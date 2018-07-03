@@ -2,6 +2,7 @@
 #include <eosiolib/multi_index.hpp>
 #include <eosiolib/singleton.hpp>
 #include <eosiolib/asset.hpp>
+#include "daccustodian.hpp"
 
 #include <string>
 
@@ -13,13 +14,8 @@ struct contract_config {
     uint8_t maxvotes = 5;
     string latestterms;
 
-    EOSLIB_SERIALIZE(contract_config, (lockupasset)(maxvotes)(agreedterms))
+    EOSLIB_SERIALIZE(contract_config, (lockupasset)(maxvotes)(latestterms))
 };
-
-//struct candconfig {
-//    string bio;
-//    asset reqpay;
-//};
 
 // @abi table candidates
 struct candidate {
@@ -27,13 +23,13 @@ struct candidate {
     string bio;
     asset requestedpay;
     uint8_t is_custodian; // bool
-    asset locked;
+    asset locked_tokens;
     uint32_t total_votes;
     vector<name> proxyfrom;
 
     name primary_key() const { return candidate_name; }
 
-    EOSLIB_SERIALIZE(candidate, (candidate_name)(bio)(is_custodian)(locked)(total_votes)(proxyfrom))
+    EOSLIB_SERIALIZE(candidate, (candidate_name)(bio)(is_custodian)(locked_tokens)(total_votes)(proxyfrom))
 };
 
 // @abi table votes
@@ -53,7 +49,7 @@ typedef multi_index<N(candidates), candidate> candidates;
 typedef multi_index<N(votes), vote> votes;
 typedef singleton<N(config), contract_config> configscontainer;
 
-class eosdacselect : public contract {
+class daccustodian : public contract {
 
 private:
     configscontainer config_singleton;
@@ -67,7 +63,7 @@ private:
 
 public:
 
-    eosdacselect(account_name self)
+    daccustodian(account_name self)
             : contract(self),
               candidates(_self, _self),
               custodian_votes(_self, _self),
@@ -76,7 +72,7 @@ public:
         configs = config_singleton.exists() ? config_singleton.get() : get_default_configs();
     }
 
-    void regcandidate(name candidate, string bio, asset requestedpay) {
+    void regcandidate(name cand, string bio, asset requestedpay) {
         /* From Tech Doc vvvv
          * 1. Check the message has the permission of the account registering, and that account has agreed to the membership agreement
          * 2. Query the candidate table to see if the account is already registered.
@@ -87,27 +83,27 @@ public:
          * From Tech doc ^^^^
          */
         print("regcandidate...");
-        require_auth(candidate);
+        require_auth(cand);
 
         regmembers reg_members(N(eosdactoken), N(eosdactoken));
-        const auto &regmem = reg_members.get(candidate, "Candidate is not registered with members");
+        const auto &regmem = reg_members.get(cand, "Candidate is not registered with members");
         eosio_assert(!regmem.agreedterms.empty(), "Candidate has not agreed any to terms");
-        eosio_assert(!regmem.agreedterms == configs.latestterms, "Candidate has not agreed to current terms");
+        eosio_assert(regmem.agreedterms == configs.latestterms, "Candidate has not agreed to current terms");
 
-        auto reg_candidate = candidates.find(candidate);
+        auto reg_candidate = candidates.find(cand);
         eosio_assert(reg_candidate == candidates.end(), "Candidate is already registered.");
         action(
-                permission_level{N(candidate), N(active)},
+                permission_level{N(cand), N(active)},
                 N(eosdactoken), N(transfer),
-                std::make_tuple(candidate, _self, configs.lockupasset, "Candidate lockup amount")
+                std::make_tuple(cand, _self, configs.lockupasset, "Candidate lockup amount")
         ).send();
 
-        candidates.emplace(_self, [&](auto &c) {
-            c.candidate_name = candidate;
+        candidates.emplace(_self, [&](candidate &c) {
+            c.candidate_name = cand;
             c.bio = bio;
             c.requestedpay = requestedpay;
             c.is_custodian = false;
-            c.locked = configs.lockupasset;
+            c.locked_tokens = configs.lockupasset;
             c.total_votes = 0;
         });
     }
@@ -123,7 +119,7 @@ public:
         action(
                 permission_level{N(eosdactoken), N(active)},
                 N(eosdactoken), N(transfer),
-                std::make_tuple(_self, cand, reg_candidate.locked, "Returning candidate lockup amount")
+                std::make_tuple(_self, cand, reg_candidate.locked_tokens, "Returning candidate lockup amount")
         ).send();
         candidates.erase(reg_candidate);
     }
@@ -139,7 +135,7 @@ public:
         });
     }
 
-    void updateconfig(name cand, asset requestedpay) {
+    void updatereqpay(name cand, asset requestedpay) {
         print("updateconfig...");
 
         require_auth(cand);
@@ -276,4 +272,4 @@ public:
 //    }
 };
 
-EOSIO_ABI(eosdacselect, (regcandidate)(unregcand)(updateconfig)(updatebio)(claimpay)(votecust)(voteproxy)(newperiod))
+EOSIO_ABI(daccustodian, (regcandidate)(unregcand)(updatebio)(updatereqpay)(claimpay)(votecust)(voteproxy)(newperiod))
