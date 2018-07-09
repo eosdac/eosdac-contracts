@@ -5,7 +5,7 @@
 using namespace eosio;
 using namespace std;
 
-
+// This is a reference to the member struct as used in the eosdactoken contract.
 // @abi table members
 struct member {
     name sender;
@@ -15,13 +15,6 @@ struct member {
     name primary_key() const { return sender; }
 
     EOSLIB_SERIALIZE(member, (sender)(agreedterms))
-};
-
-struct memberraw {
-  name sender;
-  asset quantity;
-
-  EOSLIB_SERIALIZE(memberraw, (sender)(quantity))
 };
 
 typedef multi_index<N(members), member> regmembers;
