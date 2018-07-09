@@ -408,103 +408,23 @@ describe "eosdacelect" do
   end
 
   context "Read the candidates table after votes" do
-    command %(cleos get table daccustodian daccustodian candidates), allow_error: true
+    command %(cleos get table daccustodian daccustodian votes), allow_error: true
     it do
       expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
 {
   "rows": [{
-      "candidate_name": "testreguser1",
-      "bio": "any bio",
-      "requestedpay": "11.5000 ABC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "10.0000 ABC",
-      "total_votes": 0,
-      "proxyfrom": []
-    },{
-      "candidate_name": "updatebio2",
-      "bio": "new bio",
-      "requestedpay": "11.5000 ABC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "13.0000 ABC",
-      "total_votes": 0,
-      "proxyfrom": []
-    },{
-      "candidate_name": "updatepay2",
-      "bio": "any bio",
-      "requestedpay": "21.5000 ABP",
-      "pendreqpay": "41.5000 ABP",
-      "is_custodian": 0,
-      "locked_tokens": "13.0000 ABC",
-      "total_votes": 0,
-      "proxyfrom": []
-    },{
-      "candidate_name": "votecust1",
-      "bio": "any bio",
-      "requestedpay": "21.5000 ABV",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "13.0000 ABC",
-      "total_votes": 0,
-      "proxyfrom": []
-    },{
-      "candidate_name": "votecust11",
-      "bio": "any bio",
-      "requestedpay": "21.5000 ABV",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "13.0000 ABC",
-      "total_votes": 0,
-      "proxyfrom": []
-    },{
-      "candidate_name": "votecust2",
-      "bio": "any bio",
-      "requestedpay": "21.5000 ABV",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "13.0000 ABC",
-      "total_votes": 0,
-      "proxyfrom": []
-    },{
-      "candidate_name": "votecust3",
-      "bio": "any bio",
-      "requestedpay": "21.5000 ABV",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "13.0000 ABC",
-      "total_votes": 0,
-      "proxyfrom": []
-    },{
-      "candidate_name": "votecust4",
-      "bio": "any bio",
-      "requestedpay": "21.5000 ABV",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "13.0000 ABC",
-      "total_votes": 0,
-      "proxyfrom": []
-    },{
-      "candidate_name": "votecust5",
-      "bio": "any bio",
-      "requestedpay": "21.5000 ABV",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "13.0000 ABC",
-      "total_votes": 0,
-      "proxyfrom": []
-    },{
-      "candidate_name": "voter1",
-      "bio": "any bio",
-      "requestedpay": "21.5000 ABV",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "13.0000 ABC",
-      "total_votes": 0,
-      "proxyfrom": []
+      "voter": "voter1",
+      "proxy": "",
+      "stake": "1398362884 ",
+      "candidates": [
+        "votecust1",
+        "votecust2",
+        "votecust3",
+        "votecust4"
+      ]
     }
   ],
-  "more": true
+  "more": false
 }
       JSON
     end
