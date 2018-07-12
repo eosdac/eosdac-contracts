@@ -365,14 +365,14 @@ describe "eosdacelect" do
       `cleos push action eosdactoken memberreg '{ "sender": "voter1", "agreedterms": "New Latest terms"}' -p voter1`
       # `cleos push action eosdactoken memberreg '{ "sender": "unregvoter", "agreedterms": "New Latest terms"}' -p unregvoter`
 
-      `cleos push action daccustodian regcandidate '{ "cand": "votecust1", "bio": "any bio", "requestedpay": "21.5000 ABV"}' -p votecust1`
-      `cleos push action daccustodian regcandidate '{ "cand": "votecust2", "bio": "any bio", "requestedpay": "21.5000 ABV"}' -p votecust2`
-      `cleos push action daccustodian regcandidate '{ "cand": "votecust3", "bio": "any bio", "requestedpay": "21.5000 ABV"}' -p votecust3`
-      `cleos push action daccustodian regcandidate '{ "cand": "votecust4", "bio": "any bio", "requestedpay": "21.5000 ABV"}' -p votecust4`
-      `cleos push action daccustodian regcandidate '{ "cand": "votecust5", "bio": "any bio", "requestedpay": "21.5000 ABV"}' -p votecust5`
-      `cleos push action daccustodian regcandidate '{ "cand": "votecust11", "bio": "any bio", "requestedpay": "21.5000 ABV"}' -p votecust11`
+      `cleos push action daccustodian regcandidate '{ "cand": "votecust1", "bio": "any bio", "requestedpay": "10.0000 ABV"}' -p votecust1`
+      `cleos push action daccustodian regcandidate '{ "cand": "votecust2", "bio": "any bio", "requestedpay": "10.0000 ABV"}' -p votecust2`
+      `cleos push action daccustodian regcandidate '{ "cand": "votecust3", "bio": "any bio", "requestedpay": "10.0000 ABV"}' -p votecust3`
+      `cleos push action daccustodian regcandidate '{ "cand": "votecust4", "bio": "any bio", "requestedpay": "10.0000 ABV"}' -p votecust4`
+      `cleos push action daccustodian regcandidate '{ "cand": "votecust5", "bio": "any bio", "requestedpay": "10.0000 ABV"}' -p votecust5`
+      `cleos push action daccustodian regcandidate '{ "cand": "votecust11", "bio": "any bio", "requestedpay": "10.0000 ABV"}' -p votecust11`
       # `cleos push action daccustodian regcandidate '{ "cand": "unrvotecust1", "bio": "any bio", "requestedpay": "21.5000 ABV"}' -p unrvotecust1`
-      `cleos push action daccustodian regcandidate '{ "cand": "voter1", "bio": "any bio", "requestedpay": "21.5000 ABV"}' -p voter1`
+      `cleos push action daccustodian regcandidate '{ "cand": "voter1", "bio": "any bio", "requestedpay": "10.0000 ABV"}' -p voter1`
       # `cleos push action daccustodian regcandidate '{ "cand": "unregvoter", "bio": "any bio", "requestedpay": "21.5000 ABV"}' -p unregvoter`
     end
 

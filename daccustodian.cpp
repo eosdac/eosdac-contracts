@@ -26,22 +26,25 @@ struct candidate {
     asset pendreqpay; // requested pay that would be pending until the new period begins. Then it should be moved to requestedpay.
     uint8_t is_custodian; // bool
     asset locked_tokens;
-    uint32_t total_votes;
+    asset total_votes;
     vector<name> proxyfrom;
 
     name primary_key() const { return candidate_name; }
 
-    EOSLIB_SERIALIZE(candidate, (candidate_name)(bio)(requestedpay)(pendreqpay)(is_custodian)(locked_tokens)(total_votes)(proxyfrom))
+    EOSLIB_SERIALIZE(candidate,
+                     (candidate_name)(bio)(requestedpay)(pendreqpay)(is_custodian)(locked_tokens)(total_votes)(
+                             proxyfrom))
 };
 
 // @abi table votes
 struct vote {
     name voter;
     name proxy;
-    asset stake;
+    asset weight;
     vector<name> candidates;
 
-    account_name primary_key()const { return voter; }
+    account_name primary_key() const { return voter; }
+
     account_name by_proxy() const { return static_cast<uint64_t>(proxy); }
 
     EOSLIB_SERIALIZE(vote, (voter)(stake)(proxy)(candidates))
@@ -50,7 +53,7 @@ struct vote {
 typedef multi_index<N(candidates), candidate> candidates_table;
 
 typedef eosio::multi_index<N(votes), vote,
-indexed_by< N(byproxy), const_mem_fun<vote, account_name, &vote::by_proxy> >
+        indexed_by<N(byproxy), const_mem_fun<vote, account_name, &vote::by_proxy> >
 > votes_table;
 
 typedef singleton<N(config), contract_config> configscontainer;
@@ -61,17 +64,16 @@ private:
     configscontainer config_singleton;
     candidates_table registered_candidates;
     votes_table votes_cast_by_members;
+    regmembers reg_members;
 
 public:
 
     daccustodian(account_name self)
-    : contract(self),
-    registered_candidates(_self, _self),
-    votes_cast_by_members(_self, _self),
-    config_singleton(_self, _self) {
-
-//        configs = config_singleton.get_or_create(_self);
-    }
+            : contract(self),
+              registered_candidates(_self, _self),
+              votes_cast_by_members(_self, _self),
+              config_singleton(_self, _self),
+              reg_members(N(eosdactoken), N(eosdactoken)) {}
 
     contract_config configs() {
         contract_config conf = config_singleton.exists() ? config_singleton.get() : contract_config();
@@ -81,12 +83,11 @@ public:
 
     void updateconfig(asset lockupasset, uint8_t maxvotes, string latestterms) {
         require_auth(_self);
-        contract_config newconfig{lockupasset,maxvotes,latestterms};
+        contract_config newconfig{lockupasset, maxvotes, latestterms};
         config_singleton.set(newconfig, _self);
     }
 
-    void assert_valid_membership(name member) {
-        regmembers reg_members(N(eosdactoken), N(eosdactoken));
+    member get_valid_member(name member) {
         const auto &regmem = reg_members.get(member, "Account is not registered with members");
         eosio_assert(!regmem.agreedterms.empty(), "Account has not agreed any to terms");
         eosio_assert(regmem.agreedterms == configs().latestterms, "Account has not agreed to current terms");
@@ -104,7 +105,7 @@ public:
          */
         print("regcandidate...");
         require_auth(cand);
-        assert_valid_membership(cand);
+        get_valid_member(cand);
         account_name tokencontract = N(eosdactoken);
 
         auto reg_candidate = registered_candidates.find(cand);
@@ -183,73 +184,59 @@ public:
          */
     }
 
-    int64_t acquired_vote_weight(vote existing_vote) {
+    asset acquired_vote_weight(name voter) {
         auto proxyIndex = votes_cast_by_members.get_index<N(byproxy)>();
-        auto proxied_to_voter = proxyIndex.find(existing_vote.voter);
+        auto proxied_to_voter = proxyIndex.find(voter);
 
-        int64_t vote_added_weight = existing_vote.stake.amount;
-        while (proxied_to_voter != proxyIndex.end() && proxied_to_voter->voter == existing_vote.voter) {
-            vote_added_weight += proxied_to_voter->stake.amount;
+        asset vote_added_weight = configs().lockupasset; // Where does the stake come from - balance???
+        while (proxied_to_voter != proxyIndex.end() && proxied_to_voter->voter == voter) {
+//            vote_added_weight += proxied_to_voter->stake;
         }
         return vote_added_weight;
     }
 
+    void clear_current_vote(vote current_vote) {
+        for (const auto &currentVotedCandidate : existingVote->candidates) {
+            auto candidate = registered_candidates.get(currentVotedCandidate,
+                                                       "Candidate is not registered for voting - This should never happen!!");
+            registered_candidates.modify(candidate, 0, [&](auto &c) {
+                c.total_votes -= existingVote->stake;
+            });
+        }
+    } // move common stuff here.
+
     void votecust(name voter, vector<name> newvotes) {
-        /*
-         * From Tech doc vvvv
-         1. Check that the message has voting permission of account
-         2. For each of the votes_cast_by_members, check that the account names are registered as custodian candidates.  Assert if any of the accounts are not registered as candidates
-         3. Save the votes in the CandidateVotes table, update if the voting account already has a record
-         * From Tech doc ^^^^
-         */
+
         print("votecust...");
         require_auth(voter);
-        assert_valid_membership(voter);
+        get_valid_member(voter);
         eosio_assert(newvotes.size() <= configs().maxvotes, "Number of allowed votes was exceeded.");
-        /*
-         * The deltaVotes approach aims to find a minimal change set of votes as a map<name,int_8>.
-         * If a new votee is added it will have a +1
-         * If a votee is removed it will have -1
-         * If the vote is unchanged then it will be removed in preparation for the next step.
-         */
-        map<name, int> deltaVotes;
 
-        for (const auto &newVote : newvotes) {
-            eosio_assert(voter != newVote, "Member cannot vote for themselves.");
-            // Add vote with +1
-            deltaVotes.insert(make_pair(newVote, 1));
-        }
+        asset vote_added_weight = acquired_vote_weight(voter);
 
         // Find a vote that has been cast by this voter previously.
         auto existingVote = votes_cast_by_members.find(voter);
         if (existingVote != votes_cast_by_members.end()) {
-            for (const auto &currentVotedCandidate : existingVote->candidates) {
-                // If vote is no longer present decrement vote count on currentVotedCandidate.
-                if (deltaVotes.find(currentVotedCandidate) == deltaVotes.end()) {
-                    deltaVotes.insert(make_pair(currentVotedCandidate, -1));
-                } else {
-                    // remove vote from delta if no change to avoid uneeded action below.
-                    deltaVotes.erase(currentVotedCandidate);
-                }
-            }
-
-            int64_t vote_added_weight = acquired_vote_weight(*existingVote);
-
-            for (auto &voteChange : deltaVotes) {
-                auto candidate = registered_candidates.get(voteChange.first, "Candidate is not registered for voting");
-                registered_candidates.modify(candidate, 0, [&](auto &c) {
-                    c.total_votes += voteChange.second * vote_added_weight;
-                });
-            }
+clear_current_vote(existingVote);
 
             votes_cast_by_members.modify(existingVote, _self, [&](vote &v) {
                 v.candidates = newvotes;
                 v.proxy = name();
+                v.weight = vote_added_weight;
             });
         } else {
             votes_cast_by_members.emplace(_self, [&](vote &v) {
                 v.voter = voter;
                 v.candidates = newvotes;
+                v.weight = vote_added_weight;
+            });
+        }
+
+        for (const auto &newVote : newvotes) {
+            eosio_assert(voter != newVote, "Member cannot vote for themselves.");
+            auto candidate = registered_candidates.get(newVote, "Candidate is not registered for voting");
+            registered_candidates.modify(candidate, 0, [&](auto &c) {
+                c.total_votes += vote_added_weight;
             });
         }
     }
@@ -262,14 +249,15 @@ public:
         print("voteproxy...");
         require_auth(voter);
 
+
+        asset new_vote_weight = acquired_vote_weight(voter);
+
         auto existingVote = votes_cast_by_members.find(voter);
-
-        int64_t vote_added_weight = acquired_vote_weight(*existingVote);
-
         if (existingVote != votes_cast_by_members.end()) {
             for (const auto &currentVotedCandidate : existingVote->candidates) {
 
-                auto candidate = registered_candidates.get(currentVotedCandidate, "Candidate is not registered for voting");
+                auto candidate = registered_candidates.get(currentVotedCandidate,
+                                                           "Candidate is not registered for voting");
 
                 registered_candidates.modify(candidate, 0, [&](auto &c) {
                     c.total_votes -= vote_added_weight;
@@ -298,11 +286,12 @@ public:
          */
     }
 
-    //    asset getMedianPay() {
-    //        //TODO: Add index to candidates to sort by requestedPay. Then find the middle record from the collection.
-    ////        candidates.find()
-    ////        return asset{};
-    //    }
+//    asset getMedianPay() {
+//        //TODO: Add index to candidates to sort by requestedPay. Then find the middle record from the collection.
+////        candidates.find()
+////        return asset{};
+//    }
 };
 
-EOSIO_ABI(daccustodian, (updateconfig)(regcandidate)(unregcand)(updatebio)(updatereqpay)(claimpay)(votecust)(voteproxy)(newperiod))
+EOSIO_ABI(daccustodian,
+          (updateconfig)(regcandidate)(unregcand)(updatebio)(updatereqpay)(claimpay)(votecust)(voteproxy)(newperiod))
