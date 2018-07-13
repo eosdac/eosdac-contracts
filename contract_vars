@@ -9,4 +9,4 @@ CONTRACT_NAME='daccustodian'
 ACCOUNT_NAME='daccustodian'
 
 # Set to false if the ABI is from another source eg. super implementation as is currency.
-SHOULD_GENERATE_ABI=true
+SHOULD_GENERATE_ABI=false

@@ -37,9 +37,6 @@
         },{
           "name": "total_votes",
           "type": "uint32"
-        },{
-          "name": "proxyfrom",
-          "type": "name[]"
         }
       ]
     },{
@@ -52,8 +49,8 @@
           "name": "proxy",
           "type": "name"
         },{
-          "name": "stake",
-          "type": "asset"
+          "name": "weight",
+          "type": "int64"
         },{
           "name": "candidates",
           "type": "name[]"

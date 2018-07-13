@@ -17,4 +17,12 @@ struct member {
     EOSLIB_SERIALIZE(member, (sender)(agreedterms))
 };
 
+struct account {
+    asset    balance;
+
+    uint64_t primary_key()const { return balance.symbol.name(); }
+};
+
 typedef multi_index<N(members), member> regmembers;
+typedef eosio::multi_index<N(accounts), account> accounts;
+

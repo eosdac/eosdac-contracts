@@ -9,9 +9,11 @@
 
 using namespace eosio;
 using namespace std;
+using eosio::print;
 
+// @abi table configs
 struct contract_config {
-    asset lockupasset = asset(100000, S(4, ABC));
+    asset lockupasset = asset(100000, S(4, EOSDAC));
     uint8_t maxvotes = 5;
     string latestterms = "initaltermsagreedbyuser";
 
@@ -26,28 +28,26 @@ struct candidate {
     asset pendreqpay; // requested pay that would be pending until the new period begins. Then it should be moved to requestedpay.
     uint8_t is_custodian; // bool
     asset locked_tokens;
-    asset total_votes;
-    vector<name> proxyfrom;
+    int64_t total_votes;
 
     name primary_key() const { return candidate_name; }
 
     EOSLIB_SERIALIZE(candidate,
-                     (candidate_name)(bio)(requestedpay)(pendreqpay)(is_custodian)(locked_tokens)(total_votes)(
-                             proxyfrom))
+                     (candidate_name)(bio)(requestedpay)(pendreqpay)(is_custodian)(locked_tokens)(total_votes))
 };
 
 // @abi table votes
 struct vote {
     name voter;
     name proxy;
-    asset weight;
+    int64_t weight;
     vector<name> candidates;
 
     account_name primary_key() const { return voter; }
 
     account_name by_proxy() const { return static_cast<uint64_t>(proxy); }
 
-    EOSLIB_SERIALIZE(vote, (voter)(stake)(proxy)(candidates))
+    EOSLIB_SERIALIZE(vote, (voter)(proxy)(weight)(candidates))
 };
 
 typedef multi_index<N(candidates), candidate> candidates_table;
@@ -83,6 +83,7 @@ public:
 
     void updateconfig(asset lockupasset, uint8_t maxvotes, string latestterms) {
         require_auth(_self);
+        eosio_assert(lockupasset.symbol == configs().lockupasset.symbol, "The provided asset does not match the current lockup asset symbol.");
         contract_config newconfig{lockupasset, maxvotes, latestterms};
         config_singleton.set(newconfig, _self);
     }
@@ -91,6 +92,7 @@ public:
         const auto &regmem = reg_members.get(member, "Account is not registered with members");
         eosio_assert(!regmem.agreedterms.empty(), "Account has not agreed any to terms");
         eosio_assert(regmem.agreedterms == configs().latestterms, "Account has not agreed to current terms");
+        return regmem;
     }
 
     void regcandidate(name cand, string bio, asset requestedpay) {
@@ -184,59 +186,66 @@ public:
          */
     }
 
-    asset acquired_vote_weight(name voter) {
+    int64_t acquired_vote_weight(name voter) {
         auto proxyIndex = votes_cast_by_members.get_index<N(byproxy)>();
         auto proxied_to_voter = proxyIndex.find(voter);
+        uint64_t asset_name = configs().lockupasset.symbol.name();
+        accounts accountstable(N(eosdactoken), voter);
+        const auto &ac = accountstable.get(asset_name, "voter as no balance");
 
-        asset vote_added_weight = configs().lockupasset; // Where does the stake come from - balance???
+        int64_t vote_added_weight = ac.balance.amount;
         while (proxied_to_voter != proxyIndex.end() && proxied_to_voter->voter == voter) {
-//            vote_added_weight += proxied_to_voter->stake;
+            accounts accountstable(N(eosdactoken), proxied_to_voter->voter);
+            print(proxied_to_voter->voter);
+            const auto &ac = accountstable.get(asset_name, "proxying voter as no balance");
+            vote_added_weight += ac.balance.amount;
         }
         return vote_added_weight;
     }
 
     void clear_current_vote(vote current_vote) {
-        for (const auto &currentVotedCandidate : existingVote->candidates) {
-            auto candidate = registered_candidates.get(currentVotedCandidate,
-                                                       "Candidate is not registered for voting - This should never happen!!");
+        for (const auto &currentVotedCandidate : current_vote.candidates) {
+            auto candidate = registered_candidates.find(currentVotedCandidate);
+            eosio_assert(candidate != registered_candidates.end(),"Candidate is not registered for voting - This should never happen!!");
             registered_candidates.modify(candidate, 0, [&](auto &c) {
-                c.total_votes -= existingVote->stake;
+                c.total_votes -= current_vote.weight ;
             });
         }
-    } // move common stuff here.
+    }
 
     void votecust(name voter, vector<name> newvotes) {
-
         print("votecust...");
         require_auth(voter);
-        get_valid_member(voter);
-        eosio_assert(newvotes.size() <= configs().maxvotes, "Number of allowed votes was exceeded.");
 
-        asset vote_added_weight = acquired_vote_weight(voter);
+        get_valid_member(voter);
+        eosio_assert(newvotes.size() <= configs().maxvotes, "Number of allowed votes was exceeded. ");
+
+        int64_t new_vote_weight = acquired_vote_weight(voter);
 
         // Find a vote that has been cast by this voter previously.
         auto existingVote = votes_cast_by_members.find(voter);
         if (existingVote != votes_cast_by_members.end()) {
-clear_current_vote(existingVote);
+            clear_current_vote(*existingVote );
 
             votes_cast_by_members.modify(existingVote, _self, [&](vote &v) {
                 v.candidates = newvotes;
                 v.proxy = name();
-                v.weight = vote_added_weight;
+                v.weight = new_vote_weight;
             });
         } else {
             votes_cast_by_members.emplace(_self, [&](vote &v) {
                 v.voter = voter;
                 v.candidates = newvotes;
-                v.weight = vote_added_weight;
+                v.weight = new_vote_weight;
             });
         }
 
         for (const auto &newVote : newvotes) {
-            eosio_assert(voter != newVote, "Member cannot vote for themselves.");
-            auto candidate = registered_candidates.get(newVote, "Candidate is not registered for voting");
-            registered_candidates.modify(candidate, 0, [&](auto &c) {
-                c.total_votes += vote_added_weight;
+            eosio_assert(voter != newVote, "Member cannot vote for themselves. ");
+            auto candidate = registered_candidates.find(newVote);
+            eosio_assert(candidate != registered_candidates.end(),"Candidate is not registered for voting");
+            registered_candidates.modify(candidate, _self, [&](auto &c) {
+                c.total_votes += new_vote_weight;
             });
         }
     }
@@ -248,29 +257,27 @@ clear_current_vote(existingVote);
          */
         print("voteproxy...");
         require_auth(voter);
+        get_valid_member(voter);
+        eosio_assert(voter != proxy, "Member cannot proxy vote for themselves.");
 
 
-        asset new_vote_weight = acquired_vote_weight(voter);
+        int64_t new_vote_weight = acquired_vote_weight(voter);
 
+        // // Find a vote that has been cast by this voter previously.
         auto existingVote = votes_cast_by_members.find(voter);
         if (existingVote != votes_cast_by_members.end()) {
-            for (const auto &currentVotedCandidate : existingVote->candidates) {
+            clear_current_vote(*existingVote);
 
-                auto candidate = registered_candidates.get(currentVotedCandidate,
-                                                           "Candidate is not registered for voting");
-
-                registered_candidates.modify(candidate, 0, [&](auto &c) {
-                    c.total_votes -= vote_added_weight;
-                });
-            }
             votes_cast_by_members.modify(existingVote, _self, [&](vote &v) {
                 v.candidates.clear();
                 v.proxy = proxy;
+                v.weight = new_vote_weight;
             });
         } else {
             votes_cast_by_members.emplace(_self, [&](vote &v) {
                 v.voter = voter;
                 v.proxy = proxy;
+                v.weight = new_vote_weight;
             });
         }
     }
