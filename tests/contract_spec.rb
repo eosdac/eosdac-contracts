@@ -6,7 +6,7 @@ require_relative './accounts_helper'
 
 # 1. A recent version of Ruby is required
 # 2. Ensure the required gems are installed with `gem install rspec json rspec-command`
-# 3. Run this from the command line with rspec test.rb
+# 3. Run this from the command line with rspec contract_spec.rb
 
 # Optionally output the test results with -f [p|d|h] for required views of the test results.
 
@@ -34,17 +34,11 @@ ACCOUNT_NAME = 'daccustodian'
 beforescript = <<~SHELL
   set -x
   kill -INT `pgrep nodeos`
-  rm -rf ~/Library/Application\\ Support/eosio/nodeos/data/
-  if [[ $? != 0 ]] 
-  then 
-    echo " failed to clear out the old blocks"
-    exit 1
-  fi
-    
-  nodeos --contracts-console &>/dev/null &
-    sleep 2
+  nodeos --delete-all-blocks  &>/dev/null &
+    sleep 0.5
     cleos wallet import #{CONTRACT_ACTIVE_PRIVATE_KEY}
     cleos wallet import #{TEST_ACTIVE_PRIVATE_KEY}
+    cleos wallet import #{TEST_OWNER_PRIVATE_KEY}
     cleos create account eosio #{ACCOUNT_NAME} #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
     cleos create account eosio eosdactoken #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
     if [[ $? != 0 ]] 
@@ -73,7 +67,7 @@ SHELL
 describe "eosdacelect" do
   before(:all) do
     `#{beforescript}`
-    fail() unless $? == 0
+    exit() unless $? == 0
   end
 
   describe "test before all" do
@@ -90,19 +84,26 @@ describe "eosdacelect" do
       `cleos create account eosio testreguser2 #{TEST_OWNER_PUBLIC_KEY} #{TEST_ACTIVE_PUBLIC_KEY}`
       `cleos create account eosio testreguser3 #{TEST_OWNER_PUBLIC_KEY} #{TEST_ACTIVE_PUBLIC_KEY}`
       `cleos create account eosio testreguser4 #{TEST_OWNER_PUBLIC_KEY} #{TEST_ACTIVE_PUBLIC_KEY}`
-      # `cleos create account eosio testreguser5 #{TEST_OWNER_PUBLIC_KEY} #{TEST_ACTIVE_PUBLIC_KEY}`
+      `cleos create account eosio testreguser5 #{TEST_OWNER_PUBLIC_KEY} #{TEST_ACTIVE_PUBLIC_KEY}`
       # Issue tokens to the first accounts in the token contract
       `cleos push action eosdactoken issue '{ "to": "testreguser1", "quantity": "100.0000 EOSDAC", "memo": "Initial amount."}' -p eosdactoken`
       `cleos push action eosdactoken issue '{ "to": "testreguser2", "quantity": "100.0000 EOSDAC", "memo": "Initial amount."}' -p eosdactoken`
       `cleos push action eosdactoken issue '{ "to": "testreguser3", "quantity": "100.0000 EOSDAC", "memo": "Initial amount."}' -p eosdactoken`
       `cleos push action eosdactoken issue '{ "to": "testreguser4", "quantity": "100.0000 EOSDAC", "memo": "Initial amount."}' -p eosdactoken`
-      # `cleos push action eosdactoken issue '{ "to": "testreguser5", "quantity": "100.0000 EOSDAC", "memo": "Initial amount."}' -p eosdactoken`
+      `cleos push action eosdactoken issue '{ "to": "testreguser5", "quantity": "100.0000 EOSDAC", "memo": "Initial amount."}' -p eosdactoken`
       # Add the founders to the memberreg table
       `cleos push action eosdactoken memberreg '{ "sender": "testreguser1", "agreedterms": "initaltermsagreedbyuser"}' -p testreguser1`
       # `cleos push action eosdactoken memberreg '{ "sender": "testreguser2", "agreedterms": "initaltermsagreedbyuser"}' -p testreguser2` # not registered
       `cleos push action eosdactoken memberreg '{ "sender": "testreguser3", "agreedterms": ""}' -p testreguser3` # empty terms
       `cleos push action eosdactoken memberreg '{ "sender": "testreguser4", "agreedterms": "oldterms"}' -p testreguser4`
-      # `cleos push action eosdactoken memberreg '{ "sender": "testreguser5", "agreedterms": "initaltermsagreedbyuser"}' -p testreguser5`
+      `cleos push action eosdactoken memberreg '{ "sender": "testreguser5", "agreedterms": "initaltermsagreedbyuser"}' -p testreguser5`
+
+      # set account permissions for transfers from within the contract.
+      `cleos set account permission testreguser1 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p testreguser1`
+      `cleos set account permission testreguser2 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p testreguser2`
+      `cleos set account permission testreguser3 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p testreguser3`
+      `cleos set account permission testreguser4 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p testreguser4`
+
     end
 
     context "with valid and member registered user" do
@@ -129,6 +130,13 @@ describe "eosdacelect" do
       its(:stderr) {is_expected.to include('Account has not agreed to current terms')}
     end
 
+    context "without delegated permission for staking" do
+      command %(cleos push action daccustodian regcandidate '{ "cand": "testreguser5", "bio": "any bio", "requestedpay": "10.0000 EOSDAC"}' -p testreguser5), allow_error: true
+      # its(:stdout) {is_expected.to include('daccustodian::regcandidate')}
+      its(:stderr) {is_expected.to include('but does not have signatures for it under a provided delay of 0 ms')}
+    end
+
+
     context "with user is already registered" do
       command %(cleos push action daccustodian regcandidate '{ "cand": "testreguser1", "bio": "any bio", "requestedpay": "10.0000 EOSDAC"}' -p testreguser1), allow_error: true
       # its(:stdout) {is_expected.to include('daccustodian::regcandidate')}
@@ -144,7 +152,7 @@ describe "eosdacelect" do
                 "candidate_name": "testreguser1",
                 "bio": "any bio",
                 "requestedpay": "11.5000 EOSDAC",
-                "pendreqpay": "0.0000 SYS",
+                "pendreqpay": "0.0000 EOSDAC",
                 "is_custodian": 0,
                 "locked_tokens": "10.0000 EOSDAC",
                 "total_votes": 0
@@ -157,15 +165,16 @@ describe "eosdacelect" do
     end
   end
 
+
   describe "updateconfig" do
     context "with invalid auth" do
-      command %(cleos push action daccustodian updateconfig '{ "lockupasset": "13.0000 EOSDAC", "maxvotes": 4, "latestterms": "New Latest terms"}' -p testreguser1), allow_error: true
+      command %(cleos push action daccustodian updateconfig '{ "lockupasset": "13.0000 EOSDAC", "maxvotes": 4, "latestterms": "New Latest terms", "numelected": 3}' -p testreguser1), allow_error: true
       # its(:stdout) {is_expected.to include('daccustodian::regcandidate')}
       its(:stderr) {is_expected.to include('missing required authority')}
     end
 
     context "with valid auth" do
-      command %(cleos push action daccustodian updateconfig '{ "lockupasset": "23.0000 EOSDAC", "maxvotes": 4, "latestterms": "New Latest terms"}' -p daccustodian), allow_error: true
+      command %(cleos push action daccustodian updateconfig '{ "lockupasset": "23.0000 EOSDAC", "maxvotes": 4, "latestterms": "New Latest terms", "numelected": 3}' -p daccustodian), allow_error: true
       # its(:stdout) {is_expected.to include('daccustodian::regcandidate')}
       its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
     end
@@ -186,6 +195,8 @@ describe "eosdacelect" do
       # Add the founders to the memberreg table
       `cleos push action eosdactoken memberreg '{ "sender": "unreguser1", "agreedterms": "New Latest terms"}' -p unreguser1`
       `cleos push action eosdactoken memberreg '{ "sender": "unreguser2", "agreedterms": "New Latest terms"}' -p unreguser2`
+
+      `cleos set account permission unreguser2 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p unreguser2`
 
       `cleos push action daccustodian regcandidate '{ "cand": "unreguser2", "bio": "any bio", "requestedpay": "11.5000 EOSDAC"}' -p unreguser2`
     end
@@ -225,6 +236,9 @@ describe "eosdacelect" do
       `cleos push action eosdactoken memberreg '{ "sender": "updatebio1", "agreedterms": "New Latest terms"}' -p updatebio1`
       `cleos push action eosdactoken memberreg '{ "sender": "updatebio2", "agreedterms": "New Latest terms"}' -p updatebio2`
 
+      # set account permissions for transfers from within the contract.
+      `cleos set account permission updatebio2 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p updatebio2`
+
       `cleos push action daccustodian regcandidate '{ "cand": "updatebio2", "bio": "any bio", "requestedpay": "11.5000 EOSDAC"}' -p updatebio2`
     end
 
@@ -263,6 +277,9 @@ describe "eosdacelect" do
       `cleos push action eosdactoken memberreg '{ "sender": "updatepay1", "agreedterms": "New Latest terms"}' -p updatepay1`
       `cleos push action eosdactoken memberreg '{ "sender": "updatepay2", "agreedterms": "New Latest terms"}' -p updatepay2`
 
+      # set account permissions for transfers from within the contract.
+      `cleos set account permission updatepay2 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p updatepay2`
+
       `cleos push action daccustodian regcandidate '{ "cand": "updatepay2", "bio": "any bio", "requestedpay": "21.5000 EOSDAC"}' -p updatepay2`
     end
 
@@ -294,7 +311,7 @@ describe "eosdacelect" do
               "candidate_name": "testreguser1",
               "bio": "any bio",
               "requestedpay": "11.5000 EOSDAC",
-              "pendreqpay": "0.0000 SYS",
+              "pendreqpay": "0.0000 EOSDAC",
               "is_custodian": 0,
               "locked_tokens": "10.0000 EOSDAC",
               "total_votes": 0
@@ -302,7 +319,7 @@ describe "eosdacelect" do
               "candidate_name": "updatebio2",
               "bio": "new bio",
               "requestedpay": "11.5000 EOSDAC",
-              "pendreqpay": "0.0000 SYS",
+              "pendreqpay": "0.0000 EOSDAC",
               "is_custodian": 0,
               "locked_tokens": "23.0000 EOSDAC",
               "total_votes": 0
@@ -343,7 +360,7 @@ describe "eosdacelect" do
       `cleos push action eosdactoken issue '{ "to": "votecust3", "quantity": "103.0000 EOSDAC", "memo": "Initial amount."}' -p eosdactoken`
       `cleos push action eosdactoken issue '{ "to": "votecust4", "quantity": "104.0000 EOSDAC", "memo": "Initial amount."}' -p eosdactoken`
       `cleos push action eosdactoken issue '{ "to": "votecust5", "quantity": "105.0000 EOSDAC", "memo": "Initial amount."}' -p eosdactoken`
-      # `cleos push action eosdactoken issue '{ "to": "votecust11", "quantity": "106.0000 EOSDAC", "memo": "Initial amount."}' -p eosdactoken`
+      `cleos push action eosdactoken issue '{ "to": "votecust11", "quantity": "106.0000 EOSDAC", "memo": "Initial amount."}' -p eosdactoken`
       `cleos push action eosdactoken issue '{ "to": "unrvotecust1", "quantity": "107.0000 EOSDAC", "memo": "Initial amount."}' -p eosdactoken`
       `cleos push action eosdactoken issue '{ "to": "voter1", "quantity": "108.0000 EOSDAC", "memo": "Initial amount."}' -p eosdactoken`
       `cleos push action eosdactoken issue '{ "to": "unregvoter", "quantity": "109.0000 EOSDAC", "memo": "Initial amount."}' -p eosdactoken`
@@ -358,6 +375,15 @@ describe "eosdacelect" do
       # `cleos push action eosdactoken memberreg '{ "sender": "unrvotecust1", "agreedterms": "New Latest terms"}' -p unrvotecust1`
       `cleos push action eosdactoken memberreg '{ "sender": "voter1", "agreedterms": "New Latest terms"}' -p voter1`
       # `cleos push action eosdactoken memberreg '{ "sender": "unregvoter", "agreedterms": "New Latest terms"}' -p unregvoter`
+
+      # set account permissions for transfers from within the contract.
+      `cleos set account permission votecust1 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p votecust1`
+      `cleos set account permission votecust2 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p votecust2`
+      `cleos set account permission votecust3 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p votecust3`
+      `cleos set account permission votecust4 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p votecust4`
+      `cleos set account permission votecust5 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p votecust5`
+      `cleos set account permission votecust11 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p votecust11`
+      `cleos set account permission voter1 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p voter1`
 
       `cleos push action daccustodian regcandidate '{ "cand": "votecust1", "bio": "any bio", "requestedpay": "11.0000 EOSDAC"}' -p votecust1`
       `cleos push action daccustodian regcandidate '{ "cand": "votecust2", "bio": "any bio", "requestedpay": "12.0000 EOSDAC"}' -p votecust2`
@@ -408,7 +434,7 @@ describe "eosdacelect" do
             "rows": [{
                 "voter": "voter1",
                 "proxy": "",
-                "weight": 1080000,
+                "weight": 0,
                 "candidates": [
                   "votecust1",
                   "votecust2",
@@ -431,7 +457,7 @@ describe "eosdacelect" do
                 "candidate_name": "testreguser1",
                 "bio": "any bio",
                 "requestedpay": "11.5000 EOSDAC",
-                "pendreqpay": "0.0000 SYS",
+                "pendreqpay": "0.0000 EOSDAC",
                 "is_custodian": 0,
                 "locked_tokens": "10.0000 EOSDAC",
                 "total_votes": 0
@@ -439,7 +465,7 @@ describe "eosdacelect" do
                 "candidate_name": "updatebio2",
                 "bio": "new bio",
                 "requestedpay": "11.5000 EOSDAC",
-                "pendreqpay": "0.0000 SYS",
+                "pendreqpay": "0.0000 EOSDAC",
                 "is_custodian": 0,
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -455,15 +481,15 @@ describe "eosdacelect" do
                 "candidate_name": "votecust1",
                 "bio": "any bio",
                 "requestedpay": "11.0000 EOSDAC",
-                "pendreqpay": "0.0000 SYS",
+                "pendreqpay": "0.0000 EOSDAC",
                 "is_custodian": 0,
                 "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 1080000
+                "total_votes": 0
               },{
                 "candidate_name": "votecust11",
                 "bio": "any bio",
                 "requestedpay": "16.0000 EOSDAC",
-                "pendreqpay": "0.0000 SYS",
+                "pendreqpay": "0.0000 EOSDAC",
                 "is_custodian": 0,
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -471,23 +497,23 @@ describe "eosdacelect" do
                 "candidate_name": "votecust2",
                 "bio": "any bio",
                 "requestedpay": "12.0000 EOSDAC",
-                "pendreqpay": "0.0000 SYS",
+                "pendreqpay": "0.0000 EOSDAC",
                 "is_custodian": 0,
                 "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 1080000
+                "total_votes": 0
               },{
                 "candidate_name": "votecust3",
                 "bio": "any bio",
                 "requestedpay": "13.0000 EOSDAC",
-                "pendreqpay": "0.0000 SYS",
+                "pendreqpay": "0.0000 EOSDAC",
                 "is_custodian": 0,
                 "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 1080000
+                "total_votes": 0
               },{
                 "candidate_name": "votecust4",
                 "bio": "any bio",
                 "requestedpay": "14.0000 EOSDAC",
-                "pendreqpay": "0.0000 SYS",
+                "pendreqpay": "0.0000 EOSDAC",
                 "is_custodian": 0,
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -495,7 +521,7 @@ describe "eosdacelect" do
                 "candidate_name": "votecust5",
                 "bio": "any bio",
                 "requestedpay": "15.0000 EOSDAC",
-                "pendreqpay": "0.0000 SYS",
+                "pendreqpay": "0.0000 EOSDAC",
                 "is_custodian": 0,
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -503,7 +529,7 @@ describe "eosdacelect" do
                 "candidate_name": "voter1",
                 "bio": "any bio",
                 "requestedpay": "17.0000 EOSDAC",
-                "pendreqpay": "0.0000 SYS",
+                "pendreqpay": "0.0000 EOSDAC",
                 "is_custodian": 0,
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -517,9 +543,9 @@ describe "eosdacelect" do
     end
 
     context "with valid auth change existing vote" do
-      before(:all) do
-        `cleos push action eosdactoken issue '{ "to": "voter1", "quantity": "58.0000 EOSDAC", "memo": "Second amount."}' -p eosdactoken`
-      end
+      # before(:all) do
+      #   `cleos push action eosdactoken issue '{ "to": "voter1", "quantity": "58.0000 EOSDAC", "memo": "Second amount."}' -p eosdactoken`
+      # end
       command %(cleos push action daccustodian votecust '{ "voter": "voter1", "newvotes": ["votecust1","votecust2","votecust4"]}' -p voter1), allow_error: true
       # its(:stdout) {is_expected.to include('daccustodian::votecust')}
       its(:stdout) {is_expected.to include('daccustodian::votecust')}
@@ -533,7 +559,7 @@ describe "eosdacelect" do
             "rows": [{
                 "voter": "voter1",
                 "proxy": "",
-                "weight": 1660000,
+                "weight": 0,
                 "candidates": [
                   "votecust1",
                   "votecust2",
@@ -556,7 +582,7 @@ describe "eosdacelect" do
                 "candidate_name": "testreguser1",
                 "bio": "any bio",
                 "requestedpay": "11.5000 EOSDAC",
-                "pendreqpay": "0.0000 SYS",
+                "pendreqpay": "0.0000 EOSDAC",
                 "is_custodian": 0,
                 "locked_tokens": "10.0000 EOSDAC",
                 "total_votes": 0
@@ -564,7 +590,7 @@ describe "eosdacelect" do
                 "candidate_name": "updatebio2",
                 "bio": "new bio",
                 "requestedpay": "11.5000 EOSDAC",
-                "pendreqpay": "0.0000 SYS",
+                "pendreqpay": "0.0000 EOSDAC",
                 "is_custodian": 0,
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -580,15 +606,15 @@ describe "eosdacelect" do
                 "candidate_name": "votecust1",
                 "bio": "any bio",
                 "requestedpay": "11.0000 EOSDAC",
-                "pendreqpay": "0.0000 SYS",
+                "pendreqpay": "0.0000 EOSDAC",
                 "is_custodian": 0,
                 "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 1660000
+                "total_votes": 0
               },{
                 "candidate_name": "votecust11",
                 "bio": "any bio",
                 "requestedpay": "16.0000 EOSDAC",
-                "pendreqpay": "0.0000 SYS",
+                "pendreqpay": "0.0000 EOSDAC",
                 "is_custodian": 0,
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -596,15 +622,15 @@ describe "eosdacelect" do
                 "candidate_name": "votecust2",
                 "bio": "any bio",
                 "requestedpay": "12.0000 EOSDAC",
-                "pendreqpay": "0.0000 SYS",
+                "pendreqpay": "0.0000 EOSDAC",
                 "is_custodian": 0,
                 "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 1660000
+                "total_votes": 0
               },{
                 "candidate_name": "votecust3",
                 "bio": "any bio",
                 "requestedpay": "13.0000 EOSDAC",
-                "pendreqpay": "0.0000 SYS",
+                "pendreqpay": "0.0000 EOSDAC",
                 "is_custodian": 0,
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -612,15 +638,15 @@ describe "eosdacelect" do
                 "candidate_name": "votecust4",
                 "bio": "any bio",
                 "requestedpay": "14.0000 EOSDAC",
-                "pendreqpay": "0.0000 SYS",
+                "pendreqpay": "0.0000 EOSDAC",
                 "is_custodian": 0,
                 "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 1660000
+                "total_votes": 0
               },{
                 "candidate_name": "votecust5",
                 "bio": "any bio",
                 "requestedpay": "15.0000 EOSDAC",
-                "pendreqpay": "0.0000 SYS",
+                "pendreqpay": "0.0000 EOSDAC",
                 "is_custodian": 0,
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -628,7 +654,7 @@ describe "eosdacelect" do
                 "candidate_name": "voter1",
                 "bio": "any bio",
                 "requestedpay": "17.0000 EOSDAC",
-                "pendreqpay": "0.0000 SYS",
+                "pendreqpay": "0.0000 EOSDAC",
                 "is_custodian": 0,
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -660,6 +686,9 @@ describe "eosdacelect" do
       `cleos push action eosdactoken memberreg '{ "sender": "voteproxy3", "agreedterms": "New Latest terms"}' -p voteproxy3`
       `cleos push action eosdactoken memberreg '{ "sender": "voter1", "agreedterms": "New Latest terms"}' -p voter1`
       # `cleos push action eosdactoken memberreg '{ "sender": "unregvoter", "agreedterms": "New Latest terms"}' -p unregvoter`
+
+      # set account permissions for transfers from within the contract.
+      `cleos set account permission voteproxy1 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p voteproxy1`
 
       `cleos push action daccustodian regcandidate '{ "cand": "voteproxy1", "bio": "any bio", "requestedpay": "10.0000 EOSDAC"}' -p voteproxy1`
       # `cleos push action daccustodian regcandidate '{ "cand": "unregvoter", "bio": "any bio", "requestedpay": "21.5000 EOSDAC"}' -p unregvoter`
@@ -697,7 +726,7 @@ describe "eosdacelect" do
             "rows": [{
                 "voter": "voter1",
                 "proxy": "voteproxy1",
-                "weight": 1660000,
+                "weight": 0,
                 "candidates": []
               }
             ],
@@ -711,99 +740,99 @@ describe "eosdacelect" do
       command %(cleos get table daccustodian daccustodian candidates --limit 20), allow_error: true
       it do
         expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-  {
-  "rows": [{
-      "candidate_name": "testreguser1",
-      "bio": "any bio",
-      "requestedpay": "11.5000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "10.0000 EOSDAC",
-      "total_votes": 0
-    },{
-      "candidate_name": "updatebio2",
-      "bio": "new bio",
-      "requestedpay": "11.5000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 0
-    },{
-      "candidate_name": "updatepay2",
-      "bio": "any bio",
-      "requestedpay": "21.5000 EOSDAC",
-      "pendreqpay": "41.5000 EOSDAC",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 0
-    },{
-      "candidate_name": "votecust1",
-      "bio": "any bio",
-      "requestedpay": "11.0000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 0
-    },{
-      "candidate_name": "votecust11",
-      "bio": "any bio",
-      "requestedpay": "16.0000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 0
-    },{
-      "candidate_name": "votecust2",
-      "bio": "any bio",
-      "requestedpay": "12.0000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 0
-    },{
-      "candidate_name": "votecust3",
-      "bio": "any bio",
-      "requestedpay": "13.0000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 0
-    },{
-      "candidate_name": "votecust4",
-      "bio": "any bio",
-      "requestedpay": "14.0000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 0
-    },{
-      "candidate_name": "votecust5",
-      "bio": "any bio",
-      "requestedpay": "15.0000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 0
-    },{
-      "candidate_name": "voteproxy1",
-      "bio": "any bio",
-      "requestedpay": "10.0000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 0
-    },{
-      "candidate_name": "voter1",
-      "bio": "any bio",
-      "requestedpay": "17.0000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 0
-    }
-  ],
-  "more": false
-}
+            {
+            "rows": [{
+                "candidate_name": "testreguser1",
+                "bio": "any bio",
+                "requestedpay": "11.5000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "10.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "updatebio2",
+                "bio": "new bio",
+                "requestedpay": "11.5000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "updatepay2",
+                "bio": "any bio",
+                "requestedpay": "21.5000 EOSDAC",
+                "pendreqpay": "41.5000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "votecust1",
+                "bio": "any bio",
+                "requestedpay": "11.0000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "votecust11",
+                "bio": "any bio",
+                "requestedpay": "16.0000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "votecust2",
+                "bio": "any bio",
+                "requestedpay": "12.0000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "votecust3",
+                "bio": "any bio",
+                "requestedpay": "13.0000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "votecust4",
+                "bio": "any bio",
+                "requestedpay": "14.0000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "votecust5",
+                "bio": "any bio",
+                "requestedpay": "15.0000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "voteproxy1",
+                "bio": "any bio",
+                "requestedpay": "10.0000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "voter1",
+                "bio": "any bio",
+                "requestedpay": "17.0000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              }
+            ],
+            "more": false
+          }
 
         JSON
       end
@@ -823,7 +852,7 @@ describe "eosdacelect" do
             "rows": [{
                 "voter": "voter1",
                 "proxy": "voteproxy3",
-                "weight": 1660000,
+                "weight": 0,
                 "candidates": []
               }
             ],
@@ -837,99 +866,99 @@ describe "eosdacelect" do
       command %(cleos get table daccustodian daccustodian candidates --limit 20), allow_error: true
       it do
         expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-  {
-  "rows": [{
-      "candidate_name": "testreguser1",
-      "bio": "any bio",
-      "requestedpay": "11.5000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "10.0000 EOSDAC",
-      "total_votes": 0
-    },{
-      "candidate_name": "updatebio2",
-      "bio": "new bio",
-      "requestedpay": "11.5000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 0
-    },{
-      "candidate_name": "updatepay2",
-      "bio": "any bio",
-      "requestedpay": "21.5000 EOSDAC",
-      "pendreqpay": "41.5000 EOSDAC",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 0
-    },{
-      "candidate_name": "votecust1",
-      "bio": "any bio",
-      "requestedpay": "11.0000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 0
-    },{
-      "candidate_name": "votecust11",
-      "bio": "any bio",
-      "requestedpay": "16.0000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 0
-    },{
-      "candidate_name": "votecust2",
-      "bio": "any bio",
-      "requestedpay": "12.0000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 0
-    },{
-      "candidate_name": "votecust3",
-      "bio": "any bio",
-      "requestedpay": "13.0000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 0
-    },{
-      "candidate_name": "votecust4",
-      "bio": "any bio",
-      "requestedpay": "14.0000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 0
-    },{
-      "candidate_name": "votecust5",
-      "bio": "any bio",
-      "requestedpay": "15.0000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 0
-    },{
-      "candidate_name": "voteproxy1",
-      "bio": "any bio",
-      "requestedpay": "10.0000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 0
-    },{
-      "candidate_name": "voter1",
-      "bio": "any bio",
-      "requestedpay": "17.0000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 0
-    }
-  ],
-  "more": false
-}
+            {
+            "rows": [{
+                "candidate_name": "testreguser1",
+                "bio": "any bio",
+                "requestedpay": "11.5000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "10.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "updatebio2",
+                "bio": "new bio",
+                "requestedpay": "11.5000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "updatepay2",
+                "bio": "any bio",
+                "requestedpay": "21.5000 EOSDAC",
+                "pendreqpay": "41.5000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "votecust1",
+                "bio": "any bio",
+                "requestedpay": "11.0000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "votecust11",
+                "bio": "any bio",
+                "requestedpay": "16.0000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "votecust2",
+                "bio": "any bio",
+                "requestedpay": "12.0000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "votecust3",
+                "bio": "any bio",
+                "requestedpay": "13.0000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "votecust4",
+                "bio": "any bio",
+                "requestedpay": "14.0000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "votecust5",
+                "bio": "any bio",
+                "requestedpay": "15.0000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "voteproxy1",
+                "bio": "any bio",
+                "requestedpay": "10.0000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "voter1",
+                "bio": "any bio",
+                "requestedpay": "17.0000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              }
+            ],
+            "more": false
+          }
         JSON
       end
     end
@@ -943,25 +972,25 @@ describe "eosdacelect" do
         command %(cleos get table daccustodian daccustodian votes), allow_error: true
         it do
           expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-            {
-  "rows": [{
-      "voter": "voteproxy3",
-      "proxy": "",
-      "weight": 1010000,
-      "candidates": [
-        "votecust1",
-        "votecust2",
-        "votecust3"
-      ]
-    },{
-      "voter": "voter1",
-      "proxy": "voteproxy3",
-      "weight": 1660000,
-      "candidates": []
-    }
-  ],
-  "more": false
-}
+                        {
+              "rows": [{
+                  "voter": "voteproxy3",
+                  "proxy": "",
+                  "weight": 0,
+                  "candidates": [
+                    "votecust1",
+                    "votecust2",
+                    "votecust3"
+                  ]
+                },{
+                  "voter": "voter1",
+                  "proxy": "voteproxy3",
+                  "weight": 0,
+                  "candidates": []
+                }
+              ],
+              "more": false
+            }
           JSON
         end
       end
@@ -970,99 +999,99 @@ describe "eosdacelect" do
         command %(cleos get table daccustodian daccustodian candidates --limit 20), allow_error: true
         it do
           expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-            {
-  "rows": [{
-      "candidate_name": "testreguser1",
-      "bio": "any bio",
-      "requestedpay": "11.5000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "10.0000 EOSDAC",
-      "total_votes": 0
-    },{
-      "candidate_name": "updatebio2",
-      "bio": "new bio",
-      "requestedpay": "11.5000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 0
-    },{
-      "candidate_name": "updatepay2",
-      "bio": "any bio",
-      "requestedpay": "21.5000 EOSDAC",
-      "pendreqpay": "41.5000 EOSDAC",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 0
-    },{
-      "candidate_name": "votecust1",
-      "bio": "any bio",
-      "requestedpay": "11.0000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 1010000
-    },{
-      "candidate_name": "votecust11",
-      "bio": "any bio",
-      "requestedpay": "16.0000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 0
-    },{
-      "candidate_name": "votecust2",
-      "bio": "any bio",
-      "requestedpay": "12.0000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 1010000
-    },{
-      "candidate_name": "votecust3",
-      "bio": "any bio",
-      "requestedpay": "13.0000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 1010000
-    },{
-      "candidate_name": "votecust4",
-      "bio": "any bio",
-      "requestedpay": "14.0000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 0
-    },{
-      "candidate_name": "votecust5",
-      "bio": "any bio",
-      "requestedpay": "15.0000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 0
-    },{
-      "candidate_name": "voteproxy1",
-      "bio": "any bio",
-      "requestedpay": "10.0000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 0
-    },{
-      "candidate_name": "voter1",
-      "bio": "any bio",
-      "requestedpay": "17.0000 EOSDAC",
-      "pendreqpay": "0.0000 SYS",
-      "is_custodian": 0,
-      "locked_tokens": "23.0000 EOSDAC",
-      "total_votes": 0
-    }
-  ],
-  "more": false
-}
+                        {
+              "rows": [{
+                  "candidate_name": "testreguser1",
+                  "bio": "any bio",
+                  "requestedpay": "11.5000 EOSDAC",
+                  "pendreqpay": "0.0000 EOSDAC",
+                  "is_custodian": 0,
+                  "locked_tokens": "10.0000 EOSDAC",
+                  "total_votes": 0
+                },{
+                  "candidate_name": "updatebio2",
+                  "bio": "new bio",
+                  "requestedpay": "11.5000 EOSDAC",
+                  "pendreqpay": "0.0000 EOSDAC",
+                  "is_custodian": 0,
+                  "locked_tokens": "23.0000 EOSDAC",
+                  "total_votes": 0
+                },{
+                  "candidate_name": "updatepay2",
+                  "bio": "any bio",
+                  "requestedpay": "21.5000 EOSDAC",
+                  "pendreqpay": "41.5000 EOSDAC",
+                  "is_custodian": 0,
+                  "locked_tokens": "23.0000 EOSDAC",
+                  "total_votes": 0
+                },{
+                  "candidate_name": "votecust1",
+                  "bio": "any bio",
+                  "requestedpay": "11.0000 EOSDAC",
+                  "pendreqpay": "0.0000 EOSDAC",
+                  "is_custodian": 0,
+                  "locked_tokens": "23.0000 EOSDAC",
+                  "total_votes": 0
+                },{
+                  "candidate_name": "votecust11",
+                  "bio": "any bio",
+                  "requestedpay": "16.0000 EOSDAC",
+                  "pendreqpay": "0.0000 EOSDAC",
+                  "is_custodian": 0,
+                  "locked_tokens": "23.0000 EOSDAC",
+                  "total_votes": 0
+                },{
+                  "candidate_name": "votecust2",
+                  "bio": "any bio",
+                  "requestedpay": "12.0000 EOSDAC",
+                  "pendreqpay": "0.0000 EOSDAC",
+                  "is_custodian": 0,
+                  "locked_tokens": "23.0000 EOSDAC",
+                  "total_votes": 0
+                },{
+                  "candidate_name": "votecust3",
+                  "bio": "any bio",
+                  "requestedpay": "13.0000 EOSDAC",
+                  "pendreqpay": "0.0000 EOSDAC",
+                  "is_custodian": 0,
+                  "locked_tokens": "23.0000 EOSDAC",
+                  "total_votes": 0
+                },{
+                  "candidate_name": "votecust4",
+                  "bio": "any bio",
+                  "requestedpay": "14.0000 EOSDAC",
+                  "pendreqpay": "0.0000 EOSDAC",
+                  "is_custodian": 0,
+                  "locked_tokens": "23.0000 EOSDAC",
+                  "total_votes": 0
+                },{
+                  "candidate_name": "votecust5",
+                  "bio": "any bio",
+                  "requestedpay": "15.0000 EOSDAC",
+                  "pendreqpay": "0.0000 EOSDAC",
+                  "is_custodian": 0,
+                  "locked_tokens": "23.0000 EOSDAC",
+                  "total_votes": 0
+                },{
+                  "candidate_name": "voteproxy1",
+                  "bio": "any bio",
+                  "requestedpay": "10.0000 EOSDAC",
+                  "pendreqpay": "0.0000 EOSDAC",
+                  "is_custodian": 0,
+                  "locked_tokens": "23.0000 EOSDAC",
+                  "total_votes": 0
+                },{
+                  "candidate_name": "voter1",
+                  "bio": "any bio",
+                  "requestedpay": "17.0000 EOSDAC",
+                  "pendreqpay": "0.0000 EOSDAC",
+                  "is_custodian": 0,
+                  "locked_tokens": "23.0000 EOSDAC",
+                  "total_votes": 0
+                }
+              ],
+              "more": false
+            }
 
           JSON
         end
@@ -1070,5 +1099,39 @@ describe "eosdacelect" do
     end
   end
 
-  
+  describe "newperiod" do
+    command %(cleos push action daccustodian newperiod '{ "message": "log message"}' -p testreguser3), allow_error: true
+    # its(:stdout) {is_expected.to include('daccustodian::voteproxy')}
+    its(:stdout) {is_expected.to include('daccustodian::newperiod')}
+  end
+
+  context "the votes table" do
+    # Assuming that proxied voter's weight should be 0 since the weight has been delegated to proxy.
+    # Also assumes that staked tokens for candidate are not used for voting power.
+    command %(cleos get table daccustodian daccustodian votes), allow_error: true
+    it do
+      expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
+                    {
+          "rows": [{
+              "voter": "voteproxy3",
+              "proxy": "",
+              "weight": 1860000,
+              "candidates": [
+                "votecust1",
+                "votecust2",
+                "votecust3"
+              ]
+            },{
+              "voter": "voter1",
+              "proxy": "voteproxy3",
+              "weight": 0,
+              "candidates": []
+            }
+          ],
+          "more": false
+        }
+      JSON
+    end
+  end
+
 end

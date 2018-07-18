@@ -36,7 +36,7 @@
           "type": "asset"
         },{
           "name": "total_votes",
-          "type": "uint32"
+          "type": "int64"
         }
       ]
     },{
@@ -68,6 +68,9 @@
         },{
           "name": "latestterms",
           "type": "string"
+        },{
+          "name": "numelected",
+          "type": "uint32"
         }
       ]
     },{
