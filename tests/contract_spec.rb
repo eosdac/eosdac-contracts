@@ -416,7 +416,7 @@ describe "eosdacelect" do
 
     context "exceeded allowed number of votes" do
       command %(cleos push action daccustodian votecust '{ "voter": "voter1", "newvotes": ["voter1","votecust2","votecust3","votecust4","votecust5", "votecust11"]}' -p voter1), allow_error: true
-      its(:stderr) {is_expected.to include('Number of allowed votes was exceeded.')}
+      its(:stderr) {is_expected.to include('Max number of allowed votes was exceeded.')}
       # its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
     end
 
@@ -708,7 +708,7 @@ describe "eosdacelect" do
 
     context "voting for self" do
       command %(cleos push action daccustodian voteproxy '{ "voter": "voter1", "proxy":"voter1"}' -p voter1), allow_error: true
-      its(:stderr) {is_expected.to include('Member cannot proxy vote for themselves.')}
+      its(:stderr) {is_expected.to include('Member cannot proxy vote for themselves: voter1')}
       # its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
     end
 
@@ -1098,11 +1098,17 @@ describe "eosdacelect" do
       end
     end
 
+    describe "newperiod without valid auth should fail" do
+      command %(cleos push action daccustodian newperiod '{ "message": "log message"}' -p testreguser3), allow_error: true
+      # its(:stdout) {is_expected.to include('daccustodian::voteproxy')}
+      its(:stderr) {is_expected.to include('missing authority of daccustodian')}
+    end
+
     describe "newperiod before votes processing" do
       before(:all) do
         `cleos push action daccustodian votecust '{ "voter": "votecust11", "newvotes": ["votecust2","votecust3","votecust4"]}' -p votecust11`
       end
-      command %(cleos push action daccustodian newperiod '{ "message": "log message"}' -p testreguser3), allow_error: true
+      command %(cleos push action daccustodian newperiod '{ "message": "log message"}' -p daccustodian), allow_error: true
       # its(:stdout) {is_expected.to include('daccustodian::voteproxy')}
       its(:stdout) {is_expected.to include('daccustodian::newperiod')}
     end
@@ -1152,7 +1158,7 @@ describe "eosdacelect" do
               },{
                 "voter": "voter1",
                 "proxy": "voteproxy3",
-                "weight": 0,
+                "weight": 850000,
                 "candidates": []
               }
             ],
@@ -1266,7 +1272,7 @@ describe "eosdacelect" do
     end
 
     describe "newperiod after votes processing" do
-      command %(cleos push action daccustodian newperiod '{ "message": "log message"}' -p testreguser3), allow_error: true
+      command %(cleos push action daccustodian newperiod '{ "message": "log message"}' -p daccustodian), allow_error: true
       # its(:stdout) {is_expected.to include('daccustodian::voteproxy')}
       its(:stdout) {is_expected.to include('daccustodian::newperiod')}
     end
@@ -1328,7 +1334,7 @@ describe "eosdacelect" do
               },{
                 "voter": "voter1",
                 "proxy": "voteproxy3",
-                "weight": 0,
+                "weight": 850000,
                 "candidates": []
               }
             ],

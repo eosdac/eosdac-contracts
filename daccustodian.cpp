@@ -1,6 +1,7 @@
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/singleton.hpp>
 #include <eosiolib/asset.hpp>
+#include <string>
 
 #include "daccustodian.hpp"
 
@@ -93,6 +94,8 @@ public:
     void updatebio(name cand, string bio) {
 
         require_auth(cand);
+        get_valid_member(cand);
+
         const auto &reg_candidate = registered_candidates.get(cand, "Candidate is not already registered.");
 
         registered_candidates.modify(reg_candidate, 0, [&](candidate &c) {
@@ -103,6 +106,7 @@ public:
     void updatereqpay(name cand, asset requestedpay) {
 
         require_auth(cand);
+        get_valid_member(cand);
         const auto &reg_candidate = registered_candidates.get(cand, "Candidate is not already registered.");
 
         registered_candidates.modify(reg_candidate, 0, [&](candidate &c) {
@@ -111,10 +115,11 @@ public:
     }
 
     void votecust(name voter, vector<name> newvotes) {
-        require_auth(voter);
 
+        require_auth(voter);
         get_valid_member(voter);
-        eosio_assert(newvotes.size() <= configs().maxvotes, "Number of allowed votes was exceeded. ");
+
+        eosio_assert(newvotes.size() <= configs().maxvotes, "Max number of allowed votes was exceeded.");
 
         // Find a vote that has been cast by this voter previously.
         auto existingVote = votes_cast_by_members.find(voter);
@@ -134,13 +139,15 @@ public:
 
     void voteproxy(name voter, name proxy) {
 
-        print("voteproxy...");
         require_auth(voter);
         get_valid_member(voter);
-        eosio_assert(voter != proxy, "Member cannot proxy vote for themselves.");
+
+        string error_msg = "Member cannot proxy vote for themselves: " + voter.to_string();
+        eosio_assert(voter != proxy, error_msg.c_str());
         auto destproxy = votes_cast_by_members.find(proxy);
         if (destproxy != votes_cast_by_members.end()) {
-            eosio_assert(destproxy->proxy == 0, "Member cannot vote for another proxy.");
+            error_msg = "Proxy voters cannot vote for another proxy: " + voter.to_string();
+            eosio_assert(destproxy->proxy == 0, error_msg.c_str());
         }
 
         // Find a vote that has been cast by this voter previously.
@@ -160,6 +167,8 @@ public:
     }
 
     void newperiod(string message) {
+        require_auth(_self);
+
         /* Copied from the Tech Doc vvvvv
          // 1. Distribute custodian pay based on the median of requested pay for all currently elected candidates
 
@@ -167,14 +176,16 @@ public:
          // 3. Assigns the custodians, this may include updating a multi-sig wallet which controls the funds in the DAC as well as updating DAC contract code
          * Copied from the Tech Doc ^^^^^
          */
-        distributepay("from newperiod");
-        clearOldVotes("from newperiod");
-        tallyNewVotes("from newperiod");
-        configureForNextPeriod("from newperiod");
+
+        // These actions a separated out for clarity and incase we want to be able to call them individually the change would be minimal.
+        distributepay();
+        clearOldVotes();
+        tallyNewVotes();
+        configureForNextPeriod();
     }
 
 private:
-    void distributepay(string message) {
+    void distributepay() {
         auto idx = registered_candidates.get_index<N(isvotedpay)>();
         auto it = idx.rbegin();
 
@@ -214,7 +225,7 @@ private:
         }
     }
 
-    void clearOldVotes(string message) {
+    void clearOldVotes() {
         auto voteitr = votes_cast_by_members.begin();
         while (voteitr != votes_cast_by_members.end()) {
             votes_cast_by_members.modify(*voteitr, _self, [&](vote &v) {
@@ -232,7 +243,7 @@ private:
         }
     }
 
-    void tallyNewVotes(string message) {
+    void tallyNewVotes() {
         auto byProxyIdx = votes_cast_by_members.get_index<N(byproxy)>();
         uint64_t asset_name = configs().lockupasset.symbol.name();
 
@@ -242,36 +253,39 @@ private:
         // This should go iterate through proxy votes first to increase the proxy weight factor.
         // Therefore the sorting order is important here.
         while (itr != end) {
-
             accounts accountstable(N(eosdactoken), itr->voter);
-            const auto &ac = accountstable.get(asset_name, "voter as no balance");
-            int64_t vote_weight = ac.balance.amount;
+            const auto ac = accountstable.find(asset_name);
+            if (ac != accountstable.end()) {
+                int64_t vote_weight = ac->balance.amount;
 
-            if (itr->proxy != 0) {
-                auto proxied_to_voter = votes_cast_by_members.find(itr->proxy); // else "no active vote for proxy");
-                if (proxied_to_voter != votes_cast_by_members.end()) {
-                    votes_cast_by_members.modify(proxied_to_voter, _self, [&](vote &p) {
-                        p.weight += vote_weight;
-                    });
-                }
-            } else {
                 votes_cast_by_members.modify(*itr, _self, [&](vote &v) {
                     v.weight += vote_weight;
-                    for (const auto &newVote : v.candidates) {
-                        auto candidate = registered_candidates.find(newVote);
-                        eosio_assert(candidate != registered_candidates.end(),
-                                     "Candidate is not registered for voting");
-                        registered_candidates.modify(candidate, _self, [&](auto &c) {
-                            c.total_votes += v.weight;
+                });
+
+                if (itr->proxy != 0) {
+                    auto proxied_to_voter = votes_cast_by_members.find(itr->proxy); // else "no active vote for proxy");
+                    if (proxied_to_voter != votes_cast_by_members.end()) {
+                        votes_cast_by_members.modify(proxied_to_voter, _self, [&](vote &p) {
+                            p.weight += vote_weight;
                         });
                     }
-                });
+                }
+            } else {
+                // Voter as no balance - Ignoring this error since the impact is small;
+            }
+            if (itr->proxy == 0) {
+                for (const auto &newVote : itr->candidates) {
+                    auto candidate = registered_candidates.find(newVote);
+                    registered_candidates.modify(candidate, _self, [&](auto &c) {
+                        c.total_votes += itr->weight;
+                    });
+                }
             }
             ++itr;
         }
     }
 
-    void configureForNextPeriod(string message) {
+    void configureForNextPeriod() {
         auto isvotedpayidx = registered_candidates.get_index<N(byvotes)>();
         auto it = isvotedpayidx.rbegin();
         auto end = isvotedpayidx.rend();
@@ -292,6 +306,7 @@ private:
             ++i;
         }
     }
+
 };
 
 EOSIO_ABI(daccustodian,

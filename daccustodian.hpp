@@ -39,8 +39,9 @@ struct contract_config {
 
 typedef singleton<N(config), contract_config> configscontainer;
 
-uint128_t combine_ids(const uint8_t &y, const uint64_t &x) {
-    return (uint128_t{x} << 8) | y;
+// Uitility to combine ids to help with indexing.
+uint128_t combine_ids(const uint8_t &boolvalue, const uint64_t &longValue) {
+    return (uint128_t{boolvalue} << 8) | longValue;
 }
 
 // @abi table candidates
