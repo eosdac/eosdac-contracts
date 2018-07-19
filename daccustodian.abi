@@ -14,6 +14,20 @@
         }
       ]
     },{
+      "name": "pay",
+      "base": "",
+      "fields": [{
+          "name": "receiver",
+          "type": "name"
+        },{
+          "name": "quantity",
+          "type": "asset"
+        },{
+          "name": "memo",
+          "type": "string"
+        }
+      ]
+    },{
       "name": "candidate",
       "base": "",
       "fields": [{
@@ -225,6 +239,17 @@
         "name"
       ],
       "type": "vote"
+    },
+    {
+      "name": "pendingpay",
+      "index_type": "i64",
+      "key_names": [
+        "receiver"
+      ],
+      "key_types": [
+        "name"
+      ],
+      "type": "pay"
     }
   ],
   "ricardian_clauses": [],

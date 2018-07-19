@@ -35,31 +35,31 @@ beforescript = <<~SHELL
   set -x
   kill -INT `pgrep nodeos`
   nodeos --delete-all-blocks  &>/dev/null &
-    sleep 0.5
-    cleos wallet import #{CONTRACT_ACTIVE_PRIVATE_KEY}
-    cleos wallet import #{TEST_ACTIVE_PRIVATE_KEY}
-    cleos wallet import #{TEST_OWNER_PRIVATE_KEY}
-    cleos create account eosio #{ACCOUNT_NAME} #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
-    cleos create account eosio eosdactoken #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
-    if [[ $? != 0 ]] 
-      then 
-        echo "Failed to create contract account" 
-        exit 1
-      fi
+  sleep 0.5
+  cleos wallet import #{CONTRACT_ACTIVE_PRIVATE_KEY}
+  cleos wallet import #{TEST_ACTIVE_PRIVATE_KEY}
+  cleos wallet import #{TEST_OWNER_PRIVATE_KEY}
+  cleos create account eosio #{ACCOUNT_NAME} #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
+  cleos create account eosio eosdactoken #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
+  if [[ $? != 0 ]] 
+    then 
+    echo "Failed to create contract account" 
+    exit 1
+    fi
     eosiocpp -g #{CONTRACT_NAME}.abi #{CONTRACT_NAME}.cpp
     eosiocpp -o #{CONTRACT_NAME}.wast *.cpp
     if [[ $? != 0 ]] 
       then 
-        echo "failed to compile contract" 
-        exit 1
+      echo "failed to compile contract" 
+      exit 1
       fi
-    cd ..
-    cleos set contract #{ACCOUNT_NAME} #{CONTRACT_NAME} -p #{ACCOUNT_NAME}
-    echo `pwd`
+      cd ..
+      cleos set contract #{ACCOUNT_NAME} #{CONTRACT_NAME} -p #{ACCOUNT_NAME}
+      echo `pwd`
 
-    cd eosdactoken/
-    cleos set contract eosdactoken eosdactoken -p eosdactoken
-    cd ../#{CONTRACT_NAME}
+      cd eosdactoken/
+      cleos set contract eosdactoken eosdactoken -p eosdactoken
+      cd ../#{CONTRACT_NAME}
 
 SHELL
 
@@ -147,8 +147,8 @@ describe "eosdacelect" do
       command %(cleos get table daccustodian daccustodian candidates), allow_error: true
       it do
         expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-          {
-            "rows": [{
+            {
+              "rows": [{
                 "candidate_name": "testreguser1",
                 "bio": "any bio",
                 "requestedpay": "11.5000 EOSDAC",
@@ -306,8 +306,8 @@ describe "eosdacelect" do
     command %(cleos get table daccustodian daccustodian candidates), allow_error: true
     it do
       expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-        {
-          "rows": [{
+          {
+            "rows": [{
               "candidate_name": "testreguser1",
               "bio": "any bio",
               "requestedpay": "11.5000 EOSDAC",
@@ -408,7 +408,7 @@ describe "eosdacelect" do
       # its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
     end
 
-    context "voting for self" do
+    xcontext "voting for self" do
       command %(cleos push action daccustodian votecust '{ "voter": "voter1", "newvotes": ["voter1","votecust2","votecust3"]}' -p voter1), allow_error: true
       its(:stderr) {is_expected.to include('Member cannot vote for themselves.')}
       # its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
@@ -430,8 +430,8 @@ describe "eosdacelect" do
       command %(cleos get table daccustodian daccustodian votes), allow_error: true
       it do
         expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-          {
-            "rows": [{
+            {
+              "rows": [{
                 "voter": "voter1",
                 "proxy": "",
                 "weight": 0,
@@ -452,8 +452,8 @@ describe "eosdacelect" do
       command %(cleos get table daccustodian daccustodian candidates), allow_error: true
       it do
         expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-          {
-            "rows": [{
+            {
+              "rows": [{
                 "candidate_name": "testreguser1",
                 "bio": "any bio",
                 "requestedpay": "11.5000 EOSDAC",
@@ -555,8 +555,8 @@ describe "eosdacelect" do
       command %(cleos get table daccustodian daccustodian votes), allow_error: true
       it do
         expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-          {
-            "rows": [{
+            {
+              "rows": [{
                 "voter": "voter1",
                 "proxy": "",
                 "weight": 0,
@@ -577,8 +577,8 @@ describe "eosdacelect" do
       command %(cleos get table daccustodian daccustodian candidates), allow_error: true
       it do
         expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-                  {
-            "rows": [{
+            {
+              "rows": [{
                 "candidate_name": "testreguser1",
                 "bio": "any bio",
                 "requestedpay": "11.5000 EOSDAC",
@@ -722,8 +722,8 @@ describe "eosdacelect" do
       command %(cleos get table daccustodian daccustodian votes), allow_error: true
       it do
         expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-          {
-            "rows": [{
+            {
+              "rows": [{
                 "voter": "voter1",
                 "proxy": "voteproxy1",
                 "weight": 0,
@@ -741,7 +741,7 @@ describe "eosdacelect" do
       it do
         expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
             {
-            "rows": [{
+              "rows": [{
                 "candidate_name": "testreguser1",
                 "bio": "any bio",
                 "requestedpay": "11.5000 EOSDAC",
@@ -848,8 +848,8 @@ describe "eosdacelect" do
       command %(cleos get table daccustodian daccustodian votes), allow_error: true
       it do
         expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-          {
-            "rows": [{
+            {
+              "rows": [{
                 "voter": "voter1",
                 "proxy": "voteproxy3",
                 "weight": 0,
@@ -867,7 +867,7 @@ describe "eosdacelect" do
       it do
         expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
             {
-            "rows": [{
+              "rows": [{
                 "candidate_name": "testreguser1",
                 "bio": "any bio",
                 "requestedpay": "11.5000 EOSDAC",
@@ -972,8 +972,8 @@ describe "eosdacelect" do
         command %(cleos get table daccustodian daccustodian votes), allow_error: true
         it do
           expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-                        {
-              "rows": [{
+              {
+                "rows": [{
                   "voter": "voteproxy3",
                   "proxy": "",
                   "weight": 0,
@@ -999,8 +999,8 @@ describe "eosdacelect" do
         command %(cleos get table daccustodian daccustodian candidates --limit 20), allow_error: true
         it do
           expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-                        {
-              "rows": [{
+              {
+                "rows": [{
                   "candidate_name": "testreguser1",
                   "bio": "any bio",
                   "requestedpay": "11.5000 EOSDAC",
@@ -1097,41 +1097,350 @@ describe "eosdacelect" do
         end
       end
     end
-  end
 
-  describe "newperiod" do
-    command %(cleos push action daccustodian newperiod '{ "message": "log message"}' -p testreguser3), allow_error: true
-    # its(:stdout) {is_expected.to include('daccustodian::voteproxy')}
-    its(:stdout) {is_expected.to include('daccustodian::newperiod')}
-  end
-
-  context "the votes table" do
-    # Assuming that proxied voter's weight should be 0 since the weight has been delegated to proxy.
-    # Also assumes that staked tokens for candidate are not used for voting power.
-    command %(cleos get table daccustodian daccustodian votes), allow_error: true
-    it do
-      expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-                    {
-          "rows": [{
-              "voter": "voteproxy3",
-              "proxy": "",
-              "weight": 1860000,
-              "candidates": [
-                "votecust1",
-                "votecust2",
-                "votecust3"
-              ]
-            },{
-              "voter": "voter1",
-              "proxy": "voteproxy3",
-              "weight": 0,
-              "candidates": []
-            }
-          ],
-          "more": false
-        }
-      JSON
+    describe "newperiod before votes processing" do
+      before(:all) do
+        `cleos push action daccustodian votecust '{ "voter": "votecust11", "newvotes": ["votecust2","votecust3","votecust4"]}' -p votecust11`
+      end
+      command %(cleos push action daccustodian newperiod '{ "message": "log message"}' -p testreguser3), allow_error: true
+      # its(:stdout) {is_expected.to include('daccustodian::voteproxy')}
+      its(:stdout) {is_expected.to include('daccustodian::newperiod')}
     end
-  end
 
+    context "the pending_pay table" do
+      # Assuming that proxied voter's weight should be 0 since the weight has been delegated to proxy.
+      # Also assumes that staked tokens for candidate are not used for voting power.
+      command %(cleos get table daccustodian daccustodian pendingpay), allow_error: true
+      it do
+        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
+                      {
+            "rows": [{
+                "receiver": "unreguser2",
+                "quantity": "23.0000 EOSDAC",
+                "memo": "Returning locked up stake. Thank you."
+              }
+            ],
+            "more": false
+          }
+        JSON
+      end
+    end
+
+    context "the votes table" do
+      command %(cleos get table daccustodian daccustodian votes), allow_error: true
+      it do
+        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
+                      {
+            "rows": [{
+                "voter": "votecust11",
+                "proxy": "",
+                "weight": 830000,
+                "candidates": [
+                  "votecust2",
+                  "votecust3",
+                  "votecust4"
+                ]
+              },{
+                "voter": "voteproxy3",
+                "proxy": "",
+                "weight": 1860000,
+                "candidates": [
+                  "votecust1",
+                  "votecust2",
+                  "votecust3"
+                ]
+              },{
+                "voter": "voter1",
+                "proxy": "voteproxy3",
+                "weight": 0,
+                "candidates": []
+              }
+            ],
+            "more": false
+          }
+
+        JSON
+      end
+    end
+
+    context "the candidates table" do
+      command %(cleos get table daccustodian daccustodian candidates --limit 20), allow_error: true
+      it do
+        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
+                                {
+            "rows": [{
+                "candidate_name": "testreguser1",
+                "bio": "any bio",
+                "requestedpay": "11.5000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "10.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "updatebio2",
+                "bio": "new bio",
+                "requestedpay": "11.5000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "updatepay2",
+                "bio": "any bio",
+                "requestedpay": "41.5000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "votecust1",
+                "bio": "any bio",
+                "requestedpay": "11.0000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 1,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 1860000
+              },{
+                "candidate_name": "votecust11",
+                "bio": "any bio",
+                "requestedpay": "16.0000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "votecust2",
+                "bio": "any bio",
+                "requestedpay": "12.0000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 1,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 2690000
+              },{
+                "candidate_name": "votecust3",
+                "bio": "any bio",
+                "requestedpay": "13.0000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 1,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 2690000
+              },{
+                "candidate_name": "votecust4",
+                "bio": "any bio",
+                "requestedpay": "14.0000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 830000
+              },{
+                "candidate_name": "votecust5",
+                "bio": "any bio",
+                "requestedpay": "15.0000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "voteproxy1",
+                "bio": "any bio",
+                "requestedpay": "10.0000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "voter1",
+                "bio": "any bio",
+                "requestedpay": "17.0000 EOSDAC",
+                "pendreqpay": "0.0000 EOSDAC",
+                "is_custodian": 0,
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              }
+            ],
+            "more": false
+          }
+
+        JSON
+      end
+    end
+
+    describe "newperiod after votes processing" do
+      command %(cleos push action daccustodian newperiod '{ "message": "log message"}' -p testreguser3), allow_error: true
+      # its(:stdout) {is_expected.to include('daccustodian::voteproxy')}
+      its(:stdout) {is_expected.to include('daccustodian::newperiod')}
+    end
+
+    context "the pending_pay table" do
+      # Assuming that proxied voter's weight should be 0 since the weight has been delegated to proxy.
+      # Also assumes that staked tokens for candidate are not used for voting power.
+      command %(cleos get table daccustodian daccustodian pendingpay), allow_error: true
+      it do
+        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
+                      {
+            "rows": [{
+                "receiver": "unreguser2",
+                "quantity": "23.0000 EOSDAC",
+                "memo": "Returning locked up stake. Thank you."
+              },{
+                "receiver": "votecust1",
+                "quantity": "12.0000 EOSDAC",
+                "memo": "EOSDAC Custodian pay. Thank you."
+              },{
+                "receiver": "votecust2",
+                "quantity": "12.0000 EOSDAC",
+                "memo": "EOSDAC Custodian pay. Thank you."
+              },{
+                "receiver": "votecust3",
+                "quantity": "12.0000 EOSDAC",
+                "memo": "EOSDAC Custodian pay. Thank you."
+              }
+            ],
+            "more": false
+          }
+        JSON
+      end
+    end
+
+    context "the votes table" do
+      command %(cleos get table daccustodian daccustodian votes), allow_error: true
+      it do
+        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
+                      {
+            "rows": [{
+                "voter": "votecust11",
+                "proxy": "",
+                "weight": 830000,
+                "candidates": [
+                  "votecust2",
+                  "votecust3",
+                  "votecust4"
+                ]
+              },{
+                "voter": "voteproxy3",
+                "proxy": "",
+                "weight": 1860000,
+                "candidates": [
+                  "votecust1",
+                  "votecust2",
+                  "votecust3"
+                ]
+              },{
+                "voter": "voter1",
+                "proxy": "voteproxy3",
+                "weight": 0,
+                "candidates": []
+              }
+            ],
+            "more": false
+          }
+
+        JSON
+      end
+    end
+
+    context "the candidates table" do
+      command %(cleos get table daccustodian daccustodian candidates --limit 20), allow_error: true
+      it do
+        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
+                                {
+  "rows": [{
+      "candidate_name": "testreguser1",
+      "bio": "any bio",
+      "requestedpay": "11.5000 EOSDAC",
+      "pendreqpay": "0.0000 EOSDAC",
+      "is_custodian": 0,
+      "locked_tokens": "10.0000 EOSDAC",
+      "total_votes": 0
+    },{
+      "candidate_name": "updatebio2",
+      "bio": "new bio",
+      "requestedpay": "11.5000 EOSDAC",
+      "pendreqpay": "0.0000 EOSDAC",
+      "is_custodian": 0,
+      "locked_tokens": "23.0000 EOSDAC",
+      "total_votes": 0
+    },{
+      "candidate_name": "updatepay2",
+      "bio": "any bio",
+      "requestedpay": "41.5000 EOSDAC",
+      "pendreqpay": "0.0000 EOSDAC",
+      "is_custodian": 0,
+      "locked_tokens": "23.0000 EOSDAC",
+      "total_votes": 0
+    },{
+      "candidate_name": "votecust1",
+      "bio": "any bio",
+      "requestedpay": "11.0000 EOSDAC",
+      "pendreqpay": "0.0000 EOSDAC",
+      "is_custodian": 1,
+      "locked_tokens": "23.0000 EOSDAC",
+      "total_votes": 1860000
+    },{
+      "candidate_name": "votecust11",
+      "bio": "any bio",
+      "requestedpay": "16.0000 EOSDAC",
+      "pendreqpay": "0.0000 EOSDAC",
+      "is_custodian": 0,
+      "locked_tokens": "23.0000 EOSDAC",
+      "total_votes": 0
+    },{
+      "candidate_name": "votecust2",
+      "bio": "any bio",
+      "requestedpay": "12.0000 EOSDAC",
+      "pendreqpay": "0.0000 EOSDAC",
+      "is_custodian": 1,
+      "locked_tokens": "23.0000 EOSDAC",
+      "total_votes": 2690000
+    },{
+      "candidate_name": "votecust3",
+      "bio": "any bio",
+      "requestedpay": "13.0000 EOSDAC",
+      "pendreqpay": "0.0000 EOSDAC",
+      "is_custodian": 1,
+      "locked_tokens": "23.0000 EOSDAC",
+      "total_votes": 2690000
+    },{
+      "candidate_name": "votecust4",
+      "bio": "any bio",
+      "requestedpay": "14.0000 EOSDAC",
+      "pendreqpay": "0.0000 EOSDAC",
+      "is_custodian": 0,
+      "locked_tokens": "23.0000 EOSDAC",
+      "total_votes": 830000
+    },{
+      "candidate_name": "votecust5",
+      "bio": "any bio",
+      "requestedpay": "15.0000 EOSDAC",
+      "pendreqpay": "0.0000 EOSDAC",
+      "is_custodian": 0,
+      "locked_tokens": "23.0000 EOSDAC",
+      "total_votes": 0
+    },{
+      "candidate_name": "voteproxy1",
+      "bio": "any bio",
+      "requestedpay": "10.0000 EOSDAC",
+      "pendreqpay": "0.0000 EOSDAC",
+      "is_custodian": 0,
+      "locked_tokens": "23.0000 EOSDAC",
+      "total_votes": 0
+    },{
+      "candidate_name": "voter1",
+      "bio": "any bio",
+      "requestedpay": "17.0000 EOSDAC",
+      "pendreqpay": "0.0000 EOSDAC",
+      "is_custodian": 0,
+      "locked_tokens": "23.0000 EOSDAC",
+      "total_votes": 0
+    }
+  ],
+  "more": false
+}
+
+
+        JSON
+      end
+    end
+
+  end
 end
