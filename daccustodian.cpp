@@ -184,6 +184,21 @@ public:
         configureForNextPeriod();
     }
 
+    void paypending(string message) {
+        require_auth(_self);
+        auto payidx = pending_pay.begin();
+
+        while (payidx != pending_pay.end()) {
+
+            action(permission_level{_self, N(active)},
+               N(eosdactoken), N(transfer),
+               std::make_tuple(_self, payidx->receiver, payidx->quantity, payidx->memo)
+        ).send();
+
+            payidx = pending_pay.erase(payidx);
+        }
+    }
+
 private:
     void distributepay() {
         auto idx = registered_candidates.get_index<N(isvotedpay)>();
@@ -310,4 +325,4 @@ private:
 };
 
 EOSIO_ABI(daccustodian,
-          (updateconfig)(regcandidate)(unregcand)(updatebio)(updatereqpay)(votecust)(voteproxy)(newperiod))
+          (updateconfig)(regcandidate)(unregcand)(updatebio)(updatereqpay)(votecust)(voteproxy)(newperiod)(paypending))

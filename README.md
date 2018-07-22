@@ -1,5 +1,5 @@
 # daccustodian - Custodian Elections Contract
-This contract will be in charge of custodian registration and voting for candidates.  It will also contain a function which will be called periodically to update the custodian set, and allocate payments.
+This contract will be in charge of custodian registration and voting for candidates.  It will also contain a function could will be called periodically to update the custodian set, and allocate payments.
 
 When a candidate registers, they need to provide a set of configuration variables which will include things like their requested pay.  The system will select the median requested pay when choosing the actual pay.
 ## Tables
@@ -57,8 +57,9 @@ This action asserts:
 
  Then removes the candidate from the candidates table and prepares to transfer the locked up tokens back to the `cand` account.
 
-__Unsure about this:__ *If the candidate is currently elected then mark the existing record as resigned ## why???
+__Unsure about this:__ *If the candidate is currently elected then mark the existing record as resigned ## why?
 Remove the candidate from the database if they are not currently elected, also remove all votes cast for them as well as votes by them for ongoing worker proposals
+
 Send the staked tokens back to the account*
 
 ### updatebio
@@ -121,7 +122,7 @@ This action asserts:
 
 The paramters are:
 
--	lockupasset(uint8_t) : defines the asset and amount required for a user to register as a candidate. This is the amount that will be locked up until the user calls `unregcand` in order to get the asset returned to them.
+- lockupasset(uint8_t) : defines the asset and amount required for a user to register as a candidate. This is the amount that will be locked up until the user calls `unregcand` in order to get the asset returned to them.
 - maxvotes(asset) : Defines the maximum number of candidates a user can vote for at any given time.
 - latestterms (string) : The hash for the current agreed terms that each member must have agreed to in order to participate in the dac actions.
 - numelected(uint16_t) : The number of candidates to elect for custodians. This is used for the payment amount to custodians for median amount and to set the `is_custodian` to true for the top voted accounts.
@@ -189,3 +190,22 @@ This action asserts:
 This is deliberately not asserting on internal verifications because they would not be resolvable by the contract account and could prevent this from being called automatically and reliably. __Perhaps further discussion required for this__ 
 
 
+### paypending
+
+This is intended to process the pending payments that have accumulated after `newperiod` has finished processing. Also any staked tokens that need to be returned after a user has called unreg will be returned via this action. This explicit action is necessary since in order to transfer funds from the DAC a multi-sig permission should probably be requried.
+
+
+## Tests
+
+The repo includes automated tests to exercise the main action paths in the contract against a running local node.
+The tests are included in the tests folder as `rspec` tests in Ruby. 
+
+### Installation
+To run the tests you would first need:
+- `ruby 2.4.1` or later installed.
+- Ruby gems as specified in the `Gemfile`. 
+    - These can be installed by running `bundle install` from the project root directory.
+Eos installed locally that can be launched via  `nodeos`
+
+### To run the tests:
+ run `rspec tests/contract_spec.rb` from the project root.
