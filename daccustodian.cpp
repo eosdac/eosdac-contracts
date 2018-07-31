@@ -17,8 +17,10 @@ private:
     votes_table votes_cast_by_members;
     pending_pay_table pending_pay;
     regmembers reg_members;
+    memterms memberterms;
 
     symbol_type EOSDACSYMBOL = eosio::symbol_type(eosio::string_to_symbol(4, "EOSDAC"));
+    symbol_type PAYMENT_TOKEN = eosio::symbol_type(eosio::string_to_symbol(4, "EOS"));
 
 
     contract_config configs() {
@@ -29,8 +31,9 @@ private:
 
     member get_valid_member(name member) {
         const auto &regmem = reg_members.get(member, "Account is not registered with members");
-        eosio_assert(!regmem.agreedterms.empty(), "Account has not agreed any to terms");
-        eosio_assert(regmem.agreedterms == configs().latestterms, "Account has not agreed to current terms");
+        eosio_assert((regmem.agreedterms != 0), "Account has not agreed to any terms");
+        auto latest_member_terms = (--memberterms.end());
+        eosio_assert( latest_member_terms->version == regmem.agreedterms, "Agreed terms isn't the latest." );
         return regmem;
     }
 
@@ -42,13 +45,14 @@ public:
               votes_cast_by_members(_self, _self),
               pending_pay(_self, _self),
               config_singleton(_self, _self),
-              reg_members(N(eosdactoken), N(eosdactoken)) {}
+              reg_members(N(eosdactoken), N(eosdactoken)),
+              memberterms(N(eosdactoken), N(eosdactoken)) {}
 
-    void updateconfig(asset lockupasset, uint8_t maxvotes, string latestterms, uint32_t numelected) {
+    void updateconfig(asset lockupasset, uint8_t maxvotes, uint32_t numelected) {
         require_auth(_self);
         eosio_assert(lockupasset.symbol == configs().lockupasset.symbol,
                      "The provided asset does not match the current lockup asset symbol.");
-        contract_config newconfig{lockupasset, maxvotes, latestterms};
+        contract_config newconfig{lockupasset, maxvotes};
         config_singleton.set(newconfig, _self);
     }
 
@@ -60,6 +64,7 @@ public:
 
         auto reg_candidate = registered_candidates.find(cand);
         eosio_assert(reg_candidate == registered_candidates.end(), "Candidate is already registered.");
+        eosio_assert(requestedpay.symbol == PAYMENT_TOKEN, "Candidate is already registered.");
 
         action(permission_level{cand, N(active)},
                N(eosdactoken), N(transfer),
@@ -70,7 +75,7 @@ public:
             c.candidate_name = cand;
             c.bio = bio;
             c.requestedpay = requestedpay;
-            c.pendreqpay = asset(0, EOSDACSYMBOL);
+            c.pendreqpay = asset(0, PAYMENT_TOKEN);
             c.is_custodian = false;
             c.locked_tokens = configs().lockupasset;
             c.total_votes = 0;
@@ -189,11 +194,18 @@ public:
         auto payidx = pending_pay.begin();
 
         while (payidx != pending_pay.end()) {
+            if (payidx->quantity.symbol == PAYMENT_TOKEN) {
+                action(permission_level{_self, N(active)},
+                       N(eosio.token), N(transfer),
+                       std::make_tuple(_self, payidx->receiver, payidx->quantity, payidx->memo)
+                ).send();
+            } else {
 
-            action(permission_level{_self, N(active)},
-               N(eosdactoken), N(transfer),
-               std::make_tuple(_self, payidx->receiver, payidx->quantity, payidx->memo)
-        ).send();
+                action(permission_level{_self, N(active)},
+                       N(eosdactoken), N(transfer),
+                       std::make_tuple(_self, payidx->receiver, payidx->quantity, payidx->memo)
+                ).send();
+            }
 
             payidx = pending_pay.erase(payidx);
         }
@@ -217,7 +229,7 @@ private:
         size_t mid = reqpays.size() / 2;
         std::nth_element(reqpays.begin(), reqpays.begin() + mid, reqpays.end());
 
-        asset median = asset(reqpays[mid], EOSDACSYMBOL);
+        asset median = asset(reqpays[mid], PAYMENT_TOKEN);
 
         it = idx.rbegin();
         while (it != idx.rend()) {
@@ -314,7 +326,7 @@ private:
                     // Move the pending request pay to the request pay for the next period.
                     cand.requestedpay = cand.pendreqpay;
                     // zeros the pending request to prevent overwrite of requestedPay on the next cycle.
-                    cand.pendreqpay = asset(0, EOSDACSYMBOL);
+                    cand.pendreqpay = asset(0, PAYMENT_TOKEN);
                 }
             });
             ++it;

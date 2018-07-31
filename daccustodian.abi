@@ -76,9 +76,6 @@
       "name": "maxvotes",
       "type": "uint8"
     }, {
-      "name": "latestterms",
-      "type": "string"
-    }, {
       "name": "numelected",
       "type": "uint32"
     }]
@@ -167,7 +164,7 @@
   "actions": [{
       "name": "updateconfig",
       "type": "updateconfig",
-      "ricardian_contract": "## ACTION: updateconfig\n**PARAMETERS:**\n\n__lockupasset__ is an asset to be locked up as part of the registering process for a custodian passed to the action in the format: \"10.0000 EOSDAC\". default value: \"10.0000 EOSDAC\"\n\n__maxvotes__ is a integer to configure the maximum number of allowed votes for a registered member in any single voting action. The default value is 5.\n\n__latestterms__ is a string with a maximum of 256 characters representing the current agreed terms in the EOSDAC constitution. There is no default value.\n\n__numelected__ is a integer to configure the number of candidates that will be elected as custodians of the dac. default value is 12.\n\n**INTENT:** The intent of {{ updateconfig }} is update the configuration for the running contract of selected parameters without needing change the source code. This requires a privilaged account.\n\n**TERM:** The action lasts for the duration of the processing of the contract."
+      "ricardian_contract": "## ACTION: updateconfig\n**PARAMETERS:**\n\n__lockupasset__ is an asset to be locked up as part of the registering process for a custodian passed to the action in the format: \"10.0000 EOSDAC\". default value: \"10.0000 EOSDAC\"\n\n__maxvotes__ is a integer to configure the maximum number of allowed votes for a registered member in any single voting action. The default value is 5.\n\n__numelected__ is a integer to configure the number of candidates that will be elected as custodians of the dac. default value is 12.\n\n**INTENT:** The intent of {{ updateconfig }} is update the configuration for the running contract of selected parameters without needing change the source code. This requires a privilaged account.\n\n**TERM:** The action lasts for the duration of the processing of the contract."
     }, {
       "name": "regcandidate",
       "type": "regcandidate",

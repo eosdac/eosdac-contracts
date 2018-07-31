@@ -10,12 +10,24 @@ using namespace std;
 struct member {
     name sender;
     /// Hash of agreed terms
-    string agreedterms;
+    uint64_t agreedterms;
 
     name primary_key() const { return sender; }
 
     EOSLIB_SERIALIZE(member, (sender)(agreedterms))
 };
+
+// This is a reference to the termsinfo struct as used in the eosdactoken contract.
+struct termsinfo {
+  string terms;
+  string hash;
+  uint64_t version;
+
+  uint64_t primary_key() const { return version; }
+  EOSLIB_SERIALIZE(termsinfo, (terms)(hash)(version))
+};
+
+typedef multi_index<N(memberterms), termsinfo> memterms;
 
 struct account {
     asset    balance;
@@ -31,10 +43,9 @@ struct contract_config {
 
     asset lockupasset = asset(100000, symbol_type(eosio::string_to_symbol(4, "EOSDAC")));
     uint8_t maxvotes = 5;
-    string latestterms = "initaltermsagreedbyuser";
     uint8_t numelected = 3;
 
-    EOSLIB_SERIALIZE(contract_config, (lockupasset)(maxvotes)(latestterms)(numelected))
+    EOSLIB_SERIALIZE(contract_config, (lockupasset)(maxvotes)(numelected))
 };
 
 typedef singleton<N(config), contract_config> configscontainer;
