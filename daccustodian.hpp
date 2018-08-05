@@ -39,16 +39,32 @@ typedef multi_index<N(members), member> regmembers;
 typedef eosio::multi_index<N(accounts), account> accounts;
 
 // @abi table configs
-struct contract_config {
-
+struct contr_config {
+//    The amount of assets that are locked up by each candidate applying for election.
     asset lockupasset = asset(100000, symbol_type(eosio::string_to_symbol(4, "EOSDAC")));
+//    The maximum number of votes that each member can make for a candidate.
     uint8_t maxvotes = 5;
+//    Number of custodians to be elected for each election count.
     uint8_t numelected = 3;
+//    Length of a period in seconds.
+//     - used for pay calculations if an eary election is called and to trigger deferred `newperiod` calls.
+    uint32_t periodlength = 7 * 24 * 60 * 60;
+    //The eosdac compatible token contract this contract should call to for member reg info
+    name tokencontr;
 
-    EOSLIB_SERIALIZE(contract_config, (lockupasset)(maxvotes)(numelected))
+    EOSLIB_SERIALIZE(contr_config, (lockupasset)(maxvotes)(numelected)(periodlength)(tokencontr))
 };
 
-typedef singleton<N(config), contract_config> configscontainer;
+typedef singleton<N(config), contr_config> configscontainer;
+
+struct contr_state {
+    uint32_t lastperiodtime = 0;
+    bool earlyendedperiod = false;
+
+    EOSLIB_SERIALIZE(contr_state, (lastperiodtime)(earlyendedperiod))
+};
+
+typedef singleton<N(state), contr_state> statecontainer;
 
 // Uitility to combine ids to help with indexing.
 uint128_t combine_ids(const uint8_t &boolvalue, const uint64_t &longValue) {
@@ -59,8 +75,10 @@ uint128_t combine_ids(const uint8_t &boolvalue, const uint64_t &longValue) {
 struct candidate {
     name candidate_name;
     string bio;
-    asset requestedpay; // Active requested pay used for payment calculations.
-    asset pendreqpay; // requested pay that would be pending until the new period begins. Then it should be moved to requestedpay.
+    // Active requested pay used for payment calculations.
+    asset requestedpay;
+    // Requested pay that would be pending until the new period begins. Then it should be moved to requestedpay.
+    asset pendreqpay;
     uint8_t is_custodian; // bool
     asset locked_tokens;
     uint64_t total_votes;
