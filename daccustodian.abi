@@ -77,8 +77,14 @@
       "type": "uint8"
     }, {
       "name": "numelected",
+      "type": "uint8"
+    },{
+      "name": "periodlength",
       "type": "uint32"
-    }]
+    },{
+       "name": "tokcontr",
+       "type": "name"
+      }]
   }, {
     "name": "regcandidate",
     "base": "",
@@ -152,6 +158,9 @@
     "fields": [{
       "name": "message",
       "type": "string"
+    },{
+      "name": "earlyelect",
+      "type": "bool"
     }]
   }, {
     "name": "paypending",

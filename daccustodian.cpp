@@ -1,6 +1,7 @@
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/singleton.hpp>
 #include <eosiolib/asset.hpp>
+#include <eosiolib/transaction.hpp>
 #include <string>
 
 #include "daccustodian.hpp"
@@ -13,29 +14,34 @@ class daccustodian : public contract {
 
 private:
     configscontainer config_singleton;
+    statecontainer contract_state;
     candidates_table registered_candidates;
     votes_table votes_cast_by_members;
     pending_pay_table pending_pay;
-    regmembers reg_members;
-    memterms memberterms;
 
-    symbol_type EOSDACSYMBOL = eosio::symbol_type(eosio::string_to_symbol(4, "EOSDAC"));
     symbol_type PAYMENT_TOKEN = eosio::symbol_type(eosio::string_to_symbol(4, "EOS"));
 
 
-    contract_config configs() {
-        contract_config conf = config_singleton.get_or_default(contract_config());
+    contr_config configs() {
+        contr_config conf = config_singleton.get_or_default(contr_config());
         config_singleton.set(conf, _self);
         return conf;
     }
 
     member get_valid_member(name member) {
+        name tokenContract = configs().tokencontr;
+        eosio_assert(tokenContract != 0,"The token contract has not been set via `updateconfig`.");
+        regmembers reg_members(tokenContract, tokenContract);
+        memterms memberterms(tokenContract, tokenContract);
+
         const auto &regmem = reg_members.get(member, "Account is not registered with members");
         eosio_assert((regmem.agreedterms != 0), "Account has not agreed to any terms");
         auto latest_member_terms = (--memberterms.end());
         eosio_assert( latest_member_terms->version == regmem.agreedterms, "Agreed terms isn't the latest." );
         return regmem;
     }
+
+    contr_state currentState;
 
 public:
 
@@ -45,14 +51,16 @@ public:
               votes_cast_by_members(_self, _self),
               pending_pay(_self, _self),
               config_singleton(_self, _self),
-              reg_members(N(eosdactoken), N(eosdactoken)),
-              memberterms(N(eosdactoken), N(eosdactoken)) {}
+              contract_state(_self, _self) {
 
-    void updateconfig(asset lockupasset, uint8_t maxvotes, uint32_t numelected) {
+        currentState = contract_state.get_or_default(contr_state());
+    }
+
+    void updateconfig(asset lockupasset, uint8_t maxvotes, uint8_t numelected, uint32_t periodlength, name tokcontr) {
         require_auth(_self);
         eosio_assert(lockupasset.symbol == configs().lockupasset.symbol,
                      "The provided asset does not match the current lockup asset symbol.");
-        contract_config newconfig{lockupasset, maxvotes};
+        contr_config newconfig{lockupasset, maxvotes, numelected, periodlength, tokcontr};
         config_singleton.set(newconfig, _self);
     }
 
@@ -87,6 +95,13 @@ public:
         require_auth(cand);
         const auto &reg_candidate = registered_candidates.get(cand, "Candidate is not already registered.");
 
+        if (reg_candidate.is_custodian) {
+            transaction nextTrans{};
+            nextTrans.actions.emplace_back(permission_level(_self, N(active)), _self, N(newperiod),
+                                           std::make_tuple("", false));
+            nextTrans.delay_sec = configs().periodlength;
+            nextTrans.send(N(newperiod), true);
+        }
         registered_candidates.erase(reg_candidate);
 
         pending_pay.emplace(_self, [&](pay &p) {
@@ -171,7 +186,7 @@ public:
         }
     }
 
-    void newperiod(string message) {
+    void newperiod(string message, bool earlyelect) {
         require_auth(_self);
 
         /* Copied from the Tech Doc vvvvv
@@ -183,10 +198,16 @@ public:
          */
 
         // These actions a separated out for clarity and incase we want to be able to call them individually the change would be minimal.
-        distributepay();
+        distributepay(earlyelect);
         clearOldVotes();
         tallyNewVotes();
         configureForNextPeriod();
+
+//        Schedule the the next election cycle at the end of the period.
+//        transaction nextTrans{};
+//        nextTrans.actions.emplace_back(permission_level(_self,N(active)), _self, N(newperiod), std::make_tuple("", false));
+//        nextTrans.delay_sec = configs().periodlength;
+//        nextTrans.send(N(newperiod), false);
     }
 
     void paypending(string message) {
@@ -212,7 +233,7 @@ public:
     }
 
 private:
-    void distributepay() {
+    void distributepay(bool earlyelect) {
         auto idx = registered_candidates.get_index<N(isvotedpay)>();
         auto it = idx.rbegin();
 
@@ -229,7 +250,17 @@ private:
         size_t mid = reqpays.size() / 2;
         std::nth_element(reqpays.begin(), reqpays.begin() + mid, reqpays.end());
 
-        asset median = asset(reqpays[mid], PAYMENT_TOKEN);
+        // To account for an early called election the pay may need calculated pro-rata'd
+        int64_t proportionalPay = reqpays[mid];
+
+        uint32_t timestamp = now();
+        currentState.lastperiodtime = timestamp;
+        if (earlyelect) {
+            uint32_t periodBlockCount = timestamp - currentState.lastperiodtime;
+            proportionalPay = proportionalPay * (periodBlockCount / configs().periodlength);
+        }
+
+        asset medianAsset = asset(proportionalPay, PAYMENT_TOKEN);
 
         it = idx.rbegin();
         while (it != idx.rend()) {
@@ -237,13 +268,13 @@ private:
                 auto currentPay = pending_pay.find(it->candidate_name);
                 if (currentPay != pending_pay.end()) {
                     pending_pay.modify(currentPay, _self, [&](pay &p) {
-                        p.quantity += median;
+                        p.quantity += medianAsset;
                     });
 
                 } else {
                     pending_pay.emplace(_self, [&](pay &p) {
                         p.receiver = it->candidate_name;
-                        p.quantity = median;
+                        p.quantity = medianAsset;
                         p.memo = "EOSDAC Custodian pay. Thank you.";
                     });
                 }

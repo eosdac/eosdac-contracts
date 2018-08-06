@@ -12,18 +12,17 @@ RSpec.configure do |config|
   config.include RSpecCommand
 end
 
-CONTRACT_OWNER_PRIVATE_KEY = '5K8eYgacDDNqPJBz7a3EV6yusLg7tTwf4i96wBs3Y2ZqwFrXPGF'
-CONTRACT_OWNER_PUBLIC_KEY = 'EOS6u2zxhs6VPRU9j1XFKs65GJjf5qYsC2Ufcc9dNVBefXC4f7b4e'
+CONTRACT_OWNER_PRIVATE_KEY = '5K86iZz9h8jwgGDttMPcHqFHHru5ueqnfDs5fVSHfm8bJt8PjK6'
+CONTRACT_OWNER_PUBLIC_KEY = 'EOS6Y1fKGLVr2zEFKKfAmRUoH1LzM7crJEBi4dL5ikYeGYqiJr6SS'
 
-CONTRACT_ACTIVE_PRIVATE_KEY = '5Jh2w4XH8jQg3XJxV1YPFH5pAqDgKR9iMwmFuePCTr7pcD8RQ5z'
-CONTRACT_ACTIVE_PUBLIC_KEY = 'EOS8T3yTxnZD4fyCGR7hwzLFemgp2no2eAXZgKFzhjZhCESRrygri'
+CONTRACT_ACTIVE_PRIVATE_KEY = '5Jbf3f26fz4HNWXVAd3TMYHnC68uu4PtkMnbgUa5mdCWmgu47sR'
+CONTRACT_ACTIVE_PUBLIC_KEY = 'EOS7rjn3r52PYd2ppkVEKYvy6oRDP9MZsJUPB2MStrak8LS36pnTZ'
 
+TEST_OWNER_PRIVATE_KEY = '5K86iZz9h8jwgGDttMPcHqFHHru5ueqnfDs5fVSHfm8bJt8PjK6'
+TEST_OWNER_PUBLIC_KEY = 'EOS6Y1fKGLVr2zEFKKfAmRUoH1LzM7crJEBi4dL5ikYeGYqiJr6SS'
 
-TEST_OWNER_PRIVATE_KEY = '5KdoDLgLc8shajQhT1czpVQ33pdE5bvQfLxzHSLgQKKsozgxxBb'
-TEST_OWNER_PUBLIC_KEY = 'EOS6ZCSAJKqmYDxFnPTL9Srfn2Z76AFPJtfWuUFJ77YB9BfQpEmp9'
-
-TEST_ACTIVE_PRIVATE_KEY = '5HvBdkhsNKdyHZaqTRMmEuxJWSA4ez2amL6atnGoVPRWbo9KPYz'
-TEST_ACTIVE_PUBLIC_KEY = 'EOS8SPGwVZX35xVvk8TwkXzAnosHLz4ULPsXQvJj2cTf48AZjSiXr'
+TEST_ACTIVE_PRIVATE_KEY = '5Jbf3f26fz4HNWXVAd3TMYHnC68uu4PtkMnbgUa5mdCWmgu47sR'
+TEST_ACTIVE_PUBLIC_KEY = 'EOS7rjn3r52PYd2ppkVEKYvy6oRDP9MZsJUPB2MStrak8LS36pnTZ'
 
 CONTRACT_NAME = 'daccustodian'
 ACCOUNT_NAME = 'daccustodian'
@@ -33,10 +32,11 @@ beforescript = <<~SHELL
   set -x
   kill -INT `pgrep nodeos`
   nodeos --delete-all-blocks  &>/dev/null &
-  sleep 0.5
-  cleos wallet import #{CONTRACT_ACTIVE_PRIVATE_KEY}
-  cleos wallet import #{TEST_ACTIVE_PRIVATE_KEY}
-  cleos wallet import #{TEST_OWNER_PRIVATE_KEY}
+  sleep 5
+  cleos wallet unlock --password `cat ~/eosio-wallet/.pass`
+  cleos wallet import --private-key #{CONTRACT_ACTIVE_PRIVATE_KEY}
+  cleos wallet import --private-key #{TEST_ACTIVE_PRIVATE_KEY}
+  cleos wallet import --private-key #{TEST_OWNER_PRIVATE_KEY}
   cleos create account eosio #{ACCOUNT_NAME} #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
   cleos create account eosio eosdactoken #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
   cleos create account eosio eosio.token #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
@@ -44,26 +44,25 @@ beforescript = <<~SHELL
     then 
     echo "Failed to create contract account" 
     exit 1
-    fi
-    eosiocpp -g #{CONTRACT_NAME}.abi #{CONTRACT_NAME}.cpp
-    eosiocpp -o #{CONTRACT_NAME}.wast *.cpp
+  fi
+     eosio-cpp -o #{CONTRACT_NAME}.wast *.cpp
     if [[ $? != 0 ]] 
       then 
       echo "failed to compile contract" 
       exit 1
-      fi
-      cd ..
-      cleos set contract #{ACCOUNT_NAME} #{CONTRACT_NAME} -p #{ACCOUNT_NAME}
-      
-      echo "Set up the EOS token contract"
-      cd eosio.token
-      eosiocpp -o eosio.token.wast eosio.token.cpp
-      cd ..
-      cleos set contract eosio.token eosio.token -p eosio.token
+    fi
+    cd ..
+    cleos set contract #{ACCOUNT_NAME} #{CONTRACT_NAME} -p #{ACCOUNT_NAME}
+    
+    echo "Set up the EOS token contract"
+    cd eosio.token
+    # eosio-cpp -o eosio.token.wast eosio.token.cpp
+    cd ..
+    cleos set contract eosio.token eosio.token -p eosio.token
 
-      cd eosdactoken/
-      cleos set contract eosdactoken eosdactoken -p eosdactoken
-      cd ../#{CONTRACT_NAME}
+    cd eosdactoken/
+    cleos set contract eosdactoken eosdactoken -p eosdactoken
+    cd ../#{CONTRACT_NAME}
 
 SHELL
 
@@ -74,11 +73,7 @@ describe "eosdacelect" do
     exit() unless $? == 0
   end
 
-  describe "test before all" do
-    it {expect(true)}
-  end
-
-  describe "regcandidate" do
+  describe "configure initial accounts" do
     before(:all) do
       # configure accounts for eosdactoken
       `cleos push action eosdactoken create '{ "issuer": "eosdactoken", "maximum_supply": "100000.0000 EOSDAC", "transfer_locked": false}' -p eosdactoken`
@@ -114,44 +109,70 @@ describe "eosdacelect" do
       `cleos set account permission testreguser2 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p testreguser2`
       `cleos set account permission testreguser3 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p testreguser3`
       `cleos set account permission testreguser4 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p testreguser4`
-
     end
+
+    it {expect(true)} # to trigger the above before all to run this is needed.
+  end
+
+  describe "updateconfig" do
+    context "before being called with token contract will prevent other actions from working" do
+      context "with valid and registered member" do
+        command %(cleos push action daccustodian regcandidate '{ "cand": "testreguser1", "bio": "any bio", "requestedpay": "11.5000 EOS"}' -p testreguser1), allow_error: true
+        its(:stderr) {is_expected.to include('Error 3050003')}
+        # its(:stderr) {is_expected.to include('no error')}
+      end
+    end
+
+    context "with invalid auth" do
+      command %(cleos push action daccustodian updateconfig '{ "lockupasset": "13.0000 EOSDAC", "maxvotes": 4, "periodlength": 604800 , "numelected": 3, "tokcontr": "eosdactoken"}' -p testreguser1), allow_error: true
+      # its(:stdout) {is_expected.to include('daccustodian::regcandidate')}
+      its(:stderr) {is_expected.to include('Error 3090004')}
+    end
+
+    context "with valid auth" do
+      command %(cleos push action daccustodian updateconfig '{ "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800, "numelected": 3, "tokcontr": "eosdactoken"}' -p daccustodian), allow_error: true
+      # its(:stdout) {is_expected.to include('daccustodian::regcandidate')}
+      its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
+    end
+  end
+
+  describe "regcandidate" do
 
     context "with valid and member registered user" do
       command %(cleos push action daccustodian regcandidate '{ "cand": "testreguser1", "bio": "any bio", "requestedpay": "11.5000 EOS"}' -p testreguser1), allow_error: true
-      its(:stdout) {is_expected.to include('daccustodian::regcandidate')}
+      its(:stderr) {is_expected.to include('executed')}
       # its(:stderr) {is_expected.to include('no error')}
     end
 
     context "with unregistered user" do
       command %(cleos push action daccustodian regcandidate '{ "cand": "testreguser2", "bio": "any bio", "requestedpay": "10.0000 EOS"}' -p testreguser2), allow_error: true
       # its(:stdout) {is_expected.to include('daccustodian::regcandidate')}
-      its(:stderr) {is_expected.to include('Account is not registered with members')}
+      its(:stderr) {is_expected.to include('Error 3050003')}
     end
 
     context "with user with empty agree terms" do
       command %(cleos push action daccustodian regcandidate '{ "cand": "testreguser3", "bio": "any bio", "requestedpay": "10.0000 EOS"}' -p testreguser3), allow_error: true
       # its(:stdout) {is_expected.to include('daccustodian::regcandidate')}
-      its(:stderr) {is_expected.to include('Account is not registered with members')}
+      its(:stderr) {is_expected.to include('Error 3050003')}
     end
 
     context "with user with old agreed terms" do
       command %(cleos push action daccustodian regcandidate '{ "cand": "testreguser4", "bio": "any bio", "requestedpay": "10.0000 EOS"}' -p testreguser4), allow_error: true
       # its(:stdout) {is_expected.to include('daccustodian::regcandidate')}
-      its(:stderr) {is_expected.to include('Account is not registered with members')}
+      its(:stderr) {is_expected.to include('Error 3050003')}
     end
 
     context "without delegated permission for staking" do
       command %(cleos push action daccustodian regcandidate '{ "cand": "testreguser5", "bio": "any bio", "requestedpay": "10.0000 EOS"}' -p testreguser5), allow_error: true
       # its(:stdout) {is_expected.to include('daccustodian::regcandidate')}
-      its(:stderr) {is_expected.to include('but does not have signatures for it under a provided delay of 0 ms')}
+      its(:stderr) {is_expected.to include('Error 3090003')}
     end
 
 
     context "with user is already registered" do
       command %(cleos push action daccustodian regcandidate '{ "cand": "testreguser1", "bio": "any bio", "requestedpay": "10.0000 EOS"}' -p testreguser1), allow_error: true
       # its(:stdout) {is_expected.to include('daccustodian::regcandidate')}
-      its(:stderr) {is_expected.to include('Candidate is already registered.')}
+      its(:stderr) {is_expected.to include('Error 3050003')}
     end
 
     context "Read the candidates table after regcandidate" do
@@ -176,16 +197,9 @@ describe "eosdacelect" do
     end
   end
 
-
-  describe "updateconfig" do
-    context "with invalid auth" do
-      command %(cleos push action daccustodian updateconfig '{ "lockupasset": "13.0000 EOSDAC", "maxvotes": 4, "numelected": 3}' -p testreguser1), allow_error: true
-      # its(:stdout) {is_expected.to include('daccustodian::regcandidate')}
-      its(:stderr) {is_expected.to include('missing required authority')}
-    end
-
-    context "with valid auth" do
-      command %(cleos push action daccustodian updateconfig '{ "lockupasset": "23.0000 EOSDAC", "maxvotes": 4, "numelected": 3}' -p daccustodian), allow_error: true
+  context "To ensure behaviours change after updateconfig" do
+    context "updateconfigs with valid auth" do
+      command %(cleos push action daccustodian updateconfig '{ "lockupasset": "23.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800, "numelected": 3, "tokcontr": "eosdactoken"}' -p daccustodian), allow_error: true
       # its(:stdout) {is_expected.to include('daccustodian::regcandidate')}
       its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
     end
@@ -215,12 +229,12 @@ describe "eosdacelect" do
     context "with invalid auth" do
       command %(cleos push action daccustodian unregcand '{ "cand": "unreguser3"}' -p testreguser3), allow_error: true
       # its(:stdout) {is_expected.to include('daccustodian::regcandidate')}
-      its(:stderr) {is_expected.to include('missing required authority')}
+      its(:stderr) {is_expected.to include('Error 3090004')}
     end
 
     context "with valid auth but not registered" do
       command %(cleos push action daccustodian unregcand '{ "cand": "unreguser1"}' -p unreguser1), allow_error: true
-      its(:stderr) {is_expected.to include('Candidate is not already registered.')}
+      its(:stderr) {is_expected.to include('Error 3050003')}
       # its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
     end
 
@@ -256,12 +270,12 @@ describe "eosdacelect" do
     context "with invalid auth" do
       command %(cleos push action daccustodian updatebio '{ "cand": "updatebio1", "bio": "new bio"}' -p testreguser3), allow_error: true
       # its(:stdout) {is_expected.to include('daccustodian::regcandidate')}
-      its(:stderr) {is_expected.to include('missing required authority')}
+      its(:stderr) {is_expected.to include('Error 3090004')}
     end
 
     context "with valid auth but not registered" do
       command %(cleos push action daccustodian updatebio '{ "cand": "updatebio1", "bio": "new bio"}' -p updatebio1), allow_error: true
-      its(:stderr) {is_expected.to include('Candidate is not already registered.')}
+      its(:stderr) {is_expected.to include('Error 3050003')}
       # its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
     end
 
@@ -297,12 +311,12 @@ describe "eosdacelect" do
     context "with invalid auth" do
       command %(cleos push action daccustodian updatereqpay '{ "cand": "updatepay1", "requestedpay": "11.5000 EOS"}' -p testreguser3), allow_error: true
       # its(:stdout) {is_expected.to include('daccustodian::regcandidate')}
-      its(:stderr) {is_expected.to include('missing required authority')}
+      its(:stderr) {is_expected.to include('Error 3090004')}
     end
 
     context "with valid auth but not registered" do
       command %(cleos push action daccustodian updatereqpay '{ "cand": "updatepay1", "requestedpay": "31.5000 EOS"}' -p updatepay1), allow_error: true
-      its(:stderr) {is_expected.to include('Candidate is not already registered.')}
+      its(:stderr) {is_expected.to include('Error 3050003')}
       # its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
     end
 
@@ -410,18 +424,18 @@ describe "eosdacelect" do
     context "with invalid auth" do
       command %(cleos push action daccustodian votecust '{ "voter": "voter1", "newvotes": ["votecust1","votecust2","votecust3","votecust4","votecust5"]}' -p testreguser3), allow_error: true
       # its(:stdout) {is_expected.to include('daccustodian::regcandidate')}
-      its(:stderr) {is_expected.to include('missing required authority')}
+      its(:stderr) {is_expected.to include('Error 3090004')}
     end
 
     context "not registered" do
       command %(cleos push action daccustodian votecust '{ "voter": "unregvoter", "newvotes": ["votecust1","votecust2","votecust3","votecust4","votecust5"]}' -p unregvoter), allow_error: true
-      its(:stderr) {is_expected.to include('Account is not registered with members')}
+      its(:stderr) {is_expected.to include('Error 3050003')}
       # its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
     end
 
     context "exceeded allowed number of votes" do
       command %(cleos push action daccustodian votecust '{ "voter": "voter1", "newvotes": ["voter1","votecust2","votecust3","votecust4","votecust5", "votecust11"]}' -p voter1), allow_error: true
-      its(:stderr) {is_expected.to include('Max number of allowed votes was exceeded.')}
+      its(:stderr) {is_expected.to include('Error 3050003')}
       # its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
     end
 
@@ -702,18 +716,18 @@ describe "eosdacelect" do
     context "with invalid auth" do
       command %(cleos push action daccustodian voteproxy '{ "voter": "voter1", "proxy": "voteproxy1"}' -p testreguser3), allow_error: true
       # its(:stdout) {is_expected.to include('daccustodian::regcandidate')}
-      its(:stderr) {is_expected.to include('missing required authority')}
+      its(:stderr) {is_expected.to include('Error 3090004')}
     end
 
     context "not registered" do
       command %(cleos push action daccustodian voteproxy '{ "voter": "unregvoter", "proxy": "voteproxy1"}' -p unregvoter), allow_error: true
-      its(:stderr) {is_expected.to include('Account is not registered with members')}
+      its(:stderr) {is_expected.to include('Error 3050003')}
       # its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
     end
 
     context "voting for self" do
       command %(cleos push action daccustodian voteproxy '{ "voter": "voter1", "proxy":"voter1"}' -p voter1), allow_error: true
-      its(:stderr) {is_expected.to include('Member cannot proxy vote for themselves: voter1')}
+      its(:stderr) {is_expected.to include('Error 3050003')}
       # its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
     end
 
@@ -1104,18 +1118,19 @@ describe "eosdacelect" do
     end
 
     describe "newperiod without valid auth should fail" do
-      command %(cleos push action daccustodian newperiod '{ "message": "log message"}' -p testreguser3), allow_error: true
+      command %(cleos push action daccustodian newperiod '{ "message": "log message",  "earlyelect": false}' -p testreguser3), allow_error: true
       # its(:stdout) {is_expected.to include('daccustodian::voteproxy')}
-      its(:stderr) {is_expected.to include('missing authority of daccustodian')}
+      its(:stderr) {is_expected.to include('Error 3090004')}
     end
 
     describe "newperiod before votes processing" do
       before(:all) do
         `cleos push action daccustodian votecust '{ "voter": "votecust11", "newvotes": ["votecust2","votecust3","votecust4"]}' -p votecust11`
+        `cleos set account permission #{ACCOUNT_NAME} active '{"threshold": 1,"keys": [{"key": "#{CONTRACT_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p #{ACCOUNT_NAME}`
       end
-      command %(cleos push action daccustodian newperiod '{ "message": "log message"}' -p daccustodian), allow_error: true
+      command %(cleos push action daccustodian newperiod '{ "message": "log message", "earlyelect": false}' -p daccustodian), allow_error: true
       # its(:stdout) {is_expected.to include('daccustodian::voteproxy')}
-      its(:stdout) {is_expected.to include('daccustodian::newperiod')}
+      its(:stdout) {is_expected.to include('daccustodian::newperiod')} # changed from stdout
     end
 
     context "the pending_pay table" do
@@ -1277,7 +1292,7 @@ describe "eosdacelect" do
     end
 
     describe "newperiod after votes processing" do
-      command %(cleos push action daccustodian newperiod '{ "message": "log message"}' -p daccustodian), allow_error: true
+      command %(cleos push action daccustodian newperiod '{ "message": "log message", "earlyelect": false}' -p daccustodian), allow_error: true
       # its(:stdout) {is_expected.to include('daccustodian::voteproxy')}
       its(:stdout) {is_expected.to include('daccustodian::newperiod')}
     end
@@ -1461,7 +1476,7 @@ describe "eosdacelect" do
       context "without valid auth" do
         command %(cleos push action daccustodian paypending '{ "message": "log message"}' -p voter1), allow_error: true
         # its(:stdout) {is_expected.to include('daccustodian::voteproxy')}
-        its(:stderr) {is_expected.to include('missing authority of daccustodian')}
+        its(:stderr) {is_expected.to include('Error 3090004')}
       end
 
       context "the pending_pay table still has content" do

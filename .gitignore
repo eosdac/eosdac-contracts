@@ -4,3 +4,13 @@ CMakeFiles/CMakeDirectoryInformation.cmake
 CMakeFiles/progress.marks
 CMakeFiles
 cmake_install.cmake
+
+tests/\.idea/
+
+tests/\.DS_Store
+
+daccustodian\.abi\.hpp
+
+\.DS_Store
+
+Project\.build/
