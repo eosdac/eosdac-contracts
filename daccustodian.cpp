@@ -72,16 +72,16 @@ public:
 
         require_auth(cand);
         get_valid_member(cand);
-        account_name tokencontract = N(eosdactoken);
+        account_name tokencontract = configs().tokencontr;
 
         auto reg_candidate = registered_candidates.find(cand);
         eosio_assert(reg_candidate == registered_candidates.end(), "Candidate is already registered.");
         eosio_assert(requestedpay.symbol == PAYMENT_TOKEN, "Candidate is already registered.");
 
-        action(permission_level{cand, N(active)},
+/*        action(permission_level{cand, N(active)},
                N(eosdactoken), N(transfer),
                std::make_tuple(cand, _self, configs().lockupasset, std::string("Candidate lockup amount"))
-        ).send();
+        ).send();*/
 
         registered_candidates.emplace(_self, [&](candidate &c) {
             c.candidate_name = cand;
