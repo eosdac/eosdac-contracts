@@ -41,7 +41,7 @@ typedef eosio::multi_index<N(accounts), account> accounts;
 // @abi table configs
 struct contr_config {
 //    The amount of assets that are locked up by each candidate applying for election.
-    asset lockupasset = asset(100000, symbol_type(eosio::string_to_symbol(4, "EOSDAC")));
+    asset lockupasset;
 //    The maximum number of votes that each member can make for a candidate.
     uint8_t maxvotes = 5;
 //    Number of custodians to be elected for each election count.

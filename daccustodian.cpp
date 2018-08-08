@@ -58,8 +58,12 @@ public:
 
     void updateconfig(asset lockupasset, uint8_t maxvotes, uint8_t numelected, uint32_t periodlength, name tokcontr) {
         require_auth(_self);
-        eosio_assert(lockupasset.symbol == configs().lockupasset.symbol,
-                     "The provided asset does not match the current lockup asset symbol.");
+
+        // If the registered candidates is not empty prevent a change to the lockup asset symbol.
+        if (registered_candidates.begin() != registered_candidates.end()) {
+            eosio_assert(lockupasset.symbol == configs().lockupasset.symbol,
+                         "The provided asset cannot be changed while there are registered candidates due to current staking in the old asset.");
+        }
         contr_config newconfig{lockupasset, maxvotes, numelected, periodlength, tokcontr};
         config_singleton.set(newconfig, _self);
     }
