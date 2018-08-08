@@ -78,10 +78,10 @@ public:
         eosio_assert(reg_candidate == registered_candidates.end(), "Candidate is already registered.");
         eosio_assert(requestedpay.symbol == PAYMENT_TOKEN, "Candidate is already registered.");
 
-/*        action(permission_level{cand, N(active)},
-               N(eosdactoken), N(transfer),
+        action(permission_level{cand, N(active)},
+               configs().tokencontr, N(transfer),
                std::make_tuple(cand, _self, configs().lockupasset, std::string("Candidate lockup amount"))
-        ).send();*/
+        ).send();
 
         registered_candidates.emplace(_self, [&](candidate &c) {
             c.candidate_name = cand;
