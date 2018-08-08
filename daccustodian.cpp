@@ -227,7 +227,7 @@ public:
             } else {
 
                 action(permission_level{_self, N(active)},
-                       N(eosdactoken), N(transfer),
+                       configs().tokencontr, N(transfer),
                        std::make_tuple(_self, payidx->receiver, payidx->quantity, payidx->memo)
                 ).send();
             }
@@ -315,7 +315,7 @@ private:
         // This should go iterate through proxy votes first to increase the proxy weight factor.
         // Therefore the sorting order is important here.
         while (itr != end) {
-            accounts accountstable(N(eosdactoken), itr->voter);
+            accounts accountstable(configs().tokencontr, itr->voter);
             const auto ac = accountstable.find(asset_name);
             if (ac != accountstable.end()) {
                 int64_t vote_weight = ac->balance.amount;
