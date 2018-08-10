@@ -68,7 +68,7 @@ public:
             c.bio = bio;
             c.requestedpay = requestedpay;
             c.pendreqpay = asset(0, PAYMENT_TOKEN);
-            c.is_custodian = false;
+//            c.is_custodian = false;
             c.locked_tokens = configs().lockupasset;
             c.total_votes = 0;
         });
@@ -79,7 +79,7 @@ public:
         require_auth(cand);
         const auto &reg_candidate = registered_candidates.get(cand, "Candidate is not already registered.");
 
-        if (reg_candidate.is_custodian) {
+        if (isCustodian(reg_candidate) ) {
             transaction nextTrans{};
             nextTrans.actions.emplace_back(permission_level(_self, N(active)), _self, N(newperiod),
                                            std::make_tuple("", false));
@@ -237,17 +237,21 @@ private:
         return regmem;
     }
 
+    bool isCustodian(candidate account) {
+        return false; // temp function as part of the earlyelect logic.
+    }
+
     void distributepay(bool earlyelect) {
-        auto idx = registered_candidates.get_index<N(isvotedpay)>();
+        auto idx = registered_candidates.get_index<N(byvotes)>();
         auto it = idx.rbegin();
 
         //Find the median pay using a temporary vector to hold the requestedpay amounts.
         std::vector<int64_t> reqpays;
-        while (it != idx.rend()) {
-            if (it->is_custodian) {
-                reqpays.push_back(it->requestedpay.amount);
-            }
+        uint16_t custodian_count = 0;
+        while (it != idx.rend() && custodian_count < configs().numelected) {
+            reqpays.push_back(it->requestedpay.amount);
             it++;
+            custodian_count++;
         }
 
         // Using nth_element to just sort for the entry we need for the median value.
@@ -255,35 +259,36 @@ private:
         std::nth_element(reqpays.begin(), reqpays.begin() + mid, reqpays.end());
 
         // To account for an early called election the pay may need calculated pro-rata'd
-        int64_t proportionalPay = reqpays[mid];
+        int64_t medianPay = reqpays[mid];
 
         uint32_t timestamp = now();
-        currentState.lastperiodtime = timestamp;
         if (earlyelect) {
             uint32_t periodBlockCount = timestamp - currentState.lastperiodtime;
-            proportionalPay = proportionalPay * (periodBlockCount / configs().periodlength);
+            medianPay = medianPay * (periodBlockCount / configs().periodlength);
         }
+        currentState.lastperiodtime = timestamp;
 
-        asset medianAsset = asset(proportionalPay, PAYMENT_TOKEN);
 
+        asset medianAsset = asset(medianPay, PAYMENT_TOKEN);
+
+        custodian_count = 0;
         it = idx.rbegin();
-        while (it != idx.rend()) {
-            if (it->is_custodian) {
-                auto currentPay = pending_pay.find(it->candidate_name);
-                if (currentPay != pending_pay.end()) {
-                    pending_pay.modify(currentPay, _self, [&](pay &p) {
-                        p.quantity += medianAsset;
-                    });
+        while (it != idx.rend() && custodian_count < configs().numelected) {
+            auto currentPay = pending_pay.find(it->candidate_name);
+            if (currentPay != pending_pay.end()) {
+                pending_pay.modify(currentPay, _self, [&](pay &p) {
+                    p.quantity += medianAsset;
+                });
 
-                } else {
-                    pending_pay.emplace(_self, [&](pay &p) {
-                        p.receiver = it->candidate_name;
-                        p.quantity = medianAsset;
-                        p.memo = "EOSDAC Custodian pay. Thank you.";
-                    });
-                }
+            } else {
+                pending_pay.emplace(_self, [&](pay &p) {
+                    p.receiver = it->candidate_name;
+                    p.quantity = medianAsset;
+                    p.memo = "EOSDAC Custodian pay. Thank you.";
+                });
             }
-            ++it;
+            it++;
+            custodian_count++;
         }
     }
 
@@ -356,7 +361,7 @@ private:
         int32_t electcount = configs().numelected;
         while (it != end) {
             registered_candidates.modify(*it, _self, [&](candidate &cand) {
-                cand.is_custodian = i < electcount ? 1 : 0; // Set elected to the highest number of votes.
+//                cand.is_custodian = i < electcount ? 1 : 0; // Set elected to the highest number of votes.
                 if (cand.pendreqpay.amount > 0) {
                     // Move the pending request pay to the request pay for the next period.
                     cand.requestedpay = cand.pendreqpay;
