@@ -1,7 +1,11 @@
-# daccustodian - Custodian Elections Contract
+# dacelections - Custodian Elections Contract
 This contract will be in charge of custodian registration and voting for candidates.  It will also contain a function could will be called periodically to update the custodian set, and allocate payments.
 
 When a candidate registers, they need to provide a set of configuration variables which will include things like their requested pay.  The system will select the median requested pay when choosing the actual pay.
+The median pay is to be paid to elected custodians at the end of each period. If an elected custodian resigns via the `unregcand` during a period a `newperiod` action is triggerred which will cause an early election and a partial payment to be distributed to the elected custodians depending on portion of passed time for the current period. 
+
+Eg. 12 custodians are elected and their median `requestedpay` is 100 EOSDAC If one of the custodians resigns 0.25 through a period all 12 of the elected custodians will get paid 25 EOSDAC tokens and a `newperiod` will be triggered to vote in a new set of custodians and a new period will begin. The new median pay amount will be calculated based on the newly elected custodians `pendingreqpay` if one existed or the current `requestedpay` (indicating that custodian has not changed their requested pay).
+
 ## Tables
 
 ### Candidate
@@ -55,9 +59,8 @@ This action asserts:
  - the message has the permission of the account registering.
  - the `cand` account is currently registered.
 
- Then removes the candidate from the candidates table and prepares to transfer the locked up tokens back to the `cand` account.
+Removes the candidate from the candidates table and prepares to transfer the locked up tokens back to the `cand` account.
 
-__Unsure about this:__ *If the candidate is currently elected then mark the existing record as resigned ## why?
 Remove the candidate from the database if they are not currently elected, also remove all votes cast for them as well as votes by them for ongoing worker proposals
 
 Send the staked tokens back to the account*
@@ -113,7 +116,7 @@ Then sets the array of accounts as the users acitive votes which will be used fo
 Updates the contract configuration parameters to allow changes without needing to redeploy the source code.
 
 ####Message
- `lockupasset(asset), maxvotes (uint8_t), latestterms (string), numelected(uint16_t)`
+ `lockupasset(asset), maxvotes (uint8_t), numelected (uint8_t), periodlength (uint32_t), tokencontr(string)`
  
 This action asserts:
 
@@ -122,10 +125,10 @@ This action asserts:
 
 The paramters are:
 
-- lockupasset(uint8_t) : defines the asset and amount required for a user to register as a candidate. This is the amount that will be locked up until the user calls `unregcand` in order to get the asset returned to them.
+- lockupasset(uint8_t) : defines the asset and amount required for a user to register as a candidate. This is the amount that will be locked up until the user calls `unregcand` in order to get the asset returned to them. If there are currently already registered candidates in the contract this cannot be changed to a different asset type because of introduced complexity of handling the staked amounts.
 - maxvotes(asset) : Defines the maximum number of candidates a user can vote for at any given time.
-- latestterms (string) : The hash for the current agreed terms that each member must have agreed to in order to participate in the dac actions.
-- numelected(uint16_t) : The number of candidates to elect for custodians. This is used for the payment amount to custodians for median amount and to set the `is_custodian` to true for the top voted accounts.
+- numelected(uint16_t) : The number of candidates to elect for custodians. This is used for the payment amount to custodians for median amount.
+- periodlength(uint32_t) : The length of a period in seconds. This is used for the scheduling of the deferred `newperiod` actions at the end of processing the current one. Also is used as part of the partial payment to custodians in the case of an elected custodian resigning which would also trigger a `newperiod` action.
 
 
 #### Message

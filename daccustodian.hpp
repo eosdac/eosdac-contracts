@@ -59,9 +59,8 @@ typedef singleton<N(config), contr_config> configscontainer;
 
 struct contr_state {
     uint32_t lastperiodtime = 0;
-    bool earlyendedperiod = false;
 
-    EOSLIB_SERIALIZE(contr_state, (lastperiodtime)(earlyendedperiod))
+    EOSLIB_SERIALIZE(contr_state, (lastperiodtime))
 };
 
 typedef singleton<N(state), contr_state> statecontainer;
@@ -71,7 +70,6 @@ uint128_t combine_ids(const uint8_t &boolvalue, const uint64_t &longValue) {
     return (uint128_t{boolvalue} << 8) | longValue;
 }
 
-// @abi table candidates
 struct candidate {
     name candidate_name;
     string bio;

@@ -21,26 +21,6 @@ private:
 
     symbol_type PAYMENT_TOKEN = eosio::symbol_type(eosio::string_to_symbol(4, "EOS"));
 
-
-    contr_config configs() {
-        contr_config conf = config_singleton.get_or_default(contr_config());
-        config_singleton.set(conf, _self);
-        return conf;
-    }
-
-    member get_valid_member(name member) {
-        name tokenContract = configs().tokencontr;
-        eosio_assert(tokenContract != 0,"The token contract has not been set via `updateconfig`.");
-        regmembers reg_members(tokenContract, tokenContract);
-        memterms memberterms(tokenContract, tokenContract);
-
-        const auto &regmem = reg_members.get(member, "Account is not registered with members");
-        eosio_assert((regmem.agreedterms != 0), "Account has not agreed to any terms");
-        auto latest_member_terms = (--memberterms.end());
-        eosio_assert( latest_member_terms->version == regmem.agreedterms, "Agreed terms isn't the latest." );
-        return regmem;
-    }
-
     contr_state currentState;
 
 public:
@@ -237,6 +217,26 @@ public:
     }
 
 private:
+
+    contr_config configs() {
+        contr_config conf = config_singleton.get_or_default(contr_config());
+        config_singleton.set(conf, _self);
+        return conf;
+    }
+
+    member get_valid_member(name member) {
+        name tokenContract = configs().tokencontr;
+        eosio_assert(tokenContract != 0,"The token contract has not been set via `updateconfig`.");
+        regmembers reg_members(tokenContract, tokenContract);
+        memterms memberterms(tokenContract, tokenContract);
+
+        const auto &regmem = reg_members.get(member, "Account is not registered with members");
+        eosio_assert((regmem.agreedterms != 0), "Account has not agreed to any terms");
+        auto latest_member_terms = (--memberterms.end());
+        eosio_assert( latest_member_terms->version == regmem.agreedterms, "Agreed terms isn't the latest." );
+        return regmem;
+    }
+
     void distributepay(bool earlyelect) {
         auto idx = registered_candidates.get_index<N(isvotedpay)>();
         auto it = idx.rbegin();

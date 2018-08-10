@@ -1483,6 +1483,14 @@ describe "eosdacelect" do
         # Assuming that proxied voter's weight should be 0 since the weight has been delegated to proxy.
         # Also assumes that staked tokens for candidate are not used for voting power.
         command %(cleos get table daccustodian daccustodian pendingpay), allow_error: true
+        # Based on the number of elected custodians being 3 the expected quanities below should be 12.
+        # There were 4 candidates
+        # votecust1 - 1860000 votes - 11 EOS
+        # votecust2 - 2690000 votes - 12 EOS
+        # votecust3 - 2690000 votes - 13 EOS
+        # votecust4 - 830000  votes - 14 EOS // will be eliminated because it has the least votes out of 4
+        # --> Therefore the median amount is 12 EOS.
+
         it do
           expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
                         {
