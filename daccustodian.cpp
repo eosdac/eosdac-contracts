@@ -248,7 +248,7 @@ private:
         //Find the median pay using a temporary vector to hold the requestedpay amounts.
         std::vector<int64_t> reqpays;
         uint16_t custodian_count = 0;
-        while (it != idx.rend() && custodian_count < configs().numelected) {
+        while (it != idx.rend() && custodian_count < configs().numelected && it->total_votes > 0) {
             reqpays.push_back(it->requestedpay.amount);
             it++;
             custodian_count++;
@@ -273,7 +273,7 @@ private:
 
         custodian_count = 0;
         it = idx.rbegin();
-        while (it != idx.rend() && custodian_count < configs().numelected) {
+        while (it != idx.rend() && custodian_count < configs().numelected && it->total_votes > 0) {
             auto currentPay = pending_pay.find(it->candidate_name);
             if (currentPay != pending_pay.end()) {
                 pending_pay.modify(currentPay, _self, [&](pay &p) {
