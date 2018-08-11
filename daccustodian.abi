@@ -41,9 +41,6 @@
        			"name": "pendreqpay",
        			"type": "asset"
        		}, {
-       			"name": "is_custodian",
-       			"type": "uint8"
-       		}, {
        			"name": "locked_tokens",
        			"type": "asset"
        		}, {

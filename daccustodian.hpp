@@ -77,23 +77,18 @@ struct candidate {
     asset requestedpay;
     // Requested pay that would be pending until the new period begins. Then it should be moved to requestedpay.
     asset pendreqpay;
-    uint8_t is_custodian; // bool
     asset locked_tokens;
     uint64_t total_votes;
 
     name primary_key() const { return candidate_name; }
 
-    uint8_t by_iscustodian() const { return static_cast<uint8_t>(is_custodian); }
     uint64_t by_number_votes() const { return static_cast<uint64_t>(total_votes); }
 
-    uint128_t get_by_is_cust_and_pay() const { return combine_ids(is_custodian, requestedpay.amount); }
-
     EOSLIB_SERIALIZE(candidate,
-                     (candidate_name)(bio)(requestedpay)(pendreqpay)(is_custodian)(locked_tokens)(total_votes))
+                     (candidate_name)(bio)(requestedpay)(pendreqpay)(locked_tokens)(total_votes))
 };
 
 typedef multi_index<N(candidates), candidate,
-        indexed_by<N(isvotedpay), const_mem_fun<candidate, uint128_t, &candidate::get_by_is_cust_and_pay> >,
         indexed_by<N(byvotes), const_mem_fun<candidate, uint64_t, &candidate::by_number_votes> >
 > candidates_table;
 

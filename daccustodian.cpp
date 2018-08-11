@@ -378,6 +378,7 @@ public:
     void migrate(name cand) {
 
         //Copy to a holding table - Enable this for the first step
+        /*
         candidates_table oldcands(_self, _self);
         candidates2_table holding_table(_self, _self);
         auto it = oldcands.begin();
@@ -392,9 +393,10 @@ public:
             });
             it = oldcands.erase(it);
         }
+         */
 
         // Copy back to the original table with the new schema - Enable this for the second step *after* modifying the original object's schema before copying back to the original table location.
-        /*
+
         candidates2_table holding_table(_self, _self);
         candidates_table oldcands(_self, _self);
         auto it = holding_table.begin();
@@ -409,7 +411,6 @@ public:
             });
             it = holding_table.erase(it);
         }
-         */
     }
 
 };
