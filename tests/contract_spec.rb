@@ -185,7 +185,6 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "11.5000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
                 "locked_tokens": "10.0000 EOSDAC",
                 "total_votes": 0
               }
@@ -337,7 +336,7 @@ describe "eosdacelect" do
               "bio": "any bio",
               "requestedpay": "11.5000 EOS",
               "pendreqpay": "0.0000 EOS",
-              "is_custodian": 0,
+              
               "locked_tokens": "10.0000 EOSDAC",
               "total_votes": 0
             },{
@@ -345,7 +344,7 @@ describe "eosdacelect" do
               "bio": "new bio",
               "requestedpay": "11.5000 EOS",
               "pendreqpay": "0.0000 EOS",
-              "is_custodian": 0,
+              
               "locked_tokens": "23.0000 EOSDAC",
               "total_votes": 0
             },{
@@ -353,7 +352,7 @@ describe "eosdacelect" do
               "bio": "any bio",
               "requestedpay": "21.5000 EOS",
               "pendreqpay": "41.5000 EOS",
-              "is_custodian": 0,
+              
               "locked_tokens": "23.0000 EOSDAC",
               "total_votes": 0
             }
@@ -477,7 +476,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "11.5000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "10.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -485,7 +484,7 @@ describe "eosdacelect" do
                 "bio": "new bio",
                 "requestedpay": "11.5000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -493,7 +492,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "21.5000 EOS",
                 "pendreqpay": "41.5000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -501,7 +500,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "11.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -509,7 +508,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "16.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -517,7 +516,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "12.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -525,7 +524,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "13.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -533,7 +532,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "14.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -541,7 +540,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "15.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -549,7 +548,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "17.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               }
@@ -602,7 +601,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "11.5000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "10.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -610,7 +609,7 @@ describe "eosdacelect" do
                 "bio": "new bio",
                 "requestedpay": "11.5000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -618,7 +617,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "21.5000 EOS",
                 "pendreqpay": "41.5000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -626,7 +625,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "11.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -634,7 +633,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "16.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -642,7 +641,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "12.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -650,7 +649,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "13.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -658,7 +657,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "14.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -666,7 +665,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "15.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -674,7 +673,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "17.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               }
@@ -765,7 +764,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "11.5000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "10.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -773,7 +772,7 @@ describe "eosdacelect" do
                 "bio": "new bio",
                 "requestedpay": "11.5000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -781,7 +780,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "21.5000 EOS",
                 "pendreqpay": "41.5000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -789,7 +788,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "11.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -797,7 +796,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "16.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -805,7 +804,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "12.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -813,7 +812,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "13.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -821,7 +820,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "14.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -829,7 +828,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "15.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -837,7 +836,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "10.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -845,7 +844,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "17.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               }
@@ -891,7 +890,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "11.5000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "10.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -899,7 +898,7 @@ describe "eosdacelect" do
                 "bio": "new bio",
                 "requestedpay": "11.5000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -907,7 +906,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "21.5000 EOS",
                 "pendreqpay": "41.5000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -915,7 +914,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "11.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -923,7 +922,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "16.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -931,7 +930,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "12.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -939,7 +938,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "13.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -947,7 +946,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "14.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -955,7 +954,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "15.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -963,7 +962,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "10.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -971,7 +970,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "17.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               }
@@ -1024,7 +1023,7 @@ describe "eosdacelect" do
                   "bio": "any bio",
                   "requestedpay": "11.5000 EOS",
                   "pendreqpay": "0.0000 EOS",
-                  "is_custodian": 0,
+                  
                   "locked_tokens": "10.0000 EOSDAC",
                   "total_votes": 0
                 },{
@@ -1032,7 +1031,7 @@ describe "eosdacelect" do
                   "bio": "new bio",
                   "requestedpay": "11.5000 EOS",
                   "pendreqpay": "0.0000 EOS",
-                  "is_custodian": 0,
+                  
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0
                 },{
@@ -1040,7 +1039,7 @@ describe "eosdacelect" do
                   "bio": "any bio",
                   "requestedpay": "21.5000 EOS",
                   "pendreqpay": "41.5000 EOS",
-                  "is_custodian": 0,
+                  
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0
                 },{
@@ -1048,7 +1047,7 @@ describe "eosdacelect" do
                   "bio": "any bio",
                   "requestedpay": "11.0000 EOS",
                   "pendreqpay": "0.0000 EOS",
-                  "is_custodian": 0,
+                  
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0
                 },{
@@ -1056,7 +1055,7 @@ describe "eosdacelect" do
                   "bio": "any bio",
                   "requestedpay": "16.0000 EOS",
                   "pendreqpay": "0.0000 EOS",
-                  "is_custodian": 0,
+                  
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0
                 },{
@@ -1064,7 +1063,7 @@ describe "eosdacelect" do
                   "bio": "any bio",
                   "requestedpay": "12.0000 EOS",
                   "pendreqpay": "0.0000 EOS",
-                  "is_custodian": 0,
+                  
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0
                 },{
@@ -1072,7 +1071,7 @@ describe "eosdacelect" do
                   "bio": "any bio",
                   "requestedpay": "13.0000 EOS",
                   "pendreqpay": "0.0000 EOS",
-                  "is_custodian": 0,
+                  
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0
                 },{
@@ -1080,7 +1079,7 @@ describe "eosdacelect" do
                   "bio": "any bio",
                   "requestedpay": "14.0000 EOS",
                   "pendreqpay": "0.0000 EOS",
-                  "is_custodian": 0,
+                  
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0
                 },{
@@ -1088,7 +1087,7 @@ describe "eosdacelect" do
                   "bio": "any bio",
                   "requestedpay": "15.0000 EOS",
                   "pendreqpay": "0.0000 EOS",
-                  "is_custodian": 0,
+                  
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0
                 },{
@@ -1096,7 +1095,7 @@ describe "eosdacelect" do
                   "bio": "any bio",
                   "requestedpay": "10.0000 EOS",
                   "pendreqpay": "0.0000 EOS",
-                  "is_custodian": 0,
+                  
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0
                 },{
@@ -1104,7 +1103,7 @@ describe "eosdacelect" do
                   "bio": "any bio",
                   "requestedpay": "17.0000 EOS",
                   "pendreqpay": "0.0000 EOS",
-                  "is_custodian": 0,
+                  
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0
                 }
@@ -1198,7 +1197,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "11.5000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "10.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -1206,7 +1205,7 @@ describe "eosdacelect" do
                 "bio": "new bio",
                 "requestedpay": "11.5000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -1214,7 +1213,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "41.5000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -1222,7 +1221,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "11.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 1860000
               },{
@@ -1230,7 +1229,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "16.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -1238,7 +1237,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "12.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 2690000
               },{
@@ -1246,7 +1245,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "13.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 2690000
               },{
@@ -1254,7 +1253,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "14.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 830000
               },{
@@ -1262,7 +1261,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "15.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -1270,7 +1269,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "10.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -1278,7 +1277,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "17.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               }
@@ -1373,7 +1372,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "11.5000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "10.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -1381,7 +1380,7 @@ describe "eosdacelect" do
                 "bio": "new bio",
                 "requestedpay": "11.5000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -1389,7 +1388,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "41.5000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -1397,7 +1396,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "11.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 1860000
               },{
@@ -1405,7 +1404,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "16.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -1413,7 +1412,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "12.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 2690000
               },{
@@ -1421,7 +1420,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "13.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 2690000
               },{
@@ -1429,7 +1428,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "14.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 830000
               },{
@@ -1437,7 +1436,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "15.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -1445,7 +1444,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "10.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -1453,7 +1452,7 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "17.0000 EOS",
                 "pendreqpay": "0.0000 EOS",
-                "is_custodian": 0,
+                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               }
