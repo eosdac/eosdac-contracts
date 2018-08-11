@@ -79,7 +79,7 @@ public:
         require_auth(cand);
         const auto &reg_candidate = registered_candidates.get(cand, "Candidate is not already registered.");
 
-        if (isCustodian(reg_candidate) ) {
+        if (isCustodian(reg_candidate)) {
             transaction nextTrans{};
             nextTrans.actions.emplace_back(permission_level(_self, N(active)), _self, N(newperiod),
                                            std::make_tuple("", false));
@@ -226,14 +226,14 @@ private:
 
     member get_valid_member(name member) {
         name tokenContract = configs().tokencontr;
-        eosio_assert(tokenContract != 0,"The token contract has not been set via `updateconfig`.");
+        eosio_assert(tokenContract != 0, "The token contract has not been set via `updateconfig`.");
         regmembers reg_members(tokenContract, tokenContract);
         memterms memberterms(tokenContract, tokenContract);
 
         const auto &regmem = reg_members.get(member, "Account is not registered with members");
         eosio_assert((regmem.agreedterms != 0), "Account has not agreed to any terms");
         auto latest_member_terms = (--memberterms.end());
-        eosio_assert( latest_member_terms->version == regmem.agreedterms, "Agreed terms isn't the latest." );
+        eosio_assert(latest_member_terms->version == regmem.agreedterms, "Agreed terms isn't the latest.");
         return regmem;
     }
 
@@ -374,7 +374,46 @@ private:
         }
     }
 
+public:
+    void migrate(name cand) {
+
+        //Copy to a holding table - Enable this for the first step
+        candidates_table oldcands(_self, _self);
+        candidates2_table holding_table(_self, _self);
+        auto it = oldcands.begin();
+        while (it != oldcands.end()) {
+            holding_table.emplace(_self, [&](candidate2 &c) {
+                c.candidate_name = it->candidate_name;
+                c.bio = it->bio;
+                c.requestedpay = it->requestedpay;
+                c.pendreqpay = it->pendreqpay;
+                c.locked_tokens = it->locked_tokens;
+                c.total_votes = it->total_votes;
+            });
+            it = oldcands.erase(it);
+        }
+
+        // Copy back to the original table with the new schema - Enable this for the second step *after* modifying the original object's schema before copying back to the original table location.
+        /*
+        candidates2_table holding_table(_self, _self);
+        candidates_table oldcands(_self, _self);
+        auto it = holding_table.begin();
+        while (it != holding_table.end()) {
+            oldcands.emplace(_self, [&](candidate &c) {
+                c.candidate_name = it->candidate_name;
+                c.bio = it->bio;
+                c.requestedpay = it->requestedpay;
+                c.pendreqpay = it->pendreqpay;
+                c.locked_tokens = it->locked_tokens;
+                c.total_votes = it->total_votes;
+            });
+            it = holding_table.erase(it);
+        }
+         */
+    }
+
 };
 
 EOSIO_ABI(daccustodian,
-          (updateconfig)(regcandidate)(unregcand)(updatebio)(updatereqpay)(votecust)(voteproxy)(newperiod)(paypending))
+          (updateconfig)(regcandidate)(unregcand)(updatebio)(updatereqpay)(votecust)(voteproxy)(newperiod)(paypending)(
+                  migrate))
