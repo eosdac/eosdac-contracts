@@ -21,26 +21,6 @@ private:
 
     symbol_type PAYMENT_TOKEN = eosio::symbol_type(eosio::string_to_symbol(4, "EOS"));
 
-
-    contr_config configs() {
-        contr_config conf = config_singleton.get_or_default(contr_config());
-        config_singleton.set(conf, _self);
-        return conf;
-    }
-
-    member get_valid_member(name member) {
-        name tokenContract = configs().tokencontr;
-        eosio_assert(tokenContract != 0,"The token contract has not been set via `updateconfig`.");
-        regmembers reg_members(tokenContract, tokenContract);
-        memterms memberterms(tokenContract, tokenContract);
-
-        const auto &regmem = reg_members.get(member, "Account is not registered with members");
-        eosio_assert((regmem.agreedterms != 0), "Account has not agreed to any terms");
-        auto latest_member_terms = (--memberterms.end());
-        eosio_assert( latest_member_terms->version == regmem.agreedterms, "Agreed terms isn't the latest." );
-        return regmem;
-    }
-
     contr_state currentState;
 
 public:
@@ -88,7 +68,7 @@ public:
             c.bio = bio;
             c.requestedpay = requestedpay;
             c.pendreqpay = asset(0, PAYMENT_TOKEN);
-            c.is_custodian = false;
+//            c.is_custodian = false;
             c.locked_tokens = configs().lockupasset;
             c.total_votes = 0;
         });
@@ -99,7 +79,7 @@ public:
         require_auth(cand);
         const auto &reg_candidate = registered_candidates.get(cand, "Candidate is not already registered.");
 
-        if (reg_candidate.is_custodian) {
+        if (isCustodian(reg_candidate)) {
             transaction nextTrans{};
             nextTrans.actions.emplace_back(permission_level(_self, N(active)), _self, N(newperiod),
                                            std::make_tuple("", false));
@@ -237,17 +217,41 @@ public:
     }
 
 private:
+
+    contr_config configs() {
+        contr_config conf = config_singleton.get_or_default(contr_config());
+        config_singleton.set(conf, _self);
+        return conf;
+    }
+
+    member get_valid_member(name member) {
+        name tokenContract = configs().tokencontr;
+        eosio_assert(tokenContract != 0, "The token contract has not been set via `updateconfig`.");
+        regmembers reg_members(tokenContract, tokenContract);
+        memterms memberterms(tokenContract, tokenContract);
+
+        const auto &regmem = reg_members.get(member, "Account is not registered with members");
+        eosio_assert((regmem.agreedterms != 0), "Account has not agreed to any terms");
+        auto latest_member_terms = (--memberterms.end());
+        eosio_assert(latest_member_terms->version == regmem.agreedterms, "Agreed terms isn't the latest.");
+        return regmem;
+    }
+
+    bool isCustodian(candidate account) {
+        return false; // temp function as part of the earlyelect logic.
+    }
+
     void distributepay(bool earlyelect) {
-        auto idx = registered_candidates.get_index<N(isvotedpay)>();
+        auto idx = registered_candidates.get_index<N(byvotes)>();
         auto it = idx.rbegin();
 
         //Find the median pay using a temporary vector to hold the requestedpay amounts.
         std::vector<int64_t> reqpays;
-        while (it != idx.rend()) {
-            if (it->is_custodian) {
-                reqpays.push_back(it->requestedpay.amount);
-            }
+        uint16_t custodian_count = 0;
+        while (it != idx.rend() && custodian_count < configs().numelected && it->total_votes > 0) {
+            reqpays.push_back(it->requestedpay.amount);
             it++;
+            custodian_count++;
         }
 
         // Using nth_element to just sort for the entry we need for the median value.
@@ -255,35 +259,36 @@ private:
         std::nth_element(reqpays.begin(), reqpays.begin() + mid, reqpays.end());
 
         // To account for an early called election the pay may need calculated pro-rata'd
-        int64_t proportionalPay = reqpays[mid];
+        int64_t medianPay = reqpays[mid];
 
         uint32_t timestamp = now();
-        currentState.lastperiodtime = timestamp;
         if (earlyelect) {
             uint32_t periodBlockCount = timestamp - currentState.lastperiodtime;
-            proportionalPay = proportionalPay * (periodBlockCount / configs().periodlength);
+            medianPay = medianPay * (periodBlockCount / configs().periodlength);
         }
+        currentState.lastperiodtime = timestamp;
 
-        asset medianAsset = asset(proportionalPay, PAYMENT_TOKEN);
 
+        asset medianAsset = asset(medianPay, PAYMENT_TOKEN);
+
+        custodian_count = 0;
         it = idx.rbegin();
-        while (it != idx.rend()) {
-            if (it->is_custodian) {
-                auto currentPay = pending_pay.find(it->candidate_name);
-                if (currentPay != pending_pay.end()) {
-                    pending_pay.modify(currentPay, _self, [&](pay &p) {
-                        p.quantity += medianAsset;
-                    });
+        while (it != idx.rend() && custodian_count < configs().numelected && it->total_votes > 0) {
+            auto currentPay = pending_pay.find(it->candidate_name);
+            if (currentPay != pending_pay.end()) {
+                pending_pay.modify(currentPay, _self, [&](pay &p) {
+                    p.quantity += medianAsset;
+                });
 
-                } else {
-                    pending_pay.emplace(_self, [&](pay &p) {
-                        p.receiver = it->candidate_name;
-                        p.quantity = medianAsset;
-                        p.memo = "EOSDAC Custodian pay. Thank you.";
-                    });
-                }
+            } else {
+                pending_pay.emplace(_self, [&](pay &p) {
+                    p.receiver = it->candidate_name;
+                    p.quantity = medianAsset;
+                    p.memo = "EOSDAC Custodian pay. Thank you.";
+                });
             }
-            ++it;
+            it++;
+            custodian_count++;
         }
     }
 
@@ -356,7 +361,7 @@ private:
         int32_t electcount = configs().numelected;
         while (it != end) {
             registered_candidates.modify(*it, _self, [&](candidate &cand) {
-                cand.is_custodian = i < electcount ? 1 : 0; // Set elected to the highest number of votes.
+//                cand.is_custodian = i < electcount ? 1 : 0; // Set elected to the highest number of votes.
                 if (cand.pendreqpay.amount > 0) {
                     // Move the pending request pay to the request pay for the next period.
                     cand.requestedpay = cand.pendreqpay;
@@ -369,7 +374,47 @@ private:
         }
     }
 
+public:
+    void migrate(name cand) {
+
+        //Copy to a holding table - Enable this for the first step
+        /*
+        candidates_table oldcands(_self, _self);
+        candidates2_table holding_table(_self, _self);
+        auto it = oldcands.begin();
+        while (it != oldcands.end()) {
+            holding_table.emplace(_self, [&](candidate2 &c) {
+                c.candidate_name = it->candidate_name;
+                c.bio = it->bio;
+                c.requestedpay = it->requestedpay;
+                c.pendreqpay = it->pendreqpay;
+                c.locked_tokens = it->locked_tokens;
+                c.total_votes = it->total_votes;
+            });
+            it = oldcands.erase(it);
+        }
+         */
+
+        // Copy back to the original table with the new schema - Enable this for the second step *after* modifying the original object's schema before copying back to the original table location.
+
+        candidates2_table holding_table(_self, _self);
+        candidates_table oldcands(_self, _self);
+        auto it = holding_table.begin();
+        while (it != holding_table.end()) {
+            oldcands.emplace(_self, [&](candidate &c) {
+                c.candidate_name = it->candidate_name;
+                c.bio = it->bio;
+                c.requestedpay = it->requestedpay;
+                c.pendreqpay = it->pendreqpay;
+                c.locked_tokens = it->locked_tokens;
+                c.total_votes = it->total_votes;
+            });
+            it = holding_table.erase(it);
+        }
+    }
+
 };
 
 EOSIO_ABI(daccustodian,
-          (updateconfig)(regcandidate)(unregcand)(updatebio)(updatereqpay)(votecust)(voteproxy)(newperiod)(paypending))
+          (updateconfig)(regcandidate)(unregcand)(updatebio)(updatereqpay)(votecust)(voteproxy)(newperiod)(paypending)(
+                  migrate))
