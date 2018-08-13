@@ -58,10 +58,10 @@ public:
         eosio_assert(reg_candidate == registered_candidates.end(), "Candidate is already registered.");
         eosio_assert(requestedpay.symbol == PAYMENT_TOKEN, "Candidate is already registered.");
 
-        action(permission_level{cand, N(active)},
-               configs().tokencontr, N(transfer),
-               std::make_tuple(cand, _self, configs().lockupasset, std::string("Candidate lockup amount"))
-        ).send();
+//        action(permission_level{cand, N(active)},
+//               configs().tokencontr, N(transfer),
+//               std::make_tuple(cand, _self, configs().lockupasset, std::string("Candidate lockup amount"))
+//        ).send();
 
         registered_candidates.emplace(_self, [&](candidate &c) {
             c.candidate_name = cand;
@@ -88,11 +88,11 @@ public:
         }
         registered_candidates.erase(reg_candidate);
 
-        pending_pay.emplace(_self, [&](pay &p) {
-            p.receiver = cand;
-            p.quantity = reg_candidate.locked_tokens;
-            p.memo = "Returning locked up stake. Thank you.";
-        });
+//        pending_pay.emplace(_self, [&](pay &p) {
+//            p.receiver = cand;
+//            p.quantity = reg_candidate.locked_tokens;
+//            p.memo = "Returning locked up stake. Thank you.";
+//        });
     }
 
     void updatebio(name cand, string bio) {
