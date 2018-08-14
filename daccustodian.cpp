@@ -56,7 +56,7 @@ public:
 
         auto reg_candidate = registered_candidates.find(cand);
         eosio_assert(reg_candidate == registered_candidates.end(), "Candidate is already registered.");
-        eosio_assert(requestedpay.symbol == PAYMENT_TOKEN, "Candidate is already registered.");
+        eosio_assert(requestedpay.symbol == PAYMENT_TOKEN, "Incorrect payment token for the current configuration");
 
 //        action(permission_level{cand, N(active)},
 //               configs().tokencontr, N(transfer),
