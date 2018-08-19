@@ -45,7 +45,7 @@ beforescript = <<~SHELL
     echo "Failed to create contract account" 
     exit 1
   fi
-    eosio-cpp -o #{CONTRACT_NAME}.wast *.cpp
+    # eosio-cpp -o #{CONTRACT_NAME}.wast *.cpp
     if [[ $? != 0 ]] 
       then 
       echo "failed to compile contract" 
@@ -87,12 +87,15 @@ describe "eosdacelect" do
       `cleos create account eosio testreguser3 #{TEST_OWNER_PUBLIC_KEY} #{TEST_ACTIVE_PUBLIC_KEY}`
       `cleos create account eosio testreguser4 #{TEST_OWNER_PUBLIC_KEY} #{TEST_ACTIVE_PUBLIC_KEY}`
       `cleos create account eosio testreguser5 #{TEST_OWNER_PUBLIC_KEY} #{TEST_ACTIVE_PUBLIC_KEY}`
+      `cleos create account eosio testregusera #{TEST_OWNER_PUBLIC_KEY} #{TEST_ACTIVE_PUBLIC_KEY}`
+
       # Issue tokens to the first accounts in the token contract
       `cleos push action eosdactoken issue '{ "to": "testreguser1", "quantity": "100.0000 EOSDAC", "memo": "Initial amount."}' -p eosdactoken`
       `cleos push action eosdactoken issue '{ "to": "testreguser2", "quantity": "100.0000 EOSDAC", "memo": "Initial amount."}' -p eosdactoken`
       `cleos push action eosdactoken issue '{ "to": "testreguser3", "quantity": "100.0000 EOSDAC", "memo": "Initial amount."}' -p eosdactoken`
       `cleos push action eosdactoken issue '{ "to": "testreguser4", "quantity": "100.0000 EOSDAC", "memo": "Initial amount."}' -p eosdactoken`
       `cleos push action eosdactoken issue '{ "to": "testreguser5", "quantity": "100.0000 EOSDAC", "memo": "Initial amount."}' -p eosdactoken`
+      `cleos push action eosdactoken issue '{ "to": "testregusera", "quantity": "100.0000 EOSDAC", "memo": "Initial amount."}' -p eosdactoken`
 
 
       # Ensure terms are registered in the token contract
@@ -103,12 +106,8 @@ describe "eosdacelect" do
       `cleos push action eosdactoken memberreg '{ "sender": "testreguser3", "agreedterms": ""}' -p testreguser3` # empty terms
       `cleos push action eosdactoken memberreg '{ "sender": "testreguser4", "agreedterms": "oldterms"}' -p testreguser4`
       `cleos push action eosdactoken memberreg '{ "sender": "testreguser5", "agreedterms": "New Latest terms"}' -p testreguser5`
+      `cleos push action eosdactoken memberreg '{ "sender": "testregusera", "agreedterms": "New Latest terms"}' -p testregusera`
 
-      # set account permissions for transfers from within the contract.
-      `cleos set account permission testreguser1 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p testreguser1`
-      `cleos set account permission testreguser2 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p testreguser2`
-      `cleos set account permission testreguser3 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p testreguser3`
-      `cleos set account permission testreguser4 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p testreguser4`
     end
 
     it {expect(true)} # to trigger the above before all to run this is needed.
@@ -138,16 +137,30 @@ describe "eosdacelect" do
 
   describe "regcandidate" do
 
-    context "with valid and member registered user" do
+    context "with valid and registered member after transferring insufficient staked tokens" do
+      before(:all) do
+        `cleos push action eosdactoken transfer '{ "from": "testreguser1", "to": "daccustodian", "quantity": "5.0000 EOSDAC","memo":"daccustodian"}' -p testreguser1 -f`
+        # Verify that a transaction with an invalid account memo still is insufficient funds.
+        `cleos push action eosdactoken transfer '{ "from": "testreguser1", "to": "daccustodian", "quantity": "25.0000 EOSDAC","memo":"noncaccount"}' -p testreguser1 -f`
+      end
       command %(cleos push action daccustodian regcandidate '{ "cand": "testreguser1", "bio": "any bio", "requestedpay": "11.5000 EOS"}' -p testreguser1), allow_error: true
-      its(:stderr) {is_expected.to include('executed')}
+      its(:stderr) {is_expected.to include('The amount staked is insufficient by: 50000 tokens.')}
+      # its(:stderr) {is_expected.to include('no error')}
+    end
+
+    context "with valid and registered member after transferring sufficient staked tokens in multiple transfers" do
+      before(:all) do
+        `cleos push action eosdactoken transfer '{ "from": "testreguser1", "to": "daccustodian", "quantity": "5.0000 EOSDAC","memo":"daccustodian"}' -p testreguser1 -f`
+      end
+      command %(cleos push action daccustodian regcandidate '{ "cand": "testreguser1", "bio": "any bio", "requestedpay": "11.5000 EOS"}' -p testreguser1), allow_error: true
+      its(:stdout) {is_expected.to include('daccustodian::regcandidate')}
       # its(:stderr) {is_expected.to include('no error')}
     end
 
     context "with unregistered user" do
       command %(cleos push action daccustodian regcandidate '{ "cand": "testreguser2", "bio": "any bio", "requestedpay": "10.0000 EOS"}' -p testreguser2), allow_error: true
       # its(:stdout) {is_expected.to include('daccustodian::regcandidate')}
-      its(:stderr) {is_expected.to include('Error 3050003')}
+      its(:stderr) {is_expected.to include("Account is not registered with members")}
     end
 
     context "with user with empty agree terms" do
@@ -162,10 +175,10 @@ describe "eosdacelect" do
       its(:stderr) {is_expected.to include('Error 3050003')}
     end
 
-    context "without delegated permission for staking" do
+    context "without first staking" do
       command %(cleos push action daccustodian regcandidate '{ "cand": "testreguser5", "bio": "any bio", "requestedpay": "10.0000 EOS"}' -p testreguser5), allow_error: true
       # its(:stdout) {is_expected.to include('daccustodian::regcandidate')}
-      its(:stderr) {is_expected.to include('Error 3090003')}
+      its(:stderr) {is_expected.to include("A registering member must first stake tokens as set by the contract's config")}
     end
 
 
@@ -189,6 +202,18 @@ describe "eosdacelect" do
                 "total_votes": 0
               }
             ],
+            "more": false
+          }
+        JSON
+      end
+    end
+
+    context "Read the pendingstake table after regcandidate and it should be empty" do
+      command %(cleos get table daccustodian daccustodian pendingstake), allow_error: true
+      it do
+        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
+            {
+              "rows": [],
             "more": false
           }
         JSON
@@ -220,7 +245,7 @@ describe "eosdacelect" do
       `cleos push action eosdactoken memberreg '{ "sender": "unreguser1", "agreedterms": "New Latest terms"}' -p unreguser1`
       `cleos push action eosdactoken memberreg '{ "sender": "unreguser2", "agreedterms": "New Latest terms"}' -p unreguser2`
 
-      `cleos set account permission unreguser2 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p unreguser2`
+      `cleos push action eosdactoken transfer '{ "from": "unreguser2", "to": "daccustodian", "quantity": "23.0000 EOSDAC","memo":"daccustodian"}' -p unreguser2`
 
       `cleos push action daccustodian regcandidate '{ "cand": "unreguser2", "bio": "any bio", "requestedpay": "11.5000 EOS"}' -p unreguser2`
     end
@@ -238,6 +263,7 @@ describe "eosdacelect" do
     end
 
     context "with valid auth" do
+
       command %(cleos push action daccustodian unregcand '{ "cand": "unreguser2"}' -p unreguser2), allow_error: true
       its(:stdout) {is_expected.to include('daccustodian::unregcand')}
       # its(:stderr) {is_expected.to include('daccustodian:: error occurred')}
@@ -260,9 +286,7 @@ describe "eosdacelect" do
       `cleos push action eosdactoken memberreg '{ "sender": "updatebio1", "agreedterms": "New Latest terms"}' -p updatebio1`
       `cleos push action eosdactoken memberreg '{ "sender": "updatebio2", "agreedterms": "New Latest terms"}' -p updatebio2`
 
-      # set account permissions for transfers from within the contract.
-      `cleos set account permission updatebio2 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p updatebio2`
-
+      `cleos push action eosdactoken transfer '{ "from": "updatebio2", "to": "daccustodian", "quantity": "23.0000 EOSDAC","memo":"daccustodian"}' -p updatebio2`
       `cleos push action daccustodian regcandidate '{ "cand": "updatebio2", "bio": "any bio", "requestedpay": "11.5000 EOS"}' -p updatebio2`
     end
 
@@ -301,8 +325,7 @@ describe "eosdacelect" do
       `cleos push action eosdactoken memberreg '{ "sender": "updatepay1", "agreedterms": "New Latest terms"}' -p updatepay1`
       `cleos push action eosdactoken memberreg '{ "sender": "updatepay2", "agreedterms": "New Latest terms"}' -p updatepay2`
 
-      # set account permissions for transfers from within the contract.
-      `cleos set account permission updatepay2 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p updatepay2`
+      `cleos push action eosdactoken transfer '{ "from": "updatepay2", "to": "daccustodian", "quantity": "23.0000 EOSDAC","memo":"daccustodian"}' -p updatepay2`
 
       `cleos push action daccustodian regcandidate '{ "cand": "updatepay2", "bio": "any bio", "requestedpay": "21.5000 EOS"}' -p updatepay2`
     end
@@ -400,14 +423,15 @@ describe "eosdacelect" do
       `cleos push action eosdactoken memberreg '{ "sender": "voter1", "agreedterms": "New Latest terms"}' -p voter1`
       # `cleos push action eosdactoken memberreg '{ "sender": "unregvoter", "agreedterms": "New Latest terms"}' -p unregvoter`
 
-      # set account permissions for transfers from within the contract.
-      `cleos set account permission votedcust1 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p votedcust1`
-      `cleos set account permission votedcust2 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p votedcust2`
-      `cleos set account permission votedcust3 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p votedcust3`
-      `cleos set account permission votedcust4 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p votedcust4`
-      `cleos set account permission votedcust5 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p votedcust5`
-      `cleos set account permission votedcust11 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p votedcust11`
-      `cleos set account permission voter1 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p voter1`
+      # pre-transfer staking tokens before attempting to register from within this contract.
+
+      `cleos push action eosdactoken transfer '{ "from": "votedcust1", "to": "daccustodian", "quantity": "23.0000 EOSDAC","memo":"daccustodian"}' -p votedcust1`
+      `cleos push action eosdactoken transfer '{ "from": "votedcust2", "to": "daccustodian", "quantity": "23.0000 EOSDAC","memo":"daccustodian"}' -p votedcust2`
+      `cleos push action eosdactoken transfer '{ "from": "votedcust3", "to": "daccustodian", "quantity": "23.0000 EOSDAC","memo":"daccustodian"}' -p votedcust3`
+      `cleos push action eosdactoken transfer '{ "from": "votedcust4", "to": "daccustodian", "quantity": "23.0000 EOSDAC","memo":"daccustodian"}' -p votedcust4`
+      `cleos push action eosdactoken transfer '{ "from": "votedcust5", "to": "daccustodian", "quantity": "23.0000 EOSDAC","memo":"daccustodian"}' -p votedcust5`
+      `cleos push action eosdactoken transfer '{ "from": "votedcust11", "to": "daccustodian", "quantity": "23.0000 EOSDAC","memo":"daccustodian"}' -p votedcust11`
+      `cleos push action eosdactoken transfer '{ "from": "voter1", "to": "daccustodian", "quantity": "23.0000 EOSDAC","memo":"daccustodian"}' -p voter1`
 
       `cleos push action daccustodian regcandidate '{ "cand": "votedcust1", "bio": "any bio", "requestedpay": "11.0000 EOS"}' -p votedcust1`
       `cleos push action daccustodian regcandidate '{ "cand": "votedcust2", "bio": "any bio", "requestedpay": "12.0000 EOS"}' -p votedcust2`
@@ -435,6 +459,12 @@ describe "eosdacelect" do
     context "exceeded allowed number of votes" do
       command %(cleos push action daccustodian votecust '{ "voter": "voter1", "newvotes": ["voter1","votedcust2","votedcust3","votedcust4","votedcust5", "votedcust11"]}' -p voter1), allow_error: true
       its(:stderr) {is_expected.to include('Error 3050003')}
+      # its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
+    end
+
+    context "Voted for the same candidate multiple times" do
+      command %(cleos push action daccustodian votecust '{ "voter": "voter1", "newvotes": ["votedcust2","votedcust3","votedcust2","votedcust5", "votedcust11"]}' -p voter1), allow_error: true
+      its(:stderr) {is_expected.to include('Added duplicate votes for the same candidate')}
       # its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
     end
 
@@ -705,8 +735,8 @@ describe "eosdacelect" do
       `cleos push action eosdactoken memberreg '{ "sender": "voter1", "agreedterms": "New Latest terms"}' -p voter1`
       # `cleos push action eosdactoken memberreg '{ "sender": "unregvoter", "agreedterms": "New Latest terms"}' -p unregvoter`
 
-      # set account permissions for transfers from within the contract.
-      `cleos set account permission votedproxy1 active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p votedproxy1`
+      # pre-transfer for staking before registering from within the contract.
+      `cleos push action eosdactoken transfer '{ "from": "votedproxy1", "to": "daccustodian", "quantity": "23.0000 EOSDAC","memo":"daccustodian"}' -p votedproxy1`
 
       `cleos push action daccustodian regcandidate '{ "cand": "votedproxy1", "bio": "any bio", "requestedpay": "10.0000 EOS"}' -p votedproxy1`
       # `cleos push action daccustodian regcandidate '{ "cand": "unregvoter", "bio": "any bio", "requestedpay": "21.5000 EOS"}' -p unregvoter`
@@ -1140,6 +1170,7 @@ describe "eosdacelect" do
         expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
                       {
             "rows": [{
+              "key": 0, 
             	"receiver": "unreguser2",
             	"quantity": "23.0000 EOSDAC",
             	"memo": "Returning locked up stake. Thank you."
@@ -1302,19 +1333,23 @@ describe "eosdacelect" do
         expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
                       {
             "rows": [{
+                "key": 0,
                 "receiver": "unreguser2",
                 "quantity": "23.0000 EOSDAC",
                 "memo": "Returning locked up stake. Thank you."
               },{
-                "receiver": "votedcust1",
+                "key": 1,
+                "receiver": "votedcust3",
                 "quantity": "12.0000 EOS",
                 "memo": "EOSDAC Custodian pay. Thank you."
               },{
+                "key": 2,
                 "receiver": "votedcust2",
                 "quantity": "12.0000 EOS",
                 "memo": "EOSDAC Custodian pay. Thank you."
               },{
-                "receiver": "votedcust3",
+                "key": 3,
+                "receiver": "votedcust1",
                 "quantity": "12.0000 EOS",
                 "memo": "EOSDAC Custodian pay. Thank you."
               }
@@ -1492,19 +1527,23 @@ describe "eosdacelect" do
           expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
                         {
               "rows": [{
+                "key": 0,
                   "receiver": "unreguser2",
                   "quantity": "23.0000 EOSDAC",
                   "memo": "Returning locked up stake. Thank you."
                 },{
-                  "receiver": "votedcust1",
+                "key": 1,
+                  "receiver": "votedcust3",
                   "quantity": "12.0000 EOS",
                   "memo": "EOSDAC Custodian pay. Thank you."
                 },{
+                "key": 2,
                   "receiver": "votedcust2",
                   "quantity": "12.0000 EOS",
                   "memo": "EOSDAC Custodian pay. Thank you."
                 },{
-                  "receiver": "votedcust3",
+                  "key": 3,
+                  "receiver": "votedcust1",
                   "quantity": "12.0000 EOS",
                   "memo": "EOSDAC Custodian pay. Thank you."
                 }

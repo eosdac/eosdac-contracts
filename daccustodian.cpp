@@ -48,6 +48,32 @@ public:
         config_singleton.set(newconfig, _self);
     }
 
+// Action to listen to from the associated token contract to ensure registering should be allowed.
+    void transfer(account_name from,
+                  account_name to,
+                  asset quantity,
+                  string memo) {
+        print("listening to transfer with memo == dacaccountId");
+        if (to == _self) {
+            account_name dacId = eosio::string_to_name(memo.c_str());
+            if (is_account(dacId)) {
+                pendingstake_table_t pendingstake(_self, dacId);
+                auto source = pendingstake.find(from);
+                if (source != pendingstake.end()) {
+                    pendingstake.modify(source, _self, [&](tempstake &s) {
+                        s.quantity += quantity;
+                    });
+                } else {
+                    pendingstake.emplace(_self, [&](tempstake &s) {
+                        s.sender = from;
+                        s.quantity = quantity;
+                        s.memo = memo;
+                    });
+                }
+            }
+        }
+    }
+
     void regcandidate(name cand, string bio, asset requestedpay) {
 
         require_auth(cand);
@@ -58,20 +84,35 @@ public:
         eosio_assert(reg_candidate == registered_candidates.end(), "Candidate is already registered.");
         eosio_assert(requestedpay.symbol == PAYMENT_TOKEN, "Incorrect payment token for the current configuration");
 
-//        action(permission_level{cand, N(active)},
-//               configs().tokencontr, N(transfer),
-//               std::make_tuple(cand, _self, configs().lockupasset, std::string("Candidate lockup amount"))
-//        ).send();
+        pendingstake_table_t pendingstake(_self, _self);
+        auto pending = pendingstake.find(cand);
+        eosio_assert(pending != pendingstake.end(),
+                     "A registering member must first stake tokens as set by the contract's config.");
+        int64_t shortfall = configs().lockupasset.amount - pending->quantity.amount;
+        if (shortfall > 0) {
+            print("The amount staked is insufficient by: ", shortfall, " tokens.");
+            eosio_assert(false, "");
+        }
+
+//        TODO: handle returning the partially staked tokens.
+//            pending_pay.emplace(_self, [&](pay &p) {
+//                p.key = pending_pay.available_primary_key();
+//                p.receiver = cand;
+//                p.quantity = pending->quantity;
+//                p.memo = "Returning incorrect amount of staked tokens from registering attempt.";
+//            });
+//        }
 
         registered_candidates.emplace(_self, [&](candidate &c) {
             c.candidate_name = cand;
             c.bio = bio;
             c.requestedpay = requestedpay;
             c.pendreqpay = asset(0, PAYMENT_TOKEN);
-//            c.is_custodian = false;
-            c.locked_tokens = configs().lockupasset;
+            c.locked_tokens = pending->quantity;
             c.total_votes = 0;
         });
+
+        pendingstake.erase(pending);
     }
 
     void unregcand(name cand) {
@@ -88,11 +129,12 @@ public:
         }
         registered_candidates.erase(reg_candidate);
 
-//        pending_pay.emplace(_self, [&](pay &p) {
-//            p.receiver = cand;
-//            p.quantity = reg_candidate.locked_tokens;
-//            p.memo = "Returning locked up stake. Thank you.";
-//        });
+        pending_pay.emplace(_self, [&](pay &p) {
+            p.key = pending_pay.available_primary_key();
+            p.receiver = cand;
+            p.quantity = reg_candidate.locked_tokens;
+            p.memo = "Returning locked up stake. Thank you.";
+        });
     }
 
     void updatebio(name cand, string bio) {
@@ -124,6 +166,10 @@ public:
         get_valid_member(voter);
 
         eosio_assert(newvotes.size() <= configs().maxvotes, "Max number of allowed votes was exceeded.");
+        std::set<name> dupSet{};
+        for_each(newvotes.begin(), newvotes.end(), [&] (name& v) {
+            eosio_assert(dupSet.insert(v).second, "Added duplicate votes for the same candidate");
+        });
 
         // Find a vote that has been cast by this voter previously.
         auto existingVote = votes_cast_by_members.find(voter);
@@ -197,15 +243,15 @@ public:
     void paypending(string message) {
         require_auth(_self);
         auto payidx = pending_pay.begin();
+        eosio_assert(payidx != pending_pay.end(), "pending pay is empty");
 
-        while (payidx != pending_pay.end()) {
+        while (payidx != pending_pay.end()/* TODO: Add AND batch condition here to avoid long transaction errors */) {
             if (payidx->quantity.symbol == PAYMENT_TOKEN) {
                 action(permission_level{_self, N(active)},
                        N(eosio.token), N(transfer),
                        std::make_tuple(_self, payidx->receiver, payidx->quantity, payidx->memo)
                 ).send();
             } else {
-
                 action(permission_level{_self, N(active)},
                        configs().tokencontr, N(transfer),
                        std::make_tuple(_self, payidx->receiver, payidx->quantity, payidx->memo)
@@ -213,6 +259,17 @@ public:
             }
 
             payidx = pending_pay.erase(payidx);
+        }
+        if (payidx != pending_pay.end()) {
+            //        Schedule the the next pending pay batch into a separate transaction.
+            transaction nextPendingPayBatch{};
+            nextPendingPayBatch.actions.emplace_back(
+                    permission_level(_self, N(active)),
+                    _self, N(paypending),
+                    std::make_tuple("DAC Payment delayed batch transaction.")
+            );
+            nextPendingPayBatch.delay_sec = 1;
+            nextPendingPayBatch.send(N(paypending), false);
         }
     }
 
@@ -274,22 +331,17 @@ private:
         custodian_count = 0;
         it = idx.rbegin();
         while (it != idx.rend() && custodian_count < configs().numelected && it->total_votes > 0) {
-            auto currentPay = pending_pay.find(it->candidate_name);
-            if (currentPay != pending_pay.end()) {
-                pending_pay.modify(currentPay, _self, [&](pay &p) {
-                    p.quantity += medianAsset;
-                });
-
-            } else {
-                pending_pay.emplace(_self, [&](pay &p) {
-                    p.receiver = it->candidate_name;
-                    p.quantity = medianAsset;
-                    p.memo = "EOSDAC Custodian pay. Thank you.";
-                });
-            }
+            pending_pay.emplace(_self, [&](pay &p) {
+                p.key = pending_pay.available_primary_key();
+                p.receiver = it->candidate_name;
+                p.quantity = medianAsset;
+                p.memo = "EOSDAC Custodian pay. Thank you.";
+            });
             it++;
             custodian_count++;
         }
+
+        print("distribute pay");
     }
 
     void clearOldVotes() {
@@ -308,6 +360,7 @@ private:
             });
             canditr++;
         }
+        print("clear old votes");
     }
 
     void tallyNewVotes() {
@@ -338,7 +391,7 @@ private:
                     }
                 }
             } else {
-                // Voter as no balance - Ignoring this error since the impact is small;
+                print("tally new votes - voter has no balance");
             }
             if (itr->proxy == 0) {
                 for (const auto &newVote : itr->candidates) {
@@ -350,28 +403,27 @@ private:
             }
             ++itr;
         }
+        print("tally new votes");
     }
 
     void configureForNextPeriod() {
-        auto isvotedpayidx = registered_candidates.get_index<N(byvotes)>();
-        auto it = isvotedpayidx.rbegin();
-        auto end = isvotedpayidx.rend();
+        auto byPendingPayIdx = registered_candidates.get_index<N(bypendingpay)>();
+        auto it = byPendingPayIdx.rbegin();
+        auto end = byPendingPayIdx.rend();
 
         int i = 0;
         int32_t electcount = configs().numelected;
-        while (it != end) {
+        while (it != end && it->pendreqpay.amount > 0) {
             registered_candidates.modify(*it, _self, [&](candidate &cand) {
-//                cand.is_custodian = i < electcount ? 1 : 0; // Set elected to the highest number of votes.
-                if (cand.pendreqpay.amount > 0) {
-                    // Move the pending request pay to the request pay for the next period.
-                    cand.requestedpay = cand.pendreqpay;
-                    // zeros the pending request to prevent overwrite of requestedPay on the next cycle.
-                    cand.pendreqpay = asset(0, PAYMENT_TOKEN);
-                }
+                // Move the pending request pay to the request pay for the next period.
+                cand.requestedpay = cand.pendreqpay;
+                // zeros the pending request to prevent overwrite of requestedPay on the next cycle.
+                cand.pendreqpay = asset(0, PAYMENT_TOKEN);
             });
             ++it;
             ++i;
         }
+        print("configureForNextPeriod");
     }
 
 public:
@@ -397,24 +449,51 @@ public:
 
         // Copy back to the original table with the new schema - Enable this for the second step *after* modifying the original object's schema before copying back to the original table location.
 
-        candidates2_table holding_table(_self, _self);
-        candidates_table oldcands(_self, _self);
-        auto it = holding_table.begin();
-        while (it != holding_table.end()) {
-            oldcands.emplace(_self, [&](candidate &c) {
-                c.candidate_name = it->candidate_name;
-                c.bio = it->bio;
-                c.requestedpay = it->requestedpay;
-                c.pendreqpay = it->pendreqpay;
-                c.locked_tokens = it->locked_tokens;
-                c.total_votes = it->total_votes;
-            });
-            it = holding_table.erase(it);
-        }
+//        candidates2_table holding_table(_self, _self);
+//        candidates_table oldcands(_self, _self);
+//        auto it = holding_table.begin();
+//        while (it != holding_table.end()) {
+//            oldcands.emplace(_self, [&](candidate &c) {
+//                c.candidate_name = it->candidate_name;
+//                c.bio = it->bio;
+//                c.requestedpay = it->requestedpay;
+//                c.pendreqpay = it->pendreqpay;
+//                c.locked_tokens = it->locked_tokens;
+//                c.total_votes = it->total_votes;
+//            });
+//            it = holding_table.erase(it);
+//        }
     }
-
 };
 
-EOSIO_ABI(daccustodian,
-          (updateconfig)(regcandidate)(unregcand)(updatebio)(updatereqpay)(votecust)(voteproxy)(newperiod)(paypending)(
-                  migrate))
+#define EOSIO_ABI_EX(TYPE, MEMBERS) \
+extern "C" { \
+   void apply( uint64_t receiver, uint64_t code, uint64_t action ) { \
+      if( action == N(onerror)) { \
+         /* onerror is only valid if it is for the "eosio" code account and authorized by "eosio"'s "active permission */ \
+         eosio_assert(code == N(eosio), "onerror action's are only valid from the \"eosio\" system account"); \
+      } \
+      auto self = receiver; \
+      if( code == self || action == N(transfer) ) { \
+         TYPE thiscontract( self ); \
+         switch( action ) { \
+            EOSIO_API( TYPE, MEMBERS ) \
+         } \
+         /* does not allow destructor of thiscontract to run: eosio_exit(0); */ \
+      } \
+   } \
+}
+
+EOSIO_ABI_EX(daccustodian,
+             (updateconfig)
+                     (regcandidate)
+                     (unregcand)
+                     (updatebio)
+                     (updatereqpay)
+                     (votecust)
+                     (voteproxy)
+                     (newperiod)
+                     (paypending)
+                     (migrate)
+                     (transfer)
+)

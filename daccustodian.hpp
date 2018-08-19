@@ -83,36 +83,18 @@ struct candidate {
     name primary_key() const { return candidate_name; }
 
     uint64_t by_number_votes() const { return static_cast<uint64_t>(total_votes); }
+    uint64_t by_votes_rank() const { return static_cast<uint64_t>(UINT64_MAX - total_votes); }
+    uint64_t by_pending_pay() const { return static_cast<uint64_t>(pendreqpay.amount); }
 
     EOSLIB_SERIALIZE(candidate,
                      (candidate_name)(bio)(requestedpay)(pendreqpay)(locked_tokens)(total_votes))
 };
 
 typedef multi_index<N(candidates), candidate,
-        indexed_by<N(byvotes), const_mem_fun<candidate, uint64_t, &candidate::by_number_votes> >
+        indexed_by<N(byvotes), const_mem_fun<candidate, uint64_t, &candidate::by_number_votes> >,
+        indexed_by<N(byvotesrank), const_mem_fun<candidate, uint64_t, &candidate::by_votes_rank> >,
+        indexed_by<N(bypendingpay), const_mem_fun<candidate, uint64_t, &candidate::by_pending_pay> >
 > candidates_table;
-
-struct candidate2 {
-    name candidate_name;
-    string bio;
-    // Active requested pay used for payment calculations.
-    asset requestedpay;
-    // Requested pay that would be pending until the new period begins. Then it should be moved to requestedpay.
-    asset pendreqpay;
-    asset locked_tokens;
-    uint64_t total_votes;
-
-    name primary_key() const { return candidate_name; }
-
-    uint64_t by_number_votes() const { return static_cast<uint64_t>(total_votes); }
-
-    EOSLIB_SERIALIZE(candidate2,
-                     (candidate_name)(bio)(requestedpay)(pendreqpay)(locked_tokens)(total_votes))
-};
-
-typedef multi_index<N(candidate2), candidate2,
-        indexed_by<N(byvotes), const_mem_fun<candidate2, uint64_t, &candidate2::by_number_votes> >
-> candidates2_table;
 
 // @abi table votes
 struct vote {
@@ -134,13 +116,27 @@ typedef eosio::multi_index<N(votes), vote,
 
 // @abi table pendingpay
 struct pay {
+    uint64_t key;
     name receiver;
     asset quantity;
     string memo;
 
-    account_name primary_key() const { return receiver; }
+    account_name primary_key() const { return key; }
 
-    EOSLIB_SERIALIZE(pay, (receiver)(quantity)(memo))
+    EOSLIB_SERIALIZE(pay, (key)(receiver)(quantity)(memo))
 };
 
 typedef multi_index<N(pendingpay), pay> pending_pay_table;
+
+// @abi table pendingstake
+struct tempstake {
+    account_name sender;
+    asset quantity;
+    string memo;
+
+    account_name primary_key() const { return sender; }
+
+    EOSLIB_SERIALIZE(tempstake, (sender)(quantity)(memo))
+};
+
+typedef multi_index<N(pendingstake), tempstake> pendingstake_table_t;

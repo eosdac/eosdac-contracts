@@ -15,7 +15,11 @@
 	}, {
 		"name": "pay",
 		"base": "",
-		"fields": [{
+		"fields": [
+		{
+        	"name": "key",
+       		"type": "int64"
+        }, {
 			"name": "receiver",
 			"type": "name"
 		}, {
@@ -25,7 +29,20 @@
 			"name": "memo",
 			"type": "string"
 		}]
-	},  {
+	},{
+      		"name": "tempstake",
+      		"base": "",
+      		"fields": [{
+      			"name": "sender",
+      			"type": "name"
+      		}, {
+      			"name": "quantity",
+      			"type": "asset"
+      		}, {
+      			"name": "memo",
+      			"type": "string"
+      		}]
+      	},{
        		"name": "candidate",
        		"base": "",
        		"fields": [{
@@ -260,13 +277,24 @@
 			"name": "pendingpay",
 			"index_type": "i64",
 			"key_names": [
-				"receiver"
+				"key"
 			],
 			"key_types": [
 				"name"
 			],
 			"type": "pay"
 		},
+		{
+            "name": "pendingstake",
+        	"index_type": "i64",
+        	"key_names": [
+        		"sender"
+        	],
+        	"key_types": [
+        		"name"
+        	],
+        	"type": "tempstake"
+        		},
 		{
 			"name": "config",
 			"index_type": "i64",
