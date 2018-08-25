@@ -40,6 +40,11 @@ beforescript = <<~SHELL
   cleos create account eosio #{ACCOUNT_NAME} #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
   cleos create account eosio eosdactoken #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
   cleos create account eosio eosio.token #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
+
+  # Setup for the auth setting.
+  cleos create account eosio dacauthority #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
+  cleos set account permission dacauthority active '{"threshold": 1,"keys": [{"key": "#{CONTRACT_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p dacauthority
+
   if [[ $? != 0 ]] 
     then 
     echo "Failed to create contract account" 
@@ -197,7 +202,7 @@ describe "eosdacelect" do
                 "candidate_name": "testreguser1",
                 "bio": "any bio",
                 "requestedpay": "11.5000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 "locked_tokens": "10.0000 EOSDAC",
                 "total_votes": 0
               }
@@ -358,7 +363,7 @@ describe "eosdacelect" do
               "candidate_name": "testreguser1",
               "bio": "any bio",
               "requestedpay": "11.5000 EOS",
-              "pendreqpay": "0.0000 EOS",
+              "pendreqpay": "0.0000 SYS",
               
               "locked_tokens": "10.0000 EOSDAC",
               "total_votes": 0
@@ -366,15 +371,15 @@ describe "eosdacelect" do
               "candidate_name": "updatebio2",
               "bio": "new bio",
               "requestedpay": "11.5000 EOS",
-              "pendreqpay": "0.0000 EOS",
+              "pendreqpay": "0.0000 SYS",
               
               "locked_tokens": "23.0000 EOSDAC",
               "total_votes": 0
             },{
               "candidate_name": "updatepay2",
               "bio": "any bio",
-              "requestedpay": "21.5000 EOS",
-              "pendreqpay": "41.5000 EOS",
+              "requestedpay": "41.5000 EOS",
+              "pendreqpay": "0.0000 SYS",
               
               "locked_tokens": "23.0000 EOSDAC",
               "total_votes": 0
@@ -505,7 +510,7 @@ describe "eosdacelect" do
                 "candidate_name": "testreguser1",
                 "bio": "any bio",
                 "requestedpay": "11.5000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "10.0000 EOSDAC",
                 "total_votes": 0
@@ -513,15 +518,15 @@ describe "eosdacelect" do
                 "candidate_name": "updatebio2",
                 "bio": "new bio",
                 "requestedpay": "11.5000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
                 "candidate_name": "updatepay2",
                 "bio": "any bio",
-                "requestedpay": "21.5000 EOS",
-                "pendreqpay": "41.5000 EOS",
+                "requestedpay": "41.5000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -529,7 +534,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust1",
                 "bio": "any bio",
                 "requestedpay": "11.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -537,7 +542,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust11",
                 "bio": "any bio",
                 "requestedpay": "16.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -545,7 +550,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust2",
                 "bio": "any bio",
                 "requestedpay": "12.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -553,7 +558,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust3",
                 "bio": "any bio",
                 "requestedpay": "13.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -561,7 +566,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust4",
                 "bio": "any bio",
                 "requestedpay": "14.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -569,7 +574,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust5",
                 "bio": "any bio",
                 "requestedpay": "15.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -577,7 +582,7 @@ describe "eosdacelect" do
                 "candidate_name": "voter1",
                 "bio": "any bio",
                 "requestedpay": "17.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -630,7 +635,7 @@ describe "eosdacelect" do
                 "candidate_name": "testreguser1",
                 "bio": "any bio",
                 "requestedpay": "11.5000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "10.0000 EOSDAC",
                 "total_votes": 0
@@ -638,15 +643,15 @@ describe "eosdacelect" do
                 "candidate_name": "updatebio2",
                 "bio": "new bio",
                 "requestedpay": "11.5000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
                 "candidate_name": "updatepay2",
                 "bio": "any bio",
-                "requestedpay": "21.5000 EOS",
-                "pendreqpay": "41.5000 EOS",
+                "requestedpay": "41.5000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -654,7 +659,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust1",
                 "bio": "any bio",
                 "requestedpay": "11.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -662,7 +667,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust11",
                 "bio": "any bio",
                 "requestedpay": "16.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -670,7 +675,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust2",
                 "bio": "any bio",
                 "requestedpay": "12.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -678,7 +683,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust3",
                 "bio": "any bio",
                 "requestedpay": "13.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -686,7 +691,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust4",
                 "bio": "any bio",
                 "requestedpay": "14.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -694,7 +699,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust5",
                 "bio": "any bio",
                 "requestedpay": "15.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -702,7 +707,7 @@ describe "eosdacelect" do
                 "candidate_name": "voter1",
                 "bio": "any bio",
                 "requestedpay": "17.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -793,7 +798,7 @@ describe "eosdacelect" do
                 "candidate_name": "testreguser1",
                 "bio": "any bio",
                 "requestedpay": "11.5000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "10.0000 EOSDAC",
                 "total_votes": 0
@@ -801,15 +806,15 @@ describe "eosdacelect" do
                 "candidate_name": "updatebio2",
                 "bio": "new bio",
                 "requestedpay": "11.5000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
                 "candidate_name": "updatepay2",
                 "bio": "any bio",
-                "requestedpay": "21.5000 EOS",
-                "pendreqpay": "41.5000 EOS",
+                "requestedpay": "41.5000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -817,7 +822,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust1",
                 "bio": "any bio",
                 "requestedpay": "11.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -825,7 +830,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust11",
                 "bio": "any bio",
                 "requestedpay": "16.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -833,7 +838,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust2",
                 "bio": "any bio",
                 "requestedpay": "12.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -841,7 +846,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust3",
                 "bio": "any bio",
                 "requestedpay": "13.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -849,7 +854,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust4",
                 "bio": "any bio",
                 "requestedpay": "14.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -857,7 +862,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust5",
                 "bio": "any bio",
                 "requestedpay": "15.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -865,7 +870,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedproxy1",
                 "bio": "any bio",
                 "requestedpay": "10.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -873,7 +878,7 @@ describe "eosdacelect" do
                 "candidate_name": "voter1",
                 "bio": "any bio",
                 "requestedpay": "17.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -919,7 +924,7 @@ describe "eosdacelect" do
                 "candidate_name": "testreguser1",
                 "bio": "any bio",
                 "requestedpay": "11.5000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "10.0000 EOSDAC",
                 "total_votes": 0
@@ -927,15 +932,15 @@ describe "eosdacelect" do
                 "candidate_name": "updatebio2",
                 "bio": "new bio",
                 "requestedpay": "11.5000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
                 "candidate_name": "updatepay2",
                 "bio": "any bio",
-                "requestedpay": "21.5000 EOS",
-                "pendreqpay": "41.5000 EOS",
+                "requestedpay": "41.5000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -943,7 +948,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust1",
                 "bio": "any bio",
                 "requestedpay": "11.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -951,7 +956,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust11",
                 "bio": "any bio",
                 "requestedpay": "16.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -959,7 +964,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust2",
                 "bio": "any bio",
                 "requestedpay": "12.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -967,7 +972,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust3",
                 "bio": "any bio",
                 "requestedpay": "13.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -975,7 +980,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust4",
                 "bio": "any bio",
                 "requestedpay": "14.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -983,7 +988,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust5",
                 "bio": "any bio",
                 "requestedpay": "15.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -991,7 +996,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedproxy1",
                 "bio": "any bio",
                 "requestedpay": "10.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -999,7 +1004,7 @@ describe "eosdacelect" do
                 "candidate_name": "voter1",
                 "bio": "any bio",
                 "requestedpay": "17.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -1052,7 +1057,7 @@ describe "eosdacelect" do
                   "candidate_name": "testreguser1",
                   "bio": "any bio",
                   "requestedpay": "11.5000 EOS",
-                  "pendreqpay": "0.0000 EOS",
+                  "pendreqpay": "0.0000 SYS",
                   
                   "locked_tokens": "10.0000 EOSDAC",
                   "total_votes": 0
@@ -1060,15 +1065,15 @@ describe "eosdacelect" do
                   "candidate_name": "updatebio2",
                   "bio": "new bio",
                   "requestedpay": "11.5000 EOS",
-                  "pendreqpay": "0.0000 EOS",
+                  "pendreqpay": "0.0000 SYS",
                   
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0
                 },{
                   "candidate_name": "updatepay2",
                   "bio": "any bio",
-                  "requestedpay": "21.5000 EOS",
-                  "pendreqpay": "41.5000 EOS",
+                  "requestedpay": "41.5000 EOS",
+                  "pendreqpay": "0.0000 SYS",
                   
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0
@@ -1076,7 +1081,7 @@ describe "eosdacelect" do
                   "candidate_name": "votedcust1",
                   "bio": "any bio",
                   "requestedpay": "11.0000 EOS",
-                  "pendreqpay": "0.0000 EOS",
+                  "pendreqpay": "0.0000 SYS",
                   
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0
@@ -1084,7 +1089,7 @@ describe "eosdacelect" do
                   "candidate_name": "votedcust11",
                   "bio": "any bio",
                   "requestedpay": "16.0000 EOS",
-                  "pendreqpay": "0.0000 EOS",
+                  "pendreqpay": "0.0000 SYS",
                   
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0
@@ -1092,7 +1097,7 @@ describe "eosdacelect" do
                   "candidate_name": "votedcust2",
                   "bio": "any bio",
                   "requestedpay": "12.0000 EOS",
-                  "pendreqpay": "0.0000 EOS",
+                  "pendreqpay": "0.0000 SYS",
                   
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0
@@ -1100,7 +1105,7 @@ describe "eosdacelect" do
                   "candidate_name": "votedcust3",
                   "bio": "any bio",
                   "requestedpay": "13.0000 EOS",
-                  "pendreqpay": "0.0000 EOS",
+                  "pendreqpay": "0.0000 SYS",
                   
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0
@@ -1108,7 +1113,7 @@ describe "eosdacelect" do
                   "candidate_name": "votedcust4",
                   "bio": "any bio",
                   "requestedpay": "14.0000 EOS",
-                  "pendreqpay": "0.0000 EOS",
+                  "pendreqpay": "0.0000 SYS",
                   
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0
@@ -1116,7 +1121,7 @@ describe "eosdacelect" do
                   "candidate_name": "votedcust5",
                   "bio": "any bio",
                   "requestedpay": "15.0000 EOS",
-                  "pendreqpay": "0.0000 EOS",
+                  "pendreqpay": "0.0000 SYS",
                   
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0
@@ -1124,7 +1129,7 @@ describe "eosdacelect" do
                   "candidate_name": "votedproxy1",
                   "bio": "any bio",
                   "requestedpay": "10.0000 EOS",
-                  "pendreqpay": "0.0000 EOS",
+                  "pendreqpay": "0.0000 SYS",
                   
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0
@@ -1132,7 +1137,7 @@ describe "eosdacelect" do
                   "candidate_name": "voter1",
                   "bio": "any bio",
                   "requestedpay": "17.0000 EOS",
-                  "pendreqpay": "0.0000 EOS",
+                  "pendreqpay": "0.0000 SYS",
                   
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0
@@ -1227,7 +1232,7 @@ describe "eosdacelect" do
                 "candidate_name": "testreguser1",
                 "bio": "any bio",
                 "requestedpay": "11.5000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "10.0000 EOSDAC",
                 "total_votes": 0
@@ -1235,7 +1240,7 @@ describe "eosdacelect" do
                 "candidate_name": "updatebio2",
                 "bio": "new bio",
                 "requestedpay": "11.5000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -1243,7 +1248,7 @@ describe "eosdacelect" do
                 "candidate_name": "updatepay2",
                 "bio": "any bio",
                 "requestedpay": "41.5000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -1251,7 +1256,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust1",
                 "bio": "any bio",
                 "requestedpay": "11.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 1860000
@@ -1259,7 +1264,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust11",
                 "bio": "any bio",
                 "requestedpay": "16.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -1267,7 +1272,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust2",
                 "bio": "any bio",
                 "requestedpay": "12.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 2690000
@@ -1275,7 +1280,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust3",
                 "bio": "any bio",
                 "requestedpay": "13.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 2690000
@@ -1283,7 +1288,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust4",
                 "bio": "any bio",
                 "requestedpay": "14.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 830000
@@ -1291,7 +1296,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust5",
                 "bio": "any bio",
                 "requestedpay": "15.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -1299,7 +1304,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedproxy1",
                 "bio": "any bio",
                 "requestedpay": "10.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -1307,7 +1312,7 @@ describe "eosdacelect" do
                 "candidate_name": "voter1",
                 "bio": "any bio",
                 "requestedpay": "17.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -1401,12 +1406,12 @@ describe "eosdacelect" do
       command %(cleos get table daccustodian daccustodian candidates --limit 20), allow_error: true
       it do
         expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-                                          {
+        {
             "rows": [{
                 "candidate_name": "testreguser1",
                 "bio": "any bio",
                 "requestedpay": "11.5000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "10.0000 EOSDAC",
                 "total_votes": 0
@@ -1414,7 +1419,7 @@ describe "eosdacelect" do
                 "candidate_name": "updatebio2",
                 "bio": "new bio",
                 "requestedpay": "11.5000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -1422,7 +1427,7 @@ describe "eosdacelect" do
                 "candidate_name": "updatepay2",
                 "bio": "any bio",
                 "requestedpay": "41.5000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -1430,7 +1435,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust1",
                 "bio": "any bio",
                 "requestedpay": "11.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 1860000
@@ -1438,7 +1443,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust11",
                 "bio": "any bio",
                 "requestedpay": "16.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -1446,7 +1451,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust2",
                 "bio": "any bio",
                 "requestedpay": "12.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 2690000
@@ -1454,7 +1459,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust3",
                 "bio": "any bio",
                 "requestedpay": "13.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 2690000
@@ -1462,7 +1467,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust4",
                 "bio": "any bio",
                 "requestedpay": "14.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 830000
@@ -1470,7 +1475,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedcust5",
                 "bio": "any bio",
                 "requestedpay": "15.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -1478,7 +1483,7 @@ describe "eosdacelect" do
                 "candidate_name": "votedproxy1",
                 "bio": "any bio",
                 "requestedpay": "10.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -1486,7 +1491,7 @@ describe "eosdacelect" do
                 "candidate_name": "voter1",
                 "bio": "any bio",
                 "requestedpay": "17.0000 EOS",
-                "pendreqpay": "0.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
                 
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
@@ -1495,6 +1500,35 @@ describe "eosdacelect" do
             "more": false
           }
 
+
+        JSON
+      end
+    end
+
+    context "the custodians table" do
+      command %(cleos get table daccustodian daccustodian custodians --limit 20), allow_error: true
+      it do
+        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
+      {
+        "rows": [{
+            "cust_name": "votedcust1",
+            "bio": "any bio",
+            "requestedpay": "11.0000 EOS",
+            "total_votes": 1860000
+          },{
+            "cust_name": "votedcust2",
+            "bio": "any bio",
+            "requestedpay": "12.0000 EOS",
+            "total_votes": 2690000
+          },{
+            "cust_name": "votedcust3",
+            "bio": "any bio",
+            "requestedpay": "13.0000 EOS",
+            "total_votes": 2690000
+          }
+        ],
+        "more": false
+      }
 
         JSON
       end
@@ -1525,7 +1559,7 @@ describe "eosdacelect" do
 
         it do
           expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-                        {
+          {
               "rows": [{
                 "key": 0,
                   "receiver": "unreguser2",

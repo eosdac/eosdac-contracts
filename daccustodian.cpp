@@ -2,6 +2,10 @@
 #include <eosiolib/singleton.hpp>
 #include <eosiolib/asset.hpp>
 #include <eosiolib/transaction.hpp>
+
+#include <eosiolib/multi_index.hpp>
+#include <eosiolib/public_key.hpp>
+
 #include <string>
 
 #include "daccustodian.hpp"
@@ -107,7 +111,7 @@ public:
             c.candidate_name = cand;
             c.bio = bio;
             c.requestedpay = requestedpay;
-            c.pendreqpay = asset(0, PAYMENT_TOKEN);
+//            c.pendreqpay = asset(0, PAYMENT_TOKEN);
             c.locked_tokens = pending->quantity;
             c.total_votes = 0;
         });
@@ -156,7 +160,7 @@ public:
         const auto &reg_candidate = registered_candidates.get(cand, "Candidate is not already registered.");
 
         registered_candidates.modify(reg_candidate, 0, [&](candidate &c) {
-            c.pendreqpay = requestedpay;
+            c.requestedpay = requestedpay;
         });
     }
 
@@ -228,10 +232,11 @@ public:
          */
 
         // These actions a separated out for clarity and incase we want to be able to call them individually the change would be minimal.
-        distributepay(earlyelect);
-        clearOldVotes();
-        tallyNewVotes();
-        configureForNextPeriod();
+        distpay(earlyelect);
+        clearvotes();
+        tallyvotes();
+        configperiod();
+//        setauths();
 
 //        Schedule the the next election cycle at the end of the period.
 //        transaction nextTrans{};
@@ -298,7 +303,9 @@ private:
         return false; // temp function as part of the earlyelect logic.
     }
 
-    void distributepay(bool earlyelect) {
+public:
+
+    void distpay(bool earlyelect) {
         auto idx = registered_candidates.get_index<N(byvotes)>();
         auto it = idx.rbegin();
 
@@ -344,7 +351,7 @@ private:
         print("distribute pay");
     }
 
-    void clearOldVotes() {
+    void clearvotes() {
         auto voteitr = votes_cast_by_members.begin();
         while (voteitr != votes_cast_by_members.end()) {
             votes_cast_by_members.modify(*voteitr, _self, [&](vote &v) {
@@ -363,7 +370,7 @@ private:
         print("clear old votes");
     }
 
-    void tallyNewVotes() {
+    void tallyvotes() {
         auto byProxyIdx = votes_cast_by_members.get_index<N(byproxy)>();
         uint64_t asset_name = configs().lockupasset.symbol.name();
 
@@ -406,28 +413,38 @@ private:
         print("tally new votes");
     }
 
-    void configureForNextPeriod() {
-        auto byPendingPayIdx = registered_candidates.get_index<N(bypendingpay)>();
-        auto it = byPendingPayIdx.rbegin();
-        auto end = byPendingPayIdx.rend();
+    void configperiod() {
 
+        custodians_table custodians(_self, _self);
+//        Empty custodians first.
+        auto cust_itr = custodians.begin();
+        while (cust_itr != custodians.end()) {
+            cust_itr = custodians.erase(cust_itr);
+        }
+
+        //fill custodians table
+        auto byvotes = registered_candidates.get_index<N(byvotesrank)>();
+        auto cand_itr = byvotes.begin();
         int i = 0;
         int32_t electcount = configs().numelected;
-        while (it != end && it->pendreqpay.amount > 0) {
-            registered_candidates.modify(*it, _self, [&](candidate &cand) {
-                // Move the pending request pay to the request pay for the next period.
-                cand.requestedpay = cand.pendreqpay;
-                // zeros the pending request to prevent overwrite of requestedPay on the next cycle.
-                cand.pendreqpay = asset(0, PAYMENT_TOKEN);
+        while (cand_itr != byvotes.end() && i < electcount && cand_itr->total_votes > 0) {
+            custodians.emplace(_self, [&](custodian &c) {
+                c.cust_name = cand_itr->candidate_name;
+                c.bio = cand_itr->bio;
+                c.requestedpay = cand_itr->requestedpay;
+                c.total_votes = cand_itr->total_votes;
             });
-            ++it;
-            ++i;
+            i++;
+            cand_itr++;
         }
         print("configureForNextPeriod");
     }
 
-public:
+    void setauths() {
+    }
+
     void migrate(name cand) {
+        config_singleton.remove();
 
         //Copy to a holding table - Enable this for the first step
         /*
@@ -496,4 +513,10 @@ EOSIO_ABI_EX(daccustodian,
                      (paypending)
                      (migrate)
                      (transfer)
-)
+
+                     (distpay)
+                     (clearvotes)
+                     (tallyvotes)
+                     (configperiod)
+                     (setauths)
+             )

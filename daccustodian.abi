@@ -13,13 +13,23 @@
 			"type": "string"
 		}]
 	}, {
+		"name": "distpay",
+		"base": "",
+		"fields": [{
+			"name": "earlyelect",
+			"type": "bool"
+		}]
+	}, {
+		"name": "void",
+		"base": "",
+		"fields": []
+	}, {
 		"name": "pay",
 		"base": "",
-		"fields": [
-		{
-        	"name": "key",
-       		"type": "int64"
-        }, {
+		"fields": [{
+			"name": "key",
+			"type": "int64"
+		}, {
 			"name": "receiver",
 			"type": "name"
 		}, {
@@ -29,42 +39,58 @@
 			"name": "memo",
 			"type": "string"
 		}]
-	},{
-      		"name": "tempstake",
-      		"base": "",
-      		"fields": [{
-      			"name": "sender",
-      			"type": "name"
-      		}, {
-      			"name": "quantity",
-      			"type": "asset"
-      		}, {
-      			"name": "memo",
-      			"type": "string"
-      		}]
-      	},{
-       		"name": "candidate",
-       		"base": "",
-       		"fields": [{
-       			"name": "candidate_name",
-       			"type": "name"
-       		}, {
-       			"name": "bio",
-       			"type": "string"
-       		}, {
-       			"name": "requestedpay",
-       			"type": "asset"
-       		}, {
-       			"name": "pendreqpay",
-       			"type": "asset"
-       		}, {
-       			"name": "locked_tokens",
-       			"type": "asset"
-       		}, {
-       			"name": "total_votes",
-       			"type": "int64"
-       		}]
-       	}, {
+	}, {
+		"name": "tempstake",
+		"base": "",
+		"fields": [{
+			"name": "sender",
+			"type": "name"
+		}, {
+			"name": "quantity",
+			"type": "asset"
+		}, {
+			"name": "memo",
+			"type": "string"
+		}]
+	}, {
+		"name": "candidate",
+		"base": "",
+		"fields": [{
+			"name": "candidate_name",
+			"type": "name"
+		}, {
+			"name": "bio",
+			"type": "string"
+		}, {
+			"name": "requestedpay",
+			"type": "asset"
+		}, {
+			"name": "pendreqpay",
+			"type": "asset"
+		}, {
+			"name": "locked_tokens",
+			"type": "asset"
+		}, {
+			"name": "total_votes",
+			"type": "int64"
+		}]
+	}, {
+		"name": "custodian",
+		"base": "",
+		"fields": [{
+			"name": "cust_name",
+			"type": "name"
+		}, {
+			"name": "bio",
+			"type": "string"
+		}, {
+			"name": "requestedpay",
+			"type": "asset"
+		}, {
+			"name": "total_votes",
+			"type": "int64"
+		}]
+	}, {
 		"name": "vote",
 		"base": "",
 		"fields": [{
@@ -204,6 +230,31 @@
 			"ricardian_contract": ""
 		},
 		{
+			"name": "distpay",
+			"type": "distpay",
+			"ricardian_contract": ""
+		},
+		{
+			"name": "clearvotes",
+			"type": "void",
+			"ricardian_contract": ""
+		},
+		{
+			"name": "tallyvotes",
+			"type": "void",
+			"ricardian_contract": ""
+		},
+		{
+			"name": "configperiod",
+			"type": "void",
+			"ricardian_contract": ""
+		},
+		{
+			"name": "setauths",
+			"type": "void",
+			"ricardian_contract": ""
+		},
+		{
 			"name": "updateconfig",
 			"type": "updateconfig",
 			"ricardian_contract": "## ACTION: updateconfig\n**PARAMETERS:**\n\n__lockupasset__ is an asset to be locked up as part of the registering process for a custodian passed to the action in the format: \"10.0000 EOSDAC\". default value: \"10.0000 EOSDAC\"\n\n__maxvotes__ is a integer to configure the maximum number of allowed votes for a registered member in any single voting action. The default value is 5.\n\n__numelected__ is a integer to configure the number of candidates that will be elected as custodians of the dac. default value is 12.\n\n**INTENT:** The intent of {{ updateconfig }} is update the configuration for the running contract of selected parameters without needing change the source code. This requires a privilaged account.\n\n**TERM:** The action lasts for the duration of the processing of the contract."
@@ -263,6 +314,16 @@
 			],
 			"type": "candidate"
 		}, {
+			"name": "custodians",
+			"index_type": "i64",
+			"key_names": [
+				"cust_name"
+			],
+			"key_types": [
+				"name"
+			],
+			"type": "custodian"
+		}, {
 			"name": "votes",
 			"index_type": "i64",
 			"key_names": [
@@ -285,16 +346,16 @@
 			"type": "pay"
 		},
 		{
-            "name": "pendingstake",
-        	"index_type": "i64",
-        	"key_names": [
-        		"sender"
-        	],
-        	"key_types": [
-        		"name"
-        	],
-        	"type": "tempstake"
-        		},
+			"name": "pendingstake",
+			"index_type": "i64",
+			"key_names": [
+				"sender"
+			],
+			"key_types": [
+				"name"
+			],
+			"type": "tempstake"
+		},
 		{
 			"name": "config",
 			"index_type": "i64",

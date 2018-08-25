@@ -19,12 +19,12 @@ struct member {
 
 // This is a reference to the termsinfo struct as used in the eosdactoken contract.
 struct termsinfo {
-  string terms;
-  string hash;
-  uint64_t version;
+    string terms;
+    string hash;
+    uint64_t version;
 
-  uint64_t primary_key() const { return version; }
-  EOSLIB_SERIALIZE(termsinfo, (terms)(hash)(version))
+    uint64_t primary_key() const { return version; }
+    EOSLIB_SERIALIZE(termsinfo, (terms)(hash)(version))
 };
 
 typedef multi_index<N(memberterms), termsinfo> memterms;
@@ -76,7 +76,7 @@ struct candidate {
     // Active requested pay used for payment calculations.
     asset requestedpay;
     // Requested pay that would be pending until the new period begins. Then it should be moved to requestedpay.
-    asset pendreqpay;
+    asset pendreqpay; // no longer needed should migrate out.
     asset locked_tokens;
     uint64_t total_votes;
 
@@ -84,7 +84,7 @@ struct candidate {
 
     uint64_t by_number_votes() const { return static_cast<uint64_t>(total_votes); }
     uint64_t by_votes_rank() const { return static_cast<uint64_t>(UINT64_MAX - total_votes); }
-    uint64_t by_pending_pay() const { return static_cast<uint64_t>(pendreqpay.amount); }
+    uint64_t by_pending_pay() const { return static_cast<uint64_t>(requestedpay.amount); }
 
     EOSLIB_SERIALIZE(candidate,
                      (candidate_name)(bio)(requestedpay)(pendreqpay)(locked_tokens)(total_votes))
@@ -95,6 +95,29 @@ typedef multi_index<N(candidates), candidate,
         indexed_by<N(byvotesrank), const_mem_fun<candidate, uint64_t, &candidate::by_votes_rank> >,
         indexed_by<N(bypendingpay), const_mem_fun<candidate, uint64_t, &candidate::by_pending_pay> >
 > candidates_table;
+
+
+struct custodian {
+    name cust_name;
+    string bio;
+    // Active requested pay used for payment calculations.
+    asset requestedpay;
+    uint64_t total_votes;
+
+    name primary_key() const { return cust_name; }
+
+    uint64_t by_votes_rank() const { return static_cast<uint64_t>(UINT64_MAX - total_votes); }
+    uint64_t by_requested_pay() const { return static_cast<uint64_t>(requestedpay.amount); }
+
+    EOSLIB_SERIALIZE(custodian,
+                     (cust_name)(bio)(requestedpay)(total_votes))
+};
+
+
+typedef multi_index<N(custodians), custodian,
+        indexed_by<N(byvotesrank), const_mem_fun<custodian, uint64_t, &custodian::by_votes_rank> >,
+        indexed_by<N(byreqpay), const_mem_fun<custodian, uint64_t, &custodian::by_requested_pay> >
+> custodians_table;
 
 // @abi table votes
 struct vote {
@@ -140,3 +163,41 @@ struct tempstake {
 };
 
 typedef multi_index<N(pendingstake), tempstake> pendingstake_table_t;
+
+//Authority Structs
+namespace eosiosystem {
+
+    struct key_weight {
+        eosio::public_key   key;
+        weight_type         weight;
+
+        // explicit serialization macro is not necessary, used here only to improve compilation time
+        EOSLIB_SERIALIZE(key_weight, (key)(weight))
+    };
+
+    struct permission_level_weight {
+        permission_level    permission;
+        weight_type         weight;
+
+        // explicit serialization macro is not necessary, used here only to improve compilation time
+        EOSLIB_SERIALIZE(permission_level_weight, (permission)(weight))
+    };
+
+    struct wait_weight {
+        uint32_t     wait_sec;
+        weight_type  weight;
+
+        // explicit serialization macro is not necessary, used here only to improve compilation time
+        EOSLIB_SERIALIZE( wait_weight, (wait_sec)(weight) )
+    };
+
+    struct authority {
+
+        uint32_t                          threshold;
+        vector<key_weight>                keys;
+        vector<permission_level_weight>   accounts;
+        vector<wait_weight>               waits;
+
+        EOSLIB_SERIALIZE(authority, (threshold)(keys)(accounts)(waits))
+    };
+}
