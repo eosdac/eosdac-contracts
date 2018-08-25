@@ -40,7 +40,7 @@ public:
         currentState = contract_state.get_or_default(contr_state());
     }
 
-    void updateconfig(asset lockupasset, uint8_t maxvotes, uint8_t numelected, uint32_t periodlength, name tokcontr) {
+    void updateconfig(asset lockupasset, uint8_t maxvotes, uint8_t numelected, uint32_t periodlength, name tokcontr, name authaccount, uint8_t auththresh) {
         require_auth(_self);
 
         // If the registered candidates is not empty prevent a change to the lockup asset symbol.
@@ -48,7 +48,10 @@ public:
             eosio_assert(lockupasset.symbol == configs().lockupasset.symbol,
                          "The provided asset cannot be changed while there are registered candidates due to current staking in the old asset.");
         }
-        contr_config newconfig{lockupasset, maxvotes, numelected, periodlength, tokcontr};
+
+        eosio_assert(auththresh <= numelected, "The auth threshold can never be satisfied with a value greater than the number of elected custodians");
+
+        contr_config newconfig{lockupasset, maxvotes, numelected, periodlength, tokcontr, authaccount, auththresh};
         config_singleton.set(newconfig, _self);
     }
 
@@ -441,10 +444,40 @@ public:
     }
 
     void setauths() {
+
+        custodians_table custodians(_self, _self);
+
+        account_name accountToChange = configs().authaccount;
+
+        vector<eosiosystem::permission_level_weight> accounts;
+
+        for(auto it = custodians.begin(); it != custodians.end(); it++) {
+            eosiosystem::permission_level_weight account{
+                    .permission = eosio::permission_level(it->cust_name, N(active)),
+                    .weight = (uint16_t)1,
+            };
+            accounts.push_back(account);
+        }
+
+        // Setup authority for contract. Choose either a new key, or account, or both.
+        eosiosystem::authority contract_authority{
+                .threshold = configs().auththresh,
+                .keys = {},
+                .accounts = accounts
+                };
+
+        // Remove contract permissions and replace with changeto account.
+        action(permission_level{accountToChange, N(active)}, // dacauthority
+               N(eosio), N(updateauth),
+               std::make_tuple(
+                       accountToChange,
+                       N(active),
+                       N(owner),
+                       contract_authority))
+                .send();
     }
 
     void migrate(name cand) {
-        config_singleton.remove();
 
         //Copy to a holding table - Enable this for the first step
         /*

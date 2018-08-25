@@ -121,20 +121,20 @@ describe "eosdacelect" do
   describe "updateconfig" do
     context "before being called with token contract will prevent other actions from working" do
       context "with valid and registered member" do
-        command %(cleos push action daccustodian regcandidate '{ "cand": "testreguser1", "bio": "any bio", "requestedpay": "11.5000 EOS"}' -p testreguser1), allow_error: true
+        command %(cleos push action daccustodian regcandidate '{ "cand": "testreguser1", "bio": "any bio", "requestedpay": "11.5000 EOS", "authaccount": "dacauthority", "auththresh": 3}' -p testreguser1), allow_error: true
         its(:stderr) {is_expected.to include('Error 3050003')}
         # its(:stderr) {is_expected.to include('no error')}
       end
     end
 
     context "with invalid auth" do
-      command %(cleos push action daccustodian updateconfig '{ "lockupasset": "13.0000 EOSDAC", "maxvotes": 4, "periodlength": 604800 , "numelected": 3, "tokcontr": "eosdactoken"}' -p testreguser1), allow_error: true
+      command %(cleos push action daccustodian updateconfig '{ "lockupasset": "13.0000 EOSDAC", "maxvotes": 4, "periodlength": 604800 , "numelected": 3, "tokcontr": "eosdactoken", "authaccount": "dacauthority", "auththresh": 3}' -p testreguser1), allow_error: true
       # its(:stdout) {is_expected.to include('daccustodian::regcandidate')}
       its(:stderr) {is_expected.to include('Error 3090004')}
     end
 
     context "with valid auth" do
-      command %(cleos push action daccustodian updateconfig '{ "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800, "numelected": 3, "tokcontr": "eosdactoken"}' -p daccustodian), allow_error: true
+      command %(cleos push action daccustodian updateconfig '{ "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800, "numelected": 3, "tokcontr": "eosdactoken", "authaccount": "dacauthority", "auththresh": 3}' -p daccustodian), allow_error: true
       # its(:stdout) {is_expected.to include('daccustodian::regcandidate')}
       its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
     end
@@ -228,8 +228,7 @@ describe "eosdacelect" do
 
   context "To ensure behaviours change after updateconfig" do
     context "updateconfigs with valid auth" do
-      command %(cleos push action daccustodian updateconfig '{ "lockupasset": "23.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800, "numelected": 3, "tokcontr": "eosdactoken"}' -p daccustodian), allow_error: true
-      # its(:stdout) {is_expected.to include('daccustodian::regcandidate')}
+      command %(cleos push action daccustodian updateconfig '{ "lockupasset": "23.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800, "numelected": 3, "tokcontr": "eosdactoken", "authaccount": "dacauthority", "auththresh": 3}' -p daccustodian), allow_error: true
       its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
     end
   end
@@ -264,7 +263,6 @@ describe "eosdacelect" do
     context "with valid auth but not registered" do
       command %(cleos push action daccustodian unregcand '{ "cand": "unreguser1"}' -p unreguser1), allow_error: true
       its(:stderr) {is_expected.to include('Error 3050003')}
-      # its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
     end
 
     context "with valid auth" do
@@ -304,13 +302,11 @@ describe "eosdacelect" do
     context "with valid auth but not registered" do
       command %(cleos push action daccustodian updatebio '{ "cand": "updatebio1", "bio": "new bio"}' -p updatebio1), allow_error: true
       its(:stderr) {is_expected.to include('Error 3050003')}
-      # its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
     end
 
     context "with valid auth" do
       command %(cleos push action daccustodian updatebio '{ "cand": "updatebio2", "bio": "new bio"}' -p updatebio2), allow_error: true
       its(:stdout) {is_expected.to include('daccustodian::updatebio')}
-      # its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
     end
   end
 
@@ -344,13 +340,11 @@ describe "eosdacelect" do
     context "with valid auth but not registered" do
       command %(cleos push action daccustodian updatereqpay '{ "cand": "updatepay1", "requestedpay": "31.5000 EOS"}' -p updatepay1), allow_error: true
       its(:stderr) {is_expected.to include('Error 3050003')}
-      # its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
     end
 
     context "with valid auth" do
       command %(cleos push action daccustodian updatereqpay '{ "cand": "updatepay2", "requestedpay": "41.5000 EOS"}' -p updatepay2), allow_error: true
       its(:stdout) {is_expected.to include('daccustodian::updatereqpay')}
-      # its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
     end
   end
 
@@ -458,19 +452,16 @@ describe "eosdacelect" do
     context "not registered" do
       command %(cleos push action daccustodian votecust '{ "voter": "unregvoter", "newvotes": ["votedcust1","votedcust2","votedcust3","votedcust4","votedcust5"]}' -p unregvoter), allow_error: true
       its(:stderr) {is_expected.to include('Error 3050003')}
-      # its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
     end
 
     context "exceeded allowed number of votes" do
       command %(cleos push action daccustodian votecust '{ "voter": "voter1", "newvotes": ["voter1","votedcust2","votedcust3","votedcust4","votedcust5", "votedcust11"]}' -p voter1), allow_error: true
       its(:stderr) {is_expected.to include('Error 3050003')}
-      # its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
     end
 
     context "Voted for the same candidate multiple times" do
       command %(cleos push action daccustodian votecust '{ "voter": "voter1", "newvotes": ["votedcust2","votedcust3","votedcust2","votedcust5", "votedcust11"]}' -p voter1), allow_error: true
       its(:stderr) {is_expected.to include('Added duplicate votes for the same candidate')}
-      # its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
     end
 
     context "with valid auth create new vote" do
@@ -756,13 +747,11 @@ describe "eosdacelect" do
     context "not registered" do
       command %(cleos push action daccustodian voteproxy '{ "voter": "unregvoter", "proxy": "votedproxy1"}' -p unregvoter), allow_error: true
       its(:stderr) {is_expected.to include('Error 3050003')}
-      # its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
     end
 
     context "voting for self" do
       command %(cleos push action daccustodian voteproxy '{ "voter": "voter1", "proxy":"voter1"}' -p voter1), allow_error: true
       its(:stderr) {is_expected.to include('Error 3050003')}
-      # its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
     end
 
     context "with valid auth create new vote" do

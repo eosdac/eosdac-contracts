@@ -52,7 +52,22 @@ struct contr_config {
     //The eosdac compatible token contract this contract should call to for member reg info
     name tokencontr;
 
-    EOSLIB_SERIALIZE(contr_config, (lockupasset)(maxvotes)(numelected)(periodlength)(tokencontr))
+    // account to have active auth set with all all custodians on the newperiod.
+    account_name authaccount = string_to_name("dacauthority");
+
+    // required number of agreed custodians on the auth set
+    uint8_t auththresh;
+
+    EOSLIB_SERIALIZE(contr_config,
+                     (lockupasset)
+                             (maxvotes)
+                             (numelected)
+                             (periodlength)
+                             (tokencontr)
+
+                             (authaccount)
+                             (auththresh)
+    )
 };
 
 typedef singleton<N(config), contr_config> configscontainer;

@@ -124,6 +124,12 @@
 		}, {
 			"name": "tokcontr",
 			"type": "name"
+		}, {
+			"name": "authaccount",
+			"type": "name"
+		}, {
+			"name": "auththresh",
+			"type": "uint8"
 		}]
 	}, {
 		"name": "regcandidate",
