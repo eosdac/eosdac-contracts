@@ -478,6 +478,8 @@ public:
     }
 
     void migrate(name cand) {
+        configscontainer conf(_self, _self);
+        conf.remove();
 
         //Copy to a holding table - Enable this for the first step
         /*
