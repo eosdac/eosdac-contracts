@@ -1,6 +1,5 @@
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/multi_index.hpp>
-#include <eosiolib/eosio.hpp>
 
 using namespace eosio;
 using namespace std;
@@ -95,7 +94,7 @@ struct candidate {
     asset locked_tokens;
     uint64_t total_votes;
 
-    name primary_key() const { return candidate_name; }
+    account_name primary_key() const { return static_cast<uint64_t>(candidate_name); }
 
     uint64_t by_number_votes() const { return static_cast<uint64_t>(total_votes); }
     uint64_t by_votes_rank() const { return static_cast<uint64_t>(UINT64_MAX - total_votes); }
@@ -106,8 +105,9 @@ struct candidate {
 };
 
 typedef multi_index<N(candidates), candidate,
-        indexed_by<N(byvotes), const_mem_fun<candidate, uint64_t, &candidate::by_number_votes> >,
-        indexed_by<N(byvotesrank), const_mem_fun<candidate, uint64_t, &candidate::by_votes_rank> >,
+        indexed_by<N(bycandidate),  const_mem_fun<candidate, account_name, &candidate::primary_key> >,
+        indexed_by<N(byvotes),      const_mem_fun<candidate, uint64_t, &candidate::by_number_votes> >,
+        indexed_by<N(byvotesrank),  const_mem_fun<candidate, uint64_t, &candidate::by_votes_rank> >,
         indexed_by<N(bypendingpay), const_mem_fun<candidate, uint64_t, &candidate::by_pending_pay> >
 > candidates_table;
 
@@ -141,7 +141,7 @@ struct vote {
     int64_t weight;
     vector<name> candidates;
 
-    account_name primary_key() const { return voter; }
+    account_name primary_key() const { return static_cast<uint64_t>(voter); }
 
     account_name by_proxy() const { return static_cast<uint64_t>(proxy); }
 

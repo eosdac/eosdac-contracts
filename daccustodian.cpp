@@ -16,7 +16,7 @@ using eosio::print;
 
 class daccustodian : public contract {
 
-private:
+private: // Variables used throughout the other actions.
     configscontainer config_singleton;
     statecontainer contract_state;
     candidates_table registered_candidates;
@@ -40,7 +40,15 @@ public:
         currentState = contract_state.get_or_default(contr_state());
     }
 
-    void updateconfig(asset lockupasset, uint8_t maxvotes, uint8_t numelected, uint32_t periodlength, name tokcontr, name authaccount, uint8_t auththresh) {
+    void updateconfig(
+            asset lockupasset,
+            uint8_t maxvotes,
+            uint8_t numelected,
+            uint32_t periodlength,
+            name tokcontr,
+            name authaccount,
+            uint8_t auththresh) {
+
         require_auth(_self);
 
         // If the registered candidates is not empty prevent a change to the lockup asset symbol.
@@ -49,18 +57,20 @@ public:
                          "The provided asset cannot be changed while there are registered candidates due to current staking in the old asset.");
         }
 
-        eosio_assert(auththresh <= numelected, "The auth threshold can never be satisfied with a value greater than the number of elected custodians");
+        eosio_assert(auththresh <= numelected,
+                     "The auth threshold can never be satisfied with a value greater than the number of elected custodians");
 
         contr_config newconfig{lockupasset, maxvotes, numelected, periodlength, tokcontr, authaccount, auththresh};
         config_singleton.set(newconfig, _self);
     }
 
+
 // Action to listen to from the associated token contract to ensure registering should be allowed.
-    void transfer(account_name from,
-                  account_name to,
+    void transfer(name from,
+                  name to,
                   asset quantity,
                   string memo) {
-        print("listening to transfer with memo == dacaccountId");
+        eosio::print("\nlistening to transfer with memo == dacaccountId");
         if (to == _self) {
             account_name dacId = eosio::string_to_name(memo.c_str());
             if (is_account(dacId)) {
@@ -79,6 +89,21 @@ public:
                 }
             }
         }
+
+        eosio::print("\n > transfer from : ", from, " to: ", to, " quantity: ", quantity);
+
+        // Update vote weight for the 'from' in the transfer if vote exists
+        auto existingVote = votes_cast_by_members.find(from);
+        if (existingVote != votes_cast_by_members.end()) {
+            updateVoteWeights(existingVote->candidates, -quantity.amount);
+        }
+
+        // Update vote weight for the 'to' in the transfer if vote exists
+        existingVote = votes_cast_by_members.find(to);
+        if (existingVote != votes_cast_by_members.end()) {
+            updateVoteWeights(existingVote->candidates, quantity.amount);
+        }
+
     }
 
     void regcandidate(name cand, string bio, asset requestedpay) {
@@ -174,19 +199,22 @@ public:
 
         eosio_assert(newvotes.size() <= configs().maxvotes, "Max number of allowed votes was exceeded.");
         std::set<name> dupSet{};
-        for_each(newvotes.begin(), newvotes.end(), [&] (name& v) {
-            eosio_assert(dupSet.insert(v).second, "Added duplicate votes for the same candidate");
-        });
+        for (name vote: newvotes) {
+            eosio_assert(dupSet.insert(vote).second, "Added duplicate votes for the same candidate");
+
+        }
 
         // Find a vote that has been cast by this voter previously.
         auto existingVote = votes_cast_by_members.find(voter);
         if (existingVote != votes_cast_by_members.end()) {
+            modifyVoteWeights(voter, existingVote->candidates, newvotes);
 
             votes_cast_by_members.modify(existingVote, _self, [&](vote &v) {
                 v.candidates = newvotes;
                 v.proxy = name();
             });
         } else {
+            modifyVoteWeights(voter, {}, newvotes);
             votes_cast_by_members.emplace(_self, [&](vote &v) {
                 v.voter = voter;
                 v.candidates = newvotes;
@@ -281,7 +309,7 @@ public:
         }
     }
 
-private:
+private: // Private helper methods used by other actions.
 
     contr_config configs() {
         contr_config conf = config_singleton.get_or_default(contr_config());
@@ -306,7 +334,49 @@ private:
         return false; // temp function as part of the earlyelect logic.
     }
 
-public:
+    void updateVoteWeight(name custodian, int64_t weight) {
+        if (weight == 0) {
+            print("\n Vote has no weight - No need to contrinue.");
+        }
+
+        auto candItr = registered_candidates.find(custodian);
+        if (candItr == registered_candidates.end()) {
+            eosio::print("Candidate not found while updating from a transfer: ", custodian);
+            return; // trying to avoid throwing errors from here since it's unrelated to a transfer action.?!?!?!?!
+        }
+
+        registered_candidates.modify(candItr, _self, [&](auto &c) {
+            c.total_votes += weight;
+            eosio::print("\nchanging vote weight: ", custodian, " by ", weight);
+        });
+    }
+
+    void updateVoteWeights(const vector<name> &votes, int64_t vote_weight) {
+        for (const auto &cust : votes) {
+            updateVoteWeight(cust, vote_weight);
+        }
+    }
+
+    void modifyVoteWeights(name voter, vector<name> oldVotes, vector<name> newVotes) {
+        // This could be optimised with set diffing to avoid remove then add for unchanged votes. - later
+        eosio::print(" -: Modify Vote weights", voter);
+
+        uint64_t asset_name = configs().lockupasset.symbol.name();
+
+        accounts accountstable(configs().tokencontr, voter);
+        const auto ac = accountstable.find(asset_name);
+        if (ac == accountstable.end()) {
+            print("voter has no balance - no need to update vote weights");
+            return;
+        }
+
+        int64_t vote_weight = ac->balance.amount;
+
+        updateVoteWeights(oldVotes, -vote_weight);
+        updateVoteWeights(newVotes, vote_weight);
+    }
+
+public: // Exposed publicy for debugging only.
 
     void distpay(bool earlyelect) {
         auto idx = registered_candidates.get_index<N(byvotes)>();
@@ -363,8 +433,9 @@ public:
             voteitr++;
         }
 
-        auto canditr = registered_candidates.begin();
-        while (canditr != registered_candidates.end()) {
+        auto candIndex = registered_candidates.get_index<N(bycandidate)>();
+        auto canditr = candIndex.begin();
+        while (canditr != candIndex.end()) {
             registered_candidates.modify(*canditr, _self, [&](candidate &c) {
                 c.total_votes = 0;
             });
@@ -451,10 +522,10 @@ public:
 
         vector<eosiosystem::permission_level_weight> accounts;
 
-        for(auto it = custodians.begin(); it != custodians.end(); it++) {
+        for (auto it = custodians.begin(); it != custodians.end(); it++) {
             eosiosystem::permission_level_weight account{
                     .permission = eosio::permission_level(it->cust_name, N(active)),
-                    .weight = (uint16_t)1,
+                    .weight = (uint16_t) 1,
             };
             accounts.push_back(account);
         }
@@ -464,7 +535,7 @@ public:
                 .threshold = configs().auththresh,
                 .keys = {},
                 .accounts = accounts
-                };
+        };
 
         // Remove contract permissions and replace with changeto account.
         action(permission_level{accountToChange, N(active)}, // dacauthority
@@ -554,4 +625,4 @@ EOSIO_ABI_EX(daccustodian,
                      (tallyvotes)
                      (configperiod)
                      (setauths)
-             )
+)

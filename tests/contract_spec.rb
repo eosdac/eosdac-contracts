@@ -31,8 +31,12 @@ ACCOUNT_NAME = 'daccustodian'
 beforescript = <<~SHELL
   set -x
   kill -INT `pgrep nodeos`
-  nodeos --delete-all-blocks  &>/dev/null &
-  sleep 5
+
+ ttab 'nodeos --delete-all-blocks --verbose-http-errors'
+
+  # kill -INT `pgrep nodeos`
+   # nodeos --delete-all-blocks --verbose-http-errors &>/dev/null &
+   sleep 2
   cleos wallet unlock --password `cat ~/eosio-wallet/.pass`
   cleos wallet import --private-key #{CONTRACT_ACTIVE_PRIVATE_KEY}
   cleos wallet import --private-key #{TEST_ACTIVE_PRIVATE_KEY}
@@ -67,6 +71,8 @@ beforescript = <<~SHELL
 
     cd eosdactoken/
     cleos set contract eosdactoken eosdactoken -p eosdactoken
+
+    cleos push action eosdactoken updateconfig '["daccustodian"]' -p eosdactoken 
     cd ../#{CONTRACT_NAME}
 
 SHELL
@@ -76,6 +82,10 @@ describe "eosdacelect" do
   before(:all) do
     `#{beforescript}`
     exit() unless $? == 0
+  end
+
+  after(:all) do
+    `sleep 2; kill \`pgrep nodeos\``
   end
 
   describe "configure initial accounts" do
@@ -526,15 +536,13 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "11.0000 EOS",
                 "pendreqpay": "0.0000 SYS",
-                
                 "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 0
+                "total_votes": 850000
               },{
                 "candidate_name": "votedcust11",
                 "bio": "any bio",
                 "requestedpay": "16.0000 EOS",
                 "pendreqpay": "0.0000 SYS",
-                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -542,23 +550,20 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "12.0000 EOS",
                 "pendreqpay": "0.0000 SYS",
-                
                 "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 0
+                "total_votes": 850000
               },{
                 "candidate_name": "votedcust3",
                 "bio": "any bio",
                 "requestedpay": "13.0000 EOS",
                 "pendreqpay": "0.0000 SYS",
-                
                 "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 0
+                "total_votes": 850000
               },{
                 "candidate_name": "votedcust4",
                 "bio": "any bio",
                 "requestedpay": "14.0000 EOS",
                 "pendreqpay": "0.0000 SYS",
-                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -566,7 +571,6 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "15.0000 EOS",
                 "pendreqpay": "0.0000 SYS",
-                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -574,7 +578,6 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "17.0000 EOS",
                 "pendreqpay": "0.0000 SYS",
-                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               }
@@ -651,15 +654,13 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "11.0000 EOS",
                 "pendreqpay": "0.0000 SYS",
-                
                 "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 0
+                "total_votes": 850000
               },{
                 "candidate_name": "votedcust11",
                 "bio": "any bio",
                 "requestedpay": "16.0000 EOS",
                 "pendreqpay": "0.0000 SYS",
-                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -667,15 +668,13 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "12.0000 EOS",
                 "pendreqpay": "0.0000 SYS",
-                
                 "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 0
+                "total_votes": 850000
               },{
                 "candidate_name": "votedcust3",
                 "bio": "any bio",
                 "requestedpay": "13.0000 EOS",
                 "pendreqpay": "0.0000 SYS",
-                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -683,15 +682,13 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "14.0000 EOS",
                 "pendreqpay": "0.0000 SYS",
-                
                 "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 0
+                "total_votes": 850000
               },{
                 "candidate_name": "votedcust5",
                 "bio": "any bio",
                 "requestedpay": "15.0000 EOS",
                 "pendreqpay": "0.0000 SYS",
-                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               },{
@@ -699,7 +696,6 @@ describe "eosdacelect" do
                 "bio": "any bio",
                 "requestedpay": "17.0000 EOS",
                 "pendreqpay": "0.0000 SYS",
-                
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0
               }
@@ -710,9 +706,131 @@ describe "eosdacelect" do
       end
     end
 
+    context "After token transfer vote weight should update" do
+      before(:all) do
+        `cleos push action daccustodian votecust '{ "voter": "votedcust2", "newvotes": ["votedcust1","votedcust3","votedcust4"]}' -p votedcust2`
+      end
+      command %(cleos push action eosdactoken transfer '{ "from": "voter1", "to": "votedcust4", "quantity": "13.0000 EOSDAC","memo":"random transfer"}' -p voter1), allow_error: true
+      # its(:stdout) {is_expected.to include('daccustodian::votecust')}
+      its(:stdout) {is_expected.to include('eosdactoken::transfer')}
+      end
   end
 
-  describe "votedproxy" do
+  context "Read the candidates table after transfer for voter" do
+    command %(cleos get table daccustodian daccustodian candidates), allow_error: true
+    it do
+      expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
+            {
+              "rows": [{
+                "candidate_name": "testreguser1",
+                "bio": "any bio",
+                "requestedpay": "11.5000 EOS",
+                "pendreqpay": "0.0000 SYS",
+                
+                "locked_tokens": "10.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "updatebio2",
+                "bio": "new bio",
+                "requestedpay": "11.5000 EOS",
+                "pendreqpay": "0.0000 SYS",
+                
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "updatepay2",
+                "bio": "any bio",
+                "requestedpay": "41.5000 EOS",
+                "pendreqpay": "0.0000 SYS",
+                
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "votedcust1",
+                "bio": "any bio",
+                "requestedpay": "11.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 1510000
+              },{
+                "candidate_name": "votedcust11",
+                "bio": "any bio",
+                "requestedpay": "16.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "votedcust2",
+                "bio": "any bio",
+                "requestedpay": "12.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 720000
+              },{
+                "candidate_name": "votedcust3",
+                "bio": "any bio",
+                "requestedpay": "13.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 790000
+              },{
+                "candidate_name": "votedcust4",
+                "bio": "any bio",
+                "requestedpay": "14.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 1510000
+              },{
+                "candidate_name": "votedcust5",
+                "bio": "any bio",
+                "requestedpay": "15.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              },{
+                "candidate_name": "voter1",
+                "bio": "any bio",
+                "requestedpay": "17.0000 EOS",
+                "pendreqpay": "0.0000 SYS",
+                "locked_tokens": "23.0000 EOSDAC",
+                "total_votes": 0
+              }
+            ],
+            "more": true
+          }
+      JSON
+    end
+  end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  #
+  xdescribe "votedproxy" do
     before(:all) do
       # configure accounts for eosdactoken
 
