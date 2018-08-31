@@ -128,7 +128,19 @@
 			"name": "authaccount",
 			"type": "name"
 		}, {
-			"name": "auththresh",
+			"name": "initial_vote_quorum_percent",
+			"type": "uint32"
+		}, {
+			"name": "vote_quorum_percent",
+			"type": "uint32"
+		}, {
+			"name": "auth_threshold_high",
+			"type": "uint8"
+		}, {
+			"name": "auth_threshold_mid",
+			"type": "uint8"
+		}, {
+			"name": "auth_threshold_low",
 			"type": "uint8"
 		}]
 	}, {

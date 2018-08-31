@@ -14,59 +14,50 @@ using namespace eosio;
 using namespace std;
 using eosio::print;
 
-class daccustodian : public contract {
 
-private: // Variables used throughout the other actions.
-    configscontainer config_singleton;
-    statecontainer contract_state;
-    candidates_table registered_candidates;
-    votes_table votes_cast_by_members;
-    pending_pay_table pending_pay;
-
-    symbol_type PAYMENT_TOKEN = eosio::symbol_type(eosio::string_to_symbol(4, "EOS"));
-
-    contr_state currentState;
-
-public:
-
-    daccustodian(account_name self)
-            : contract(self),
-              registered_candidates(_self, _self),
-              votes_cast_by_members(_self, _self),
-              pending_pay(_self, _self),
-              config_singleton(_self, _self),
-              contract_state(_self, _self) {
-
-        currentState = contract_state.get_or_default(contr_state());
-    }
-
-    void updateconfig(
+    void daccustodian::updateconfig(
             asset lockupasset,
             uint8_t maxvotes,
             uint8_t numelected,
             uint32_t periodlength,
             name tokcontr,
             name authaccount,
-            uint8_t auththresh) {
+            uint32_t initial_vote_quorum_percent,
+            uint32_t vote_quorum_percent,
+            uint8_t auth_threshold_high,
+            uint8_t auth_threshold_mid,
+            uint8_t auth_threshold_low
+            ) {
 
         require_auth(_self);
 
         // If the registered candidates is not empty prevent a change to the lockup asset symbol.
-        if (registered_candidates.begin() != registered_candidates.end()) {
+        if (configs().lockupasset.symbol.value != 0 && registered_candidates.begin() != registered_candidates.end()) {
             eosio_assert(lockupasset.symbol == configs().lockupasset.symbol,
                          "The provided asset cannot be changed while there are registered candidates due to current staking in the old asset.");
         }
 
-        eosio_assert(auththresh <= numelected,
+        eosio_assert(auth_threshold_high < numelected,
                      "The auth threshold can never be satisfied with a value greater than the number of elected custodians");
 
-        contr_config newconfig{lockupasset, maxvotes, numelected, periodlength, tokcontr, authaccount, auththresh};
+        contr_config newconfig{
+                lockupasset,
+                maxvotes,
+                numelected,
+                periodlength,
+                tokcontr,
+                authaccount,
+                initial_vote_quorum_percent,
+                vote_quorum_percent,
+                auth_threshold_high,
+                auth_threshold_mid,
+                auth_threshold_low};
         config_singleton.set(newconfig, _self);
     }
 
 
 // Action to listen to from the associated token contract to ensure registering should be allowed.
-    void transfer(name from,
+    void daccustodian::transfer(name from,
                   name to,
                   asset quantity,
                   string memo) {
@@ -106,7 +97,7 @@ public:
 
     }
 
-    void regcandidate(name cand, string bio, asset requestedpay) {
+    void daccustodian::regcandidate(name cand, string bio, asset requestedpay) {
 
         require_auth(cand);
         get_valid_member(cand);
@@ -147,7 +138,7 @@ public:
         pendingstake.erase(pending);
     }
 
-    void unregcand(name cand) {
+    void daccustodian::unregcand(name cand) {
 
         require_auth(cand);
         const auto &reg_candidate = registered_candidates.get(cand, "Candidate is not already registered.");
@@ -169,7 +160,7 @@ public:
         });
     }
 
-    void updatebio(name cand, string bio) {
+    void daccustodian::updatebio(name cand, string bio) {
 
         require_auth(cand);
         get_valid_member(cand);
@@ -181,7 +172,7 @@ public:
         });
     }
 
-    void updatereqpay(name cand, asset requestedpay) {
+    void daccustodian::updatereqpay(name cand, asset requestedpay) {
 
         require_auth(cand);
         get_valid_member(cand);
@@ -192,7 +183,7 @@ public:
         });
     }
 
-    void votecust(name voter, vector<name> newvotes) {
+    void daccustodian::votecust(name voter, vector<name> newvotes) {
 
         require_auth(voter);
         get_valid_member(voter);
@@ -222,7 +213,7 @@ public:
         }
     }
 
-    void voteproxy(name voter, name proxy) {
+    void daccustodian::voteproxy(name voter, name proxy) {
 
         require_auth(voter);
         get_valid_member(voter);
@@ -251,7 +242,7 @@ public:
         }
     }
 
-    void newperiod(string message, bool earlyelect) {
+    void daccustodian::newperiod(string message, bool earlyelect) {
         require_auth(_self);
 
         /* Copied from the Tech Doc vvvvv
@@ -262,12 +253,24 @@ public:
          * Copied from the Tech Doc ^^^^^
          */
 
-        // These actions a separated out for clarity and incase we want to be able to call them individually the change would be minimal.
+        // These actions a separated out for clarity and in case we want to be able to call them individually the change would be minimal.
         distpay(earlyelect);
-        clearvotes();
-        tallyvotes();
-        configperiod();
-//        setauths();
+//        clearvotes();
+//        tallyvotes();
+
+        contr_config config = configs();
+
+        auto tokenStats = stats(config.tokencontr, config.lockupasset.symbol).begin();
+        uint64_t max_supply = tokenStats->max_supply.amount;
+        eosio:print("token max supply: ", max_supply, " total votes: ", _currentState.total_votes);
+        double perc_voter_engagement = double(_currentState.total_votes) / double(max_supply) * 100.0;
+        if ((_currentState.met_initial_votes_threshold && perc_voter_engagement > config.vote_quorum_percent) ||
+                perc_voter_engagement > config.initial_vote_quorum_percent) {
+            _currentState.met_initial_votes_threshold = true;
+
+            configperiod();
+            setauths();
+        }
 
 //        Schedule the the next election cycle at the end of the period.
 //        transaction nextTrans{};
@@ -276,7 +279,8 @@ public:
 //        nextTrans.send(N(newperiod), false);
     }
 
-    void paypending(string message) {
+
+    void daccustodian::paypending(string message) {
         require_auth(_self);
         auto payidx = pending_pay.begin();
         eosio_assert(payidx != pending_pay.end(), "pending pay is empty");
@@ -309,15 +313,13 @@ public:
         }
     }
 
-private: // Private helper methods used by other actions.
-
-    contr_config configs() {
+    contr_config daccustodian::configs() {
         contr_config conf = config_singleton.get_or_default(contr_config());
         config_singleton.set(conf, _self);
         return conf;
     }
 
-    member get_valid_member(name member) {
+    member daccustodian::get_valid_member(name member) {
         name tokenContract = configs().tokencontr;
         eosio_assert(tokenContract != 0, "The token contract has not been set via `updateconfig`.");
         regmembers reg_members(tokenContract, tokenContract);
@@ -330,11 +332,11 @@ private: // Private helper methods used by other actions.
         return regmem;
     }
 
-    bool isCustodian(candidate account) {
+    bool daccustodian::isCustodian(candidate account) {
         return false; // temp function as part of the earlyelect logic.
     }
 
-    void updateVoteWeight(name custodian, int64_t weight) {
+    void daccustodian::updateVoteWeight(name custodian, int64_t weight) {
         if (weight == 0) {
             print("\n Vote has no weight - No need to contrinue.");
         }
@@ -351,13 +353,13 @@ private: // Private helper methods used by other actions.
         });
     }
 
-    void updateVoteWeights(const vector<name> &votes, int64_t vote_weight) {
+    void daccustodian::updateVoteWeights(const vector<name> &votes, int64_t vote_weight) {
         for (const auto &cust : votes) {
             updateVoteWeight(cust, vote_weight);
         }
     }
 
-    void modifyVoteWeights(name voter, vector<name> oldVotes, vector<name> newVotes) {
+    void daccustodian::modifyVoteWeights(name voter, vector<name> oldVotes, vector<name> newVotes) {
         // This could be optimised with set diffing to avoid remove then add for unchanged votes. - later
         eosio::print(" -: Modify Vote weights", voter);
 
@@ -376,9 +378,7 @@ private: // Private helper methods used by other actions.
         updateVoteWeights(newVotes, vote_weight);
     }
 
-public: // Exposed publicy for debugging only.
-
-    void distpay(bool earlyelect) {
+    void daccustodian::distpay(bool earlyelect) {
         auto idx = registered_candidates.get_index<N(byvotes)>();
         auto it = idx.rbegin();
 
@@ -400,10 +400,10 @@ public: // Exposed publicy for debugging only.
 
         uint32_t timestamp = now();
         if (earlyelect) {
-            uint32_t periodBlockCount = timestamp - currentState.lastperiodtime;
+            uint32_t periodBlockCount = timestamp - _currentState.lastperiodtime;
             medianPay = medianPay * (periodBlockCount / configs().periodlength);
         }
-        currentState.lastperiodtime = timestamp;
+        _currentState.lastperiodtime = timestamp;
 
 
         asset medianAsset = asset(medianPay, PAYMENT_TOKEN);
@@ -424,7 +424,7 @@ public: // Exposed publicy for debugging only.
         print("distribute pay");
     }
 
-    void clearvotes() {
+    void daccustodian::clearvotes() {
         auto voteitr = votes_cast_by_members.begin();
         while (voteitr != votes_cast_by_members.end()) {
             votes_cast_by_members.modify(*voteitr, _self, [&](vote &v) {
@@ -444,7 +444,7 @@ public: // Exposed publicy for debugging only.
         print("clear old votes");
     }
 
-    void tallyvotes() {
+    void daccustodian::tallyvotes() {
         auto byProxyIdx = votes_cast_by_members.get_index<N(byproxy)>();
         uint64_t asset_name = configs().lockupasset.symbol.name();
 
@@ -487,7 +487,7 @@ public: // Exposed publicy for debugging only.
         print("tally new votes");
     }
 
-    void configperiod() {
+    void daccustodian::configperiod() {
 
         custodians_table custodians(_self, _self);
 //        Empty custodians first.
@@ -514,7 +514,7 @@ public: // Exposed publicy for debugging only.
         print("configureForNextPeriod");
     }
 
-    void setauths() {
+    void daccustodian::setauths() {
 
         custodians_table custodians(_self, _self);
 
@@ -532,7 +532,7 @@ public: // Exposed publicy for debugging only.
 
         // Setup authority for contract. Choose either a new key, or account, or both.
         eosiosystem::authority contract_authority{
-                .threshold = configs().auththresh,
+                .threshold = configs().auth_threshold_high,
                 .keys = {},
                 .accounts = accounts
         };
@@ -548,7 +548,7 @@ public: // Exposed publicy for debugging only.
                 .send();
     }
 
-    void migrate(name cand) {
+void daccustodian::migrate(name cand) {
         configscontainer conf(_self, _self);
         conf.remove();
 
@@ -587,7 +587,7 @@ public: // Exposed publicy for debugging only.
 //            it = holding_table.erase(it);
 //        }
     }
-};
+
 
 #define EOSIO_ABI_EX(TYPE, MEMBERS) \
 extern "C" { \
