@@ -128,7 +128,19 @@
 			"name": "authaccount",
 			"type": "name"
 		}, {
-			"name": "auththresh",
+			"name": "initial_vote_quorum_percent",
+			"type": "uint32"
+		}, {
+			"name": "vote_quorum_percent",
+			"type": "uint32"
+		}, {
+			"name": "auth_threshold_high",
+			"type": "uint8"
+		}, {
+			"name": "auth_threshold_mid",
+			"type": "uint8"
+		}, {
+			"name": "auth_threshold_low",
 			"type": "uint8"
 		}]
 	}, {
@@ -313,10 +325,16 @@
 			"name": "candidates",
 			"index_type": "i64",
 			"key_names": [
-				"candidate_name"
+				"bycandidate",
+				"byvotes",
+				"byvotesrank",
+				"bypendingpay"
 			],
 			"key_types": [
-				"name"
+				"name",
+				"int64",
+				"int64",
+				"int64"
 			],
 			"type": "candidate"
 		}, {
@@ -324,6 +342,7 @@
 			"index_type": "i64",
 			"key_names": [
 				"cust_name"
+
 			],
 			"key_types": [
 				"name"

@@ -15,3 +15,4 @@ daccustodian\.abi\.hpp
 
 Project\.build/
 Makefile
+node_modules
