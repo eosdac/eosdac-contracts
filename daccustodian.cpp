@@ -32,7 +32,7 @@ using eosio::print;
         require_auth(_self);
 
         // If the registered candidates is not empty prevent a change to the lockup asset symbol.
-        if (configs().lockupasset.symbol.value != 0 && registered_candidates.begin() != registered_candidates.end()) {
+        if (configs().lockupasset.amount != 0 && registered_candidates.begin() != registered_candidates.end()) {
             eosio_assert(lockupasset.symbol == configs().lockupasset.symbol,
                          "The provided asset cannot be changed while there are registered candidates due to current staking in the old asset.");
         }
