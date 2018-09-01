@@ -553,7 +553,7 @@ void daccustodian::migrate(name cand) {
 //        conf.remove();
 
         //Copy to a holding table - Enable this for the first step
-
+/*
         candidates_table oldcands(_self, _self);
         candidates_table2 holding_table(_self, _self);
         auto it = oldcands.begin();
@@ -568,24 +568,23 @@ void daccustodian::migrate(name cand) {
             });
             it = oldcands.erase(it);
         }
-
+*/
 
         // Copy back to the original table with the new schema - Enable this for the second step *after* modifying the original object's schema before copying back to the original table location.
 
-//        candidates2_table holding_table(_self, _self);
-//        candidates_table oldcands(_self, _self);
-//        auto it = holding_table.begin();
-//        while (it != holding_table.end()) {
-//            oldcands.emplace(_self, [&](candidate &c) {
-//                c.candidate_name = it->candidate_name;
-//                c.bio = it->bio;
-//                c.requestedpay = it->requestedpay;
-//                c.pendreqpay = it->pendreqpay;
-//                c.locked_tokens = it->locked_tokens;
-//                c.total_votes = it->total_votes;
-//            });
-//            it = holding_table.erase(it);
-//        }
+        candidates_table2 holding_table(_self, _self);
+        candidates_table oldcands(_self, _self);
+        auto it = holding_table.begin();
+        while (it != holding_table.end()) {
+            oldcands.emplace(_self, [&](candidate &c) {
+                c.candidate_name = it->candidate_name;
+                c.bio = it->bio;
+                c.requestedpay = it->requestedpay;
+                c.locked_tokens = it->locked_tokens;
+                c.total_votes = it->total_votes;
+            });
+            it = holding_table.erase(it);
+        }
     }
 
 

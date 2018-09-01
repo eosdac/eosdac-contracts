@@ -118,7 +118,7 @@ struct candidate {
     // Active requested pay used for payment calculations.
     asset requestedpay;
     // Requested pay that would be pending until the new period begins. Then it should be moved to requestedpay.
-    asset pendreqpay; // no longer needed should migrate out.
+//    asset pendreqpay; // no longer needed should migrate out.
     asset locked_tokens;
     uint64_t total_votes;
 
@@ -131,7 +131,7 @@ struct candidate {
     uint64_t by_pending_pay() const { return static_cast<uint64_t>(requestedpay.amount); }
 
     EOSLIB_SERIALIZE(candidate,
-                     (candidate_name)(bio)(requestedpay)(pendreqpay)(locked_tokens)(total_votes))
+                     (candidate_name)(bio)(requestedpay)(locked_tokens)(total_votes))
 };
 
 typedef multi_index<N(candidates), candidate,
