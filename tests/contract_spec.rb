@@ -802,6 +802,20 @@ describe "eosdacelect" do
     end
   end
 
+  context "Read the custodians table after previous actions" do
+    command %(cleos get table daccustodian daccustodian custodians), allow_error: true
+    it do
+      expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
+            {
+              "rows": [],
+            "more": false
+          }
+      JSON
+    end
+  end
+
+  
+
 
 
 
