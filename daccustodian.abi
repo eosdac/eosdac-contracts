@@ -65,9 +65,6 @@
 			"name": "requestedpay",
 			"type": "asset"
 		}, {
-			"name": "pendreqpay",
-			"type": "asset"
-		}, {
 			"name": "locked_tokens",
 			"type": "asset"
 		}, {
