@@ -13,7 +13,7 @@
 			"type": "string"
 		}]
 	}, {
-		"name": "distpay",
+		"name": "earlyelect",
 		"base": "",
 		"fields": [{
 			"name": "earlyelect",
@@ -246,7 +246,7 @@
 		},
 		{
 			"name": "distpay",
-			"type": "distpay",
+			"type": "earlyelect",
 			"ricardian_contract": ""
 		},
 		{
@@ -261,7 +261,7 @@
 		},
 		{
 			"name": "configperiod",
-			"type": "void",
+			"type": "earlyelect",
 			"ricardian_contract": ""
 		},
 		{

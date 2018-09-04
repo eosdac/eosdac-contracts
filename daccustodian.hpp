@@ -332,7 +332,7 @@ public: // Exposed publicy for debugging only.
 
     void tallyvotes();
 
-    void configperiod();
+    void configperiod(bool early_election);
 
     void setauths();
 
