@@ -250,16 +250,6 @@
 			"ricardian_contract": ""
 		},
 		{
-			"name": "clearvotes",
-			"type": "void",
-			"ricardian_contract": ""
-		},
-		{
-			"name": "tallyvotes",
-			"type": "void",
-			"ricardian_contract": ""
-		},
-		{
 			"name": "configperiod",
 			"type": "earlyelect",
 			"ricardian_contract": ""

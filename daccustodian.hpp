@@ -328,10 +328,6 @@ public: // Exposed publicy for debugging only.
 
     void distpay(bool earlyelect);
 
-    void clearvotes();
-
-    void tallyvotes();
-
     void configperiod(bool early_election);
 
     void setauths();

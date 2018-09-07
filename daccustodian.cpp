@@ -201,10 +201,16 @@ void daccustodian::votecust(name voter, vector<name> newvotes) {
     if (existingVote != votes_cast_by_members.end()) {
         modifyVoteWeights(voter, existingVote->candidates, newvotes);
 
-        votes_cast_by_members.modify(existingVote, _self, [&](vote &v) {
-            v.candidates = newvotes;
-            v.proxy = name();
-        });
+        if (newvotes.size() == 0) {
+            // Remove the vote if the array of candidates is empty
+            votes_cast_by_members.erase(existingVote);
+            eosio::print("\n Removing empty vote.");
+        } else {
+            votes_cast_by_members.modify(existingVote, _self, [&](vote &v) {
+                v.candidates = newvotes;
+                v.proxy = name();
+            });
+        }
     } else {
         modifyVoteWeights(voter, {}, newvotes);
         votes_cast_by_members.emplace(_self, [&](vote &v) {
@@ -249,15 +255,12 @@ void daccustodian::newperiod(string message, bool earlyelect) {
     /* Copied from the Tech Doc vvvvv
      // 1. Distribute custodian pay based on the median of requested pay for all currently elected candidates
 
-     // 2. Tally the current votes_cast_by_members and prepare a list of the winning custodians
      // 3. Assigns the custodians, this may include updating a multi-sig wallet which controls the funds in the DAC as well as updating DAC contract code
      * Copied from the Tech Doc ^^^^^
      */
 
-    // These actions a separated out for clarity and in case we want to be able to call them individually the change would be minimal.
+    // Distribute pay to the current custodians.
     distpay(earlyelect);
-//        clearvotes();
-//        tallyvotes();
 
     contr_config config = configs();
 
@@ -274,7 +277,11 @@ void daccustodian::newperiod(string message, bool earlyelect) {
 
         if (percent_of_current_voter_engagement > config.vote_quorum_percent) {
             eosio::print("Voter engagement is sufficient. Setting up for a new DAC period...");
+
+            // Set custodians for the nedt period.
             configperiod(earlyelect);
+
+            // Set the auths on the dacauthority account
             setauths();
         } else {
             eosio::print(
@@ -373,14 +380,14 @@ void daccustodian::updateVoteWeights(const vector<name> &votes, int64_t vote_wei
 
 void daccustodian::modifyVoteWeights(name voter, vector<name> oldVotes, vector<name> newVotes) {
     // This could be optimised with set diffing to avoid remove then add for unchanged votes. - later
-    eosio::print(" -: Modify Vote weights", voter);
+    eosio::print("Modify vote weights: ", voter,"\n");
 
     uint64_t asset_name = configs().lockupasset.symbol.name();
 
     accounts accountstable(configs().tokencontr, voter);
     const auto ac = accountstable.find(asset_name);
     if (ac == accountstable.end()) {
-        print("voter has no balance - no need to update vote weights");
+            print("Voter has no balance therefore no need to update vote weights");
         return;
     }
 
@@ -434,69 +441,6 @@ void daccustodian::distpay(bool earlyelect) {
     }
 
     print("distribute pay");
-}
-
-void daccustodian::clearvotes() {
-    auto voteitr = votes_cast_by_members.begin();
-    while (voteitr != votes_cast_by_members.end()) {
-        votes_cast_by_members.modify(*voteitr, _self, [&](vote &v) {
-            v.weight = 0;
-        });
-        voteitr++;
-    }
-
-    auto candIndex = registered_candidates.get_index<N(bycandidate)>();
-    auto canditr = candIndex.begin();
-    while (canditr != candIndex.end()) {
-        registered_candidates.modify(*canditr, _self, [&](candidate &c) {
-            c.total_votes = 0;
-        });
-        canditr++;
-    }
-    print("clear old votes");
-}
-
-void daccustodian::tallyvotes() {
-    auto byProxyIdx = votes_cast_by_members.get_index<N(byproxy)>();
-    uint64_t asset_name = configs().lockupasset.symbol.name();
-
-    auto itr = byProxyIdx.rbegin();
-    auto end = byProxyIdx.rend();
-
-    // This should go iterate through proxy votes first to increase the proxy weight factor.
-    // Therefore the sorting order is important here.
-    while (itr != end) {
-        accounts accountstable(configs().tokencontr, itr->voter);
-        const auto ac = accountstable.find(asset_name);
-        if (ac != accountstable.end()) {
-            int64_t vote_weight = ac->balance.amount;
-
-            votes_cast_by_members.modify(*itr, _self, [&](vote &v) {
-                v.weight += vote_weight;
-            });
-
-            if (itr->proxy != 0) {
-                auto proxied_to_voter = votes_cast_by_members.find(itr->proxy); // else "no active vote for proxy");
-                if (proxied_to_voter != votes_cast_by_members.end()) {
-                    votes_cast_by_members.modify(proxied_to_voter, _self, [&](vote &p) {
-                        p.weight += vote_weight;
-                    });
-                }
-            }
-        } else {
-            print("tally new votes - voter has no balance");
-        }
-        if (itr->proxy == 0) {
-            for (const auto &newVote : itr->candidates) {
-                auto candidate = registered_candidates.find(newVote);
-                registered_candidates.modify(candidate, _self, [&](auto &c) {
-                    c.total_votes += itr->weight;
-                });
-            }
-        }
-        ++itr;
-    }
-    print("tally new votes");
 }
 
 void daccustodian::configperiod(bool early_election) {
@@ -634,8 +578,6 @@ EOSIO_ABI_EX(daccustodian,
                      (transfer)
 
                      (distpay)
-                     (clearvotes)
-                     (tallyvotes)
                      (configperiod)
                      (setauths)
 )
