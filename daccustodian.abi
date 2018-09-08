@@ -187,14 +187,7 @@
 			"name": "requestedpay",
 			"type": "asset"
 		}]
-	}, {
-		"name": "claimpay",
-		"base": "",
-		"fields": [{
-			"name": "cand",
-			"type": "name"
-		}]
-	}, {
+	},  {
 		"name": "votecust",
 		"base": "",
 		"fields": [{
@@ -225,6 +218,17 @@
 			"type": "bool"
 		}]
 	}, {
+		"name": "claimpay",
+		"base": "",
+		"fields": [{
+				"name": "claimer",
+				"type": "name"
+			}, {
+				"name": "payid",
+				"type": "uint64"
+			}
+		]
+	}, {
 		"name": "paypending",
 		"base": "",
 		"fields": [{
@@ -250,7 +254,7 @@
 			"ricardian_contract": ""
 		},
 		{
-			"name": "configperiod",
+			"name": "allocatecust",
 			"type": "earlyelect",
 			"ricardian_contract": ""
 		},
@@ -296,7 +300,12 @@
 			"name": "paypending",
 			"type": "paypending",
 			"ricardian_contract": "## ACTION: paypending\n**PARAMETERS:**\n\n__message__ is string used only for logging in the blockchain history and serves no purpose in the action contract logic.\n\n**INTENT:** The intent of {{ paypending }} is to pay all the pending payment amounts to members. The list of payees would populated from the `newperiod` calculation and the candidates who have unregistered and are due to have their staked tokens returned to them. This list is collected in the `pendingpay` table. This action pays each pending payee via an inline transfer on the `eosdactoken` contract and then removes the pending payment record from the `pending_pay` table. The active auth of this contract is required to complet the action."
-		}
+		},
+         {
+         	"name": "claimpay",
+         	"type": "claimpay",
+         	"ricardian_contract": "## ACTION: claimpay\n**PARAMETERS:**\n\n__claimer__ account claiming the pay. This account must match the destination account for which the claim is for.\n\n**INTENT:** The intent of {{ claimpay }} is to allow an account to claim pending payment amounts due to the account. The pay claim they are claiming needs to be visible in the `pendingpay` table. transfers to the claimer via an inline transfer on the `eosdactoken` contract and then removes the pending payment record from the `pending_pay` table. The active auth of this claimer is required to complete this action."
+         		}
 	],
 	"tables": [{
 			"name": "members",

@@ -304,11 +304,13 @@ public:
 
     void votecust(name voter, vector<name> newvotes);
 
-    void voteproxy(name voter, name proxy);
+//    void voteproxy(name voter, name proxy);
 
     void newperiod(string message, bool earlyelect);
 
     void paypending(string message);
+
+    void claimpay(name claimer, uint64_t payid);
 
 private: // Private helper methods used by other actions.
 
@@ -328,7 +330,7 @@ public: // Exposed publicy for debugging only.
 
     void distpay(bool earlyelect);
 
-    void configperiod(bool early_election);
+    void allocatecust(bool early_election);
 
     void setauths();
 
