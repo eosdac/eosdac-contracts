@@ -88,12 +88,14 @@ void daccustodian::transfer(name from,
         auto existingVote = votes_cast_by_members.find(from);
         if (existingVote != votes_cast_by_members.end()) {
             updateVoteWeights(existingVote->candidates, -quantity.amount);
+            _currentState.total_weight_of_votes -= quantity.amount;
         }
 
         // Update vote weight for the 'to' in the transfer if vote exists
         existingVote = votes_cast_by_members.find(to);
         if (existingVote != votes_cast_by_members.end()) {
             updateVoteWeights(existingVote->candidates, quantity.amount);
+            _currentState.total_weight_of_votes += quantity.amount;
         }
     }
 }
@@ -103,9 +105,11 @@ void daccustodian::regcandidate(name cand, string bio, asset requestedpay) {
     require_auth(cand);
     get_valid_member(cand);
     account_name tokencontract = configs().tokencontr;
+    _currentState.number_active_candidates++;
 
     auto reg_candidate = registered_candidates.find(cand);
-    eosio_assert(reg_candidate == registered_candidates.end(), "Candidate is already registered.");
+    eosio_assert(reg_candidate == registered_candidates.end() || !reg_candidate->is_active,
+                 "Candidate is already registered and active.");
     eosio_assert(requestedpay.symbol == PAYMENT_TOKEN, "Incorrect payment token for the current configuration");
 
     pendingstake_table_t pendingstake(_self, _self);
@@ -117,24 +121,24 @@ void daccustodian::regcandidate(name cand, string bio, asset requestedpay) {
         print("The amount staked is insufficient by: ", shortfall, " tokens.");
         eosio_assert(false, "");
     }
+    if (reg_candidate != registered_candidates.end() && reg_candidate->is_active) {
 
-//        TODO: handle returning the partially staked tokens.
-//            pending_pay.emplace(_self, [&](pay &p) {
-//                p.key = pending_pay.available_primary_key();
-//                p.receiver = cand;
-//                p.quantity = pending->quantity;
-//                p.memo = "Returning incorrect amount of staked tokens from registering attempt.";
-//            });
-//        }
-
-    registered_candidates.emplace(_self, [&](candidate &c) {
-        c.candidate_name = cand;
-        c.bio = bio;
-        c.requestedpay = requestedpay;
-//            c.pendreqpay = asset(0, PAYMENT_TOKEN);
-        c.locked_tokens = pending->quantity;
-        c.total_votes = 0;
-    });
+        registered_candidates.modify(reg_candidate, cand, [&](auto &c) {
+            c.locked_tokens = pending->quantity;
+            c.is_active = 1;
+            c.requestedpay = requestedpay;
+            c.bio = bio;
+        });
+    } else {
+        registered_candidates.emplace(_self, [&](candidate &c) {
+            c.candidate_name = cand;
+            c.bio = bio;
+            c.requestedpay = requestedpay;
+            c.locked_tokens = pending->quantity;
+            c.total_votes = 0;
+            c.is_active = 1;
+        });
+    }
 
     pendingstake.erase(pending);
 }
@@ -142,23 +146,35 @@ void daccustodian::regcandidate(name cand, string bio, asset requestedpay) {
 void daccustodian::unregcand(name cand) {
 
     require_auth(cand);
+    _currentState.number_active_candidates--;
+
+    custodians_table custodians(_self, _self);
+
     const auto &reg_candidate = registered_candidates.get(cand, "Candidate is not already registered.");
 
-    if (isCustodian(reg_candidate)) {
-        transaction nextTrans{};
-        nextTrans.actions.emplace_back(permission_level(_self, N(active)), _self, N(newperiod),
-                                       std::make_tuple("", false));
-        nextTrans.delay_sec = configs().periodlength;
-        nextTrans.send(N(newperiod), true);
-    }
-    registered_candidates.erase(reg_candidate);
+    // Send back the locked up tokens
+    action(permission_level{_self, N(active)},
+           configs().tokencontr, N(transfer),
+           std::make_tuple(_self, cand, reg_candidate.locked_tokens,
+                           std::string("Returning locked up stake. Thank you."))
+    ).send();
 
-    pending_pay.emplace(_self, [&](pay &p) {
-        p.key = pending_pay.available_primary_key();
-        p.receiver = cand;
-        p.quantity = reg_candidate.locked_tokens;
-        p.memo = "Returning locked up stake. Thank you.";
+    // Set the is_active flag to false instead of deleting in order to retain votes.
+    // Also set the locked tokens to false so they need to be added when/if returning.
+    registered_candidates.modify(reg_candidate, _self, [&](candidate &c) {
+        c.is_active = 0;
+        c.locked_tokens = asset(0, configs().lockupasset.symbol);
     });
+
+    auto elected = custodians.find(cand);
+    if (elected != custodians.end()) {
+        custodians.erase(elected);
+        eosio::print("Remove candidate from the custodians.");
+
+        // Select a new set of auths
+        allocatecust(true);
+        setauths();
+    }
 }
 
 void daccustodian::updatebio(name cand, string bio) {
@@ -167,6 +183,7 @@ void daccustodian::updatebio(name cand, string bio) {
     get_valid_member(cand);
 
     const auto &reg_candidate = registered_candidates.get(cand, "Candidate is not already registered.");
+    eosio_assert(bio.size() < 256, "The bio should be ");
 
     registered_candidates.modify(reg_candidate, 0, [&](candidate &c) {
         c.bio = bio;
@@ -213,6 +230,7 @@ void daccustodian::votecust(name voter, vector<name> newvotes) {
         }
     } else {
         modifyVoteWeights(voter, {}, newvotes);
+
         votes_cast_by_members.emplace(_self, [&](vote &v) {
             v.voter = voter;
             v.candidates = newvotes;
@@ -249,48 +267,50 @@ void daccustodian::votecust(name voter, vector<name> newvotes) {
 //    }
 //}
 
+void daccustodian::assert_period_time() {
+    uint32_t timestamp = now();
+    uint32_t periodBlockCount = timestamp - _currentState.lastperiodtime;
+    eosio_assert(periodBlockCount > configs().periodlength,
+                 "New period is being called too soon. Wait until the period has completed.");
+}
+
 void daccustodian::newperiod(string message, bool earlyelect) {
-    require_auth(_self);
+//    require_auth(_self);
 
-    /* Copied from the Tech Doc vvvvv
-     // 1. Distribute custodian pay based on the median of requested pay for all currently elected candidates
-
-     // 3. Assigns the custodians, this may include updating a multi-sig wallet which controls the funds in the DAC as well as updating DAC contract code
-     * Copied from the Tech Doc ^^^^^
-     */
+    assert_period_time();
 
     // Distribute pay to the current custodians.
     distpay(earlyelect);
 
     contr_config config = configs();
 
+    // Get the max supply of the lockup asset token (eg. EOSDAC)
     auto tokenStats = stats(config.tokencontr, config.lockupasset.symbol).begin();
     uint64_t max_supply = tokenStats->max_supply.amount;
-    eosio::print("token max supply: ", max_supply, " total votes: ", _currentState.total_votes);
-    double percent_of_current_voter_engagement = double(_currentState.total_votes) / double(max_supply) * 100.0;
-    if (_currentState.met_initial_votes_threshold == false &&
-        percent_of_current_voter_engagement < config.initial_vote_quorum_percent) {
-        eosio::print("Voter engagement is insufficient to activate the DAC.");
-        eosio::print("Requires engagement of ", config.initial_vote_quorum_percent,
-                     "% of token's value to activate the DAC for the first time.");
-    } else {
-        _currentState.met_initial_votes_threshold = true;
 
-        if (percent_of_current_voter_engagement > config.vote_quorum_percent) {
-            eosio::print("Voter engagement is sufficient. Setting up for a new DAC period...");
+    double percent_of_current_voter_engagement =
+            double(_currentState.total_weight_of_votes) / double(max_supply) * 100.0;
 
-            // Set custodians for the nedt period.
-            allocatecust(earlyelect);
+    eosio::print("\n\nToken max supply: ", max_supply, " total votes so far: ", _currentState.total_weight_of_votes);
+    eosio::print("\n\nNeed inital engagement of: ", config.initial_vote_quorum_percent, "% to start the DAC.");
+    eosio::print("\n\nNeed ongoing engagement of: ", config.vote_quorum_percent,
+                 "% to allow new periods to trigger after initial activation. ");
+    eosio::print("\n\nPercent of current voter engagement: ", percent_of_current_voter_engagement);
 
-            // Set the auths on the dacauthority account
-            setauths();
-        } else {
-            eosio::print(
-                    "Voter engagement is insufficient. Existing custodians will remain in place for the next period");
-            eosio::print("Requires engagement of ", config.vote_quorum_percent,
-                         "% of token's value to activate election.");
-        }
-    }
+    eosio_assert(_currentState.met_initial_votes_threshold == true ||
+                 percent_of_current_voter_engagement > config.initial_vote_quorum_percent,
+                 "Voter engagement is insufficient to activate the DAC.");
+    _currentState.met_initial_votes_threshold = true;
+
+    eosio_assert(percent_of_current_voter_engagement > config.vote_quorum_percent,
+                 "Voter engagement is insufficient to process a new period");
+
+
+    // Set custodians for the nedt period.
+    allocatecust(earlyelect);
+
+    // Set the auths on the dacauthority account
+//    setauths(); // Disable for now because it makes testing harder.
 
 //        Schedule the the next election cycle at the end of the period.
 //        transaction nextTrans{};
@@ -303,7 +323,7 @@ void daccustodian::newperiod(string message, bool earlyelect) {
 void daccustodian::claimpay(name claimer, uint64_t payid) {
     require_auth(claimer);
 
-    const pay& payClaim = pending_pay.get(payid, "Invalid pay claim id.");
+    const pay &payClaim = pending_pay.get(payid, "Invalid pay claim id.");
 
     eosio_assert(claimer == payClaim.receiver, "Pay can only be claimed by the intended receiver");
 
@@ -377,10 +397,6 @@ member daccustodian::get_valid_member(name member) {
     return regmem;
 }
 
-bool daccustodian::isCustodian(candidate account) {
-    return false; // temp function as part of the earlyelect logic.
-}
-
 void daccustodian::updateVoteWeight(name custodian, int64_t weight) {
     if (weight == 0) {
         print("\n Vote has no weight - No need to contrinue.");
@@ -402,6 +418,8 @@ void daccustodian::updateVoteWeights(const vector<name> &votes, int64_t vote_wei
     for (const auto &cust : votes) {
         updateVoteWeight(cust, vote_weight);
     }
+
+    _currentState.total_votes_on_candidates += votes.size() * vote_weight;
 }
 
 void daccustodian::modifyVoteWeights(name voter, vector<name> oldVotes, vector<name> newVotes) {
@@ -418,6 +436,14 @@ void daccustodian::modifyVoteWeights(name voter, vector<name> oldVotes, vector<n
     }
 
     int64_t vote_weight = ac->balance.amount;
+
+    // New voter -> Add the tokens to the total weight.
+    if (oldVotes.size() == 0)
+        _currentState.total_weight_of_votes += vote_weight;
+
+    // Leaving voter -> Remove the tokens to the total weight.
+    if (newVotes.size() == 0)
+        _currentState.total_weight_of_votes -= vote_weight;
 
     updateVoteWeights(oldVotes, -vote_weight);
     updateVoteWeights(newVotes, vote_weight);
@@ -469,7 +495,6 @@ void daccustodian::distpay(bool earlyelect) {
 }
 
 void daccustodian::allocatecust(bool early_election) {
-    require_auth(_self);
 
     eosio::print("Configure custodians for the next period.");
 
@@ -477,25 +502,31 @@ void daccustodian::allocatecust(bool early_election) {
     auto byvotes = registered_candidates.get_index<N(byvotesrank)>();
     auto cand_itr = byvotes.begin();
 
+    int32_t electcount = configs().numelected;
+
     if (early_election) {
         eosio::print("Select only enough candidates to fill the gaps.");
-
+        uint8_t currentcustCount = 0;
+        for (auto itr = custodians.begin(); itr != custodians.end(); itr++) { ++currentcustCount; }
+        electcount -= currentcustCount;
+    } else {
+        auto cust_itr = custodians.begin();
+        while (cust_itr != custodians.end()) {
+            cust_itr = custodians.erase(cust_itr);
+        }
     }
 
-    auto cust_itr = custodians.begin();
-    while (cust_itr != custodians.end()) {
-        cust_itr = custodians.erase(cust_itr);
-    }
 
     int i = 0;
-    int32_t electcount = configs().numelected;
     while (i < electcount) {
-        // Maybe should assert here but if it's part of a deferred transaction that could be bad.
-        eosio_assert((cand_itr != byvotes.end() && cand_itr->total_votes > 0),
-                     "The pool of eligible candidates has been exhausted");
 
-        //  If the candidate is already a custodian and skip until one that is not is found.
-        if (custodians.find(cand_itr->candidate_name) != custodians.end()) {
+        if (cand_itr == byvotes.end() || cand_itr->total_votes == 0) {
+            eosio::print("The pool of eligible candidates has been exhausted");
+            return;
+        }
+
+        //  If the candidate is inactive or is already a custodian skip to the next one.
+        if (!cand_itr->is_active || custodians.find(cand_itr->candidate_name) != custodians.end()) {
             cand_itr++;
         } else {
             custodians.emplace(_self, [&](custodian &c) {
@@ -636,8 +667,8 @@ EOSIO_ABI_EX(daccustodian,
                 (claimpay)
                 (migrate)
                 (transfer)
-
                 (distpay)
                 (allocatecust)
                 (setauths)
+                (storeprofile)
 )
