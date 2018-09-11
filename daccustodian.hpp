@@ -334,6 +334,6 @@ public: // Exposed publicy for debugging only.
 
     void setauths();
 
-    void migrate(name cand);
+    void migrate();
 
 };

@@ -544,9 +544,28 @@ void daccustodian::setauths() {
             .send();
 }
 
-void daccustodian::migrate(name cand) {
-//        configscontainer conf(_self, _self);
-//        conf.remove();
+template <typename T>
+void cleanTable(uint64_t code, uint64_t account){
+    T db(code, account);
+    while(db.begin() != db.end()){
+        auto itr = --db.end();
+        db.erase(itr);
+    }
+}
+
+
+void daccustodian::migrate() {
+
+//    configscontainer configs(_self, _self);
+//    configs.remove();
+
+    contract_state.remove();
+    _currentState = contr_state{};
+
+    cleanTable<candidates_table>(_self, _self);
+    cleanTable<custodians_table>(_self, _self);
+    cleanTable<votes_table>(_self, _self);
+    cleanTable<pending_pay_table>(_self, _self);
 
     //Copy to a holding table - Enable this for the first step
 /*

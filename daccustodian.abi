@@ -161,13 +161,6 @@
 			"type": "name"
 		}]
 	}, {
-		"name": "migrate",
-		"base": "",
-		"fields": [{
-			"name": "cand",
-			"type": "name"
-		}]
-	}, {
 		"name": "updatebio",
 		"base": "",
 		"fields": [{
@@ -245,7 +238,7 @@
 	}],
 	"actions": [{
 			"name": "migrate",
-			"type": "migrate",
+			"type": "void",
 			"ricardian_contract": ""
 		},
 		{
