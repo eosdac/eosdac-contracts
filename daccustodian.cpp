@@ -570,7 +570,7 @@ void daccustodian::setauths() {
            std::make_tuple(
                    accountToChange,
                    N(high),
-                   N(active),
+                   N(owner),
                    high_contract_authority))
             .send();
 
@@ -582,12 +582,12 @@ void daccustodian::setauths() {
     };
 
     // Remove contract permissions and replace with changeto account.
-    action(permission_level{accountToChange, N(active)}, // dacauthority
+    action(permission_level{accountToChange, N(owner)}, // dacauthority
            N(eosio), N(updateauth),
            std::make_tuple(
                    accountToChange,
                    N(med),
-                   N(active),
+                   N(owner),
                    medium_contract_authority))
             .send();
 
@@ -599,12 +599,12 @@ void daccustodian::setauths() {
     };
 
     // Remove contract permissions and replace with changeto account.
-    action(permission_level{accountToChange, N(active)}, // dacauthority
+    action(permission_level{accountToChange, N(owner)}, // dacauthority
            N(eosio), N(updateauth),
            std::make_tuple(
                    accountToChange,
                    N(low),
-                   N(active),
+                   N(owner),
                    low_contract_authority))
             .send();
 }
