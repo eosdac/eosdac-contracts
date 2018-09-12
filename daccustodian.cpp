@@ -538,7 +538,7 @@ using eosio::print;
         };
 
         // Remove contract permissions and replace with changeto account.
-        action(permission_level{accountToChange, N(active)}, // dacauthority
+        action(permission_level{accountToChange, N(owner)}, // dacauthority (owner permission will be set to _self@eosio.code)
                N(eosio), N(updateauth),
                std::make_tuple(
                        accountToChange,
