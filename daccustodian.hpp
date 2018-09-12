@@ -99,10 +99,14 @@ typedef singleton<N(config), contr_config> configscontainer;
 
 struct contr_state {
     uint32_t lastperiodtime = 0;
-    uint64_t total_votes = 0;
+    int64_t total_weight_of_votes = 0;
+    int64_t total_votes_on_candidates = 0;
+    uint32_t number_active_candidates = 0;
     bool met_initial_votes_threshold = false;
 
-    EOSLIB_SERIALIZE(contr_state, (lastperiodtime)(total_votes)(met_initial_votes_threshold))
+    EOSLIB_SERIALIZE(contr_state,
+                     (lastperiodtime)(total_weight_of_votes)(total_votes_on_candidates)(number_active_candidates)(
+                             met_initial_votes_threshold))
 };
 
 typedef singleton<N(state), contr_state> statecontainer;
@@ -119,6 +123,7 @@ struct candidate {
     asset requestedpay;
     asset locked_tokens;
     uint64_t total_votes;
+    uint8_t is_active;
 
     account_name primary_key() const { return static_cast<uint64_t>(candidate_name); }
 
@@ -129,7 +134,7 @@ struct candidate {
     uint64_t by_pending_pay() const { return static_cast<uint64_t>(requestedpay.amount); }
 
     EOSLIB_SERIALIZE(candidate,
-                     (candidate_name)(bio)(requestedpay)(locked_tokens)(total_votes))
+                     (candidate_name)(bio)(requestedpay)(locked_tokens)(total_votes)(is_active))
 };
 
 typedef multi_index<N(candidates), candidate,
@@ -300,15 +305,19 @@ public:
 
     void updatebio(name cand, string bio);
 
+    inline void storeprofile(name cand, string profile) { eosio::print("store: ", profile); };
+
     void updatereqpay(name cand, asset requestedpay);
 
     void votecust(name voter, vector<name> newvotes);
 
-    void voteproxy(name voter, name proxy);
+//    void voteproxy(name voter, name proxy);
 
     void newperiod(string message, bool earlyelect);
 
     void paypending(string message);
+
+    void claimpay(name claimer, uint64_t payid);
 
 private: // Private helper methods used by other actions.
 
@@ -324,18 +333,16 @@ private: // Private helper methods used by other actions.
 
     void modifyVoteWeights(name voter, vector<name> oldVotes, vector<name> newVotes);
 
+    void assert_period_time();
+
 public: // Exposed publicy for debugging only.
 
     void distpay(bool earlyelect);
 
-    void clearvotes();
-
-    void tallyvotes();
-
-    void configperiod();
+    void allocatecust(bool early_election);
 
     void setauths();
 
-    void migrate(name cand);
+    void migrate();
 
 };
