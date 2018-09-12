@@ -121,7 +121,7 @@ void daccustodian::regcandidate(name cand, string bio, asset requestedpay) {
         print("The amount staked is insufficient by: ", shortfall, " tokens.");
         eosio_assert(false, "");
     }
-    if (reg_candidate != registered_candidates.end() && reg_candidate->is_active) {
+    if (reg_candidate != registered_candidates.end()) {
 
         registered_candidates.modify(reg_candidate, cand, [&](auto &c) {
             c.locked_tokens = pending->quantity;
