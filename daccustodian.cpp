@@ -557,8 +557,8 @@ void daccustodian::setauths() {
         accounts.push_back(account);
     }
 
-    // Setup authority for contract. Choose either a new key, or account, or both.
-    eosiosystem::authority contract_authority{
+    // Setup high authority for contract
+    eosiosystem::authority high_contract_authority{
             .threshold = configs().auth_threshold_high,
             .keys = {},
             .accounts = accounts
@@ -569,9 +569,43 @@ void daccustodian::setauths() {
            N(eosio), N(updateauth),
            std::make_tuple(
                    accountToChange,
+                   N(high),
                    N(active),
-                   N(owner),
-                   contract_authority))
+                   high_contract_authority))
+            .send();
+
+    // Setup high authority for contract
+    eosiosystem::authority medium_contract_authority{
+            .threshold = configs().auth_threshold_mid,
+            .keys = {},
+            .accounts = accounts
+    };
+
+    // Remove contract permissions and replace with changeto account.
+    action(permission_level{accountToChange, N(active)}, // dacauthority
+           N(eosio), N(updateauth),
+           std::make_tuple(
+                   accountToChange,
+                   N(med),
+                   N(active),
+                   medium_contract_authority))
+            .send();
+
+    // Setup high authority for contract
+    eosiosystem::authority low_contract_authority{
+            .threshold = configs().auth_threshold_low,
+            .keys = {},
+            .accounts = accounts
+    };
+
+    // Remove contract permissions and replace with changeto account.
+    action(permission_level{accountToChange, N(active)}, // dacauthority
+           N(eosio), N(updateauth),
+           std::make_tuple(
+                   accountToChange,
+                   N(low),
+                   N(active),
+                   low_contract_authority))
             .send();
 }
 
