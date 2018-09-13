@@ -305,7 +305,7 @@ public:
 
     void updatebio(name cand, string bio);
 
-    inline void storeprofile(name cand, string profile) { eosio::print("store: ", profile); };
+    inline void storeprofile(name cand, string profile) { require_auth(cand); };
 
     void updatereqpay(name cand, asset requestedpay);
 
