@@ -270,18 +270,8 @@
 			"ricardian_contract": ""
 		},
 		{
-			"name": "distpay",
-			"type": "earlyelect",
-			"ricardian_contract": ""
-		},
-		{
 			"name": "allocatecust",
 			"type": "earlyelect",
-			"ricardian_contract": ""
-		},
-		{
-			"name": "setauths",
-			"type": "void",
 			"ricardian_contract": ""
 		},
 		{

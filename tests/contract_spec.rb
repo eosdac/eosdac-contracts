@@ -33,9 +33,10 @@ def install_contracts
    set -x
    kill -INT `pgrep nodeos`
 
-  ttab 'nodeos --delete-all-blocks --verbose-http-errors'
+    # Launch nodeos in a new tab so the output can be observed.
+    # ttab is a nodejs module but this could be easily achieved manually without ttab.
+    ttab 'nodeos --delete-all-blocks --verbose-http-errors'
 
-   # kill -INT `pgrep nodeos`
     # nodeos --delete-all-blocks --verbose-http-errors &>/dev/null &
     sleep 4
    cleos wallet unlock --password `cat ~/eosio-wallet/.pass`
@@ -1205,6 +1206,9 @@ describe "eosdacelect" do
   describe "newperiod" do
 
     describe "with valid auth should succeed" do
+      before(:all) do
+        `cleos push action daccustodian updateconfig '{ "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 100 , "numelected": 12, "tokcontr": "eosdactoken", "authaccount": "dacauthority", "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 3, "auth_threshold_mid": 2, "auth_threshold_low": 1}' -p daccustodian`
+      end
       command %(cleos push action daccustodian newperiod '{ "message": "log message", "earlyelect": false}' -p daccustodian), allow_error: true
       its(:stdout) {is_expected.to include('daccustodian::newperiod')} # changed from stdout
     end
@@ -1216,8 +1220,8 @@ describe "eosdacelect" do
 
     describe "called after period time has passed" do
       before(:all) do
-        `cleos push action daccustodian updateconfig '{ "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 1, "numelected": 12, "tokcontr": "eosdactoken", "authaccount": "dacauthority", "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3}' -p daccustodian`
-        sleep 2
+        `cleos push action daccustodian updateconfig '{ "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 1, "numelected": 12, "tokcontr": "eosdactoken", "authaccount": "dacauthority", "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 3, "auth_threshold_mid": 2, "auth_threshold_low": 1}' -p daccustodian`
+        sleep 1
       end
       command %(cleos push action daccustodian newperiod '{ "message": "Good new period call after config change", "earlyelect": false}' -p daccustodian), allow_error: true
       its(:stdout) {is_expected.to include('daccustodian::newperiod')}
@@ -1411,12 +1415,11 @@ describe "eosdacelect" do
         JSON
       end
     end
-  end
 
-  context "the custodians table" do
-    command %(cleos get table daccustodian daccustodian custodians --limit 20), allow_error: true
-    it do
-      expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
+    context "the custodians table" do
+      command %(cleos get table daccustodian daccustodian custodians --limit 20), allow_error: true
+      it do
+        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
         {
           "rows": [
   {
@@ -1447,7 +1450,8 @@ describe "eosdacelect" do
           "more": false
         }
 
-      JSON
+        JSON
+      end
     end
   end
 
@@ -1595,7 +1599,7 @@ describe "eosdacelect" do
   describe "allocateCust" do
     before(:all) do
       # add cands
-      `cleos push action daccustodian updateconfig '{ "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "tokcontr": "eosdactoken", "authaccount": "dacauthority", "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3}' -p daccustodian`
+      `cleos push action daccustodian updateconfig '{ "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 1 , "numelected": 12, "tokcontr": "eosdactoken", "authaccount": "dacauthority", "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 4, "auth_threshold_mid": 4, "auth_threshold_low": 2}' -p daccustodian`
     end
 
     context "given there are not enough candidates to fill the custodians" do
@@ -1623,7 +1627,7 @@ describe "eosdacelect" do
 
         seed_account("voter3", issue: "110.0000 EOSDAC", memberreg: "New Latest terms")
         seed_account("voter4", issue: "121.0000 EOSDAC", memberreg: "New Latest terms")
-
+        sleep 2
       end
       command %(cleos push action daccustodian allocatecust '[false]' -p daccustodian -f), allow_error: true
       its(:stdout) {is_expected.to include('The pool of eligible candidates has been exhausted')}
@@ -1702,79 +1706,81 @@ describe "eosdacelect" do
       it do
         expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
 {
-  "rows": [{
-		"cust_name": "allocate11",
-		"bio": "any bio",
-		"requestedpay": "11.0000 EOS",
-		"total_votes": 1080000
-	},
-	{
-		"cust_name": "allocate12",
-		"bio": "any bio",
-		"requestedpay": "11.0000 EOS",
-		"total_votes": 1100000
-	},
-	{
-		"cust_name": "allocate21",
-		"bio": "any bio",
-		"requestedpay": "11.0000 EOS",
-		"total_votes": 1080000
-	},
-	{
-		"cust_name": "allocate22",
-		"bio": "any bio",
-		"requestedpay": "11.0000 EOS",
-		"total_votes": 1100000
-	},
-	{
-		"cust_name": "allocate31",
-		"bio": "any bio",
-		"requestedpay": "11.0000 EOS",
-		"total_votes": 1080000
-	},
-	{
-		"cust_name": "allocate32",
-		"bio": "any bio",
-		"requestedpay": "11.0000 EOS",
-		"total_votes": 1100000
-	},
-	{
-		"cust_name": "allocate4",
-		"bio": "any bio",
-		"requestedpay": "11.0000 EOS",
-		"total_votes": 1820000
-	},
-	{
-		"cust_name": "allocate41",
-		"bio": "any bio",
-		"requestedpay": "11.0000 EOS",
-		"total_votes": 1080000
-	},
-	{
-		"cust_name": "allocate5",
-		"bio": "any bio",
-		"requestedpay": "11.0000 EOS",
-		"total_votes": 1820000
-	},
-	{
-		"cust_name": "allocate51",
-		"bio": "any bio",
-		"requestedpay": "11.0000 EOS",
-		"total_votes": 1080000
-	},
-	{
-		"cust_name": "votedcust1",
-		"bio": "any bio",
-		"requestedpay": "11.0000 EOS",
-		"total_votes": 790000
-	},
-	{
-		"cust_name": "votedcust3",
-		"bio": "any bio",
-		"requestedpay": "13.0000 EOS",
-		"total_votes": 790000
-	}
-],
+  "rows": [
+  {
+    "cust_name": "allocate11",
+    "bio": "any bio",
+    "requestedpay": "11.0000 EOS",
+    "total_votes": 1080000
+  },
+  {
+    "cust_name": "allocate12",
+    "bio": "any bio",
+    "requestedpay": "11.0000 EOS",
+    "total_votes": 1100000
+  },
+  {
+    "cust_name": "allocate21",
+    "bio": "any bio",
+    "requestedpay": "11.0000 EOS",
+    "total_votes": 1080000
+  },
+  {
+    "cust_name": "allocate22",
+    "bio": "any bio",
+    "requestedpay": "11.0000 EOS",
+    "total_votes": 1100000
+  },
+  {
+    "cust_name": "allocate31",
+    "bio": "any bio",
+    "requestedpay": "11.0000 EOS",
+    "total_votes": 1080000
+  },
+  {
+    "cust_name": "allocate32",
+    "bio": "any bio",
+    "requestedpay": "11.0000 EOS",
+    "total_votes": 1100000
+  },
+  {
+    "cust_name": "allocate4",
+    "bio": "any bio",
+    "requestedpay": "11.0000 EOS",
+    "total_votes": 1820000
+  },
+  {
+    "cust_name": "allocate41",
+    "bio": "any bio",
+    "requestedpay": "11.0000 EOS",
+    "total_votes": 1080000
+  },
+  {
+    "cust_name": "allocate5",
+    "bio": "any bio",
+    "requestedpay": "11.0000 EOS",
+    "total_votes": 1820000
+  },
+  {
+    "cust_name": "allocate51",
+    "bio": "any bio",
+    "requestedpay": "11.0000 EOS",
+    "total_votes": 1080000
+  },
+  {
+    "cust_name": "votedcust1",
+    "bio": "any bio",
+    "requestedpay": "11.0000 EOS",
+    "total_votes": 790000
+  },
+  {
+    "cust_name": "votedcust3",
+    "bio": "any bio",
+    "requestedpay": "13.0000 EOS",
+    "total_votes": 790000
+  }
+]
+,
   "more": false
 }
 
@@ -1783,7 +1789,6 @@ describe "eosdacelect" do
       end
     end
   end
-
 
   describe "unreg custodian candidate" do
     context "when the auth is wrong" do

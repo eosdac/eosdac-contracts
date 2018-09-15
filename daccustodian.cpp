@@ -273,15 +273,12 @@ void daccustodian::assert_period_time() {
     uint32_t periodBlockCount = timestamp - _currentState.lastperiodtime;
     eosio_assert(periodBlockCount > configs().periodlength,
                  "New period is being called too soon. Wait until the period has completed.");
+    _currentState.lastperiodtime = now();
 }
 
-void daccustodian::newperiod(string message, bool earlyelect) {
-//    require_auth(_self);
+void daccustodian::newperiod(string message) {
 
     assert_period_time();
-
-    // Distribute pay to the current custodians.
-    distpay(earlyelect);
 
     contr_config config = configs();
 
@@ -295,7 +292,7 @@ void daccustodian::newperiod(string message, bool earlyelect) {
     eosio::print("\n\nToken max supply: ", max_supply, " total votes so far: ", _currentState.total_weight_of_votes);
     eosio::print("\n\nNeed inital engagement of: ", config.initial_vote_quorum_percent, "% to start the DAC.");
     eosio::print("\n\nNeed ongoing engagement of: ", config.vote_quorum_percent,
-                 "% to allow new periods to trigger after initial activation. ");
+                 "% to allow new periods to trigger after initial activation.");
     eosio::print("\n\nPercent of current voter engagement: ", percent_of_current_voter_engagement);
 
     eosio_assert(_currentState.met_initial_votes_threshold == true ||
@@ -307,11 +304,14 @@ void daccustodian::newperiod(string message, bool earlyelect) {
                  "Voter engagement is insufficient to process a new period");
 
 
-    // Set custodians for the nedt period.
-    allocatecust(earlyelect);
+    // Set custodians for the next period.
+    allocatecust(false);
+
+    // Distribute pay to the current custodians.
+    distributePay();
 
     // Set the auths on the dacauthority account
-//    setauths(); // Disable for now because it makes testing harder.
+    setauths();
 
 //        Schedule the the next election cycle at the end of the period.
 //        transaction nextTrans{};
@@ -450,7 +450,7 @@ void daccustodian::modifyVoteWeights(name voter, vector<name> oldVotes, vector<n
     updateVoteWeights(newVotes, vote_weight);
 }
 
-void daccustodian::distpay(bool earlyelect) {
+void daccustodian::distributePay() {
     auto idx = registered_candidates.get_index<N(byvotes)>();
     auto it = idx.rbegin();
 
@@ -469,13 +469,6 @@ void daccustodian::distpay(bool earlyelect) {
 
     // To account for an early called election the pay may need calculated pro-rata'd
     int64_t medianPay = reqpays[mid];
-
-    uint32_t timestamp = now();
-    if (earlyelect) {
-        uint32_t periodBlockCount = timestamp - _currentState.lastperiodtime;
-        medianPay = medianPay * (periodBlockCount / configs().periodlength);
-    }
-    _currentState.lastperiodtime = timestamp;
 
     asset medianAsset = asset(medianPay, PAYMENT_TOKEN);
 
@@ -702,8 +695,6 @@ EOSIO_ABI_EX(daccustodian,
                 (claimpay)
                 (migrate)
                 (transfer)
-                (distpay)
                 (allocatecust)
-                (setauths)
                 (storeprofile)
 )
