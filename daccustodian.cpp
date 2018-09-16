@@ -66,7 +66,9 @@ void daccustodian::newperiod(string message) {
 //        nextTrans.send(N(newperiod), false);
 }
 
-
+#ifndef TOKEN_CONTRACT
+#define TOKEN_CONTRACT eosdactoken
+#endif
 
 #define EOSIO_ABI_EX(TYPE, MEMBERS) \
 extern "C" { \
@@ -76,7 +78,7 @@ extern "C" { \
          eosio_assert(code == N(eosio), "onerror action's are only valid from the \"eosio\" system account"); \
       } \
       auto self = receiver; \
-      if( code == self || action == N(transfer) ) { \
+      if( code == self || code == eosio::string_to_name(TOKEN_CONTRACT) ) { \
          TYPE thiscontract( self ); \
          switch( action ) { \
             EOSIO_API( TYPE, MEMBERS ) \

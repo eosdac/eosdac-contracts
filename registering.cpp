@@ -4,7 +4,7 @@ void daccustodian::regcandidate(name cand, string bio, asset requestedpay) {
 
     require_auth(cand);
     get_valid_member(cand);
-    eosio_assert(requestedpay.amount < 2500000, "Requested pay amount limit of 250 token for a candidate was exceeded.");
+    eosio_assert(requestedpay.amount < 4500000, "Requested pay amount limit of 250 token for a candidate was exceeded.");
     eosio_assert(bio.size() < 256, "The bio should be less than 256 characters.");
 
     account_name tokencontract = configs().tokencontr;

@@ -58,7 +58,7 @@ def install_contracts
    cleos set account permission dacauthority owner '{"threshold": 1,"keys": [{"key": "#{CONTRACT_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' '' -p dacauthority@owner
    cleos set account permission #{ACCOUNT_NAME} active '{"threshold": 1,"keys": [{"key": "#{CONTRACT_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p #{ACCOUNT_NAME}
 
-   # eosio-cpp -o #{CONTRACT_NAME}.wast *.cpp
+   # eosio-cpp -DTOKEN_CONTRACT='"eosdactoken"' -o #{CONTRACT_NAME}.wast #{CONTRACT_NAME}.cpp
    if [[ $? != 0 ]] 
      then 
      echo "failed to compile contract" 
@@ -322,7 +322,7 @@ describe "eosdacelect" do
 
     context "with valid auth" do
       command %(cleos push action daccustodian updatereqpay '{ "cand": "updatepay2", "requestedpay": "410.5000 EOS"}' -p updatepay2), allow_error: true
-      its(:stderr) {is_expected.to include('daccustodian::updatereqpay')}
+      its(:stdout) {is_expected.to include('daccustodian::updatereqpay')}
     end
 
     context "with valid auth" do
