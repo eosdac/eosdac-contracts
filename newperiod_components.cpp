@@ -44,6 +44,7 @@ void daccustodian::assert_period_time() {
     _currentState.lastperiodtime = now();
 }
 
+//TODO: This should not be public - Tests need refactoring so this can be hidden.
 void daccustodian::allocatecust(bool early_election) {
 
     eosio::print("Configure custodians for the next period.");

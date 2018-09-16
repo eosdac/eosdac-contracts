@@ -11,8 +11,8 @@ void cleanTable(uint64_t code, uint64_t account){
 
 void daccustodian::migrate() {
 
-//    configscontainer configs(_self, _self);
-//    configs.remove();
+    configscontainer configs(_self, _self);
+    configs.remove();
 
     contract_state.remove();
     _currentState = contr_state{};
