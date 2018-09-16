@@ -31,54 +31,60 @@ def install_contracts
 
   beforescript = <<~SHELL
    set -x
+
    kill -INT `pgrep nodeos`
 
-    # Launch nodeos in a new tab so the output can be observed.
-    # ttab is a nodejs module but this could be easily achieved manually without ttab.
-    ttab 'nodeos --delete-all-blocks --verbose-http-errors'
+   # Launch nodeos in a new tab so the output can be observed.
+   # ttab is a nodejs module but this could be easily achieved manually without ttab.
+   ttab 'nodeos --delete-all-blocks --verbose-http-errors'
 
-    # nodeos --delete-all-blocks --verbose-http-errors &>/dev/null &
-    sleep 4
+   # nodeos --delete-all-blocks --verbose-http-errors &>/dev/null & # Alternative without ttab installed
+
+   echo "Give the chain a chance to settle."
+   
+   sleep 4
+   
    cleos wallet unlock --password `cat ~/eosio-wallet/.pass`
    cleos wallet import --private-key #{CONTRACT_ACTIVE_PRIVATE_KEY}
    cleos wallet import --private-key #{TEST_ACTIVE_PRIVATE_KEY}
    cleos wallet import --private-key #{TEST_OWNER_PRIVATE_KEY}
+
    cleos create account eosio #{ACCOUNT_NAME} #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
    cleos create account eosio eosdactoken #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
    cleos create account eosio eosio.token #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
-
-   # Setup for the auth setting.
    cleos create account eosio dacauthority #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
+
+   # Setup the inital permissions.
    cleos set account permission dacauthority owner '{"threshold": 1,"keys": [{"key": "#{CONTRACT_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' '' -p dacauthority@owner
    cleos set account permission #{ACCOUNT_NAME} active '{"threshold": 1,"keys": [{"key": "#{CONTRACT_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p #{ACCOUNT_NAME}
 
+   # eosio-cpp -o #{CONTRACT_NAME}.wast *.cpp
    if [[ $? != 0 ]] 
      then 
-     echo "Failed to create contract account" 
+     echo "failed to compile contract" 
      exit 1
    fi
-     # eosio-cpp -o #{CONTRACT_NAME}.wast *.cpp
-     if [[ $? != 0 ]] 
-       then 
-       echo "failed to compile contract" 
-       exit 1
-     fi
-     cd ..
-     cleos set contract #{ACCOUNT_NAME} #{CONTRACT_NAME} -p #{ACCOUNT_NAME}
-     
-     echo "Set up the EOS token contract"
-     cd eosio.token
-     # eosio-cpp -o eosio.token.wast eosio.token.cpp
-     cd ..
-     cleos set contract eosio.token eosio.token -p eosio.token
+   # cd ..
+   cleos set code #{ACCOUNT_NAME} #{ACCOUNT_NAME}.wast -p #{ACCOUNT_NAME}
+   cleos set abi #{ACCOUNT_NAME} #{ACCOUNT_NAME}.abi -p #{ACCOUNT_NAME}
+   
+   echo ""
+   echo ""
+   echo "Set up the eosio.token contract"
+ pwd
+   cleos set contract eosio.token tests/dependencies/eosio.token -p eosio.token
 
-     cd eosdactoken/
-     cleos set contract eosdactoken eosdactoken -p eosdactoken
+   echo ""
+   echo ""
+   echo "Set up the eosdactoken contract"
+   cleos set contract eosdactoken tests/dependencies/eosdactoken -p eosdactoken
 
-     cleos push action eosdactoken updateconfig '["daccustodian"]' -p eosdactoken 
-     cd ../#{CONTRACT_NAME}
+   # Set the token contract to refer to this contract
+   cleos push action eosdactoken updateconfig '["daccustodian"]' -p eosdactoken 
+   cd ../#{CONTRACT_NAME}
 
   SHELL
+
   `#{beforescript}`
   exit() unless $? == 0
 end
@@ -87,6 +93,11 @@ def killchain
   `sleep 0.5; kill \`pgrep nodeos\``
 end
 
+# @param [eos account name for the new account] name
+# @param [if not nil amount of eosdac to issue to the new account] issue
+# @param [if not nil register the account with the agreed terms as this value] memberreg
+# @param [if not nil transfer this amount to the elections contract so they can register as an election candidate] stake
+# @param [if not nil register as a candidate with this amount as the requested pay] requestedpay
 def seed_account(name, issue: nil, memberreg: nil, stake: nil, requestedpay: nil)
   `cleos create account eosio #{name} #{TEST_OWNER_PUBLIC_KEY} #{TEST_ACTIVE_PUBLIC_KEY}`
 
@@ -111,6 +122,7 @@ def seed_account(name, issue: nil, memberreg: nil, stake: nil, requestedpay: nil
   end
 end
 
+# Configure the initial state for the contracts for elements that are assumed to work from other contracts already.
 def configure_contracts
   # configure accounts for eosdactoken
   `cleos push action eosdactoken create '{ "issuer": "eosdactoken", "maximum_supply": "100000.0000 EOSDAC", "transfer_locked": false}' -p eosdactoken`
@@ -306,6 +318,11 @@ describe "eosdacelect" do
     context "with valid auth but not registered" do
       command %(cleos push action daccustodian updatereqpay '{ "cand": "updatepay1", "requestedpay": "31.5000 EOS"}' -p updatepay1), allow_error: true
       its(:stderr) {is_expected.to include('Error 3050003')}
+    end
+
+    context "with valid auth" do
+      command %(cleos push action daccustodian updatereqpay '{ "cand": "updatepay2", "requestedpay": "410.5000 EOS"}' -p updatepay2), allow_error: true
+      its(:stderr) {is_expected.to include('daccustodian::updatereqpay')}
     end
 
     context "with valid auth" do

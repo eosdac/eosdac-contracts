@@ -38,12 +38,9 @@ struct contr_config {
                              (numelected)
                              (periodlength)
                              (tokencontr)
-
                              (authaccount)
-
                              (initial_vote_quorum_percent)
                              (vote_quorum_percent)
-
                              (auth_threshold_high)
                              (auth_threshold_mid)
                              (auth_threshold_low)
@@ -60,8 +57,12 @@ struct contr_state {
     bool met_initial_votes_threshold = false;
 
     EOSLIB_SERIALIZE(contr_state,
-                     (lastperiodtime)(total_weight_of_votes)(total_votes_on_candidates)(number_active_candidates)(
-                             met_initial_votes_threshold))
+                     (lastperiodtime)
+                     (total_weight_of_votes)
+                     (total_votes_on_candidates)
+                     (number_active_candidates)
+                     (met_initial_votes_threshold)
+                     )
 };
 
 typedef singleton<N(state), contr_state> statecontainer;
@@ -81,11 +82,8 @@ struct candidate {
     uint8_t is_active;
 
     account_name primary_key() const { return static_cast<uint64_t>(candidate_name); }
-
     uint64_t by_number_votes() const { return static_cast<uint64_t>(total_votes); }
-
     uint64_t by_votes_rank() const { return static_cast<uint64_t>(UINT64_MAX - total_votes); }
-
     uint64_t by_pending_pay() const { return static_cast<uint64_t>(requestedpay.amount); }
 
     EOSLIB_SERIALIZE(candidate,
