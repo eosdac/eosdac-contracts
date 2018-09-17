@@ -13,7 +13,7 @@ void daccustodian::claimpay(name claimer, uint64_t payid) {
         ).send();
     } else {
         action(permission_level{_self, N(active)},
-               configs().tokencontr, N(transfer),
+               eosio::string_to_name(TOKEN_CONTRACT), N(transfer),
                std::make_tuple(_self, payClaim.receiver, payClaim.quantity, payClaim.memo)
         ).send();
     }
@@ -34,7 +34,7 @@ void daccustodian::paypending(string message) {
             ).send();
         } else {
             action(permission_level{_self, N(active)},
-                   configs().tokencontr, N(transfer),
+                   eosio::string_to_name(TOKEN_CONTRACT), N(transfer),
                    std::make_tuple(_self, payidx->receiver, payidx->quantity, payidx->memo)
             ).send();
         }

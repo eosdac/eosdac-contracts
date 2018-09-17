@@ -116,9 +116,6 @@
 			"name": "periodlength",
 			"type": "uint32"
 		}, {
-			"name": "tokcontr",
-			"type": "name"
-		}, {
 			"name": "authaccount",
 			"type": "name"
 		}, {

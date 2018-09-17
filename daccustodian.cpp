@@ -29,7 +29,7 @@ void daccustodian::newperiod(string message) {
     contr_config config = configs();
 
     // Get the max supply of the lockup asset token (eg. EOSDAC)
-    auto tokenStats = stats(config.tokencontr, config.lockupasset.symbol).begin();
+    auto tokenStats = stats(eosio::string_to_name(TOKEN_CONTRACT), config.lockupasset.symbol).begin();
     uint64_t max_supply = tokenStats->max_supply.amount;
 
     double percent_of_current_voter_engagement =
@@ -65,10 +65,6 @@ void daccustodian::newperiod(string message) {
 //        nextTrans.delay_sec = configs().periodlength;
 //        nextTrans.send(N(newperiod), false);
 }
-
-#ifndef TOKEN_CONTRACT
-#define TOKEN_CONTRACT eosdactoken
-#endif
 
 #define EOSIO_ABI_EX(TYPE, MEMBERS) \
 extern "C" { \

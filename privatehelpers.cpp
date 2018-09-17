@@ -6,8 +6,7 @@ contr_config daccustodian::configs() {
 }
 
 member daccustodian::get_valid_member(name member) {
-    name tokenContract = configs().tokencontr;
-    eosio_assert(tokenContract != 0, "The token contract has not been set via `updateconfig`.");
+    account_name tokenContract = eosio::string_to_name(TOKEN_CONTRACT);
     regmembers reg_members(tokenContract, tokenContract);
     memterms memberterms(tokenContract, tokenContract);
 
@@ -49,7 +48,7 @@ void daccustodian::modifyVoteWeights(name voter, vector<name> oldVotes, vector<n
 
     uint64_t asset_name = configs().lockupasset.symbol.name();
 
-    accounts accountstable(configs().tokencontr, voter);
+    accounts accountstable(eosio::string_to_name(TOKEN_CONTRACT), voter);
     const auto ac = accountstable.find(asset_name);
     if (ac == accountstable.end()) {
         print("Voter has no balance therefore no need to update vote weights");

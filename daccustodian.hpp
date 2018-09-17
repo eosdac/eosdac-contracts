@@ -2,6 +2,10 @@
 #include <eosiolib/multi_index.hpp>
 #include "external_types.hpp"
 
+#ifndef TOKEN_CONTRACT
+#define TOKEN_CONTRACT eosdactoken
+#endif
+
 using namespace eosio;
 using namespace std;
 
@@ -16,8 +20,6 @@ struct contr_config {
 //    Length of a period in seconds.
 //     - used for pay calculations if an eary election is called and to trigger deferred `newperiod` calls.
     uint32_t periodlength = 7 * 24 * 60 * 60;
-    //The eosdac compatible token contract this contract should call to for member reg info
-    name tokencontr;
     // account to have active auth set with all all custodians on the newperiod.
     account_name authaccount = string_to_name("dacauthority");
 
@@ -41,7 +43,6 @@ struct contr_config {
                              (maxvotes)
                              (numelected)
                              (periodlength)
-                             (tokencontr)
                              (authaccount)
                              (initial_vote_quorum_percent)
                              (vote_quorum_percent)
@@ -204,7 +205,6 @@ public:
             uint8_t maxvotes,
             uint8_t numelected,
             uint32_t periodlength,
-            name tokcontr,
             name authaccount,
             uint32_t initial_vote_quorum_percent,
             uint32_t vote_quorum_percent,

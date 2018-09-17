@@ -61,7 +61,7 @@ void daccustodian::unstake(const name &cand) {
         if (c.custodian_end_time_stamp < now()) {
             // Send back the locked up tokens
             action(permission_level{_self, N(active)},
-                   configs().tokencontr, N(transfer),
+                   eosio::string_to_name(TOKEN_CONTRACT), N(transfer),
                    make_tuple(_self, cand, c.locked_tokens,
                               string("Returning locked up stake. Thank you."))
             ).send();
@@ -79,6 +79,9 @@ void daccustodian::firecust(name cust) {
     require_auth2(configs().authaccount, configs().auth_threshold_high);
     removecust(cust);
 }
+
+
+// private methods for the above actions
 
 void daccustodian::removecust(name cust) {
 
