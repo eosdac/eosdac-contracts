@@ -5,10 +5,6 @@ void daccustodian::updatebio(name cand, string bio) {
 
     const auto &reg_candidate = registered_candidates.get(cand, "Candidate is not already registered.");
     eosio_assert(bio.size() < 256, "The bio should be less than 256 characters.");
-
-    registered_candidates.modify(reg_candidate, cand, [&](candidate &c) {
-        c.bio = bio;
-    });
 }
 
 void daccustodian::updatereqpay(name cand, asset requestedpay) {

@@ -90,17 +90,14 @@ extern "C" { \
 
 EOSIO_ABI_EX(daccustodian,
              (updateconfig)
-             (regcandidate)
-             (unregcand)
-             (updatebio)
-             (updatereqpay)
-             (votecust)
-//                     (voteproxy)
-                (newperiod)
-                (paypending)
-                (claimpay)
-                (migrate)
-                (transfer)
-                (allocatecust)
-                (storeprofile)
+             (nominatecand)(withdrawcand)(resigncust)(firecust)
+             (updatebio)(updatereqpay)
+             (votecust)/*(voteproxy)*/
+             (newperiod)
+             (paypending)(claimpay)
+             (transfer)
+             (allocatecust)
+             (stprofile)(stprofileuns)
+             (migrate)
+
 )

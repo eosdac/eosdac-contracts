@@ -32,6 +32,10 @@ struct contr_config {
     uint8_t auth_threshold_mid;
     uint8_t auth_threshold_low;
 
+    uint32_t lockup_release_time_delay;
+
+    asset requested_pay_max;
+
     EOSLIB_SERIALIZE(contr_config,
                      (lockupasset)
                              (maxvotes)
@@ -44,6 +48,8 @@ struct contr_config {
                              (auth_threshold_high)
                              (auth_threshold_mid)
                              (auth_threshold_low)
+                             (lockup_release_time_delay)
+                             (requested_pay_max)
     )
 };
 
@@ -58,11 +64,11 @@ struct contr_state {
 
     EOSLIB_SERIALIZE(contr_state,
                      (lastperiodtime)
-                     (total_weight_of_votes)
-                     (total_votes_on_candidates)
-                     (number_active_candidates)
-                     (met_initial_votes_threshold)
-                     )
+                             (total_weight_of_votes)
+                             (total_votes_on_candidates)
+                             (number_active_candidates)
+                             (met_initial_votes_threshold)
+    )
 };
 
 typedef singleton<N(state), contr_state> statecontainer;
@@ -74,33 +80,33 @@ uint128_t combine_ids(const uint8_t &boolvalue, const uint64_t &longValue) {
 
 struct candidate {
     name candidate_name;
-    string bio;
-    // Active requested pay used for display in pending elections.
     asset requestedpay;
     asset locked_tokens;
     uint64_t total_votes;
     uint8_t is_active;
+    uint32_t custodian_end_time_stamp;
 
     account_name primary_key() const { return static_cast<uint64_t>(candidate_name); }
+
     uint64_t by_number_votes() const { return static_cast<uint64_t>(total_votes); }
+
     uint64_t by_votes_rank() const { return static_cast<uint64_t>(UINT64_MAX - total_votes); }
-    uint64_t by_pending_pay() const { return static_cast<uint64_t>(requestedpay.amount); }
+
+    uint64_t by_requested_pay() const { return static_cast<uint64_t>(requestedpay.amount); }
 
     EOSLIB_SERIALIZE(candidate,
-                     (candidate_name)(bio)(requestedpay)(locked_tokens)(total_votes)(is_active))
+                     (candidate_name)(requestedpay)(locked_tokens)(total_votes)(is_active)(custodian_end_time_stamp))
 };
 
 typedef multi_index<N(candidates), candidate,
         indexed_by<N(bycandidate), const_mem_fun<candidate, account_name, &candidate::primary_key> >,
         indexed_by<N(byvotes), const_mem_fun<candidate, uint64_t, &candidate::by_number_votes> >,
         indexed_by<N(byvotesrank), const_mem_fun<candidate, uint64_t, &candidate::by_votes_rank> >,
-        indexed_by<N(bypendingpay), const_mem_fun<candidate, uint64_t, &candidate::by_pending_pay> >
+        indexed_by<N(byreqpay), const_mem_fun<candidate, uint64_t, &candidate::by_requested_pay> >
 > candidates_table;
 
 struct custodian {
     name cust_name;
-    string bio;
-    // Active requested pay used for payment calculations.
     asset requestedpay;
     uint64_t total_votes;
 
@@ -111,9 +117,8 @@ struct custodian {
     uint64_t by_requested_pay() const { return static_cast<uint64_t>(requestedpay.amount); }
 
     EOSLIB_SERIALIZE(custodian,
-                     (cust_name)(bio)(requestedpay)(total_votes))
+                     (cust_name)(requestedpay)(total_votes))
 };
-
 
 typedef multi_index<N(custodians), custodian,
         indexed_by<N(byvotesrank), const_mem_fun<custodian, uint64_t, &custodian::by_votes_rank> >,
@@ -124,14 +129,13 @@ typedef multi_index<N(custodians), custodian,
 struct vote {
     name voter;
     name proxy;
-    int64_t weight;
     vector<name> candidates;
 
     account_name primary_key() const { return static_cast<uint64_t>(voter); }
 
     account_name by_proxy() const { return static_cast<uint64_t>(proxy); }
 
-    EOSLIB_SERIALIZE(vote, (voter)(proxy)(weight)(candidates))
+    EOSLIB_SERIALIZE(vote, (voter)(proxy)(candidates))
 };
 
 typedef eosio::multi_index<N(votes), vote,
@@ -175,7 +179,6 @@ private: // Variables used throughout the other actions.
     votes_table votes_cast_by_members;
     pending_pay_table pending_pay;
 
-    symbol_type PAYMENT_TOKEN = eosio::symbol_type(eosio::string_to_symbol(4, "EOS"));
 
     contr_state _currentState;
 
@@ -207,7 +210,9 @@ public:
             uint32_t vote_quorum_percent,
             uint8_t auth_threshold_high,
             uint8_t auth_threshold_mid,
-            uint8_t auth_threshold_low
+            uint8_t auth_threshold_low,
+            uint32_t lockup_release_time_delay,
+            asset requested_pay_max
     );
 
     void transfer(name from,
@@ -215,13 +220,22 @@ public:
                   asset quantity,
                   string memo);
 
-    void regcandidate(name cand, string bio, asset requestedpay);
 
-    void unregcand(name cand);
+    void nominatecand(name cand, asset requestedpay);
+
+    void withdrawcand(name cand);
+
+    void firecand(name cand, bool lockupStake);
+
+    void resigncust(name cust);
+
+    void firecust(name cust);
 
     void updatebio(name cand, string bio);
 
-    inline void storeprofile(name cand, string profile) { require_auth(cand); };
+    inline void stprofile(name cand, string profile) { require_auth(cand); };
+
+    inline void stprofileuns(name cand, string profile) { require_auth(cand); };
 
     void updatereqpay(name cand, asset requestedpay);
 
@@ -255,10 +269,15 @@ private: // Private helper methods used by other actions.
 
     void setauths();
 
+    void removecust(name cust);
+
+    void removecand(name cust, bool lockupStake);
+
 public: // Exposed publicy for debugging only.
 
     void allocatecust(bool early_election);
 
     void migrate();
 
+    void unstake(const name &cand);
 };

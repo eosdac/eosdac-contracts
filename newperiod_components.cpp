@@ -18,7 +18,7 @@ void daccustodian::distributePay() {
 
     int64_t medianPay = reqpays[mid];
 
-    asset medianAsset = asset(medianPay, PAYMENT_TOKEN);
+    asset medianAsset = asset(medianPay, configs().requested_pay_max.symbol);
 
     custodian_count = 0;
     it = idx.rbegin();
@@ -79,7 +79,6 @@ void daccustodian::allocatecust(bool early_election) {
         } else {
             custodians.emplace(_self, [&](custodian &c) {
                 c.cust_name = cand_itr->candidate_name;
-                c.bio = cand_itr->bio;
                 c.requestedpay = cand_itr->requestedpay;
                 c.total_votes = cand_itr->total_votes;
             });

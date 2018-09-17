@@ -10,19 +10,19 @@ void daccustodian::updateconfig(
         uint32_t vote_quorum_percent,
         uint8_t auth_threshold_high,
         uint8_t auth_threshold_mid,
-        uint8_t auth_threshold_low
+        uint8_t auth_threshold_low,
+        uint32_t lockup_release_time_delay,
+        asset requested_pay_max
 ) {
 
     require_auth(_self);
 
-    // If the registered candidates is not empty prevent a change to the lockup asset symbol.
-    if (configs().lockupasset.amount != 0 && registered_candidates.begin() != registered_candidates.end()) {
-        eosio_assert(lockupasset.symbol == configs().lockupasset.symbol,
-                     "The provided asset cannot be changed while there are registered candidates due to current staking in the old asset.");
-    }
-
     eosio_assert(auth_threshold_high < numelected,
                  "The auth threshold can never be satisfied with a value greater than the number of elected custodians");
+    eosio_assert(auth_threshold_mid <= auth_threshold_high,
+                 "The mid auth threshold cannot be greater than the high auth threshold.");
+    eosio_assert(auth_threshold_low <= auth_threshold_mid,
+                 "The low auth threshold cannot be greater than the mid auth threshold.");
 
     contr_config newconfig{
             lockupasset,
@@ -35,6 +35,8 @@ void daccustodian::updateconfig(
             vote_quorum_percent,
             auth_threshold_high,
             auth_threshold_mid,
-            auth_threshold_low};
+            auth_threshold_low,
+            lockup_release_time_delay,
+            requested_pay_max};
     config_singleton.set(newconfig, _self);
 }

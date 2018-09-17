@@ -59,9 +59,6 @@
 			"name": "candidate_name",
 			"type": "name"
 		}, {
-			"name": "bio",
-			"type": "string"
-		}, {
 			"name": "requestedpay",
 			"type": "asset"
 		}, {
@@ -73,6 +70,9 @@
 		}, {
 			"name": "is_active",
 			"type": "uint8"
+		},{
+			"name": "custodian_end_time_stamp",
+			"type": "uint32"
 		}]
 	}, {
 		"name": "custodian",
@@ -80,9 +80,6 @@
 		"fields": [{
 			"name": "cust_name",
 			"type": "name"
-		}, {
-			"name": "bio",
-			"type": "string"
 		}, {
 			"name": "requestedpay",
 			"type": "asset"
@@ -99,9 +96,6 @@
 		}, {
 			"name": "proxy",
 			"type": "name"
-		}, {
-			"name": "weight",
-			"type": "int64"
 		}, {
 			"name": "candidates",
 			"type": "name[]"
@@ -142,22 +136,25 @@
 		}, {
 			"name": "auth_threshold_low",
 			"type": "uint8"
+		}, {
+			"name": "lockup_release_time_delay",
+			"type": "uint32"
+		}, {
+			"name": "requested_pay_max",
+			"type": "asset"
 		}]
 	}, {
-		"name": "regcandidate",
+		"name": "nominatecand",
 		"base": "",
 		"fields": [{
 			"name": "cand",
 			"type": "name"
 		}, {
-			"name": "bio",
-			"type": "string"
-		}, {
 			"name": "requestedpay",
 			"type": "asset"
 		}]
 	}, {
-		"name": "unregcand",
+		"name": "withdrawcand",
 		"base": "",
 		"fields": [{
 			"name": "cand",
@@ -261,7 +258,11 @@
 		}]
 	}],
 	"actions": [{
-			"name": "storeprofile",
+			"name": "stprofile",
+			"type": "storeprofile",
+			"ricardian_contract": ""
+		},{
+			"name": "stprofileuns",
 			"type": "storeprofile",
 			"ricardian_contract": ""
 		},{
@@ -277,27 +278,27 @@
 		{
 			"name": "updateconfig",
 			"type": "updateconfig",
-			"ricardian_contract": "## ACTION: updateconfig\n**PARAMETERS:**\n\n__lockupasset__ is an asset to be locked up as part of the registering process for a custodian passed to the action in the format: \"10.0000 EOSDAC\". default value: \"10.0000 EOSDAC\"\n\n__maxvotes__ is a integer to configure the maximum number of allowed votes for a registered member in any single voting action. The default value is 5.\n\n__numelected__ is a integer to configure the number of candidates that will be elected as custodians of the dac. default value is 12.\n\n**INTENT:** The intent of {{ updateconfig }} is update the configuration for the running contract of selected parameters without needing change the source code. This requires a privilaged account.\n\n**TERM:** The action lasts for the duration of the processing of the contract."
+			"ricardian_contract": "## ACTION: updateconfig\n**PARAMETERS:**\n\n__lockupasset__ is an asset to be locked up as part of the nominating process for a custodian passed to the action in the format: \"10.0000 EOSDAC\". default value: \"10.0000 EOSDAC\"\n\n__maxvotes__ is a integer to configure the maximum number of allowed votes for a nominated member in any single voting action. The default value is 5.\n\n__numelected__ is a integer to configure the number of candidates that will be elected as custodians of the dac. default value is 12.\n\n**INTENT:** The intent of {{ updateconfig }} is update the configuration for the running contract of selected parameters without needing change the source code. This requires a privilaged account.\n\n**TERM:** The action lasts for the duration of the processing of the contract."
 		}, {
-			"name": "regcandidate",
-			"type": "regcandidate",
-			"ricardian_contract": "## ACTION: regcadidate\n**PARAMETERS:**\n\n__cand__ is an account_name parameter for the registering candidate.\n\n__bio__ is a string representing a bio for candidate. This could be an IPFS hash.\n\n__requestedpay__ is an asset requested by the candidate as pay for being an elected custodian. It should be passed to the action in the format: \"10.0000 EOSDAC\".\n\n**INTENT:** The intent of {{ regcadidate }} is to register a candidate for becoming an elected custodian. The action ensures the user has agreed to the latest terms and conditions and has the correct authorization of the {{ cand }} to perform the action. Then the an amount of tokens will be transferred from the {{ cand }} account to this contract as specified in the config for the contract. Upon success the user will be added to the list of candidates and will eligible for election.\n\n**TERM:** The action lasts for the duration of the processing of the contract."
+			"name": "nominatecand",
+			"type": "nominatecand",
+			"ricardian_contract": "## ACTION: regcadidate\n**PARAMETERS:**\n\n__cand__ is an account_name parameter for the nominating candidate.\n\n__bio__ is a string representing a bio for candidate. This could be an IPFS hash.\n\n__requestedpay__ is an asset requested by the candidate as pay for being an elected custodian. It should be passed to the action in the format: \"10.0000 EOSDAC\".\n\n**INTENT:** The intent of {{ regcadidate }} is to nominate a candidate for becoming an elected custodian. The action ensures the user has agreed to the latest terms and conditions and has the correct authorization of the {{ cand }} to perform the action. Then the an amount of tokens will be transferred from the {{ cand }} account to this contract as specified in the config for the contract. Upon success the user will be added to the list of candidates and will eligible for election.\n\n**TERM:** The action lasts for the duration of the processing of the contract."
 		}, {
-			"name": "unregcand",
-			"type": "unregcand",
-			"ricardian_contract": "## ACTION: unregcand\n**PARAMETERS:**\n\n__cand__ is an account_name parameter for the registering candidate.\n\n**INTENT:** The intent of {{ unregcand }} is to unregister a candidate for becoming an elected custodian. The action ensures the {{ cand }} account is currently registered. On success the amount of tokens that was locked up via the {{ regcandidate }} action will be added to a list of pending transactions to transfer back to the {{ cand }} account. The actual transfer would be performed by a seperate action due to the auth requirement for sending funds from the contract's account.\n\n**TERM:** The action lasts for the duration of the processing of the contract."
+			"name": "withdrawcand",
+			"type": "withdrawcand",
+			"ricardian_contract": "## ACTION: withdrawcand\n**PARAMETERS:**\n\n__cand__ is an account_name parameter for the nominating candidate.\n\n**INTENT:** The intent of {{ withdrawcand }} is to unnominate a candidate for becoming an elected custodian. The action ensures the {{ cand }} account is currently nominated. On success the amount of tokens that was locked up via the {{ nominatecand }} action will be added to a list of pending transactions to transfer back to the {{ cand }} account. The actual transfer would be performed by a seperate action due to the auth requirement for sending funds from the contract's account.\n\n**TERM:** The action lasts for the duration of the processing of the contract."
 		}, {
 			"name": "updatebio",
 			"type": "updatebio",
-			"ricardian_contract": "## ACTION: updatebio\n**PARAMETERS:**\n\n__cand__ is an account_name parameter for the registering candidate.\n\n__bio__ is a string representing a bio for candidate. This could be an IPFS hash.\n\n**INTENT:** The intent of {{ updatebio }} is to allow a candidate update their bio information after they have registered. The action ensures the user has agreed to the latest terms and conditions, has the correct authorization of the {{ cand }} to perform the action and is already registered as a candidate. Then the bio information for the candidate will be updated leaving all other data of the candidate unchanged.\n\n**TERM:** The action lasts for the duration of the processing of the contract."
+			"ricardian_contract": "## ACTION: updatebio\n**PARAMETERS:**\n\n__cand__ is an account_name parameter for the nominating candidate.\n\n__bio__ is a string representing a bio for candidate. This could be an IPFS hash.\n\n**INTENT:** The intent of {{ updatebio }} is to allow a candidate update their bio information after they have nominated. The action ensures the user has agreed to the latest terms and conditions, has the correct authorization of the {{ cand }} to perform the action and is already nominated as a candidate. Then the bio information for the candidate will be updated leaving all other data of the candidate unchanged.\n\n**TERM:** The action lasts for the duration of the processing of the contract."
 		}, {
 			"name": "updatereqpay",
 			"type": "updatereqpay",
-			"ricardian_contract": "## ACTION: updatereqpay\n**PARAMETERS:**\n\n__cand__ is an account_name parameter for the registering candidate.\n\n__requestedpay__ is an asset requested by the candidate as pay for being an elected custodian. It should be passed to the action in the format: \"10.0000 EOSDAC\".\n\n**INTENT:** The intent of {{ updatereqpay }} is to allow a candidate update their requested pay after they have registered. The action ensures the user has agreed to the latest terms and conditions, has the correct authorization of the {{ cand }} to perform the action and is already registered as a candidate. Then the {{ pendingreqpay }} field is updated on the candidate until the next time {{ newperiod }} is run. At the time {{ newperiod }} is called the {{ pendingreqpay }} is tranferred to {{ requestedpay }}. This 2 step process is to ensure that a custodian cannot change their requested pay after a voter has elected but before the election period has closed (as signalled by calling {{ newperiod }}) which would effect the amount of pay a custodian would receive. All other data of the candidate should remain unchanged.\n\n**TERM:** The action lasts for the duration of the processing of the contract."
+			"ricardian_contract": "## ACTION: updatereqpay\n**PARAMETERS:**\n\n__cand__ is an account_name parameter for the nominating candidate.\n\n__requestedpay__ is an asset requested by the candidate as pay for being an elected custodian. It should be passed to the action in the format: \"10.0000 EOSDAC\".\n\n**INTENT:** The intent of {{ updatereqpay }} is to allow a candidate update their requested pay after they have nominated. The action ensures the user has agreed to the latest terms and conditions, has the correct authorization of the {{ cand }} to perform the action and is already nominated as a candidate. Then the {{ pendingreqpay }} field is updated on the candidate until the next time {{ newperiod }} is run. At the time {{ newperiod }} is called the {{ pendingreqpay }} is tranferred to {{ requestedpay }}. This 2 step process is to ensure that a custodian cannot change their requested pay after a voter has elected but before the election period has closed (as signalled by calling {{ newperiod }}) which would effect the amount of pay a custodian would receive. All other data of the candidate should remain unchanged.\n\n**TERM:** The action lasts for the duration of the processing of the contract."
 		}, {
 			"name": "votecust",
 			"type": "votecust",
-			"ricardian_contract": "## ACTION: votecust\n**PARAMETERS:**\n\n__voter__ is an account_name parameter for the {{ voter }} member.\n\n__newvotes__ is an array of registered candidates account names that the voter intends to vote for with a maximum number of votes as configured by the contract.\n\n**INTENT:** The intent of {{ votecust }} is to vote candidates that may become custodians after the next call to {{ newperiod }}. The action ensures the user has agreed to the latest terms and conditions and has the correct authorization of the {{ voter }} to place or change an active vote. Upon success this action will either update an existing vote with a new set of candidates or create a new active vote for the {{ voter }} for candidates eligible for election. This action will replace an existing vote for a proxy for {{ voter }} if one exists."
+			"ricardian_contract": "## ACTION: votecust\n**PARAMETERS:**\n\n__voter__ is an account_name parameter for the {{ voter }} member.\n\n__newvotes__ is an array of nominated candidates account names that the voter intends to vote for with a maximum number of votes as configured by the contract.\n\n**INTENT:** The intent of {{ votecust }} is to vote candidates that may become custodians after the next call to {{ newperiod }}. The action ensures the user has agreed to the latest terms and conditions and has the correct authorization of the {{ voter }} to place or change an active vote. Upon success this action will either update an existing vote with a new set of candidates or create a new active vote for the {{ voter }} for candidates eligible for election. This action will replace an existing vote for a proxy for {{ voter }} if one exists."
 		}, {
 			"name": "voteproxy",
 			"type": "voteproxy",
@@ -305,12 +306,12 @@
 		}, {
 			"name": "newperiod",
 			"type": "newperiod",
-			"ricardian_contract": "## ACTION: newperiod\n**PARAMETERS:**\n\n__message__ is string used only for logging in the blockchain history and serves no purpose in the action contract logic.\n\n**INTENT:** The intent of {{ newperiod }} is to signal the end of one election period and commence the next. It performs several actions:\n\n1. Calculate the mean `requestedpay` of all the currently elected custodians.\n2. Distribute the median pay amount to all the currently elected custodians. This is achieved by adding a record to the `pendingpay` table with the custodian and the amount payable in preparation for a contract authorised action to transfer all the pending payments for custodians and recently unregistered candidates (from the `unregcand` action).\n3. Clears the existing vote counts for each voter and custodian in the current period in preparation for the tallying of votes for the next period.\n4. tally the votes based each voter's EOSDAC balance at the time `newperiod` is called. This is captured on the `weight` field for each vote. The same is also added to a chosen proxy if they have an active proxy vote.\n5. The vote `weight` for each vote is added to the `total_votes` field for each candidate resulting in the total votes being collated.\n6. The top `numelected` candidates based on the value of their `total_votes` has their `is_custodian` field set to true and the rest  are set to false.\n7. The `pendingreqpay` field value for each candidate is moved to the `requestedpay` field. This ensures the `pendingreqpay` field can be used for election campaiging for the next period while the `requestedpay` field can be used at the closing of the current period for pay calculations. \n "
+			"ricardian_contract": "## ACTION: newperiod\n**PARAMETERS:**\n\n__message__ is string used only for logging in the blockchain history and serves no purpose in the action contract logic.\n\n**INTENT:** The intent of {{ newperiod }} is to signal the end of one election period and commence the next. It performs several actions:\n\n1. Calculate the mean `requestedpay` of all the currently elected custodians.\n2. Distribute the median pay amount to all the currently elected custodians. This is achieved by adding a record to the `pendingpay` table with the custodian and the amount payable in preparation for a contract authorised action to transfer all the pending payments for custodians and recently unnominated candidates (from the `withdrawcand` action).\n3. Clears the existing vote counts for each voter and custodian in the current period in preparation for the tallying of votes for the next period.\n4. tally the votes based each voter's EOSDAC balance at the time `newperiod` is called. This is captured on the `weight` field for each vote. The same is also added to a chosen proxy if they have an active proxy vote.\n5. The vote `weight` for each vote is added to the `total_votes` field for each candidate resulting in the total votes being collated.\n6. The top `numelected` candidates based on the value of their `total_votes` has their `is_custodian` field set to true and the rest  are set to false.\n7. The `pendingreqpay` field value for each candidate is moved to the `requestedpay` field. This ensures the `pendingreqpay` field can be used for election campaiging for the next period while the `requestedpay` field can be used at the closing of the current period for pay calculations. \n "
 		},
 		{
 			"name": "paypending",
 			"type": "paypending",
-			"ricardian_contract": "## ACTION: paypending\n**PARAMETERS:**\n\n__message__ is string used only for logging in the blockchain history and serves no purpose in the action contract logic.\n\n**INTENT:** The intent of {{ paypending }} is to pay all the pending payment amounts to members. The list of payees would populated from the `newperiod` calculation and the candidates who have unregistered and are due to have their staked tokens returned to them. This list is collected in the `pendingpay` table. This action pays each pending payee via an inline transfer on the `eosdactoken` contract and then removes the pending payment record from the `pending_pay` table. The active auth of this contract is required to complet the action."
+			"ricardian_contract": "## ACTION: paypending\n**PARAMETERS:**\n\n__message__ is string used only for logging in the blockchain history and serves no purpose in the action contract logic.\n\n**INTENT:** The intent of {{ paypending }} is to pay all the pending payment amounts to members. The list of payees would populated from the `newperiod` calculation and the candidates who have unnominated and are due to have their staked tokens returned to them. This list is collected in the `pendingpay` table. This action pays each pending payee via an inline transfer on the `eosdactoken` contract and then removes the pending payment record from the `pending_pay` table. The active auth of this contract is required to complet the action."
 		},
 		{
 			"name": "claimpay",

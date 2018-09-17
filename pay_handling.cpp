@@ -6,7 +6,7 @@ void daccustodian::claimpay(name claimer, uint64_t payid) {
 
     eosio_assert(claimer == payClaim.receiver, "Pay can only be claimed by the intended receiver");
 
-    if (payClaim.quantity.symbol == PAYMENT_TOKEN) {
+    if (payClaim.quantity.symbol == configs().requested_pay_max.symbol) {
         action(permission_level{_self, N(active)},
                N(eosio.token), N(transfer),
                std::make_tuple(_self, payClaim.receiver, payClaim.quantity, payClaim.memo)
@@ -27,7 +27,7 @@ void daccustodian::paypending(string message) {
     eosio_assert(payidx != pending_pay.end(), "pending pay is empty");
 
     while (payidx != pending_pay.end()/* TODO: Add AND batch condition here to avoid long transaction errors */) {
-        if (payidx->quantity.symbol == PAYMENT_TOKEN) {
+        if (payidx->quantity.symbol == configs().requested_pay_max.symbol) {
             action(permission_level{_self, N(active)},
                    N(eosio.token), N(transfer),
                    std::make_tuple(_self, payidx->receiver, payidx->quantity, payidx->memo)
