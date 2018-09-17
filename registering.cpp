@@ -48,7 +48,7 @@ void daccustodian::withdrawcand(name cand) {
 }
 
 void daccustodian::firecand(name cand, bool lockupStake) {
-    require_auth2(configs().authaccount, configs().auth_threshold_high);
+    require_auth2(configs().authaccount, configs().auth_threshold_mid);
     removecand(cand, lockupStake);
 }
 
@@ -76,7 +76,7 @@ void daccustodian::resigncust(name cust) {
 }
 
 void daccustodian::firecust(name cust) {
-    require_auth2(configs().authaccount, configs().auth_threshold_high);
+    require_auth2(configs().authaccount, configs().auth_threshold_mid);
     removecust(cust);
 }
 
