@@ -39,7 +39,26 @@
 			"name": "memo",
 			"type": "string"
 		}]
-	}, {
+	},
+		{
+			"name": "firecust",
+			"base": "",
+			"fields": [
+				{
+					"name": "cust",
+					"type": "int64"
+				}
+			]
+		}{
+			"name": "resigncust",
+			"base": "",
+			"fields": [
+				{
+					"name": "cust",
+					"type": "int64"
+				}
+			]
+		},{
 		"name": "tempstake",
 		"base": "",
 		"fields": [{
@@ -157,6 +176,16 @@
 			"name": "cand",
 			"type": "name"
 		}]
+	},{
+		"name": "firecand",
+		"base": "",
+		"fields": [{
+			"name": "cand",
+			"type": "name"
+		}, {
+			"name": "lockupStake",
+			"type": "uint8"
+		}]
 	}, {
 		"name": "updatebio",
 		"base": "",
@@ -257,17 +286,32 @@
 	"actions": [{
 			"name": "stprofile",
 			"type": "storeprofile",
-			"ricardian_contract": ""
+			"ricardian_contract": "An authenticated action to update the user's profile. ##Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later so therefore should only store a unidentifiable hash of content rather than human readable content. "
 		},{
 			"name": "stprofileuns",
 			"type": "storeprofile",
-			"ricardian_contract": ""
+			"ricardian_contract": "An authenticated action to update the user's profile. ##Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later."
+		},{
+			"name": "firecust",
+			"type": "firecust",
+			"ricardian_contract": "Remove an elected custodian. This action must be run by the by elected custodians and the outcome should remove the elected custodian and lock up their tokens until the delay period has passed so the tokens can be claimed with the unstake action."
+		},{
+			"name": "resigncust",
+			"type": "resigncust",
+			"ricardian_contract": "Remove an elected custodian. This action must be run by the resigning custodian and the outcome should remove the elected custodian and lock up their tokens until the delay period has passed so the tokens can be claimed with the unstake action."
+		},{
+			"name": "firecand",
+			"type": "firecand",
+			"ricardian_contract": "Sets a candidate inactive so they will be excluded from the next election round. This action must be run by the by elected custodians and has the additional option to lock up the candidate's tokens until a delay period has passed based on the delay set in the config. Then the tokens can be claimed with the unstake action. If the option passed is false and there is an existing lockup delay on the tokens this lockup will continue to be active until the lock up time has passed."
+		},{
+			"name": "unstake",
+			"type": "withdrawcand",
+			"ricardian_contract": "Returns staked tokens back to the candidate if the user is no longer an active candidate and there is no  delay set on the candidate the staked tokens will be returned to the candidate."
 		},{
 			"name": "migrate",
 			"type": "void",
 			"ricardian_contract": ""
-		},
-		{
+		},{
 			"name": "allocatecust",
 			"type": "earlyelect",
 			"ricardian_contract": ""
@@ -283,7 +327,7 @@
 		}, {
 			"name": "withdrawcand",
 			"type": "withdrawcand",
-			"ricardian_contract": "## ACTION: withdrawcand\n**PARAMETERS:**\n\n__cand__ is an account_name parameter for the nominating candidate.\n\n**INTENT:** The intent of {{ withdrawcand }} is to unnominate a candidate for becoming an elected custodian. The action ensures the {{ cand }} account is currently nominated. On success the amount of tokens that was locked up via the {{ nominatecand }} action will be added to a list of pending transactions to transfer back to the {{ cand }} account. The actual transfer would be performed by a seperate action due to the auth requirement for sending funds from the contract's account.\n\n**TERM:** The action lasts for the duration of the processing of the contract."
+			"ricardian_contract": "## ACTION: withdrawcand\n**PARAMETERS:**\n\n__cand__ is an account_name parameter for the nominating candidate.\n\n**INTENT:** The intent of {{ withdrawcand }} is to withdraw a candidate for becoming an elected custodian. The action ensures the {{ cand }} account is currently nominated. On success the amount of tokens that was locked up via the {{ nominatecand }} action will be added to a list of pending transactions to transfer back to the {{ cand }} account. The actual transfer would be performed by a seperate action due to the auth requirement for sending funds from the contract's account.\n\n**TERM:** The action lasts for the duration of the processing of the contract."
 		}, {
 			"name": "updatebio",
 			"type": "updatebio",

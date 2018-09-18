@@ -249,6 +249,9 @@ public:
 
     void claimpay(name claimer, uint64_t payid);
 
+    void unstake(name cand);
+
+
 private: // Private helper methods used by other actions.
 
     contr_config configs();
@@ -279,5 +282,4 @@ public: // Exposed publicy for debugging only.
 
     void migrate();
 
-    void unstake(const name &cand);
 };

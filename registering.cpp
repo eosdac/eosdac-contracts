@@ -52,7 +52,7 @@ void daccustodian::firecand(name cand, bool lockupStake) {
     removecand(cand, lockupStake);
 }
 
-void daccustodian::unstake(const name &cand) {
+void daccustodian::unstake(name cand) {
     const auto &reg_candidate = registered_candidates.get(cand, "Candidate is not already registered.");
     eosio_assert(!reg_candidate.is_active, "Cannot unstake tokens for an active candidate. Call withdrawcand first.");
 
