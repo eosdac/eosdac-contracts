@@ -2,9 +2,9 @@
 This contract will be in charge of custodian registration and voting for candidates.  It will also contain a function could will be called periodically to update the custodian set, and allocate payments.
 
 When a candidate registers, they need to provide a set of configuration variables which will include things like their requested pay.  The system will select the median requested pay when choosing the actual pay.
-The median pay is to be paid to elected custodians at the end of each period. If an elected custodian resigns via the `unregcand` during a period a `newperiod` action is triggerred which will cause an early election and a partial payment to be distributed to the elected custodians depending on portion of passed time for the current period. 
+The median pay is to be paid to elected custodians at the end of each period. If an elected custodian resigns via the `unregcand` during a period a new candidate will be chosen to fill the gap on the custodian board from the votes ranking in the candidates at that moment. 
 
-Eg. 12 custodians are elected and their median `requestedpay` is 100 EOSDAC If one of the custodians resigns 0.25 through a period all 12 of the elected custodians will get paid 25 EOSDAC tokens and a `newperiod` will be triggered to vote in a new set of custodians and a new period will begin. The new median pay amount will be calculated based on the newly elected custodians `pendingreqpay` if one existed or the current `requestedpay` (indicating that custodian has not changed their requested pay).
+Eg. 12 custodians are elected and their median `requestedpay` is 100 EOSDAC If one of the custodians resigns partially through a period they will not will not be paid for that partial period. The median pay amount will be calculated based on the current elected custodians `requestedpay` value. If a candidate changes their requested pay it will not be included in the pay calculation until the next period if they are re-elected.
 
 ## Tables
 
@@ -12,24 +12,22 @@ Eg. 12 custodians are elected and their median `requestedpay` is 100 EOSDAC If o
 
 - candidate_name (name) - Account name of the candidate (INDEX)
 - bio (hash) - Link to IPFS file containing structured data about the candidate (schema.org preferred)
-- is_custodian (int8) - Boolean indicating if the candidate is currently elected (INDEX)
+- isactive (int8) - Boolean indicating if the candidate is currently available for election. (INDEX)
 - locked_tokens (asset) - An asset object representing the number of tokens locked when registering
-- requestedpay - The amount of pay requested for this election period
-- pendreqpay - The amount of pay requested for next election period. This will become `requestedpay` after `newperiod` is called.
-- total_votes - Updated tally of the number of votes cast to a candidate. This is updated and used as part of the `newperiod` calculations then stored in the table until being refreshed on the next `newperiod` call.
+- requestedpay - The amount of pay requested by the candidate to be paid if they were elected for the following period.
+- total_votes - Updated tally of the number of votes cast to a candidate. This is updated and used as part of the `newperiod` calculations. It is updated every time there is a vote change or a change of token balance for a voter for this candidate to facilitate live voting stats.
 
 ### Votes
 
 - voter (account_name) - The account name of the voter (INDEX)
 - proxy (account_name) - Name of another voter used to proxy votes through. This should not have a value in both the proxy and candidates at the same time.
 - candidates (account_name[]) - The candidates voted for, can supply up to the maximum number of votes (currently 5) - Can be configured via `updateconfig`
-- weight - The amount of voting strength this voter has which is derived from the EOSDAC balance at the time `newperiod` is called.
 
 ## Actions
 
 ### regcandidate
 
-Register to be a candidate, accounts must register as a candidate before they can be voted for.  The account must lock 1000 tokens when registering (configurable via `updateconfig`).
+Register to be a candidate, accounts must register as a candidate before they can be voted for.  The account must lock a configurable number of tokens when registering (configurable via `updateconfig`).
 
 
 #### Message
@@ -42,10 +40,10 @@ This action asserts:
  - the message has the permission of the account registering.
  - the `cand` account has agreed to the membership agreement.
  - the candidate is not already registered.
- - `cand` account can transfer funds and that there is sufficient permission for this contract to transfer funds for lockup.
+ - `cand` account has transferred sufficient tokens to this contract to satisfy lockup configuration.
 
-Then it insert the candidate record into the database, making sure to set elected to 0
- and transfer the configurable number of tokens which need to be locked to the contract account based on the amount set in `updateconfig`.
+Then it inserts the candidate record into the database, making sure to set total_votes to 0 and is_active to true.
+This action will assert that candidate is not already a candidate and if they that they are inactive. If they are inactive at the time their record will be made active again and the amount of locked up tokens will be required for the lockup.
 
 ### unregcand
 
@@ -61,9 +59,7 @@ This action asserts:
 
 Removes the candidate from the candidates table and prepares to transfer the locked up tokens back to the `cand` account.
 
-Remove the candidate from the database if they are not currently elected, also remove all votes cast for them as well as votes by them for ongoing worker proposals
-
-Send the staked tokens back to the account*
+Sets the candidate record to inactive. All votes cast to this candidate will remain in place but the votes will have not effect until the candidate becomes active again. 
 
 ### updatebio
 
@@ -78,11 +74,12 @@ This action asserts:
  - the account has agreed to the current terms.
  - the `cand` account is currently registered.
 
-__*Currently no validation on the bio field - to be determined??*__
+The length of the bio must be less than 256 characters.
 
 ### updatereqpay
 
-Update the requested pay for this candidate / custodian. This will be available on the account immediately in preparation for the next election cycle.
+Update the requested pay for this candidate. This will be available on the account in preparation for the next election cycle.
+
 #### Message
 `cand (account_name)
 requestedpay (asset)`
@@ -93,11 +90,11 @@ This action asserts:
  - the account has agreed to the current terms.
  - the `cand` account is currently registered.
 
-Then the candidate's field for `pendingreqpay` is populated with the amount. On the next `newperiod` call this amount is trandferred to the `requestedpay` field. The reason for this is to prevent candidates changing their requested pay after being elected but before getting paid. Voters would be able to see their requested amount for the next period via the `pendingreqpay`field. A candidate cannot update the `requestedpay` field directly.
+Then the candidate's field for `requestedpay` is populated with the amount. If this candidate is elected for the next period this amount will be used as the pay amount for them as a custodian.
 
 ### votecust
 
-Update the votes for a configurable number of custodian candidates using preference voting.  The votes supplied will overwrite all existing votes so to remove a vote, simply supply an updated list.
+Update the votes for a configurable number of custodian candidates using preference voting.  The votes supplied will overwrite all existing votes so to remove a vote, simply supply an updated list. An empty array will remove the vote record.
 
 ####Message
 `voter (name), newvotes ([name])`
@@ -105,23 +102,24 @@ Update the votes for a configurable number of custodian candidates using prefere
 This action asserts:
 
  - the message has the permission of the account registering.
- - the `cand` account is currently registered.
+ - Each `cand` account is currently registered and active.
  - the account has agreed to the current terms.
+ - Duplicate votes cannot be applied to the same candidate by the same voter.
  - the maximum number of votes is not more than the configured amount (as set by updateconfig).
 
-Then sets the array of accounts as the users acitive votes which will be used for calcualtions when `newperiod` is called.
+Then sets the array of accounts for the users active votes which will be used for calculations for the `newperiod` call. Then each candidate's `total_votes` value will updated to reflect the vote change.
 
 ### updateconfig
 
 Updates the contract configuration parameters to allow changes without needing to redeploy the source code.
 
 ####Message
- `lockupasset(asset), maxvotes (uint8_t), numelected (uint8_t), periodlength (uint32_t), tokencontr(string)`
+updateconfig(<params>)
  
 This action asserts:
 
  - the message has the permission of the contract account.
- - the supplied asset symbol matches the current lockup symbol.
+ - the supplied asset symbol matches the current lockup symbol if it has been previously set or that there have been no 	.
 
 The paramters are:
 
@@ -129,20 +127,17 @@ The paramters are:
 - maxvotes(asset) : Defines the maximum number of candidates a user can vote for at any given time.
 - numelected(uint16_t) : The number of candidates to elect for custodians. This is used for the payment amount to custodians for median amount.
 - periodlength(uint32_t) : The length of a period in seconds. This is used for the scheduling of the deferred `newperiod` actions at the end of processing the current one. Also is used as part of the partial payment to custodians in the case of an elected custodian resigning which would also trigger a `newperiod` action.
-
-
-#### Message
-`account (account_name)`
-
-Check the message has permission of the account
-Check if there is a record in the CustodianReward table, if there is not then assert
-If the account has an outstanding balance then send it to the account, otherwise assert
-Remove the record in the CustodianReward table
+- tokcontr(name) : The token contract used to manage the tokens for the DAC.
+- authaccount(name) : The managing account that controls the whole DAC.
+- initial_vote_quorum_percent (uint32) : The percent of voters required to activate the DAC for the first election period. 
+- vote_quorum_percent (uint32) : The percent of voters required to continue the DAC for the following election periods after the first one has activated the DAC. 
+- auth_threshold_high (uint8) : The number of custodians required to approve an action in the high permission category (exceptional change).
+- auth_threshold_mid (uint8) : The number of custodians required to approve an action in the mid permission category ( extraordinary change).
+- auth_threshold_low (uint8) : The number of custodians required to approve an action in the low permission category ( ordinary action such as a worker proposal).
 
 ### votecust
 
-Create/update the votes for a configurable number of custodian candidates using preference voting. The votes supplied will overwrite all existing votes so to remove a vote, simply supply an updated list. This vote will overwrite any existing vote for either a custodian vote or proxy vote.
-
+Create/update the votes for a configurable number of custodian candidates using preference voting. The votes supplied will overwrite all existing votes so to remove a vote, simply supply an updated list. This vote will overwrite any existing vote for either a custodian vote or proxy vote. Supplying an empty array of candidates will remove an existing vote.
 
 #### Message
 `account (account_name)
@@ -154,11 +149,12 @@ This action asserts:
  - the `cand` account is currently registered.
  - the account has agreed to the current terms.
 
-__Unsure about this since each could be unregistered by the time `newperiod` is called.__ For each of the votes, check that the account names are registered as custodian candidates.  Assert if any of the accounts are not registered as candidates
+For each of the candidates in the votes array, check that the account names are registered as custodian candidates and they are all active.  Assert if any of the accounts are not registered as candidates or are set as inactive.
 
 Save the votes in the `Votes` table, update if the voting account already has a record.
+Then update the total votes count for each candidate by removing the voter's token balance from a candidates vote for the old votes (if they exist) and add the voter's token balance to each of the new candidates. 
 
-### voteproxy
+### voteproxy ( inactive development at the moment to reduce scope for the initial release)
 
 Create/update the active vote to proxy through another voter. This vote will overwrite any existing vote for either a custodian vote or proxy vote.
 
@@ -178,24 +174,20 @@ Save the votes in the `Votes` table, update if the voting account already has a 
 
 ### newperiod
 
-This is an internal action which is designed to be called once every election period (24 hours initially).  It will do the following things:
+This is an action which is designed to be called once every election period (7 day initially).  It will do the following things:
 
-- Distribute custodian pay based on the median of `requestedpay` for all currently elected candidates.
-- Tally the current votes and prepare a list of the winning custodians for the next period based on the voter's and proxies current EOSDAC balances.
--  __Still to be decided on the details here__ This may include updating a multi-sig wallet which controls the funds in the DAC as well as updating DAC contract code.
--  Configures the contract for the next period by moving the `pendingreqpay` into the `requestedpay` for each candidate.
-- Assigns the elected custodians after tallying the votes based on the top `numelected` votees. (set `is_custodian` to true).
+- Distribute custodian pay based on the median of `requestedpay` for all currently elected custodians.
+- Prepare a list of the winning custodians for the next period based on the top ranked candidates in the candidates table.
+- Update a multi-sig permissions for the controlling DAC account, as set by `authaccount` field in `updateconfig` for the High, Medium and Low permissions.
 
 This action asserts:
-
- - the message has the permission of the contract account.
-
-This is deliberately not asserting on internal verifications because they would not be resolvable by the contract account and could prevent this from being called automatically and reliably. __Perhaps further discussion required for this__ 
-
+- The the action has not been called too soon after the last `newperiod` ran successfully as set by the `periodlength` config in seconds.
+- If the `initialvotequorum_percent` has not been met then asserts that enough people have voted to satify the initial quorum.
+- After the initial quorum has been reached and the DAC has had a suucessful `newperiod` run it checks the `votequorumpercent` hs been satisfied for ongoing election periods. The percentages are based on the token balance balances of all active votes / `max_supply`
 
 ### paypending
 
-This is intended to process the pending payments that have accumulated after `newperiod` has finished processing. Also any staked tokens that need to be returned after a user has called unreg will be returned via this action. This explicit action is necessary since in order to transfer funds from the DAC a multi-sig permission should probably be requried.
+This is intended to process the pending payments that have accumulated after `newperiod` has finished processing. Also any staked tokens that need to be returned after a user has called unreg will be returned via this action. This may be redundant now that there is `claimpay` action.
 
 
 ## Tests
@@ -209,6 +201,8 @@ To run the tests you would first need:
 - Ruby gems as specified in the `Gemfile`. 
     - These can be installed by running `bundle install` from the project root directory.
 Eos installed locally that can be launched via  `nodeos`
+
+There is one action that requires `ttab` which is a nodejs module but this can be easily avoided by a small modification to the rspec tests as detailed in the file. The purpose of using ttab is to start a second tab running nodeos to help diagnose bugs during the test run. 
 
 ### To run the tests:
  run `rspec tests/contract_spec.rb` from the project root.
