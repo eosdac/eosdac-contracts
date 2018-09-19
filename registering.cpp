@@ -56,17 +56,17 @@ void daccustodian::unstake(name cand) {
     const auto &reg_candidate = registered_candidates.get(cand, "Candidate is not already registered.");
     eosio_assert(!reg_candidate.is_active, "Cannot unstake tokens for an active candidate. Call withdrawcand first.");
 
+    eosio_assert(reg_candidate.custodian_end_time_stamp < now(), "Cannot unstake tokens before they are unlocked from the time delay.");
+
     registered_candidates.modify(reg_candidate, cand, [&](candidate &c) {
         // Ensure the candidate's tokens are not locked up for a time delay period.
-        if (c.custodian_end_time_stamp < now()) {
-            // Send back the locked up tokens
-            action(permission_level{_self, N(active)},
-                   eosio::string_to_name(TOKEN_CONTRACT), N(transfer),
-                   make_tuple(_self, cand, c.locked_tokens,
-                              string("Returning locked up stake. Thank you."))
-            ).send();
-            c.locked_tokens = asset(0, configs().lockupasset.symbol);
-        }
+        // Send back the locked up tokens
+        action(permission_level{_self, N(active)},
+               eosio::string_to_name(TOKEN_CONTRACT), N(transfer),
+               make_tuple(_self, cand, c.locked_tokens,
+                          string("Returning locked up stake. Thank you."))
+        ).send();
+        c.locked_tokens = asset(0, configs().lockupasset.symbol);
     });
 }
 

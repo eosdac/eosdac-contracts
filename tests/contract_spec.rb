@@ -1217,12 +1217,12 @@ describe "eosdacelect" do
 
   describe "newperiod" do
 
-    describe "with valid auth should succeed" do
+    describe "with insufficient votes to trigger the dac should fail" do
       before(:all) do
-        `cleos push action daccustodian updateconfig '{ "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 100 , "numelected": 12, "authaccount": "dacauthority", "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 3, "auth_threshold_mid": 2, "auth_threshold_low": 1, "lockup_release_time_delay": 15552000, "requested_pay_max": "450.0000 EOS"}' -p daccustodian`
+        `cleos push action daccustodian updateconfig '{ "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 1 , "numelected": 12, "authaccount": "dacauthority", "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 3, "auth_threshold_mid": 2, "auth_threshold_low": 1, "lockup_release_time_delay": 15552000, "requested_pay_max": "450.0000 EOS"}' -p daccustodian`
       end
       command %(cleos push action daccustodian newperiod '{ "message": "log message", "earlyelect": false}' -p daccustodian), allow_error: true
-      its(:stdout) {is_expected.to include('daccustodian::newperiod')} # changed from stdout
+      its(:stderr) {is_expected.to include('Voter engagement is insufficient to activate the DAC.')}
     end
 
     describe "called too early in the period should fail after recent newperiod call" do
@@ -1233,7 +1233,7 @@ describe "eosdacelect" do
     describe "called after period time has passed" do
       before(:all) do
         `cleos push action daccustodian updateconfig '{ "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 1, "numelected": 12, "authaccount": "dacauthority", "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 3, "auth_threshold_mid": 2, "auth_threshold_low": 1, "lockup_release_time_delay": 15552000, "requested_pay_max": "450.0000 EOS"}' -p daccustodian`
-        sleep 1
+        sleep 5
       end
       command %(cleos push action daccustodian newperiod '{ "message": "Good new period call after config change", "earlyelect": false}' -p daccustodian), allow_error: true
       its(:stdout) {is_expected.to include('daccustodian::newperiod')}
