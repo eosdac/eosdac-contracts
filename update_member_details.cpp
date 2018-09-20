@@ -1,3 +1,19 @@
+
+/**
+ * This action is used to update the bio for a candidate.
+ *
+ * ### Assertions:
+ * - The `cand` account performing the action is authorised to do so.
+ * - The `cand` has agreed to the latest constitution and member terms.
+ * - The `cand` is currently in the candidates table.
+ * - The string in the bio field is less than 256 chartacers.
+ * @param cand - The account id for the candidate nominating.
+ * @param bio - A string of bio data that will be passed through the contract.
+ *
+ *
+ * ### Post Condition:
+Nothing from this action is stored on the blockchain. It is only intended to ensure authentication of changing the bio which will be stored off chain.
+ */
 void daccustodian::updatebio(name cand, string bio) {
 
     require_auth(cand);

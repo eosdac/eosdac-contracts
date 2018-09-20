@@ -25,22 +25,23 @@ Eg. 12 custodians are elected and their median `requestedpay` is 100 EOSDAC If o
 
 ## Actions
 
-### regcandidate
+### nominatecand
 
-Register to be a candidate, accounts must register as a candidate before they can be voted for.  The account must lock a configurable number of tokens when registering (configurable via `updateconfig`).
+Nominates a candidate to custodian election, Accounts must nominate as a candidate before they can be voted for. The candidate must lock a configurable number of tokens before trying to nominate (configurable via `updateconfig`) which would be sent from the token contract as defined by TOKEN_CONTRACT set in the code of the contract. If a user previously been a candidate they may have enough staked tokens to not require further staking but will otherwise need to transfer the difference to mee the required stake.
 
 
 #### Message
 `cand (account_name)
-bio (ipfs_hash/url)
-requested_pay`
+requested_pay (asset)`
 
 This action asserts:
 
  - the message has the permission of the account registering.
- - the `cand` account has agreed to the membership agreement.
+ - the `cand` account has agreed to the latest membership agreement.
  - the candidate is not already registered.
- - `cand` account has transferred sufficient tokens to this contract to satisfy lockup configuration.
+ - the candidate has not requested too much pay as part of their nomination ( configured by the contract config).
+ - `cand` account has transferred sufficient tokens to this contract to satisfy lockup configuration, either from previous staking as a candidate that is still attached to the account or via a recent transfer to the contract.
+ ** Note: In order for this contract to acknowledge a transfer as an intention to stake the memo field needs to populated with the elections contract name (eosdacelections) **
 
 Then it inserts the candidate record into the database, making sure to set total_votes to 0 and is_active to true.
 This action will assert that candidate is not already a candidate and if they that they are inactive. If they are inactive at the time their record will be made active again and the amount of locked up tokens will be required for the lockup.
