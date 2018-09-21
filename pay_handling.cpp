@@ -1,4 +1,17 @@
 
+/**
+ * This action is to claim pay as a custodian.
+ *
+ * ### Assertions:
+ * - The claimer account performing the action is authorised to do so.
+ * - The payid is for a valid pay record in the pending pay table.
+ * - The claimer account is the same as the intended destination account for the pay record.
+ * @param claimer - The account id for the claiming account.
+ * @param payid - The id for the pay record to claim from the pending pay table.
+ *
+ * ### Post Condition:
+ * The quantity owed to the custodian as referred to by the pay record is transferred to the claimer and then the pay record is removed from the pending pay table.
+ */
 void daccustodian::claimpay(name claimer, uint64_t payid) {
     require_auth(claimer);
 
