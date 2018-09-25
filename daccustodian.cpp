@@ -11,7 +11,7 @@
 #include "update_member_details.cpp"
 #include "registering.cpp"
 #include "voting.cpp"
-#include "migration.cpp"
+//#include "migration.cpp"
 #include "privatehelpers.cpp"
 #include "newperiod_components.cpp"
 #include "pay_handling.cpp"
@@ -20,51 +20,6 @@
 
 using namespace eosio;
 using namespace std;
-using eosio::print;
-
-void daccustodian::newperiod(string message) {
-
-    assert_period_time();
-
-    contr_config config = configs();
-
-    // Get the max supply of the lockup asset token (eg. EOSDAC)
-    auto tokenStats = stats(eosio::string_to_name(TOKEN_CONTRACT), config.lockupasset.symbol.name()).begin();
-    uint64_t max_supply = tokenStats->max_supply.amount;
-
-    double percent_of_current_voter_engagement =
-            double(_currentState.total_weight_of_votes) / double(max_supply) * 100.0;
-
-    eosio::print("\n\nToken max supply: ", max_supply, " total votes so far: ", _currentState.total_weight_of_votes);
-    eosio::print("\n\nNeed inital engagement of: ", config.initial_vote_quorum_percent, "% to start the DAC.");
-    eosio::print("\n\nNeed ongoing engagement of: ", config.vote_quorum_percent,
-                 "% to allow new periods to trigger after initial activation.");
-    eosio::print("\n\nPercent of current voter engagement: ", percent_of_current_voter_engagement);
-
-    eosio_assert(_currentState.met_initial_votes_threshold == true ||
-                 percent_of_current_voter_engagement > config.initial_vote_quorum_percent,
-                 "Voter engagement is insufficient to activate the DAC.");
-    _currentState.met_initial_votes_threshold = true;
-
-    eosio_assert(percent_of_current_voter_engagement > config.vote_quorum_percent,
-                 "Voter engagement is insufficient to process a new period");
-
-
-    // Set custodians for the next period.
-    allocatecust(false);
-
-    // Distribute pay to the current custodians.
-    distributePay();
-
-    // Set the auths on the dacauthority account
-    setauths();
-
-//        Schedule the the next election cycle at the end of the period.
-//        transaction nextTrans{};
-//        nextTrans.actions.emplace_back(permission_level(_self,N(active)), _self, N(newperiod), std::make_tuple("", false));
-//        nextTrans.delay_sec = configs().periodlength;
-//        nextTrans.send(N(newperiod), false);
-}
 
 #define EOSIO_ABI_EX(TYPE, MEMBERS) \
 extern "C" { \
@@ -90,10 +45,9 @@ EOSIO_ABI_EX(daccustodian,
              (updatebio)(updatereqpay)
              (votecust)/*(voteproxy)*/
              (newperiod)
-             (paypending)(claimpay)
+             (claimpay)
              (transfer)
-             (allocatecust)
              (stprofile)(stprofileuns)
-             (migrate)
+//             (migrate)
 
 )

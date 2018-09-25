@@ -1,14 +1,4 @@
 
-
-// Action to listen to from the associated token contract to ensure registering should be allowed.
-/**
- *
- * @param from The account to observe as the source of funds for a transfer
- * @param to The account to observe as the destination of funds for a transfer
- * @param quantity
- * @param memo A string to attach to a transaction. For staking this string should match the name of the running contract eg "dacelections". Otherwise it will be regarded only as a generic transfer to the account.
- * This action is intended only to observe transfers that are run by the associated token contract for the purpose of tracking the moving weights of votes if either the `from` or `to` in the transfer have active votes. It is not included in the ABI to prevent it from being called from outside the chain.
- */
 void daccustodian::transfer(name from,
                             name to,
                             asset quantity,

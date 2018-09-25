@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['transfer',['transfer',['../classdaccustodian.html#a5a519f16f473f1ed0cd55cf345a0ea26',1,'daccustodian']]]
+  ['resigncust',['resigncust',['../classdaccustodian.html#a6a5b42ed4684f3e52c067cc3e8df4660',1,'daccustodian']]]
 ];

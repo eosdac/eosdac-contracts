@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Dac Elections: daccustodian Class Reference</title>
+<title>EOSDACElections: daccustodian Class Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -21,7 +21,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">Dac Elections
+   <div id="projectname">EOSDACElections
    </div>
   </td>
  </tr>
@@ -73,12 +73,6 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ae31b22ee060943b2e8f72aa4a9c22e70"><td class="memItemLeft" align="right" valign="top"><a id="ae31b22ee060943b2e8f72aa4a9c22e70"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>daccustodian</b> (account_name self)</td></tr>
-<tr class="separator:ae31b22ee060943b2e8f72aa4a9c22e70"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afd68e58136d2e0f0ba9666e59574db7e"><td class="memItemLeft" align="right" valign="top"><a id="afd68e58136d2e0f0ba9666e59574db7e"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>updateconfig</b> (asset lockupasset, uint8_t maxvotes, uint8_t numelected, uint32_t periodlength, name authaccount, uint32_t initial_vote_quorum_percent, uint32_t vote_quorum_percent, uint8_t auth_threshold_high, uint8_t auth_threshold_mid, uint8_t auth_threshold_low, uint32_t lockup_release_time_delay, asset requested_pay_max)</td></tr>
-<tr class="separator:afd68e58136d2e0f0ba9666e59574db7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5a519f16f473f1ed0cd55cf345a0ea26"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdaccustodian.html#a5a519f16f473f1ed0cd55cf345a0ea26">transfer</a> (name from, name to, asset quantity, string memo)</td></tr>
 <tr class="separator:a5a519f16f473f1ed0cd55cf345a0ea26"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aca4d775e5ab016b1f54c43bc6a9f37ef"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdaccustodian.html#aca4d775e5ab016b1f54c43bc6a9f37ef">nominatecand</a> (name cand, asset requestedpay)</td></tr>
@@ -93,37 +87,62 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>updateconfig</b> (ass
 <tr class="separator:abe706d41e498e7608aa5015995be7eda"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a58729e9522bb63367206f1beafbd5514"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdaccustodian.html#a58729e9522bb63367206f1beafbd5514">updatebio</a> (name cand, string bio)</td></tr>
 <tr class="separator:a58729e9522bb63367206f1beafbd5514"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab5e6e51bcad22dbe5eede4d61a00023e"><td class="memItemLeft" align="right" valign="top"><a id="ab5e6e51bcad22dbe5eede4d61a00023e"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>stprofile</b> (name cand, string profile)</td></tr>
-<tr class="separator:ab5e6e51bcad22dbe5eede4d61a00023e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9b2ee31dc732785cb98c43fb5d66202f"><td class="memItemLeft" align="right" valign="top"><a id="a9b2ee31dc732785cb98c43fb5d66202f"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>stprofileuns</b> (name cand, string profile)</td></tr>
-<tr class="separator:a9b2ee31dc732785cb98c43fb5d66202f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae210505bf3acff94d5f55d266f4cdb59"><td class="memItemLeft" align="right" valign="top"><a id="ae210505bf3acff94d5f55d266f4cdb59"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>updatereqpay</b> (name cand, asset requestedpay)</td></tr>
+<tr class="memitem:ae210505bf3acff94d5f55d266f4cdb59"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdaccustodian.html#ae210505bf3acff94d5f55d266f4cdb59">updatereqpay</a> (name cand, asset requestedpay)</td></tr>
 <tr class="separator:ae210505bf3acff94d5f55d266f4cdb59"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab9ef43d4df3544e5d9617f13164d500a"><td class="memItemLeft" align="right" valign="top"><a id="ab9ef43d4df3544e5d9617f13164d500a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>votecust</b> (name voter, vector&lt; name &gt; newvotes)</td></tr>
+<tr class="memitem:ab9ef43d4df3544e5d9617f13164d500a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdaccustodian.html#ab9ef43d4df3544e5d9617f13164d500a">votecust</a> (name voter, vector&lt; name &gt; newvotes)</td></tr>
 <tr class="separator:ab9ef43d4df3544e5d9617f13164d500a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0476848b649fb6fe1af1d7b8aa4d4686"><td class="memItemLeft" align="right" valign="top"><a id="a0476848b649fb6fe1af1d7b8aa4d4686"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>newperiod</b> (string message)</td></tr>
+<tr class="memitem:a0476848b649fb6fe1af1d7b8aa4d4686"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdaccustodian.html#a0476848b649fb6fe1af1d7b8aa4d4686">newperiod</a> (string message)</td></tr>
 <tr class="separator:a0476848b649fb6fe1af1d7b8aa4d4686"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6327542fedb40c2877d005b2e226bcf9"><td class="memItemLeft" align="right" valign="top"><a id="a6327542fedb40c2877d005b2e226bcf9"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>paypending</b> (string message)</td></tr>
-<tr class="separator:a6327542fedb40c2877d005b2e226bcf9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3b0a50e1d9b8e2f8d6c294f5ebde0765"><td class="memItemLeft" align="right" valign="top"><a id="a3b0a50e1d9b8e2f8d6c294f5ebde0765"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>claimpay</b> (name claimer, uint64_t payid)</td></tr>
+<tr class="memitem:a3b0a50e1d9b8e2f8d6c294f5ebde0765"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdaccustodian.html#a3b0a50e1d9b8e2f8d6c294f5ebde0765">claimpay</a> (name claimer, uint64_t payid)</td></tr>
 <tr class="separator:a3b0a50e1d9b8e2f8d6c294f5ebde0765"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4eff3201931e897c60072671fffc566b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdaccustodian.html#a4eff3201931e897c60072671fffc566b">unstake</a> (name cand)</td></tr>
 <tr class="separator:a4eff3201931e897c60072671fffc566b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac46d134b19828fa8e688aa44849f571d"><td class="memItemLeft" align="right" valign="top"><a id="ac46d134b19828fa8e688aa44849f571d"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>allocatecust</b> (bool early_election)</td></tr>
-<tr class="separator:ac46d134b19828fa8e688aa44849f571d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5039d64ab9d27bd965bd45a9b8e78b12"><td class="memItemLeft" align="right" valign="top"><a id="a5039d64ab9d27bd965bd45a9b8e78b12"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>migrate</b> ()</td></tr>
-<tr class="separator:a5039d64ab9d27bd965bd45a9b8e78b12"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="a3b0a50e1d9b8e2f8d6c294f5ebde0765"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3b0a50e1d9b8e2f8d6c294f5ebde0765">&#9670;&nbsp;</a></span>claimpay()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void daccustodian::claimpay </td>
+          <td>(</td>
+          <td class="paramtype">name&#160;</td>
+          <td class="paramname"><em>claimer</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint64_t&#160;</td>
+          <td class="paramname"><em>payid</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>This action is to claim pay as a custodian.</p>
+<h3>Assertions:</h3>
+<ul>
+<li>The claimer account performing the action is authorised to do so.</li>
+<li>The payid is for a valid pay record in the pending pay table.</li>
+<li>The claimer account is the same as the intended destination account for the pay record. <dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">claimer</td><td>- The account id for the claiming account. </td></tr>
+    <tr><td class="paramname">payid</td><td>- The id for the pay record to claim from the pending pay table.</td></tr>
+  </table>
+  </dd>
+</dl>
+<h3>Post Condition:</h3>
+</li>
+</ul>
+<p>The quantity owed to the custodian as referred to by the pay record is transferred to the claimer and then the pay record is removed from the pending pay table. </p>
+
+</div>
+</div>
 <a id="adb98e1e4bcdff5c772b449f39440d52d"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#adb98e1e4bcdff5c772b449f39440d52d">&#9670;&nbsp;</a></span>firecand()</h2>
 
@@ -196,6 +215,38 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>migrate</b> ()</td></
 </li>
 </ul>
 <p>The custodian will be removed from the active custodians and should still be present in the candidates table but will be set to inactive. Their staked tokens will be locked up for the time delay added from the moment this action was called so they will not able to unstake until that time has passed. A replacement custodian will selected from the candidates to fill the missing place (based on vote ranking) then the auths for the controlling dac auth account will be set for the custodian board. </p>
+
+</div>
+</div>
+<a id="a0476848b649fb6fe1af1d7b8aa4d4686"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0476848b649fb6fe1af1d7b8aa4d4686">&#9670;&nbsp;</a></span>newperiod()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void daccustodian::newperiod </td>
+          <td>(</td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>message</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>This action is to be run to end and begin each period in the DAC life cycle. It performs multiple tasks for the DAC including:</p><ul>
+<li>Allocate custodians from the candidates tables based on those with most votes at the moment this action is run. &ndash; This action removes and selects a full set of custodians each time it is successfully run selected from the candidates with the most votes weight. If there are not enough eligible candidates to satisfy the DAC config numbers the action adds the highest voted candidates as custodians as long their votes weight is greater than 0. At this time the held stake for the departing custodians is set to have a time delayed lockup to prevent the funds releasing too soon after each custodian has been in office.</li>
+<li>Distribute pay for the existing custodians based on the configs into the pendingpay table so it can be claimed by individual candidates. &ndash; The pay is distributed as determined by the median pay of the currently elected custodians. Therefore all elected custodians receive the same pay amount.</li>
+<li>Set the DAC auths for the intended controlling accounts based on the configs thresholds with the newly elected custodians. This action asserts unless the following conditions have been met:</li>
+<li>The action cannot be called multiple times within the period since the last time it was previously run successfully. This minimum time between allowed calls is configured by the period length parameter in contract configs.</li>
+<li>To run for the first time a minimum threshold of voter engragement must be satisfied. This is configured by the <code>initial_vote_quorum_percent</code> field in the contract config with the percentage calculated from the amount of registered votes cast by voters against the max supply of tokens for DAC's primary currency.</li>
+<li>After the initial vote quorum percent has been reached subsequent calls to this action will require a minimum of <code>vote_quorum_percent</code> to vote for the votes to be considered sufficient to trigger a new period with new custodians. <dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">message</td><td>- a string that be used to log a message in the chain history logs. It serves no function in the contract logic. </td></tr>
+  </table>
+  </dd>
+</dl>
+</li>
+</ul>
 
 </div>
 </div>
@@ -315,6 +366,7 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>migrate</b> ()</td></
         </tr>
       </table>
 </div><div class="memdoc">
+<p>Action to listen to from the associated token contract to ensure registering should be allowed.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">from</td><td>The account to observe as the source of funds for a transfer </td></tr>
@@ -389,9 +441,7 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>migrate</b> ()</td></
 <h3>Assertions:</h3>
 <ul>
 <li>The <code>cand</code> account performing the action is authorised to do so.</li>
-<li>The <code>cand</code> has agreed to the latest constitution and member terms.</li>
-<li>The <code>cand</code> is currently in the candidates table.</li>
-<li>The string in the bio field is less than 256 chartacers. <dl class="params"><dt>Parameters</dt><dd>
+<li>The string in the bio field is less than 256 characters. <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">cand</td><td>- The account id for the candidate nominating. </td></tr>
     <tr><td class="paramname">bio</td><td>- A string of bio data that will be passed through the contract.</td></tr>
@@ -402,6 +452,96 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>migrate</b> ()</td></
 </li>
 </ul>
 <p>Nothing from this action is stored on the blockchain. It is only intended to ensure authentication of changing the bio which will be stored off chain. </p>
+
+</div>
+</div>
+<a id="ae210505bf3acff94d5f55d266f4cdb59"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae210505bf3acff94d5f55d266f4cdb59">&#9670;&nbsp;</a></span>updatereqpay()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void daccustodian::updatereqpay </td>
+          <td>(</td>
+          <td class="paramtype">name&#160;</td>
+          <td class="paramname"><em>cand</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">asset&#160;</td>
+          <td class="paramname"><em>requestedpay</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>This action is used to update the requested pay for a candidate.</p>
+<h3>Assertions:</h3>
+<ul>
+<li>The <code>cand</code> account performing the action is authorised to do so.</li>
+<li>The candidate is currently registered as a candidate.</li>
+<li>The requestedpay is not more than the requested pay amount. <dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">cand</td><td>- The account id for the candidate nominating. </td></tr>
+    <tr><td class="paramname">requestedpay</td><td>- A string representing the asset they would like to be paid as custodian.</td></tr>
+  </table>
+  </dd>
+</dl>
+<h3>Post Condition:</h3>
+</li>
+</ul>
+<p>The requested pay for the candidate should be updated to the new asset. </p>
+
+</div>
+</div>
+<a id="ab9ef43d4df3544e5d9617f13164d500a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab9ef43d4df3544e5d9617f13164d500a">&#9670;&nbsp;</a></span>votecust()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void daccustodian::votecust </td>
+          <td>(</td>
+          <td class="paramtype">name&#160;</td>
+          <td class="paramname"><em>voter</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">vector&lt; name &gt;&#160;</td>
+          <td class="paramname"><em>newvotes</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>This action is to facilitate voting for candidates to become custodians of the DAC. Each member will be able to vote a configurable number of custodians set by the contract configuration. When a voter calls this action either a new vote will be recorded or the existing vote for that voter will be modified. If an empty array of candidates is passed to the action an existing vote for that voter will be removed.</p>
+<h3>Assertions:</h3>
+<ul>
+<li>The voter account performing the action is authorised to do so.</li>
+<li>The voter account performing has agreed to the latest member terms for the DAC.</li>
+<li>The number of candidates in the newvotes vector is not greater than the number of allowed votes per voter as set by the contract config.</li>
+<li>Ensure there are no duplicate candidates in the voting vector.</li>
+<li>Ensure all the candidates in the vector are registered and active candidates. <dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">voter</td><td>- The account id for the voter account. </td></tr>
+    <tr><td class="paramname">newvotes</td><td>- A vector of account ids for the candidate that the voter is voting for.</td></tr>
+  </table>
+  </dd>
+</dl>
+<h3>Post Condition:</h3>
+</li>
+</ul>
+<p>An active vote record for the voter will have been created or modified to reflect the newvotes. Each of the candidates will have their total_votes amount updated to reflect the delta in voter's token balance. Eg. If a voter has 1000 tokens and votes for 5 candidates, each of those candidates will have their total_votes value increased by 1000. Then if they change their votes to now vote 2 different candidates while keeping the other 3 the same there would be a change of -1000 for 2 old candidates +1000 for 2 new candidates and the other 3 will remain unchanged. </p>
 
 </div>
 </div>
@@ -440,9 +580,7 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>migrate</b> ()</td></
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li><a class="el" href="daccustodian_8hpp_source.html">daccustodian.hpp</a></li>
 <li>config.cpp</li>
-<li>daccustodian.cpp</li>
 <li>external_observable_actions.cpp</li>
-<li>migration.cpp</li>
 <li>newperiod_components.cpp</li>
 <li>pay_handling.cpp</li>
 <li>privatehelpers.cpp</li>

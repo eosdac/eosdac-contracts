@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['nominatecand',['nominatecand',['../classdaccustodian.html#aca4d775e5ab016b1f54c43bc6a9f37ef',1,'daccustodian']]]
+  ['firecand',['firecand',['../classdaccustodian.html#adb98e1e4bcdff5c772b449f39440d52d',1,'daccustodian']]],
+  ['firecust',['firecust',['../classdaccustodian.html#abe706d41e498e7608aa5015995be7eda',1,'daccustodian']]]
 ];

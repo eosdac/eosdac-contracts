@@ -46,7 +46,7 @@
 			"fields": [
 				{
 					"name": "cust",
-					"type": "int64"
+					"type": "name"
 				}
 			]
 		}{
@@ -55,7 +55,7 @@
 			"fields": [
 				{
 					"name": "cust",
-					"type": "int64"
+					"type": "name"
 				}
 			]
 		},{
@@ -91,7 +91,7 @@
 			"type": "uint8"
 		},{
 			"name": "custodian_end_time_stamp",
-			"type": "uint32"
+			"type": "time_point_sec"
 		}]
 	}, {
 		"name": "custodian",
@@ -242,9 +242,6 @@
 		"fields": [{
 			"name": "message",
 			"type": "string"
-		}, {
-			"name": "earlyelect",
-			"type": "bool"
 		}]
 	}, {
 		"name": "claimpay",
@@ -348,11 +345,6 @@
 			"name": "newperiod",
 			"type": "newperiod",
 			"ricardian_contract": "## ACTION: newperiod\n**PARAMETERS:**\n\n__message__ is string used only for logging in the blockchain history and serves no purpose in the action contract logic.\n\n**INTENT:** The intent of {{ newperiod }} is to signal the end of one election period and commence the next. It performs several actions:\n\n1. Calculate the mean `requestedpay` of all the currently elected custodians.\n2. Distribute the median pay amount to all the currently elected custodians. This is achieved by adding a record to the `pendingpay` table with the custodian and the amount payable in preparation for a contract authorised action to transfer all the pending payments for custodians and recently unnominated candidates (from the `withdrawcand` action).\n3. Clears the existing vote counts for each voter and custodian in the current period in preparation for the tallying of votes for the next period.\n4. tally the votes based each voter's EOSDAC balance at the time `newperiod` is called. This is captured on the `weight` field for each vote. The same is also added to a chosen proxy if they have an active proxy vote.\n5. The vote `weight` for each vote is added to the `total_votes` field for each candidate resulting in the total votes being collated.\n6. The top `numelected` candidates based on the value of their `total_votes` has their `is_custodian` field set to true and the rest  are set to false.\n7. The `pendingreqpay` field value for each candidate is moved to the `requestedpay` field. This ensures the `pendingreqpay` field can be used for election campaiging for the next period while the `requestedpay` field can be used at the closing of the current period for pay calculations. \n "
-		},
-		{
-			"name": "paypending",
-			"type": "paypending",
-			"ricardian_contract": "## ACTION: paypending\n**PARAMETERS:**\n\n__message__ is string used only for logging in the blockchain history and serves no purpose in the action contract logic.\n\n**INTENT:** The intent of {{ paypending }} is to pay all the pending payment amounts to members. The list of payees would populated from the `newperiod` calculation and the candidates who have unnominated and are due to have their staked tokens returned to them. This list is collected in the `pendingpay` table. This action pays each pending payee via an inline transfer on the `eosdactoken` contract and then removes the pending payment record from the `pending_pay` table. The active auth of this contract is required to complet the action."
 		},
 		{
 			"name": "claimpay",

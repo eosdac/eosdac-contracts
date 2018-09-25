@@ -1,4 +1,6 @@
 
+
+
 void daccustodian::votecust(name voter, vector<name> newvotes) {
 
     require_auth(voter);

@@ -1,17 +1,4 @@
 
-/**
- * This action is to claim pay as a custodian.
- *
- * ### Assertions:
- * - The claimer account performing the action is authorised to do so.
- * - The payid is for a valid pay record in the pending pay table.
- * - The claimer account is the same as the intended destination account for the pay record.
- * @param claimer - The account id for the claiming account.
- * @param payid - The id for the pay record to claim from the pending pay table.
- *
- * ### Post Condition:
- * The quantity owed to the custodian as referred to by the pay record is transferred to the claimer and then the pay record is removed from the pending pay table.
- */
 void daccustodian::claimpay(name claimer, uint64_t payid) {
     require_auth(claimer);
 
@@ -32,39 +19,4 @@ void daccustodian::claimpay(name claimer, uint64_t payid) {
     }
 
     pending_pay.erase(payClaim);
-}
-
-void daccustodian::paypending(string message) {
-    require_auth(_self);
-    auto payidx = pending_pay.begin();
-    eosio_assert(payidx != pending_pay.end(), "pending pay is empty");
-
-    while (payidx != pending_pay.end()/* TODO: Add AND batch condition here to avoid long transaction errors */) {
-        if (payidx->quantity.symbol == configs().requested_pay_max.symbol) {
-            action(permission_level{_self, N(active)},
-                   N(eosio.token), N(transfer),
-                   std::make_tuple(_self, payidx->receiver, payidx->quantity, payidx->memo)
-            ).send();
-        } else {
-            action(permission_level{_self, N(active)},
-                   eosio::string_to_name(TOKEN_CONTRACT), N(transfer),
-                   std::make_tuple(_self, payidx->receiver, payidx->quantity, payidx->memo)
-            ).send();
-        }
-
-        payidx = pending_pay.erase(payidx);
-    }
-
-    if (payidx != pending_pay.end()) {
-
-        //        Schedule the the next pending pay batch into a separate transaction.
-        transaction nextPendingPayBatch{};
-        nextPendingPayBatch.actions.emplace_back(
-                permission_level(_self, N(active)),
-                _self, N(paypending),
-                std::make_tuple("DAC Payment delayed batch transaction.")
-        );
-        nextPendingPayBatch.delay_sec = 1;
-        nextPendingPayBatch.send(N(paypending), false);
-    }
 }

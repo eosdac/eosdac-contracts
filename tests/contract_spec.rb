@@ -90,7 +90,7 @@ def install_contracts
 end
 
 def killchain
-  `sleep 0.5; kill \`pgrep nodeos\``
+  # `sleep 0.5; kill \`pgrep nodeos\``
 end
 
 # @param [eos account name for the new account] name
@@ -103,22 +103,18 @@ def seed_account(name, issue: nil, memberreg: nil, stake: nil, requestedpay: nil
 
   unless issue.nil?
     `cleos push action eosdactoken issue '{ "to": "#{name}", "quantity": "#{issue}", "memo": "Initial amount."}' -p eosdactoken`
-    puts("Issue to #{name}")
   end
 
   unless memberreg.nil?
     `cleos push action eosdactoken memberreg '{ "sender": "#{name}", "agreedterms": "#{memberreg}"}' -p #{name}`
-    puts("memberreg #{memberreg}")
   end
 
   unless stake.nil?
     `cleos push action eosdactoken transfer '{ "from": "#{name}", "to": "daccustodian", "quantity": "#{stake}","memo":"daccustodian"}' -p #{name}`
-    puts("nominatecand #{name}")
   end
 
   unless requestedpay.nil?
     `cleos push action daccustodian nominatecand '{ "cand": "#{name}", "bio": "any bio", "requestedpay": "#{requestedpay}"}' -p #{name}`
-    puts("nominatecand #{name}")
   end
 end
 
@@ -162,12 +158,12 @@ describe "eosdacelect" do
     end
 
     context "with invalid auth" do
-      command %(cleos push action daccustodian updateconfig '{ "lockupasset": "13.0000 EOSDAC", "maxvotes": 4, "periodlength": 604800 , "numelected": 12, "authaccount": "dacauthority", "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 15552000, "requested_pay_max": "450.0000 EOS"}' -p testreguser1), allow_error: true
+      command %(cleos push action daccustodian updateconfig '{ "lockupasset": "13.0000 EOSDAC", "maxvotes": 4, "periodlength": 604800 , "numelected": 12, "authaccount": "dacauthority", "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}' -p testreguser1), allow_error: true
       its(:stderr) {is_expected.to include('Error 3090004')}
     end
 
     context "with valid auth" do
-      command %(cleos push action daccustodian updateconfig '{ "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "authaccount": "dacauthority", "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 15552000, "requested_pay_max": "450.0000 EOS"}' -p daccustodian), allow_error: true
+      command %(cleos push action daccustodian updateconfig '{ "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "authaccount": "dacauthority", "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}' -p daccustodian), allow_error: true
       its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
     end
   end
@@ -229,7 +225,7 @@ describe "eosdacelect" do
                 "locked_tokens": "10.0000 EOSDAC",
                 "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
               }
             ],
             "more": false
@@ -253,7 +249,7 @@ describe "eosdacelect" do
 
   context "To ensure behaviours change after updateconfig" do
     context "updateconfigs with valid auth" do
-      command %(cleos push action daccustodian updateconfig '{ "lockupasset": "23.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "authaccount": "dacauthority", "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 15552000, "requested_pay_max": "450.0000 EOS"}' -p daccustodian), allow_error: true
+      command %(cleos push action daccustodian updateconfig '{ "lockupasset": "23.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "authaccount": "dacauthority", "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}' -p daccustodian), allow_error: true
       its(:stdout) {is_expected.to include('daccustodian::updateconfig')}
     end
   end
@@ -309,14 +305,14 @@ describe "eosdacelect" do
       seed_account("updatepay2", issue: "100.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "21.5000 EOS")
     end
 
-    context "with invalid auth" do
-      command %(cleos push action daccustodian updatereqpay '{ "cand": "updatepay1", "requestedpay": "11.5000 EOS"}' -p testreguser3), allow_error: true
-      its(:stderr) {is_expected.to include('Error 3090004')}
-    end
-
     context "with valid auth but not registered" do
       command %(cleos push action daccustodian updatereqpay '{ "cand": "updatepay1", "requestedpay": "31.5000 EOS"}' -p updatepay1), allow_error: true
       its(:stderr) {is_expected.to include('Error 3050003')}
+    end
+
+    context "with invalid auth" do
+      command %(cleos push action daccustodian updatereqpay '{ "cand": "updatepay2", "requestedpay": "11.5000 EOS"}' -p testreguser3), allow_error: true
+      its(:stderr) {is_expected.to include('Error 3090004')}
     end
 
     context "with valid auth" do
@@ -332,41 +328,13 @@ describe "eosdacelect" do
     context "Read the candidates table after change reqpay" do
       command %(cleos get table daccustodian daccustodian candidates), allow_error: true
       it do
-        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-          {
-            "rows": [{
-              "candidate_name": "testreguser1",
-              "requestedpay": "11.5000 EOS",
-              "locked_tokens": "10.0000 EOSDAC",
-              "total_votes": 0,
-              "is_active": 1,
-              "custodian_end_time_stamp": 0
-            },{
-              "candidate_name": "unreguser2",
-              "requestedpay": "11.5000 EOS",
-              "locked_tokens": "23.0000 EOSDAC",
-              "total_votes": 0,
-              "is_active": 0,
-              "custodian_end_time_stamp": 0
-            },{
-              "candidate_name": "updatebio2",
-              "requestedpay": "11.5000 EOS",
-              "locked_tokens": "23.0000 EOSDAC",
-              "total_votes": 0,
-              "is_active": 1,
-              "custodian_end_time_stamp": 0
-            },{
-              "candidate_name": "updatepay2",
-              "requestedpay": "41.5000 EOS",
-              "locked_tokens": "23.0000 EOSDAC",
-              "total_votes": 0,
-              "is_active": 1,
-              "custodian_end_time_stamp": 0
-            }
-          ],
-          "more": false
-        }
-        JSON
+        json = JSON.parse(subject.stdout)
+        expect(json["rows"].count).to eq 4
+
+        expect(json["rows"][-1]["candidate_name"]).to eq 'updatepay2'
+        expect(json["rows"][-1]["requestedpay"]).to eq '41.5000 EOS'
+        expect(json["rows"][-1]["locked_tokens"]).to eq '23.0000 EOSDAC'
+
       end
     end
   end
@@ -382,7 +350,7 @@ describe "eosdacelect" do
       seed_account("votedcust4", issue: "104.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "14.0000 EOS")
       seed_account("votedcust5", issue: "105.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "15.0000 EOS")
       seed_account("votedcust11", issue: "106.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "16.0000 EOS")
-      seed_account("voter1", issue: "85.0000 EOSDAC", memberreg: "New Latest terms")
+      seed_account("voter1", issue: "3000.0000 EOSDAC", memberreg: "New Latest terms")
       seed_account("voter2", issue: "108.0000 EOSDAC", memberreg: "New Latest terms")
       seed_account("unregvoter", issue: "109.0000 EOSDAC")
     end
@@ -465,8 +433,8 @@ describe "eosdacelect" do
               "rows": [
   {
     "lastperiodtime": 0,
-    "total_weight_of_votes": 1930000,
-    "total_votes_on_candidates": 5790000,
+    "total_weight_of_votes": 31080000,
+    "total_votes_on_candidates": 93240000,
     "number_active_candidates": 9,
     "met_initial_votes_threshold": 0
   }
@@ -507,84 +475,41 @@ describe "eosdacelect" do
     context "Read the candidates table after _create_ vote" do
       command %(cleos get table daccustodian daccustodian candidates), allow_error: true
       it do
-        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-            {
-              "rows": [{
-                "candidate_name": "testreguser1",
-                "requestedpay": "11.5000 EOS",
-                "locked_tokens": "10.0000 EOSDAC",
-                "total_votes": 0,
-                "is_active": 1,
-                "custodian_end_time_stamp": 0
-              },{
-                "candidate_name": "unreguser2",
-                "requestedpay": "11.5000 EOS",
-                "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 0,
-                "is_active": 0,
-                "custodian_end_time_stamp": 0
-              },{
-                "candidate_name": "updatebio2",
-                "requestedpay": "11.5000 EOS",
-                "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 0,
-                "is_active": 1,
-                "custodian_end_time_stamp": 0
-              },{
-                "candidate_name": "updatepay2",
-                "requestedpay": "41.5000 EOS",
-                "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 0,
-                "is_active": 1,
-                "custodian_end_time_stamp": 0
-              },{
-                "candidate_name": "votedcust1",
-                "requestedpay": "11.0000 EOS",
-                "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 850000,
-                "is_active": 1,
-              "custodian_end_time_stamp": 0
-              },{
-                "candidate_name": "votedcust11",
-                "requestedpay": "16.0000 EOS",
-                "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 0,
-                "is_active": 1,
-              "custodian_end_time_stamp": 0
-              },{
-                "candidate_name": "votedcust2",
-                "requestedpay": "12.0000 EOS",
-                "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 850000,
-                "is_active": 1,
-                "custodian_end_time_stamp": 0
-              },{
-                "candidate_name": "votedcust3",
-                "requestedpay": "13.0000 EOS",
-                "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 850000,
-                "is_active": 1,
-                "custodian_end_time_stamp": 0
-              },{
-                "candidate_name": "votedcust4",
-                "requestedpay": "14.0000 EOS",
-                "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 0,
-                "is_active": 1,
-                "custodian_end_time_stamp": 0
-              },{
-                "candidate_name": "votedcust5",
-                "requestedpay": "15.0000 EOS",
-                "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 0,
-                "is_active": 1,
-                "custodian_end_time_stamp": 0
-              }
-            ],
-            "more": true
-          }
 
-        JSON
+        json = JSON.parse(subject.stdout)
+        expect(json["rows"].count).to eq 10
+
+        candidate = json["rows"][4]
+
+        expect(candidate["candidate_name"]).to eq 'votedcust1'
+        expect(candidate["requestedpay"]).to eq '11.0000 EOS'
+        expect(candidate["total_votes"]).to eq 30000000
+        expect(candidate["is_active"]).to eq 1
+        expect(candidate["custodian_end_time_stamp"]).to eq "1970-01-01T00:00:00"
+
+        candidate = json["rows"][6]
+
+        expect(candidate["candidate_name"]).to eq 'votedcust2'
+        expect(candidate["requestedpay"]).to eq '12.0000 EOS'
+        expect(candidate["total_votes"]).to eq 30000000
+        expect(candidate["is_active"]).to eq 1
+        expect(candidate["custodian_end_time_stamp"]).to eq "1970-01-01T00:00:00"
+
+        candidate = json["rows"][7]
+
+        expect(candidate["candidate_name"]).to eq 'votedcust3'
+        expect(candidate["requestedpay"]).to eq '13.0000 EOS'
+        expect(candidate["total_votes"]).to eq 30000000
+        expect(candidate["is_active"]).to eq 1
+        expect(candidate["custodian_end_time_stamp"]).to eq "1970-01-01T00:00:00"
+
+        candidate = json["rows"][8]
+
+        expect(candidate["candidate_name"]).to eq 'votedcust4'
+        expect(candidate["requestedpay"]).to eq '14.0000 EOS'
+        expect(candidate["total_votes"]).to eq 0
+        expect(candidate["is_active"]).to eq 1
+        expect(candidate["custodian_end_time_stamp"]).to eq "1970-01-01T00:00:00"
       end
     end
 
@@ -617,174 +542,90 @@ describe "eosdacelect" do
     context "Read the candidates table after _change_ vote" do
       command %(cleos get table daccustodian daccustodian candidates), allow_error: true
       it do
-        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-            {
-              "rows": [{
-                "candidate_name": "testreguser1",
-                "requestedpay": "11.5000 EOS",
-                "locked_tokens": "10.0000 EOSDAC",
-                "total_votes": 0,
-                "is_active": 1,
-                "custodian_end_time_stamp": 0
-              },{
-                "candidate_name": "unreguser2",
-                "requestedpay": "11.5000 EOS",
-                "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 0,
-                "is_active": 0,
-                "custodian_end_time_stamp": 0
-              },{
-                "candidate_name": "updatebio2",
-                "requestedpay": "11.5000 EOS",
-                "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 0,
-                "is_active": 1,
-                "custodian_end_time_stamp": 0
-              },{
-                "candidate_name": "updatepay2",
-                "requestedpay": "41.5000 EOS",
-                "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 0,
-                "is_active": 1,
-                "custodian_end_time_stamp": 0
-              },{
-                "candidate_name": "votedcust1",
-                "requestedpay": "11.0000 EOS",
-                "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 850000,
-                "is_active": 1,
-                "custodian_end_time_stamp": 0
-              },{
-                "candidate_name": "votedcust11",
-                "requestedpay": "16.0000 EOS",
-                "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 0,
-                "is_active": 1,
-                "custodian_end_time_stamp": 0
-              },{
-                "candidate_name": "votedcust2",
-                "requestedpay": "12.0000 EOS",
-                "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 850000,
-                "is_active": 1,
-                "custodian_end_time_stamp": 0
-              },{
-                "candidate_name": "votedcust3",
-                "requestedpay": "13.0000 EOS",
-                "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 0,
-                "is_active": 1,
-                "custodian_end_time_stamp": 0
-              },{
-                "candidate_name": "votedcust4",
-                "requestedpay": "14.0000 EOS",
-                "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 850000,
-                "is_active": 1,
-                "custodian_end_time_stamp": 0
-              },{
-                "candidate_name": "votedcust5",
-                "requestedpay": "15.0000 EOS",
-                "locked_tokens": "23.0000 EOSDAC",
-                "total_votes": 0,
-                "is_active": 1,
-                "custodian_end_time_stamp": 0
-              }
-            ],
-            "more": true
-          }
-        JSON
+
+        json = JSON.parse(subject.stdout)
+        expect(json["rows"].count).to eq 10
+
+        candidate = json["rows"][4]
+
+        expect(candidate["candidate_name"]).to eq 'votedcust1'
+        expect(candidate["requestedpay"]).to eq '11.0000 EOS'
+        expect(candidate["total_votes"]).to eq 30000000
+        expect(candidate["is_active"]).to eq 1
+        expect(candidate["custodian_end_time_stamp"]).to eq "1970-01-01T00:00:00"
+
+        candidate = json["rows"][6]
+
+        expect(candidate["candidate_name"]).to eq 'votedcust2'
+        expect(candidate["requestedpay"]).to eq '12.0000 EOS'
+        expect(candidate["total_votes"]).to eq 30000000
+        expect(candidate["is_active"]).to eq 1
+        expect(candidate["custodian_end_time_stamp"]).to eq "1970-01-01T00:00:00"
+
+        candidate = json["rows"][7]
+
+        expect(candidate["candidate_name"]).to eq 'votedcust3'
+        expect(candidate["requestedpay"]).to eq '13.0000 EOS'
+        expect(candidate["total_votes"]).to eq 0
+        expect(candidate["is_active"]).to eq 1
+        expect(candidate["custodian_end_time_stamp"]).to eq "1970-01-01T00:00:00"
+
+        candidate = json["rows"][8]
+
+        expect(candidate["candidate_name"]).to eq 'votedcust4'
+        expect(candidate["requestedpay"]).to eq '14.0000 EOS'
+        expect(candidate["total_votes"]).to eq 30000000
+        expect(candidate["is_active"]).to eq 1
+        expect(candidate["custodian_end_time_stamp"]).to eq "1970-01-01T00:00:00"
       end
     end
 
     context "After token transfer vote weight should move to different candidates" do
       before(:all) do
-        `cleos push action daccustodian votecust '{ "voter": "votedcust2", "newvotes": ["votedcust1","votedcust3","votedcust4"]}' -p votedcust2`
+        `cleos push action daccustodian votecust '{ "voter": "voter2", "newvotes": ["votedcust3"]}' -p voter2`
       end
-      command %(cleos push action eosdactoken transfer '{ "from": "voter1", "to": "votedcust4", "quantity": "13.0000 EOSDAC","memo":"random transfer"}' -p voter1), allow_error: true
+      command %(cleos push action eosdactoken transfer '{ "from": "voter1", "to": "voter2", "quantity": "1300.0000 EOSDAC","memo":"random transfer"}' -p voter1), allow_error: true
       its(:stdout) {is_expected.to include('eosdactoken::transfer')}
     end
 
     context "Read the candidates table after transfer for voter" do
       command %(cleos get table daccustodian daccustodian candidates), allow_error: true
       it do
-        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-          {
-            "rows": [{
-              "candidate_name": "testreguser1",
-              "requestedpay": "11.5000 EOS",
-              "locked_tokens": "10.0000 EOSDAC",
-              "total_votes": 0,
-                "is_active": 1,
-                "custodian_end_time_stamp": 0
-            },{
-              "candidate_name": "unreguser2",
-              "requestedpay": "11.5000 EOS",
-              "locked_tokens": "23.0000 EOSDAC",
-              "total_votes": 0,
-                "is_active": 0,
-                "custodian_end_time_stamp": 0
-            },{
-              "candidate_name": "updatebio2",
-              "requestedpay": "11.5000 EOS",
-              "locked_tokens": "23.0000 EOSDAC",
-              "total_votes": 0,
-                "is_active": 1,
-                "custodian_end_time_stamp": 0
-            },{
-              "candidate_name": "updatepay2",
-              "requestedpay": "41.5000 EOS",
-              "locked_tokens": "23.0000 EOSDAC",
-              "total_votes": 0,
-                "is_active": 1,
-                "custodian_end_time_stamp": 0
-            },{
-              "candidate_name": "votedcust1",
-              "requestedpay": "11.0000 EOS",
-              "locked_tokens": "23.0000 EOSDAC",
-              "total_votes": 1510000,
-                "is_active": 1,
-                "custodian_end_time_stamp": 0
-            },{
-              "candidate_name": "votedcust11",
-              "requestedpay": "16.0000 EOS",
-              "locked_tokens": "23.0000 EOSDAC",
-              "total_votes": 0,
-                "is_active": 1,
-                "custodian_end_time_stamp": 0
-            },{
-              "candidate_name": "votedcust2",
-              "requestedpay": "12.0000 EOS",
-              "locked_tokens": "23.0000 EOSDAC",
-              "total_votes": 720000,
-                "is_active": 1,
-                "custodian_end_time_stamp": 0
-            },{
-              "candidate_name": "votedcust3",
-              "requestedpay": "13.0000 EOS",
-              "locked_tokens": "23.0000 EOSDAC",
-              "total_votes": 790000,
-                "is_active": 1,
-                "custodian_end_time_stamp": 0
-            },{
-              "candidate_name": "votedcust4",
-              "requestedpay": "14.0000 EOS",
-              "locked_tokens": "23.0000 EOSDAC",
-              "total_votes": 1510000,
-                "is_active": 1,
-                "custodian_end_time_stamp": 0
-            },{
-              "candidate_name": "votedcust5",
-              "requestedpay": "15.0000 EOS",
-              "locked_tokens": "23.0000 EOSDAC",
-              "total_votes": 0,
-                "is_active": 1,
-                "custodian_end_time_stamp": 0
-            }
-          ],
-          "more": true
-        }
-        JSON
+
+        json = JSON.parse(subject.stdout)
+        expect(json["rows"].count).to eq 10
+
+        candidate = json["rows"][4]
+
+        expect(candidate["candidate_name"]).to eq 'votedcust1'
+        expect(candidate["requestedpay"]).to eq '11.0000 EOS'
+        expect(candidate["total_votes"]).to eq 17000000
+        expect(candidate["is_active"]).to eq 1
+        expect(candidate["custodian_end_time_stamp"]).to eq "1970-01-01T00:00:00"
+
+        candidate = json["rows"][6]
+
+        expect(candidate["candidate_name"]).to eq 'votedcust2'
+        expect(candidate["requestedpay"]).to eq '12.0000 EOS'
+        expect(candidate["total_votes"]).to eq 17000000
+        expect(candidate["is_active"]).to eq 1
+        expect(candidate["custodian_end_time_stamp"]).to eq "1970-01-01T00:00:00"
+
+        candidate = json["rows"][7]
+
+        expect(candidate["candidate_name"]).to eq 'votedcust3'
+        expect(candidate["requestedpay"]).to eq '13.0000 EOS'
+        expect(candidate["total_votes"]).to eq 14080000
+        expect(candidate["is_active"]).to eq 1
+        expect(candidate["custodian_end_time_stamp"]).to eq "1970-01-01T00:00:00"
+
+        candidate = json["rows"][8]
+
+        expect(candidate["candidate_name"]).to eq 'votedcust4'
+        expect(candidate["requestedpay"]).to eq '14.0000 EOS'
+        expect(candidate["total_votes"]).to eq 17000000
+        expect(candidate["is_active"]).to eq 1
+        expect(candidate["custodian_end_time_stamp"]).to eq "1970-01-01T00:00:00"
       end
     end
 
@@ -801,21 +642,21 @@ describe "eosdacelect" do
     end
   end
 
-  #
-  #
-  #
-  #
-  #
-  #
-  #
-  #
-  #
-  #
-  #
-  #
-  #
-  #  Excluded for now.           vvvvvvvvvvvv
-  #
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#  Excluded for now.           vvvvvvvvvvvv
+#
   xdescribe "votedproxy" do
     before(:all) do
       # configure accounts for eosdactoken
@@ -892,14 +733,14 @@ describe "eosdacelect" do
                 "locked_tokens": "10.0000 EOSDAC",
                 "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
               },{
                 "candidate_name": "unreguser2",
                 "requestedpay": "11.5000 EOS",
                 "locked_tokens": "0.0000 EOSDAC",
                 "total_votes": 0,
                 "is_active": 0,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
               },{
                 "candidate_name": "updatebio2",
                 "bio": "new bio",
@@ -907,63 +748,63 @@ describe "eosdacelect" do
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
               },{
                 "candidate_name": "updatepay2",
                 "requestedpay": "41.5000 EOS",
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
               },{
                 "candidate_name": "votedcust1",
                 "requestedpay": "11.0000 EOS",
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
               },{
                 "candidate_name": "votedcust11",
                 "requestedpay": "16.0000 EOS",
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
               },{
                 "candidate_name": "votedcust2",
                 "requestedpay": "12.0000 EOS",
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
               },{
                 "candidate_name": "votedcust3",
                 "requestedpay": "13.0000 EOS",
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
               },{
                 "candidate_name": "votedcust4",
                 "requestedpay": "14.0000 EOS",
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
               },{
                 "candidate_name": "votedcust5",
                 "requestedpay": "15.0000 EOS",
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
               },{
                 "candidate_name": "votedproxy1",
                 "requestedpay": "10.0000 EOS",
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
               }
             ],
             "more": false
@@ -1007,14 +848,14 @@ describe "eosdacelect" do
                 "locked_tokens": "10.0000 EOSDAC",
                 "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
               },{
                 "candidate_name": "unreguser2",
                 "requestedpay": "11.5000 EOS",
                 "locked_tokens": "0.0000 EOSDAC",
                 "total_votes": 0,
                 "is_active": 0,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
               },{
                 "candidate_name": "updatebio2",
                 "bio": "new bio",
@@ -1022,63 +863,63 @@ describe "eosdacelect" do
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
               },{
                 "candidate_name": "updatepay2",
                 "requestedpay": "41.5000 EOS",
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
               },{
                 "candidate_name": "votedcust1",
                 "requestedpay": "11.0000 EOS",
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
               },{
                 "candidate_name": "votedcust11",
                 "requestedpay": "16.0000 EOS",
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
               },{
                 "candidate_name": "votedcust2",
                 "requestedpay": "12.0000 EOS",
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
               },{
                 "candidate_name": "votedcust3",
                 "requestedpay": "13.0000 EOS",
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
               },{
                 "candidate_name": "votedcust4",
                 "requestedpay": "14.0000 EOS",
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
               },{
                 "candidate_name": "votedcust5",
                 "requestedpay": "15.0000 EOS",
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
               },{
                 "candidate_name": "votedproxy1",
                 "requestedpay": "10.0000 EOS",
                 "locked_tokens": "23.0000 EOSDAC",
                 "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
               }
             ],
             "more": false
@@ -1130,14 +971,14 @@ describe "eosdacelect" do
                   "locked_tokens": "10.0000 EOSDAC",
                   "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
                 },{
                   "candidate_name": "unreguser2",
                   "requestedpay": "11.5000 EOS",
                   "locked_tokens": "0.0000 EOSDAC",
                   "total_votes": 0,
                 "is_active": 0,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
                 },{
                   "candidate_name": "updatebio2",
                   "bio": "new bio",
@@ -1145,62 +986,62 @@ describe "eosdacelect" do
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
                 },{
                   "candidate_name": "updatepay2",
                   "requestedpay": "41.5000 EOS",
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
                 },{
                   "candidate_name": "votedcust1",
                   "requestedpay": "11.0000 EOS",
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
                 },{
                   "candidate_name": "votedcust11",
                   "requestedpay": "16.0000 EOS",
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
                 },{
                   "candidate_name": "votedcust2",
                   "requestedpay": "12.0000 EOS",
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
                 },{
                   "candidate_name": "votedcust3",
                   "requestedpay": "13.0000 EOS",
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
                 },{
                   "candidate_name": "votedcust4",
                   "requestedpay": "14.0000 EOS",
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
                 },{
                   "candidate_name": "votedcust5",
                   "requestedpay": "15.0000 EOS",
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
                 },{
                   "candidate_name": "votedproxy1",
                   "requestedpay": "10.0000 EOS",
                   "locked_tokens": "23.0000 EOSDAC",
                   "total_votes": 0,
                 "is_active": 1,
-                "custodian_end_time_stamp": 0
+                "custodian_end_time_stamp": "1970-01-01T00:00:00"
                 }
               ],
               "more": false
@@ -1213,257 +1054,233 @@ describe "eosdacelect" do
   end
 
 
-  # Excluded ^^^^^^^^^^^^^^^^^^^^^^
+# Excluded ^^^^^^^^^^^^^^^^^^^^^^
 
   describe "newperiod" do
+    before(:all) do
+      seed_account("voter3", issue: "110.0000 EOSDAC", memberreg: "New Latest terms")
+      seed_account("whale1", issue: "15000.0000 EOSDAC", memberreg: "New Latest terms")
+    end
 
     describe "with insufficient votes to trigger the dac should fail" do
       before(:all) do
-        `cleos push action daccustodian updateconfig '{ "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 1 , "numelected": 12, "authaccount": "dacauthority", "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 3, "auth_threshold_mid": 2, "auth_threshold_low": 1, "lockup_release_time_delay": 15552000, "requested_pay_max": "450.0000 EOS"}' -p daccustodian`
+        `cleos push action daccustodian updateconfig '{ "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 5, "numelected": 12, "authaccount": "dacauthority", "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 3, "auth_threshold_mid": 2, "auth_threshold_low": 1, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}' -p daccustodian`
       end
       command %(cleos push action daccustodian newperiod '{ "message": "log message", "earlyelect": false}' -p daccustodian), allow_error: true
       its(:stderr) {is_expected.to include('Voter engagement is insufficient to activate the DAC.')}
     end
 
+    describe "allocateCust" do
+      before(:all) do
+        # add cands
+        `cleos push action daccustodian updateconfig '{ "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 1 , "numelected": 12, "authaccount": "dacauthority", "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 4, "auth_threshold_mid": 4, "auth_threshold_low": 2, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}' -p daccustodian`
+      end
+
+      context "given there are not enough candidates to fill the custodians" do
+        # command %(cleos push action daccustodian allocatecust '[false]' -p daccustodian), allow_error: true
+        # its(:stdout) {is_expected.to include('The pool of eligible candidates has been exhausted')}
+        command %(cleos push action daccustodian newperiod '{ "message": "log message", "earlyelect": false}' -p daccustodian), allow_error: true
+        its(:stderr) {is_expected.to include('Voter engagement is insufficient to activate the DAC.')}
+      end
+
+      context "given there are enough candidates to fill the custodians but not enough have votes greater than 0" do
+        before(:all) do
+          seed_account("allocate1", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "11.0000 EOS")
+          seed_account("allocate2", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "12.0000 EOS")
+          seed_account("allocate3", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "13.0000 EOS")
+          seed_account("allocate4", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "14.0000 EOS")
+          seed_account("allocate5", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "15.0000 EOS")
+          seed_account("allocate11", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "16.0000 EOS")
+          seed_account("allocate21", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "17.0000 EOS")
+          seed_account("allocate31", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "18.0000 EOS")
+          seed_account("allocate41", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "19.0000 EOS")
+          seed_account("allocate51", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "20.0000 EOS")
+          seed_account("allocate12", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "21.0000 EOS")
+          seed_account("allocate22", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "22.0000 EOS")
+          seed_account("allocate32", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "23.0000 EOS")
+          seed_account("allocate42", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "24.0000 EOS")
+          seed_account("allocate52", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "25.0000 EOS")
+        end
+
+        command %(cleos push action daccustodian newperiod '{ "message": "log message", "earlyelect": false}' -p daccustodian), allow_error: true
+        its(:stderr) {is_expected.to include('Voter engagement is insufficient to activate the DAC.')}
+      end
+
+      context "given there are enough votes with total_votes over 0" do
+        before(:all) do
+          `cleos push action daccustodian votecust '{ "voter": "voter1", "newvotes": ["allocate1","allocate2","allocate3","allocate4","allocate5"]}' -p voter1`
+          `cleos push action daccustodian votecust '{ "voter": "voter2", "newvotes": ["allocate11","allocate21","allocate31","allocate41","allocate51"]}' -p voter2`
+          `cleos push action daccustodian votecust '{ "voter": "voter3", "newvotes": ["allocate12","allocate22","allocate32","allocate4","allocate5"]}' -p voter3`
+        end
+        context "But not enough engagement to active the DAC" do
+          command %(cleos push action daccustodian newperiod '{ "message": "log message", "earlyelect": false}' -p daccustodian), allow_error: true
+          its(:stderr) {is_expected.to include('Voter engagement is insufficient to activate the DAC.')}
+        end
+
+        context "And enough voter weight to activate the DAC" do
+          before(:all) {`cleos push action daccustodian votecust '{ "voter": "whale1", "newvotes": ["allocate12","allocate22","allocate32","allocate4","allocate5"]}' -p whale1`}
+
+          command %(cleos push action daccustodian newperiod '{ "message": "log message"}' -p daccustodian), allow_error: true
+          its(:stdout) {is_expected.to include('daccustodian::newperiod')}
+        end
+      end
+
+      context "Read the votes table after adding enough votes for a valid election" do
+        command %(cleos get table daccustodian daccustodian votes), allow_error: true
+        it do
+
+          json = JSON.parse(subject.stdout)
+          expect(json["rows"].count).to eq 4
+
+          vote = json["rows"].detect {|v| v["voter"] == 'voter2'}
+
+          expect(vote["candidates"].count).to eq 5
+          expect(vote["candidates"][0]).to eq 'allocate11'
+
+          vote = json["rows"].detect {|v| v["voter"] == 'voter3'}
+
+          expect(vote["candidates"].count).to eq 5
+          expect(vote["candidates"][0]).to eq 'allocate12'
+
+          vote = json["rows"].detect {|v| v["voter"] == 'whale1'}
+          expect(vote["candidates"].count).to eq 5
+          expect(vote["candidates"][0]).to eq 'allocate12'
+        end
+      end
+
+      context "Read the custodians table after adding enough votes for election" do
+        command %(cleos get table daccustodian daccustodian custodians --limit 20), allow_error: true
+        it do
+          json = JSON.parse(subject.stdout)
+          expect(json["rows"].count).to eq 12
+
+          custodian = json["rows"].detect {|v| v["cust_name"] == 'allocate11'}
+          expect(custodian["total_votes"]).to eq 14080000
+
+          custodian = json["rows"].detect {|v| v["cust_name"] == 'allocate32'}
+          expect(custodian["total_votes"]).to eq 151100000
+
+          custodian = json["rows"].detect {|v| v["cust_name"] == 'allocate4'}
+          expect(custodian["total_votes"]).to eq 168100000
+
+        end
+      end
+    end
+
+
     describe "called too early in the period should fail after recent newperiod call" do
+      before(:all) do
+        `cleos push action daccustodian votecust '{ "voter": "whale1", "newvotes": ["allocate1","allocate2","allocate3","allocate4","allocate5"]}' -p whale1`
+      end
+
       command %(cleos push action daccustodian newperiod '{ "message": "called too early", "earlyelect": false}' -p daccustodian), allow_error: true
       its(:stderr) {is_expected.to include('New period is being called too soon. Wait until the period has complete')}
     end
 
     describe "called after period time has passed" do
       before(:all) do
-        `cleos push action daccustodian updateconfig '{ "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 1, "numelected": 12, "authaccount": "dacauthority", "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 3, "auth_threshold_mid": 2, "auth_threshold_low": 1, "lockup_release_time_delay": 15552000, "requested_pay_max": "450.0000 EOS"}' -p daccustodian`
-        sleep 5
+        `cleos push action daccustodian updateconfig '{ "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 1, "numelected": 12, "authaccount": "dacauthority", "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 3, "auth_threshold_mid": 2, "auth_threshold_low": 1, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}' -p daccustodian`
+        sleep 2
+      end
+      command %(cleos push action daccustodian newperiod '{ "message": "Good new period call after config change", "earlyelect": false}' -p daccustodian), allow_error: true
+      its(:stdout) {is_expected.to include('daccustodian::newperiod')}
+    end
+
+    describe "called after voter engagement has dropped to too low" do
+      before(:all) do
+        # Remove the whale vote to drop backs
+        `cleos push action daccustodian votecust '{ "voter": "whale1", "newvotes": []}' -p whale1`
+        `cleos push action daccustodian updateconfig '{ "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 1, "numelected": 12, "authaccount": "dacauthority", "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 4, "auth_threshold_high": 3, "auth_threshold_mid": 2, "auth_threshold_low": 1, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}' -p daccustodian`
+        sleep 2
+      end
+      command %(cleos push action daccustodian newperiod '{ "message": "Good new period call after config change", "earlyelect": false}' -p daccustodian), allow_error: true
+      its(:stderr) {is_expected.to include('Voter engagement is insufficient to process a new period')}
+    end
+
+    describe "called after voter engagement has risen to above the continuing threshold" do
+      before(:all) do
+        `cleos push action daccustodian updateconfig '{ "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 1, "numelected": 12, "authaccount": "dacauthority", "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 4, "auth_threshold_high": 3, "auth_threshold_mid": 2, "auth_threshold_low": 1, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}' -p daccustodian`
+        `cleos push action eosdactoken transfer '{ "from": "whale1", "to": "voter1", "quantity": "1300.0000 EOSDAC","memo":"random transfer"}' -p whale1`
+
+        sleep 2
       end
       command %(cleos push action daccustodian newperiod '{ "message": "Good new period call after config change", "earlyelect": false}' -p daccustodian), allow_error: true
       its(:stdout) {is_expected.to include('daccustodian::newperiod')}
     end
 
     context "the pending_pay table" do
-      # Assuming that proxied voter's weight should be 0 since the weight has been delegated to proxy.
-      # Also assumes that staked tokens for candidate are not used for voting power.
-      command %(cleos get table daccustodian daccustodian pendingpay), allow_error: true
+      command %(cleos get table daccustodian daccustodian pendingpay --limit 50), allow_error: true
       it do
-        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-                    {
-          "rows": [{
-		"key": 0,
-		"receiver": "votedcust4",
-		"quantity": "13.0000 EOS",
-		"memo": "EOSDAC Custodian pay. Thank you."
-	},
-	{
-		"key": 1,
-		"receiver": "votedcust1",
-		"quantity": "13.0000 EOS",
-		"memo": "EOSDAC Custodian pay. Thank you."
-	},
-	{
-		"key": 2,
-		"receiver": "votedcust3",
-		"quantity": "13.0000 EOS",
-		"memo": "EOSDAC Custodian pay. Thank you."
-	},
-	{
-		"key": 3,
-		"receiver": "votedcust2",
-		"quantity": "13.0000 EOS",
-		"memo": "EOSDAC Custodian pay. Thank you."
-	},
-	{
-		"key": 4,
-		"receiver": "votedcust4",
-		"quantity": "13.0000 EOS",
-		"memo": "EOSDAC Custodian pay. Thank you."
-	},
-	{
-		"key": 5,
-		"receiver": "votedcust1",
-		"quantity": "13.0000 EOS",
-		"memo": "EOSDAC Custodian pay. Thank you."
-	},
-	{
-		"key": 6,
-		"receiver": "votedcust3",
-		"quantity": "13.0000 EOS",
-		"memo": "EOSDAC Custodian pay. Thank you."
-	},
-	{
-		"key": 7,
-		"receiver": "votedcust2",
-		"quantity": "13.0000 EOS",
-		"memo": "EOSDAC Custodian pay. Thank you."
-	}
-],
-          "more": false
-        }
-        JSON
+
+        json = JSON.parse(subject.stdout)
+        expect(json["rows"].count).to eq 36
+
+        custodian = json["rows"].detect {|v| v["receiver"] == 'allocate5'}
+        expect(custodian["quantity"]).to eq '18.0000 EOS'
+        expect(custodian["memo"]).to eq 'EOSDAC Custodian pay. Thank you.'
+
+        custodian = json["rows"].detect {|v| v["receiver"] == 'allocate3'}
+        expect(custodian["quantity"]).to eq '18.0000 EOS'
       end
     end
 
     context "the votes table" do
       command %(cleos get table daccustodian daccustodian votes), allow_error: true
       it do
-        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-                    {
-          "rows": [
-  {
-    "voter": "votedcust2",
-    "proxy": "",
-    "candidates": [
-      "votedcust1",
-      "votedcust3",
-      "votedcust4"
-    ]
-  },
-  {
-    "voter": "voter1",
-    "proxy": "",
-    "candidates": [
-      "votedcust1",
-      "votedcust2",
-      "votedcust4"
-    ]
-  }
-],
-          "more": false
-        }
 
-        JSON
+        json = JSON.parse(subject.stdout)
+        expect(json["rows"].count).to eq 3
+
+        vote = json["rows"].detect {|v| v["voter"] == 'voter2'}
+
+        expect(vote["candidates"].count).to eq 5
+        expect(vote["candidates"][0]).to eq 'allocate11'
+
+        vote = json["rows"].detect {|v| v["voter"] == 'voter3'}
+
+        expect(vote["candidates"].count).to eq 5
+        expect(vote["candidates"][0]).to eq 'allocate12'
+
+        vote = json["rows"].detect {|v| v["voter"] == 'voter1'}
+        expect(vote["candidates"].count).to eq 5
+        expect(vote["candidates"][0]).to eq 'allocate1'
       end
     end
 
     context "the candidates table" do
-      command %(cleos get table daccustodian daccustodian candidates --limit 20), allow_error: true
+      subject {command %(cleos get table daccustodian daccustodian candidates --limit 40), allow_error: true}
       it do
-        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-                              {
-          "rows": [
-  {
-    "candidate_name": "testreguser1",
-    "requestedpay": "11.5000 EOS",
-    "locked_tokens": "10.0000 EOSDAC",
-    "total_votes": 0,
-     "is_active": 1,
-     "custodian_end_time_stamp": 0
-  },{
-    "candidate_name": "unreguser2",
-    "requestedpay": "11.5000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 0,
-     "is_active": 0,
-     "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "updatebio2",
-    "requestedpay": "11.5000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 0,
-     "is_active": 1,
-     "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "updatepay2",
-    "requestedpay": "41.5000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 0,
-     "is_active": 1,
-     "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "votedcust1",
-    "requestedpay": "11.0000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 1510000,
-     "is_active": 1,
-     "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "votedcust11",
-    "requestedpay": "16.0000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 0,
-     "is_active": 1,
-     "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "votedcust2",
-    "requestedpay": "12.0000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 720000,
-     "is_active": 1,
-     "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "votedcust3",
-    "requestedpay": "13.0000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 790000,
-     "is_active": 1,
-     "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "votedcust4",
-    "requestedpay": "14.0000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 1510000,
-     "is_active": 1,
-     "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "votedcust5",
-    "requestedpay": "15.0000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 0,
-     "is_active": 1,
-     "custodian_end_time_stamp": 0
-  }
-],
-          "more": false
-        }
+        json = JSON.parse(subject.stdout)
 
-        JSON
+        expect(json["rows"].count).to eq 25
+
+        delayedcandidates = json["rows"].select {|v| v["custodian_end_time_stamp"] > "1970-01-01T00:00:00"}
+        expect(delayedcandidates.count).to eq(13)
       end
     end
 
     context "the custodians table" do
       command %(cleos get table daccustodian daccustodian custodians --limit 20), allow_error: true
       it do
-        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-        {
-          "rows": [
-  {
-    "cust_name": "votedcust1",
-    "requestedpay": "11.0000 EOS",
-    "total_votes": 1510000
-  },
-  {
-    "cust_name": "votedcust2",
-    "requestedpay": "12.0000 EOS",
-    "total_votes": 720000
-  },
-  {
-    "cust_name": "votedcust3",
-    "requestedpay": "13.0000 EOS",
-    "total_votes": 790000
-  },
-  {
-    "cust_name": "votedcust4",
-    "requestedpay": "14.0000 EOS",
-    "total_votes": 1510000
-  }
-],
-          "more": false
-        }
+        json = JSON.parse(subject.stdout)
+        expect(json["rows"].count).to eq 12
 
-        JSON
+        custodian = json["rows"].detect {|v| v["cust_name"] == 'allocate11'}
+        expect(custodian["total_votes"]).to eq 14080000
+
+        custodian = json["rows"].detect {|v| v["cust_name"] == 'allocate1'}
+        expect(custodian["total_votes"]).to eq 30000000
+
+        custodian = json["rows"].detect {|v| v["cust_name"] == 'allocate4'}
+        expect(custodian["total_votes"]).to eq 31100000
+
       end
     end
   end
 
   describe "claimpay" do
     context "with invalid payId should fail" do
-      command %(cleos push action daccustodian claimpay '{ "claimer": "votedcust4", "payid": 10}' -p votedcust4), allow_error: true
+      command %(cleos push action daccustodian claimpay '{ "claimer": "votedcust4", "payid": 100}' -p votedcust4), allow_error: true
       its(:stderr) {is_expected.to include('Invalid pay claim id')}
     end
 
@@ -1472,315 +1289,24 @@ describe "eosdacelect" do
       its(:stderr) {is_expected.to include('missing authority of votedcust4')}
     end
 
-    context "Before claiming pay the balance should 0" do
+    context "Before claiming pay the balance should be 0" do
       command %(cleos get currency balance eosio.token votedcust4 EOS), allow_error: true
       its(:stdout) {is_expected.to eq('')}
     end
 
     context "claiming for the correct account with matching auth should succeed" do
-      command %(cleos push action daccustodian claimpay '{ "claimer": "votedcust4", "payid": 0}' -p votedcust4), allow_error: true
+      command %(cleos push action daccustodian claimpay '{ "claimer": "allocate4", "payid": 1 }' -p allocate4), allow_error: true
       its(:stdout) {is_expected.to include('daccustodian::claimpay')}
       # exit
     end
 
     context "After claiming for the correct should be added to the claimer" do
-      command %(cleos get currency balance eosio.token votedcust4 EOS), allow_error: true
-      its(:stdout) {is_expected.to include('13.0000 EOS')}
-    end
-    # after(:all) do
-    #   exit
-    # end
-  end
-
-  describe "paypending" do
-    before(:all) do
-      `cleos set account permission daccustodian active '{"threshold": 1,"keys": [{"key": "#{TEST_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p daccustodian`
-    end
-
-    context "without valid auth" do
-      command %(cleos push action daccustodian paypending '{ "message": "log message"}' -p voter1), allow_error: true
-      its(:stderr) {is_expected.to include('Error 3090004')}
-    end
-
-    context "the pending_pay table still has content" do
-      # Based on the number of elected custodians being 4 the expected quanities below should be 13.
-      # There were 4 candidates
-      # votedcust1 - 1510000 votes - 11 EOS
-      # votedcust2 - 720000  votes - 12 EOS
-      # votedcust3 - 790000  votes - 13 EOS
-      # votedcust4 - 151000  votes - 14 EOS // will be eliminated because it has the least votes out of 4
-      # --> Therefore the median amount is 13 EOS.
-
-      command %(cleos get table daccustodian daccustodian pendingpay), allow_error: true
-      it do
-        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-          {
-              "rows": [
-	{
-		"key": 1,
-		"receiver": "votedcust1",
-		"quantity": "13.0000 EOS",
-		"memo": "EOSDAC Custodian pay. Thank you."
-	},
-	{
-		"key": 2,
-		"receiver": "votedcust3",
-		"quantity": "13.0000 EOS",
-		"memo": "EOSDAC Custodian pay. Thank you."
-	},
-	{
-		"key": 3,
-		"receiver": "votedcust2",
-		"quantity": "13.0000 EOS",
-		"memo": "EOSDAC Custodian pay. Thank you."
-	},
-	{
-		"key": 4,
-		"receiver": "votedcust4",
-		"quantity": "13.0000 EOS",
-		"memo": "EOSDAC Custodian pay. Thank you."
-	},
-	{
-		"key": 5,
-		"receiver": "votedcust1",
-		"quantity": "13.0000 EOS",
-		"memo": "EOSDAC Custodian pay. Thank you."
-	},
-	{
-		"key": 6,
-		"receiver": "votedcust3",
-		"quantity": "13.0000 EOS",
-		"memo": "EOSDAC Custodian pay. Thank you."
-	},
-	{
-		"key": 7,
-		"receiver": "votedcust2",
-		"quantity": "13.0000 EOS",
-		"memo": "EOSDAC Custodian pay. Thank you."
-	}
-],
-              "more": false
-            }
-        JSON
-      end
-    end
-
-    context "the balance of EOSDAC should not have changed" do
-      command %(cleos get currency balance eosdactoken unreguser2 EOSDAC), allow_error: true
-      its(:stdout) {is_expected.to include('77.0000 EOSDAC')}
-    end
-
-    context "with valid auth" do
-      command %(cleos push action daccustodian paypending '{ "message": "log message"}' -p daccustodian), allow_error: true
-      its(:stdout) {is_expected.to include('daccustodian::paypending')}
-    end
-
-    context "the pending_pay table should be empty" do
-      # Assuming that proxied voter's weight should be 0 since the weight has been delegated to proxy.
-      # Also assumes that staked tokens for candidate are not used for voting power.
-      command %(cleos get table daccustodian daccustodian pendingpay), allow_error: true
-      it do
-        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-                    {
-          "rows": [],
-          "more": false
-        }
-        JSON
-      end
-    end
-
-    context "the balance of EOSDAC should updated 77" do
-      # Also assumes that staked tokens for candidate are not used for voting power.
-      command %(cleos get currency balance eosdactoken unreguser2 EOSDAC), allow_error: true
-      its(:stdout) {is_expected.to include('77.0000 EOSDAC')}
-    end
-
-    context "the balance of EOS should updated 100" do
-      # Also assumes that staked tokens for candidate are not used for voting power.
-      command %(cleos get currency balance eosio.token votedcust2 EOS), allow_error: true
-      its(:stdout) {is_expected.to include('26.0000 EOS')}
+      command %(cleos get currency balance eosio.token allocate4 EOS), allow_error: true
+      its(:stdout) {is_expected.to include('18.0000 EOS')}
     end
   end
 
-  describe "allocateCust" do
-    before(:all) do
-      # add cands
-      `cleos push action daccustodian updateconfig '{ "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 1 , "numelected": 12, "authaccount": "dacauthority", "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 4, "auth_threshold_mid": 4, "auth_threshold_low": 2, "lockup_release_time_delay": 15552000, "requested_pay_max": "450.0000 EOS"}' -p daccustodian`
-    end
-
-    context "given there are not enough candidates to fill the custodians" do
-      command %(cleos push action daccustodian allocatecust '[false]' -p daccustodian), allow_error: true
-      its(:stdout) {is_expected.to include('The pool of eligible candidates has been exhausted')}
-    end
-
-    context "given there are enough candidates to fill the custodians but not enough have votes greater than 0" do
-      before(:all) do
-        seed_account("allocate1", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "11.0000 EOS")
-        seed_account("allocate2", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "11.0000 EOS")
-        seed_account("allocate3", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "11.0000 EOS")
-        seed_account("allocate4", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "11.0000 EOS")
-        seed_account("allocate5", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "11.0000 EOS")
-        seed_account("allocate11", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "11.0000 EOS")
-        seed_account("allocate21", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "11.0000 EOS")
-        seed_account("allocate31", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "11.0000 EOS")
-        seed_account("allocate41", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "11.0000 EOS")
-        seed_account("allocate51", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "11.0000 EOS")
-        seed_account("allocate12", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "11.0000 EOS")
-        seed_account("allocate22", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "11.0000 EOS")
-        seed_account("allocate32", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "11.0000 EOS")
-        seed_account("allocate42", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "11.0000 EOS")
-        seed_account("allocate52", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "11.0000 EOS")
-
-        seed_account("voter3", issue: "110.0000 EOSDAC", memberreg: "New Latest terms")
-        seed_account("voter4", issue: "121.0000 EOSDAC", memberreg: "New Latest terms")
-        sleep 2
-      end
-      command %(cleos push action daccustodian allocatecust '[false]' -p daccustodian -f), allow_error: true
-      its(:stdout) {is_expected.to include('The pool of eligible candidates has been exhausted')}
-    end
-
-    context "given there are enough votes with total_votes over 0" do
-      before(:all) do
-        `cleos push action daccustodian votecust '{ "voter": "voter1", "newvotes": ["allocate1","allocate2","allocate3","allocate4","allocate5"]}' -p voter1`
-        `cleos push action daccustodian votecust '{ "voter": "voter2", "newvotes": ["allocate11","allocate21","allocate31","allocate41","allocate51"]}' -p voter2`
-        `cleos push action daccustodian votecust '{ "voter": "voter3", "newvotes": ["allocate12","allocate22","allocate32","allocate4","allocate5"]}' -p voter3`
-      end
-      command %(cleos push action daccustodian allocatecust '[false]' -p daccustodian -f), allow_error: true
-      its(:stdout) {is_expected.to include('daccustodian::allocatecust')}
-    end
-
-    context "Read the votes table after adding enough votes for a valid election" do
-      command %(cleos get table daccustodian daccustodian votes), allow_error: true
-      it do
-        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-            {
-	"rows": [{
-			"voter": "votedcust2",
-			"proxy": "",
-			"candidates": [
-				"votedcust1",
-				"votedcust3",
-				"votedcust4"
-			]
-		},
-		{
-			"voter": "voter1",
-			"proxy": "",
-			"candidates": [
-				"allocate1",
-				"allocate2",
-				"allocate3",
-				"allocate4",
-				"allocate5"
-			]
-		},
-		{
-			"voter": "voter2",
-			"proxy": "",
-			"candidates": [
-				"allocate11",
-				"allocate21",
-				"allocate31",
-				"allocate41",
-				"allocate51"
-			]
-		},
-		{
-			"voter": "voter3",
-			"proxy": "",
-			"candidates": [
-				"allocate12",
-				"allocate22",
-				"allocate32",
-				"allocate4",
-				"allocate5"
-			]
-		}
-	],
-	"more": false
-}
-        JSON
-      end
-    end
-
-    context "Read the custodians table after adding enough votes for election" do
-      command %(cleos get table daccustodian daccustodian custodians --limit 20), allow_error: true
-      it do
-        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-{
-  "rows": [
-  {
-    "cust_name": "allocate11",
-    "requestedpay": "11.0000 EOS",
-    "total_votes": 1080000
-  },
-  {
-    "cust_name": "allocate12",
-    "requestedpay": "11.0000 EOS",
-    "total_votes": 1100000
-  },
-  {
-    "cust_name": "allocate21",
-    "requestedpay": "11.0000 EOS",
-    "total_votes": 1080000
-  },
-  {
-    "cust_name": "allocate22",
-    "requestedpay": "11.0000 EOS",
-    "total_votes": 1100000
-  },
-  {
-    "cust_name": "allocate31",
-    "requestedpay": "11.0000 EOS",
-    "total_votes": 1080000
-  },
-  {
-    "cust_name": "allocate32",
-    "requestedpay": "11.0000 EOS",
-    "total_votes": 1100000
-  },
-  {
-    "cust_name": "allocate4",
-    "requestedpay": "11.0000 EOS",
-    "total_votes": 1820000
-  },
-  {
-    "cust_name": "allocate41",
-    "requestedpay": "11.0000 EOS",
-    "total_votes": 1080000
-  },
-  {
-    "cust_name": "allocate5",
-    "requestedpay": "11.0000 EOS",
-    "total_votes": 1820000
-  },
-  {
-    "cust_name": "allocate51",
-    "requestedpay": "11.0000 EOS",
-    "total_votes": 1080000
-  },
-  {
-    "cust_name": "votedcust1",
-    "requestedpay": "11.0000 EOS",
-    "total_votes": 790000
-  },
-  {
-    "cust_name": "votedcust3",
-    "requestedpay": "13.0000 EOS",
-    "total_votes": 790000
-  }
-]
-,
-  "more": false
-}
-
-        JSON
-
-      end
-    end
-  end
-
-  describe "unreg custodian candidate" do
+  describe "withdrawcand" do
     context "when the auth is wrong" do
       command %(cleos push action daccustodian withdrawcand '{ "cand": "allocate41"}' -p allocate4), allow_error: true
       its(:stderr) {is_expected.to include('missing authority of allocate41')}
@@ -1791,76 +1317,21 @@ describe "eosdacelect" do
       its(:stdout) {is_expected.to include('daccustodian::withdrawcand')}
     end
 
-    context "Read the custodians table after unreg custodian and a single vote will be replaced" do
-      command %(cleos get table daccustodian daccustodian custodians --limit 20), allow_error: true
+    context "the candidates table" do
+      subject {command %(cleos get table daccustodian daccustodian candidates --limit 40), allow_error: true}
       it do
-        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-{
-  "rows": [{
-		"cust_name": "allocate11",
-		"requestedpay": "11.0000 EOS",
-		"total_votes": 1080000
-	},
-	{
-		"cust_name": "allocate12",
-	
-		"requestedpay": "11.0000 EOS",
-		"total_votes": 1100000
-	},
-	{
-		"cust_name": "allocate21",
-		"requestedpay": "11.0000 EOS",
-		"total_votes": 1080000
-	},
-	{
-		"cust_name": "allocate22",
-		"requestedpay": "11.0000 EOS",
-		"total_votes": 1100000
-	},
-	{
-		"cust_name": "allocate31",
-		"requestedpay": "11.0000 EOS",
-		"total_votes": 1080000
-	},
-	{
-		"cust_name": "allocate32",
-	
-		"requestedpay": "11.0000 EOS",
-		"total_votes": 1100000
-	},
-	{
-		"cust_name": "allocate4",
-		"requestedpay": "11.0000 EOS",
-		"total_votes": 1820000
-	},{
-		"cust_name": "allocate41",
-		"requestedpay": "11.0000 EOS",
-		"total_votes": 1080000
-	},
-	{
-		"cust_name": "allocate5",
-		"requestedpay": "11.0000 EOS",
-		"total_votes": 1820000
-	},
-	{
-		"cust_name": "allocate51",
-		"requestedpay": "11.0000 EOS",
-		"total_votes": 1080000
-	},
-	{
-		"cust_name": "votedcust1",
-		"requestedpay": "11.0000 EOS",
-		"total_votes": 790000
-	},
-	{
-		"cust_name": "votedcust3",
-		"requestedpay": "13.0000 EOS",
-		"total_votes": 790000
-	}
-],
-  "more": false
-}
-        JSON
+        json = JSON.parse(subject.stdout)
+
+        expect(json["rows"].count).to eq 25
+
+        delayedcandidatescount = json["rows"].count {|v| v["custodian_end_time_stamp"] > "1970-01-01T00:00:00"}
+        expect(delayedcandidatescount).to eq(13)
+
+        inactiveCandidatesCount = json["rows"].count {|v| v["is_active"] == 0}
+        expect(inactiveCandidatesCount).to eq(2)
+
+        inactiveCand = json["rows"].detect {|v| v["candidate_name"] == 'allocate41'}
+        expect(inactiveCand["is_active"]).to eq(0)
       end
     end
   end
@@ -1877,216 +1348,213 @@ describe "eosdacelect" do
     context "Read the custodians table after unreg custodian and a single vote will be replaced" do
       command %(cleos get table daccustodian daccustodian candidates --limit 40), allow_error: true
       it do
-        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-{
-  "rows": [
-  {
-    "candidate_name": "allocate1",
-    "requestedpay": "11.0000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 720000,
-    "is_active": 1,
-    "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "allocate11",
-    "requestedpay": "11.0000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 1080000,
-    "is_active": 1,
-    "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "allocate12",
-    "requestedpay": "11.0000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 1100000,
-    "is_active": 1,
-    "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "allocate2",
-    "requestedpay": "11.0000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 720000,
-    "is_active": 1,
-    "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "allocate21",
-    "requestedpay": "11.0000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 1080000,
-    "is_active": 1,
-    "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "allocate22",
-    "requestedpay": "11.0000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 1100000,
-    "is_active": 1,
-    "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "allocate3",
-    "requestedpay": "11.0000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 720000,
-    "is_active": 1,
-    "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "allocate31",
-    "requestedpay": "11.0000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 1080000,
-    "is_active": 1,
-    "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "allocate32",
-    "requestedpay": "11.0000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 1100000,
-    "is_active": 1,
-    "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "allocate4",
-    "requestedpay": "11.0000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 1820000,
-    "is_active": 1,
-    "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "allocate41",
-    "requestedpay": "11.5000 EOS",
-    "locked_tokens": "33.0000 EOSDAC",
-    "total_votes": 1080000,
-    "is_active": 1,
-    "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "allocate42",
-    "requestedpay": "11.0000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 0,
-    "is_active": 1,
-    "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "allocate5",
-    "requestedpay": "11.0000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 1820000,
-    "is_active": 1,
-    "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "allocate51",
-    "requestedpay": "11.0000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 1080000,
-    "is_active": 1,
-    "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "allocate52",
-    "requestedpay": "11.0000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 0,
-    "is_active": 1,
-    "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "testreguser1",
-    "requestedpay": "11.5000 EOS",
-    "locked_tokens": "10.0000 EOSDAC",
-    "total_votes": 0,
-    "is_active": 1,
-    "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "unreguser2",
-    "requestedpay": "11.5000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 0,
-    "is_active": 0,
-    "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "updatebio2",
-    "requestedpay": "11.5000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 0,
-    "is_active": 1,
-    "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "updatepay2",
-    "requestedpay": "41.5000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 0,
-    "is_active": 1,
-    "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "votedcust1",
-    "requestedpay": "11.0000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 790000,
-    "is_active": 1,
-    "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "votedcust11",
-    "requestedpay": "16.0000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 0,
-    "is_active": 1,
-    "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "votedcust2",
-    "requestedpay": "12.0000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 0,
-    "is_active": 1,
-    "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "votedcust3",
-    "requestedpay": "13.0000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 790000,
-    "is_active": 1,
-    "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "votedcust4",
-    "requestedpay": "14.0000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 790000,
-    "is_active": 1,
-    "custodian_end_time_stamp": 0
-  },
-  {
-    "candidate_name": "votedcust5",
-    "requestedpay": "15.0000 EOS",
-    "locked_tokens": "23.0000 EOSDAC",
-    "total_votes": 0,
-    "is_active": 1,
-    "custodian_end_time_stamp": 0
-  }
-],
-  "more": false
-}
-        JSON
+        json = JSON.parse(subject.stdout)
+        expect(json["rows"].count).to eq 25
+
+        candidate = json["rows"].detect {|v| v["candidate_name"] == 'allocate41'}
+        expect(candidate["total_votes"]).to eq 14080000
+        expect(candidate["candidate_name"]).to eq 'allocate41'
+        expect(candidate["requestedpay"]).to eq '11.5000 EOS'
+        expect(candidate["locked_tokens"]).to eq "33.0000 EOSDAC"
+        expect(candidate["custodian_end_time_stamp"]).to be > "1970-01-01T00:00:00"
       end
     end
   end
 
+  describe "resign cust" do
+    context "with invalid auth" do
+      command %(cleos push action daccustodian resigncust '{ "cust": "allocate31"}' -p allocate3), allow_error: true
+      its(:stderr) {is_expected.to include('missing authority of allocate31')}
+    end
+
+    context "with a candidate who is not an elected custodian" do
+      command %(cleos push action daccustodian resigncust '{ "cust": "votedcust3"}' -p votedcust3), allow_error: true
+      its(:stderr) {is_expected.to include('The entered account name is not for a current custodian.')}
+    end
+
+    context "when the auth is correct" do
+      command %(cleos push action daccustodian resigncust '{ "cust": "allocate31"}' -p allocate31), allow_error: true
+      its(:stdout) {is_expected.to include('daccustodian::resigncust')}
+    end
+
+    context "Read the state" do
+      command %(cleos get table daccustodian daccustodian state), allow_error: true
+      it do
+
+        json = JSON.parse(subject.stdout)
+        expect(json["rows"].count).to eq 1
+
+        state = json["rows"][0]
+        expect(state["total_weight_of_votes"]).to eq 45180000
+        expect(state["total_votes_on_candidates"]).to eq 225900000
+        expect(state["number_active_candidates"]).to eq 23
+        expect(state["met_initial_votes_threshold"]).to eq 1
+      end
+    end
+
+    context "the custodians table" do
+      command %(cleos get table daccustodian daccustodian custodians --limit 20), allow_error: true
+      it do
+        json = JSON.parse(subject.stdout)
+        expect(json["rows"].count).to eq 12
+
+        custodian = json["rows"].detect {|v| v["cust_name"] == 'allocate11'}
+        expect(custodian["total_votes"]).to eq 14080000
+
+        custodian = json["rows"].detect {|v| v["cust_name"] == 'allocate1'}
+        expect(custodian["total_votes"]).to eq 30000000
+
+        custodian = json["rows"].detect {|v| v["cust_name"] == 'allocate4'}
+        expect(custodian["total_votes"]).to eq 31100000
+
+      end
+    end
+
+    context "Read the candidates table after resign cust" do
+      command %(cleos get table daccustodian daccustodian candidates --limit 40), allow_error: true
+      it do
+        json = JSON.parse(subject.stdout)
+        expect(json["rows"].count).to eq 25
+
+        candidate = json["rows"].detect {|v| v["candidate_name"] == 'allocate31'}
+
+        expect(candidate["candidate_name"]).to eq 'allocate31'
+        expect(candidate["requestedpay"]).to eq "18.0000 EOS"
+        expect(candidate["locked_tokens"]).to eq "23.0000 EOSDAC"
+        expect(candidate["custodian_end_time_stamp"]).to be > "1970-01-01T00:00:00"
+        expect(candidate["is_active"]).to eq(0)
+      end
+    end
+  end
+
+  describe "unstake" do
+    context "for an elected custodian" do
+      command %(cleos push action daccustodian unstake '{ "cand": "allocate41"}' -p allocate41), allow_error: true
+      its(:stderr) {is_expected.to include('Cannot unstake tokens for an active candidate. Call withdrawcand first.')}
+    end
+
+    context "for a unelected custodian" do
+      context "who has not withdrawn as a candidate" do
+        command %(cleos push action daccustodian unstake '{ "cand": "votedcust2"}' -p votedcust2), allow_error: true
+        its(:stderr) {is_expected.to include('Cannot unstake tokens for an active candidate. Call withdrawcand first.')}
+      end
+
+      context "who has withdrawn as a candidate" do
+        command %(cleos push action daccustodian unstake '{ "cand": "allocate31"}' -p allocate31), allow_error: true
+        its(:stderr) {is_expected.to include('Cannot unstake tokens before they are unlocked from the time delay.')}
+      end
+    end
+
+    context "Before unstaking the token should note have been transferred back" do
+      command %(cleos get currency balance eosdactoken unreguser2 EOSDAC), allow_error: true
+      its(:stdout) {is_expected.to include('77.0000 EOSDAC')}
+    end
+
+    context "for a resigned custodian after time expired" do
+      command %(cleos push action daccustodian unstake '{ "cand": "unreguser2"}' -p unreguser2), allow_error: true
+      its(:stdout) {is_expected.to include('daccustodian::unstake')}
+    end
+
+    context "After successful unstaking the token should have been transferred back" do
+        command %(cleos get currency balance eosdactoken unreguser2 EOSDAC), allow_error: true
+        its(:stdout) {is_expected.to include('100.0000 EOSDAC')}
+      end
+    end
+
+  describe "fire cand" do
+    context "with invalid auth" do
+      command %(cleos push action daccustodian firecand '{ "cand": "votedcust4", "lockupStake": true}' -p votedcust4), allow_error: true
+      its(:stderr) {is_expected.to include('missing authority of dacauthority')}
+    end
+
+    context "with valid auth" do
+      context "without locked up stake" do
+        command %(cleos push action daccustodian firecand '{ "cand": "votedcust4", "lockupStake": false}' -p allocate1 -p allocate2 -p allocate3 -p allocate4 -p allocate5 -p allocate11 -p allocate12 -p allocate21 -p allocate22 -p allocate32 -p allocate51), allow_error: true
+        its(:stderr) {is_expected.to include('Cannot unstake tokens before they are unlocked from the time delay.')}
+      end
+      context "with locked up stake" do
+        command %(cleos push action daccustodian firecand '{ "cand": "votedcust5", "lockupStake": true}' -p dacauthority), allow_error: true
+        its(:stderr) {is_expected.to include('Cannot unstake tokens before they are unlocked from the time delay.')}
+      end
+    end
+
+    context "Read the candidates table after fire candidate" do
+      command %(cleos get table daccustodian daccustodian candidates --limit 40), allow_error: true
+      it do
+        json = JSON.parse(subject.stdout)
+        expect(json["rows"].count).to eq 25
+
+        candidate = json["rows"].detect {|v| v["candidate_name"] == 'votedcust4'}
+
+        expect(candidate["candidate_name"]).to eq 'votedcust4'
+        expect(candidate["requestedpay"]).to eq "18.0000 EOS"
+        expect(candidate["locked_tokens"]).to eq "23.0000 EOSDAC"
+        expect(candidate["custodian_end_time_stamp"]).to be eq "1970-01-01T00:00:00"
+        expect(candidate["is_active"]).to eq(0)
+
+        candidate = json["rows"].detect {|v| v["candidate_name"] == 'votedcust5'}
+
+        expect(candidate["candidate_name"]).to eq 'votedcust5'
+        expect(candidate["requestedpay"]).to eq "18.0000 EOS"
+        expect(candidate["locked_tokens"]).to eq "23.0000 EOSDAC"
+        expect(candidate["custodian_end_time_stamp"]).to be > "2018-01-01T00:00:00"
+        expect(candidate["is_active"]).to eq(0)
+      end
+    end
+  end
+
+  describe "fire custodian" do
+    context "with invalid auth" do
+      command %(cleos push action daccustodian firecust '{ "cust": "allocate1"}' -p allocate31), allow_error: true
+      its(:stderr) {is_expected.to include('missing authority of dacauthority')}
+    end
+
+    context "with valid auth" do
+      command %(cleos push action daccustodian firecust '{ "cust": "allocate1"}' -p dacauthority), allow_error: true
+      its(:stderr) {is_expected.to include('Cannot unstake tokens before they are unlocked from the time delay.')}
+    end
+
+    context "Read the candidates table after fire candidate" do
+      command %(cleos get table daccustodian daccustodian candidates --limit 40), allow_error: true
+      it do
+        json = JSON.parse(subject.stdout)
+        expect(json["rows"].count).to eq 25
+
+        candidate = json["rows"].detect {|v| v["candidate_name"] == 'allocate1'}
+
+        expect(candidate["candidate_name"]).to eq 'allocate1'
+        expect(candidate["requestedpay"]).to eq "18.0000 EOS"
+        expect(candidate["locked_tokens"]).to eq "23.0000 EOSDAC"
+        expect(candidate["custodian_end_time_stamp"]).to be eq "1970-01-01T00:00:00"
+        expect(candidate["is_active"]).to eq(0)
+
+        candidate = json["rows"].detect {|v| v["candidate_name"] == 'allocate11'}
+
+        expect(candidate["candidate_name"]).to eq 'allocate11'
+        expect(candidate["requestedpay"]).to eq "18.0000 EOS"
+        expect(candidate["locked_tokens"]).to eq "23.0000 EOSDAC"
+        expect(candidate["custodian_end_time_stamp"]).to be > "2018-01-01T00:00:00"
+        expect(candidate["is_active"]).to eq(0)
+      end
+    end
+
+    context "Read the custodians table" do
+      command %(cleos get table daccustodian daccustodian custodians --limit 20), allow_error: true
+      it do
+        json = JSON.parse(subject.stdout)
+        expect(json["rows"].count).to eq 12
+
+        custodian = json["rows"].detect {|v| v["cust_name"] == 'allocate11'}
+        expect(custodian["total_votes"]).to eq 14080000
+
+        custodian = json["rows"].detect {|v| v["cust_name"] == 'allocate1'}
+        expect(custodian["total_votes"]).to eq 30000000
+
+        custodian = json["rows"].detect {|v| v["cust_name"] == 'allocate4'}
+        expect(custodian["total_votes"]).to eq 31100000
+
+      end
+    end
+  end
 end
 

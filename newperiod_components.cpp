@@ -44,7 +44,6 @@ void daccustodian::assert_period_time() {
     _currentState.lastperiodtime = now();
 }
 
-//TODO: This should not be public - Tests need refactoring so this can be hidden.
 void daccustodian::allocatecust(bool early_election) {
 
     eosio::print("Configure custodians for the next period.");
@@ -127,7 +126,7 @@ void daccustodian::setauths() {
            std::make_tuple(
                    accountToChange,
                    N(high),
-                   N(owner),
+                   N(active),
                    high_contract_authority))
             .send();
 
@@ -142,7 +141,7 @@ void daccustodian::setauths() {
            std::make_tuple(
                    accountToChange,
                    N(med),
-                   N(owner),
+                   N(active),
                    medium_contract_authority))
             .send();
 
@@ -157,7 +156,51 @@ void daccustodian::setauths() {
            std::make_tuple(
                    accountToChange,
                    N(low),
-                   N(owner),
+                   N(active),
                    low_contract_authority))
             .send();
+}
+
+void daccustodian::newperiod(string message) {
+
+    assert_period_time();
+
+    contr_config config = configs();
+
+    // Get the max supply of the lockup asset token (eg. EOSDAC)
+    auto tokenStats = stats(eosio::string_to_name(TOKEN_CONTRACT), config.lockupasset.symbol.name()).begin();
+    uint64_t max_supply = tokenStats->max_supply.amount;
+
+    double percent_of_current_voter_engagement =
+            double(_currentState.total_weight_of_votes) / double(max_supply) * 100.0;
+
+    eosio::print("\n\nToken max supply: ", max_supply, " total votes so far: ", _currentState.total_weight_of_votes);
+    eosio::print("\n\nNeed inital engagement of: ", config.initial_vote_quorum_percent, "% to start the DAC.");
+    eosio::print("\n\nNeed ongoing engagement of: ", config.vote_quorum_percent,
+                 "% to allow new periods to trigger after initial activation.");
+    eosio::print("\n\nPercent of current voter engagement: ", percent_of_current_voter_engagement);
+
+    eosio_assert(_currentState.met_initial_votes_threshold == true ||
+                 percent_of_current_voter_engagement > config.initial_vote_quorum_percent,
+                 "Voter engagement is insufficient to activate the DAC.");
+    _currentState.met_initial_votes_threshold = true;
+
+    eosio_assert(percent_of_current_voter_engagement > config.vote_quorum_percent,
+                 "Voter engagement is insufficient to process a new period");
+
+
+    // Set custodians for the next period.
+    allocatecust(false);
+
+    // Distribute pay to the current custodians.
+    distributePay();
+
+    // Set the auths on the dacauthority account
+    setauths();
+
+//        Schedule the the next election cycle at the end of the period.
+//        transaction nextTrans{};
+//        nextTrans.actions.emplace_back(permission_level(_self,N(active)), _self, N(newperiod), std::make_tuple("", false));
+//        nextTrans.delay_sec = configs().periodlength;
+//        nextTrans.send(N(newperiod), false);
 }
