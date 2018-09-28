@@ -437,27 +437,25 @@ private: // Private helper methods used by other actions.
 
     contr_config configs();
 
-    member get_valid_member(name member);
-
-    bool isCustodian(candidate account);
-
+    member getValidMember(name member);
+    
     void updateVoteWeight(name custodian, int64_t weight);
 
     void updateVoteWeights(const vector<name> &votes, int64_t vote_weight);
 
     void modifyVoteWeights(name voter, vector<name> oldVotes, vector<name> newVotes);
 
-    void assert_period_time();
+    void assertPeriodTime();
 
     void distributePay();
 
-    void setauths();
+    void setCustodianAuths();
 
-    void removecust(name cust);
+    void removeCustodian(name cust);
 
-    void removecand(name cust, bool lockupStake);
+    void removeCandidate(name cust, bool lockupStake);
 
-    void allocatecust(bool early_election);
+    void allocateCustodians(bool early_election);
 
 
 public: // Exposed publicy for development only.

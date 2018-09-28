@@ -5,7 +5,7 @@ contr_config daccustodian::configs() {
     return conf;
 }
 
-member daccustodian::get_valid_member(name member) {
+member daccustodian::getValidMember(name member) {
     account_name tokenContract = eosio::string_to_name(TOKEN_CONTRACT);
     regmembers reg_members(tokenContract, tokenContract);
     memterms memberterms(tokenContract, tokenContract);

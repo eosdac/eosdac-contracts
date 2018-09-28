@@ -1,50 +1,39 @@
 
 void daccustodian::distributePay() {
-    auto idx = registered_candidates.get_index<N(byvotes)>();
-    auto it = idx.rbegin();
+    custodians_table custodians(_self, _self);
 
     //Find the median pay using a temporary vector to hold the requestedpay amounts.
-    std::vector<int64_t> reqpays;
-    uint16_t custodian_count = 0;
-    while (it != idx.rend() && custodian_count < configs().numelected && it->total_votes > 0) {
-        reqpays.push_back(it->requestedpay.amount);
-        it++;
-        custodian_count++;
+    std::vector<asset> reqpays;
+    for (auto cust: custodians) {
+        reqpays.push_back(cust.requestedpay);
     }
 
     // Using nth_element to just sort for the entry we need for the median value.
     size_t mid = reqpays.size() / 2;
     std::nth_element(reqpays.begin(), reqpays.begin() + mid, reqpays.end());
 
-    int64_t medianPay = reqpays[mid];
+    asset medianAsset = reqpays[mid];
 
-    asset medianAsset = asset(medianPay, configs().requested_pay_max.symbol);
-
-    custodian_count = 0;
-    it = idx.rbegin();
-    while (it != idx.rend() && custodian_count < configs().numelected && it->total_votes > 0) {
+    for (auto cust: custodians) {
         pending_pay.emplace(_self, [&](pay &p) {
             p.key = pending_pay.available_primary_key();
-            p.receiver = it->candidate_name;
+            p.receiver = cust.cust_name;
             p.quantity = medianAsset;
-            p.memo = "EOSDAC Custodian pay. Thank you.";
+            p.memo = "Custodian pay. Thank you.";
         });
-        it++;
-        custodian_count++;
     }
 
     print("distribute pay");
 }
 
-void daccustodian::assert_period_time() {
+void daccustodian::assertPeriodTime() {
     uint32_t timestamp = now();
     uint32_t periodBlockCount = timestamp - _currentState.lastperiodtime;
     eosio_assert(periodBlockCount > configs().periodlength,
                  "New period is being called too soon. Wait until the period has completed.");
-    _currentState.lastperiodtime = now();
 }
 
-void daccustodian::allocatecust(bool early_election) {
+void daccustodian::allocateCustodians(bool early_election) {
 
     eosio::print("Configure custodians for the next period.");
 
@@ -98,7 +87,7 @@ void daccustodian::allocatecust(bool early_election) {
     }
 }
 
-void daccustodian::setauths() {
+void daccustodian::setCustodianAuths() {
 
     custodians_table custodians(_self, _self);
 
@@ -163,7 +152,7 @@ void daccustodian::setauths() {
 
 void daccustodian::newperiod(string message) {
 
-    assert_period_time();
+    assertPeriodTime();
 
     contr_config config = configs();
 
@@ -188,15 +177,17 @@ void daccustodian::newperiod(string message) {
     eosio_assert(percent_of_current_voter_engagement > config.vote_quorum_percent,
                  "Voter engagement is insufficient to process a new period");
 
-
-    // Set custodians for the next period.
-    allocatecust(false);
-
     // Distribute pay to the current custodians.
     distributePay();
 
+    // Set custodians for the next period.
+    allocateCustodians(false);
+
     // Set the auths on the dacauthority account
-    setauths();
+    setCustodianAuths();
+
+    _currentState.lastperiodtime = now();
+
 
 //        Schedule the the next election cycle at the end of the period.
 //        transaction nextTrans{};

@@ -2,7 +2,7 @@
 
 void daccustodian::nominatecand(name cand, asset requestedpay) {
     require_auth(cand);
-    get_valid_member(cand);
+    getValidMember(cand);
 
     // This implicitly asserts that the symbol of requestedpay matches the configs.max pay.
     eosio_assert(requestedpay < configs().requested_pay_max,
@@ -44,12 +44,13 @@ void daccustodian::nominatecand(name cand, asset requestedpay) {
 
 void daccustodian::withdrawcand(name cand) {
     require_auth(cand);
-    removecand(cand, false);
+    removeCandidate(cand, false);
 }
 
 void daccustodian::firecand(name cand, bool lockupStake) {
-    require_auth2(configs().authaccount, configs().auth_threshold_mid);
-    removecand(cand, lockupStake);
+
+    require_auth2(configs().authaccount, MEDIUM_PERMISSION);
+    removeCandidate(cand, lockupStake);
 }
 
 void daccustodian::unstake(name cand) {
@@ -72,17 +73,17 @@ void daccustodian::unstake(name cand) {
 
 void daccustodian::resigncust(name cust) {
     require_auth(cust);
-    removecust(cust);
+    removeCustodian(cust);
 }
 
 void daccustodian::firecust(name cust) {
     require_auth2(configs().authaccount, configs().auth_threshold_mid);
-    removecust(cust);
+    removeCustodian(cust);
 }
 
 // private methods for the above actions
 
-void daccustodian::removecust(name cust) {
+void daccustodian::removeCustodian(name cust) {
 
     custodians_table custodians(_self, _self);
     auto elected = custodians.find(cust);
@@ -92,16 +93,16 @@ void daccustodian::removecust(name cust) {
     custodians.erase(elected);
 
     // Remove the candidate from being eligible for the next election period.
-    removecand(cust, true);
+    removeCandidate(cust, true);
 
     // Allocate the next set of candidates to only fill the gap for the missing slot.
-    allocatecust(true);
+    allocateCustodians(true);
 
     // Update the auths to give control to the new set of custodians.
-    setauths();
+    setCustodianAuths();
 }
 
-void daccustodian::removecand(name cand, bool lockupStake) {
+void daccustodian::removeCandidate(name cand, bool lockupStake) {
     _currentState.number_active_candidates--;
 
     const auto &reg_candidate = registered_candidates.get(cand, "Candidate is not already registered.");
