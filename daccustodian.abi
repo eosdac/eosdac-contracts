@@ -13,14 +13,7 @@
 			"type": "string"
 		}]
 	}, {
-		"name": "earlyelect",
-		"base": "",
-		"fields": [{
-			"name": "earlyelect",
-			"type": "bool"
-		}]
-	}, {
-		"name": "void",
+		"name": "migrate",
 		"base": "",
 		"fields": []
 	}, {
@@ -49,7 +42,7 @@
 					"type": "name"
 				}
 			]
-		}{
+		},{
 			"name": "resigncust",
 			"base": "",
 			"fields": [
@@ -177,6 +170,13 @@
 			"type": "name"
 		}]
 	},{
+		"name": "unstake",
+		"base": "",
+		"fields": [{
+			"name": "cand",
+			"type": "name"
+		}]
+	},{
 		"name": "firecand",
 		"base": "",
 		"fields": [{
@@ -197,7 +197,17 @@
 			"type": "string"
 		}]
 	},{
-		"name": "storeprofile",
+		"name": "stprofile",
+		"base": "",
+		"fields": [{
+			"name": "cand",
+			"type": "name"
+		}, {
+			"name": "profile",
+			"type": "string"
+		}]
+	},{
+		"name": "stprofileuns",
 		"base": "",
 		"fields": [{
 			"name": "cand",
@@ -247,9 +257,6 @@
 		"name": "claimpay",
 		"base": "",
 		"fields": [{
-			"name": "claimer",
-			"type": "name"
-		}, {
 			"name": "payid",
 			"type": "uint64"
 		}]
@@ -282,11 +289,11 @@
 	}],
 	"actions": [{
 			"name": "stprofile",
-			"type": "storeprofile",
+			"type": "stprofile",
 			"ricardian_contract": "An authenticated action to update the user's profile. ##Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later so therefore should only store a unidentifiable hash of content rather than human readable content. "
 		},{
 			"name": "stprofileuns",
-			"type": "storeprofile",
+			"type": "stprofileuns",
 			"ricardian_contract": "An authenticated action to update the user's profile. ##Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later."
 		},{
 			"name": "firecust",
@@ -302,15 +309,11 @@
 			"ricardian_contract": "Sets a candidate inactive so they will be excluded from the next election round. This action must be run by the by elected custodians and has the additional option to lock up the candidate's tokens until a delay period has passed based on the delay set in the config. Then the tokens can be claimed with the unstake action. If the option passed is false and there is an existing lockup delay on the tokens this lockup will continue to be active until the lock up time has passed."
 		},{
 			"name": "unstake",
-			"type": "withdrawcand",
+			"type": "unstake",
 			"ricardian_contract": "Returns staked tokens back to the candidate if the user is no longer an active candidate and there is no  delay set on the candidate the staked tokens will be returned to the candidate."
 		},{
 			"name": "migrate",
-			"type": "void",
-			"ricardian_contract": ""
-		},{
-			"name": "allocatecust",
-			"type": "earlyelect",
+			"type": "migrate",
 			"ricardian_contract": ""
 		},
 		{
