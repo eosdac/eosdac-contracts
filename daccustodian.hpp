@@ -13,8 +13,7 @@ const permission_name HIGH_PERMISSION = N(high);
 using namespace eosio;
 using namespace std;
 
-// @abi table configs
-struct contr_config {
+struct [[eosio::table("config")]] contr_config {
 //    The amount of assets that are locked up by each candidate applying for election.
     asset lockupasset;
 //    The maximum number of votes that each member can make for a candidate.
@@ -65,7 +64,7 @@ struct contr_config {
 
 typedef singleton<N(config), contr_config> configscontainer;
 
-struct contr_state {
+struct [[eosio::table("state")]] contr_state {
     uint32_t lastperiodtime = 0;
     int64_t total_weight_of_votes = 0;
     int64_t total_votes_on_candidates = 0;
@@ -115,7 +114,7 @@ typedef multi_index<N(candidates), candidate,
         indexed_by<N(byreqpay), const_mem_fun<candidate, uint64_t, &candidate::by_requested_pay> >
 > candidates_table;
 
-struct custodian {
+struct [[eosio::table("custodians")]] custodian {
     name cust_name;
     asset requestedpay;
     uint64_t total_votes;
@@ -135,11 +134,10 @@ typedef multi_index<N(custodians), custodian,
         indexed_by<N(byreqpay), const_mem_fun<custodian, uint64_t, &custodian::by_requested_pay> >
 > custodians_table;
 
-// @abi table votes
-struct vote {
+struct [[eosio::table("votes")]]vote {
     name voter;
     name proxy;
-    vector<name> candidates;
+    std::vector<name> candidates;
 
     account_name primary_key() const { return static_cast<uint64_t>(voter); }
 
@@ -152,8 +150,7 @@ typedef eosio::multi_index<N(votes), vote,
         indexed_by<N(byproxy), const_mem_fun<vote, account_name, &vote::by_proxy> >
 > votes_table;
 
-// @abi table pendingpay
-struct pay {
+struct [[eosio::table("pendingpay")]] pay {
     uint64_t key;
     name receiver;
     asset quantity;
@@ -169,8 +166,7 @@ typedef multi_index<N(pendingpay), pay,
         indexed_by<N(byreceiver), const_mem_fun<pay, account_name, &pay::byreceiver> >
 > pending_pay_table;
 
-// @abi table pendingstake
-struct tempstake {
+struct [[eosio::table("pendingstake")]] tempstake {
     account_name sender;
     asset quantity;
     string memo;
@@ -213,7 +209,7 @@ public:
 #endif
     }
 
-
+    [[eosio::action]]
     void updateconfig(
             asset lockupasset,
             uint8_t maxvotes,
@@ -263,7 +259,8 @@ public:
  * ### Post Condition:
  * The candidate should be present in the candidates table and be set to active. If they are a returning candidate they should be set to active again. The `locked_tokens` value should reflect the total of the tokens they have transferred to the contract for staking. The number of active candidates in the contract will incremented.
  */
-    void nominatecand(name cand, asset requestedpay);
+    [[eosio::action]]
+    void nominatecand(name cand, eosio::asset requestedpay);
 
     /**
  * This action is used to withdraw a candidate from being active for custodian elections.
@@ -277,6 +274,7 @@ public:
  * ### Post Condition:
  * The candidate should still be present in the candidates table and be set to inactive. If the were recently an elected custodian there may be a time delay on when they can unstake their tokens from the contract. If not they will be able to unstake their tokens immediately using the unstake action.
  */
+    [[eosio::action]]
     void withdrawcand(name cand);
 
     /**
@@ -292,6 +290,7 @@ public:
  * ### Post Condition:
  * The candidate should still be present in the candidates table and be set to inactive. If the `lockupstake` parameter is true the stake will be locked until the time delay has passed. If not the candidate will be able to unstake their tokens immediately using the unstake action to have them returned.
  */
+    [[eosio::action]]
     void firecand(name cand, bool lockupStake);
 
     /**
@@ -306,6 +305,7 @@ public:
  * ### Post Condition:
  * The custodian will be removed from the active custodians and should still be present in the candidates table but will be set to inactive. Their staked tokens will be locked up for the time delay added from the moment this action was called so they will not able to unstake until that time has passed. A replacement custodian will selected from the candidates to fill the missing place (based on vote ranking) then the auths for the controlling dac auth account will be set for the custodian board.
  */
+    [[eosio::action]]
     void resigncust(name cust);
 
     /**
@@ -320,6 +320,7 @@ public:
  * ### Post Condition:
  * The custodian will be removed from the active custodians and should still be present in the candidates table but will be set to inactive. Their staked tokens will be locked up for the time delay added from the moment this action was called so they will not able to unstake until that time has passed. A replacement custodian will selected from the candidates to fill the missing place (based on vote ranking) then the auths for the controlling dac auth account will be set for the custodian board.
  */
+    [[eosio::action]]
     void firecust(name cust);
 
     /**
@@ -335,11 +336,14 @@ public:
  * ### Post Condition:
 Nothing from this action is stored on the blockchain. It is only intended to ensure authentication of changing the bio which will be stored off chain.
  */
-    void updatebio(name cand, string bio);
+    [[eosio::action]]
+    void updatebio(name cand, std::string bio);
 
-    inline void stprofile(name cand, string profile) { require_auth(cand); };
+    [[eosio::action]]
+    inline void stprofile(name cand, std::string profile) { require_auth(cand); };
 
-    inline void stprofileuns(name cand, string profile) { require_auth(cand); };
+    [[eosio::action]]
+    inline void stprofileuns(name cand, std::string profile) { require_auth(cand); };
 
     /**
  * This action is used to update the requested pay for a candidate.
@@ -355,7 +359,8 @@ Nothing from this action is stored on the blockchain. It is only intended to ens
  * ### Post Condition:
  * The requested pay for the candidate should be updated to the new asset.
  */
-    void updatereqpay(name cand, asset requestedpay);
+    [[eosio::action]]
+    void updatereqpay(name cand, eosio::asset requestedpay);
 
     /**
 * This action is to facilitate voting for candidates to become custodians of the DAC. Each member will be able to vote a configurable number of custodians set by the contract configuration. When a voter calls this action either a new vote will be recorded or the existing vote for that voter will be modified. If an empty array of candidates is passed to the action an existing vote for that voter will be removed.
@@ -372,7 +377,8 @@ Nothing from this action is stored on the blockchain. It is only intended to ens
 * ### Post Condition:
 * An active vote record for the voter will have been created or modified to reflect the newvotes. Each of the candidates will have their total_votes amount updated to reflect the delta in voter's token balance. Eg. If a voter has 1000 tokens and votes for 5 candidates, each of those candidates will have their total_votes value increased by 1000. Then if they change their votes to now vote 2 different candidates while keeping the other 3 the same there would be a change of -1000 for 2 old candidates +1000 for 2 new candidates and the other 3 will remain unchanged.
 */
-    void votecust(name voter, vector<name> newvotes);
+    [[eosio::action]]
+    void votecust(name voter, std::vector<name> newvotes);
 
 //    void voteproxy(name voter, name proxy);
 
@@ -391,7 +397,8 @@ Nothing from this action is stored on the blockchain. It is only intended to ens
  * - After the initial vote quorum percent has been reached subsequent calls to this action will require a minimum of `vote_quorum_percent` to vote for the votes to be considered sufficient to trigger a new period with new custodians.
  * @param message - a string that be used to log a message in the chain history logs. It serves no function in the contract logic.
  */
-    void newperiod(string message);
+    [[eosio::action]]
+    void newperiod(std::string message);
 
     /**
  * This action is to claim pay as a custodian.
@@ -422,6 +429,7 @@ Nothing from this action is stored on the blockchain. It is only intended to ens
  * ### Post Condition:
  * The candidate should still be present in the candidates table and should be still set to inactive. The candidates tokens will be transferred back to their account and their `locked_tokens` value will be reduced to 0.
  */
+    [[eosio::action]]
     void unstake(name cand);
 
 
