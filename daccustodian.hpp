@@ -27,6 +27,9 @@ struct contr_config {
     // account to have active auth set with all all custodians on the newperiod.
     account_name authaccount = string_to_name("dacauthority");
 
+    // The contract that holds the fund for the DAC. This is used as the source for custodian pay.
+    account_name tokenholder = string_to_name("eosdacthedac");
+
     // Amount of token value in votes required to trigger the initial set of custodians
     uint32_t initial_vote_quorum_percent;
 
@@ -49,6 +52,7 @@ struct contr_config {
                              (numelected)
                              (periodlength)
                              (authaccount)
+                             (tokenholder)
                              (initial_vote_quorum_percent)
                              (vote_quorum_percent)
                              (auth_threshold_high)
@@ -79,12 +83,12 @@ struct contr_state {
 
 typedef singleton<N(state), contr_state> statecontainer;
 
-// Uitility to combine ids to help with indexing.
+// Utility to combine ids to help with indexing.
 uint128_t combine_ids(const uint8_t &boolvalue, const uint64_t &longValue) {
     return (uint128_t{boolvalue} << 8) | longValue;
 }
 
-struct candidate {
+struct [[eosio::table("candidates")]] candidate {
     name candidate_name;
     asset requestedpay;
     asset locked_tokens;
@@ -155,12 +159,15 @@ struct pay {
     asset quantity;
     string memo;
 
-    account_name primary_key() const { return key; }
+    uint64_t primary_key() const { return key; }
+    account_name byreceiver() const { return receiver; }
 
     EOSLIB_SERIALIZE(pay, (key)(receiver)(quantity)(memo))
 };
 
-typedef multi_index<N(pendingpay), pay> pending_pay_table;
+typedef multi_index<N(pendingpay), pay,
+        indexed_by<N(byreceiver), const_mem_fun<pay, account_name, &pay::byreceiver> >
+> pending_pay_table;
 
 // @abi table pendingstake
 struct tempstake {
@@ -213,6 +220,7 @@ public:
             uint8_t numelected,
             uint32_t periodlength,
             name authaccount,
+            name tokenholder,
             uint32_t initial_vote_quorum_percent,
             uint32_t vote_quorum_percent,
             uint8_t auth_threshold_high,
@@ -389,16 +397,16 @@ Nothing from this action is stored on the blockchain. It is only intended to ens
  * This action is to claim pay as a custodian.
  *
  * ### Assertions:
- * - The claimer account performing the action is authorised to do so.
+ * - The caller to the action account performing the action is authorised to do so.
  * - The payid is for a valid pay record in the pending pay table.
- * - The claimer account is the same as the intended destination account for the pay record.
- * @param claimer - The account id for the claiming account.
+ * - The callas account is the same as the intended destination account for the pay record.
  * @param payid - The id for the pay record to claim from the pending pay table.
  *
  * ### Post Condition:
  * The quantity owed to the custodian as referred to by the pay record is transferred to the claimer and then the pay record is removed from the pending pay table.
  */
-    void claimpay(name claimer, uint64_t payid);
+    [[eosio::action]]
+    void claimpay(uint64_t payid);
 
     /**
  * This action is used to unstake a candidates tokens and have them transferred to their account.

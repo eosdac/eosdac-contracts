@@ -51,7 +51,7 @@
 					"type": "name"
 				}
 			]
-		},{
+		}, {
 		"name": "tempstake",
 		"base": "",
 		"fields": [{
@@ -129,6 +129,9 @@
 			"type": "uint32"
 		}, {
 			"name": "authaccount",
+			"type": "name"
+		},{
+			"name": "tokenholder",
 			"type": "name"
 		}, {
 			"name": "initial_vote_quorum_percent",
