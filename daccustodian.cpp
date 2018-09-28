@@ -11,7 +11,9 @@
 #include "update_member_details.cpp"
 #include "registering.cpp"
 #include "voting.cpp"
-//#include "migration.cpp"
+#ifdef MIGRATE
+#include "migration.cpp"
+#endif
 #include "privatehelpers.cpp"
 #include "newperiod_components.cpp"
 #include "pay_handling.cpp"
@@ -48,6 +50,7 @@ EOSIO_ABI_EX(daccustodian,
              (claimpay)
              (transfer)
              (stprofile)(stprofileuns)
-//             (migrate)
-
+#ifdef MIGRATE
+             (migrate)
+#endif
 )

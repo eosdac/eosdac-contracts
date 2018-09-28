@@ -201,7 +201,9 @@ public:
     }
 
     ~daccustodian() {
-        contract_state.set(_currentState, _self);
+#ifndef MIGRATE
+        contract_state.set(_currentState, _self); // This should always run unless we are doing a migration.
+#endif
     }
 
 
@@ -442,9 +444,10 @@ private: // Private helper methods used by other actions.
     void allocatecust(bool early_election);
 
 
-public: // Exposed publicy for debugging only.
+public: // Exposed publicy for development only.
 
-
-    //void migrate();
+#ifdef MIGRATE
+    void migrate();
+#endif
 
 };

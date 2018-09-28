@@ -1,6 +1,6 @@
 
 
-/*
+
 template <typename T>
 void cleanTable(uint64_t code, uint64_t account){
     T db(code, account);
@@ -9,10 +9,8 @@ void cleanTable(uint64_t code, uint64_t account){
         db.erase(itr);
     }
 }
-*/
 
 void daccustodian::migrate() {
-    /*
 
     configscontainer configs(_self, _self);
     configs.remove();
@@ -25,6 +23,7 @@ void daccustodian::migrate() {
     cleanTable<votes_table>(_self, _self);
     cleanTable<pending_pay_table>(_self, _self);
 
+    /*
     //Copy to a holding table - Enable this for the first step
 
         candidates_table oldcands(_self, _self);
@@ -42,7 +41,6 @@ void daccustodian::migrate() {
             it = oldcands.erase(it);
         }
 
-
     // Copy back to the original table with the new schema - Enable this for the second step *after* modifying the original object's schema before copying back to the original table location.
 
         candidates_table2 holding_table(_self, _self);
@@ -58,6 +56,5 @@ void daccustodian::migrate() {
             });
             it = holding_table.erase(it);
         }
-
         */
 }
