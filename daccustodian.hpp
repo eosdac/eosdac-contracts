@@ -6,6 +6,10 @@
 #define TOKEN_CONTRACT "eosdactoken"
 #endif
 
+const permission_name LOW_PERMISSION = N(low);
+const permission_name MEDIUM_PERMISSION = N(med);
+const permission_name HIGH_PERMISSION = N(high);
+
 using namespace eosio;
 using namespace std;
 

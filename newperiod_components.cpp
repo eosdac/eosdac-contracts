@@ -125,8 +125,8 @@ void daccustodian::setauths() {
            N(eosio), N(updateauth),
            std::make_tuple(
                    accountToChange,
-                   N(high),
-                   N(active),
+                   HIGH_PERMISSION,
+                   N(owner),
                    high_contract_authority))
             .send();
 
@@ -140,8 +140,8 @@ void daccustodian::setauths() {
            N(eosio), N(updateauth),
            std::make_tuple(
                    accountToChange,
-                   N(med),
-                   N(active),
+                   MEDIUM_PERMISSION,
+                   N(owner),
                    medium_contract_authority))
             .send();
 
@@ -155,8 +155,8 @@ void daccustodian::setauths() {
            N(eosio), N(updateauth),
            std::make_tuple(
                    accountToChange,
-                   N(low),
-                   N(active),
+                  LOW_PERMISSION,
+                   N(owner),
                    low_contract_authority))
             .send();
 }

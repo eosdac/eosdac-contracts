@@ -29,7 +29,7 @@ extern "C" { \
          eosio_assert(code == N(eosio), "onerror action's are only valid from the \"eosio\" system account"); \
       } \
       auto self = receiver; \
-      if( code == self || code == eosio::string_to_name(TOKEN_CONTRACT) ) { \
+      if( (code == self  && action != N(transfer)) || (code == eosio::string_to_name(TOKEN_CONTRACT) && action == N(transfer)) ) { \
          TYPE thiscontract( self ); \
          switch( action ) { \
             EOSIO_API( TYPE, MEMBERS ) \
