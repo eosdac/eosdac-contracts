@@ -1271,8 +1271,10 @@ describe "eosdacelect" do
         custodian = json["rows"].detect {|v| v["cust_name"] == 'allocate4'}
         expect(custodian["total_votes"]).to eq 31100000
 
-        # custnames = json["rows"].map { |c| c["cust_name"] }
-        # expect(custnames).to eq ["allocate1", "allocate11", "allocate12", "allocate2", "allocate21", "allocate22", "allocate3", "allocate31", "allocate32", "allocate4", "allocate41", "allocate5"]
+        custnames = json["rows"].map { |c| c["cust_name"] }
+
+        # allocate32 was dropped and then allocate51 took the spot
+        expect(custnames).to eq ["allocate1", "allocate11", "allocate12", "allocate2", "allocate21", "allocate22", "allocate3", "allocate31", "allocate4", "allocate41", "allocate5", "allocate51"]
       end
     end
   end
