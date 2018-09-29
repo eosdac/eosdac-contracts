@@ -77,7 +77,7 @@ void daccustodian::resigncust(name cust) {
 }
 
 void daccustodian::firecust(name cust) {
-    require_auth2(configs().authaccount, configs().auth_threshold_mid);
+    require_auth2(configs().authaccount, MEDIUM_PERMISSION);
     removeCustodian(cust);
 }
 

@@ -458,9 +458,9 @@ private: // Private helper methods used by other actions.
     void allocateCustodians(bool early_election);
 
 
-public: // Exposed publicy for development only.
 
 #ifdef MIGRATE
+public: // Exposed publicy for development only.
     void migrate();
 #endif
 
