@@ -3,7 +3,7 @@
 #include "external_types.hpp"
 
 #ifndef TOKEN_CONTRACT
-#define TOKEN_CONTRACT "eosdactoken"
+#define TOKEN_CONTRACT "eosdactokens"
 #endif
 
 const permission_name LOW_PERMISSION = N(low);
