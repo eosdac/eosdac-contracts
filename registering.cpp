@@ -5,7 +5,7 @@ void daccustodian::nominatecand(name cand, asset requestedpay) {
     getValidMember(cand);
 
     // This implicitly asserts that the symbol of requestedpay matches the configs.max pay.
-    eosio_assert(requestedpay < configs().requested_pay_max,
+    eosio_assert(requestedpay <= configs().requested_pay_max,
                  "Requested pay limit for a candidate was exceeded.");
 
     _currentState.number_active_candidates++;
