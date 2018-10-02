@@ -32,6 +32,20 @@ ACCOUNT_NAME = 'daccustodian'
 
 CONTRACTS_DIR = '~Documents/code/EOSIO/eos/build/contracts/'
 
+def reset_chain
+  `kill -INT \`pgrep nodeos\``
+
+  # Launch nodeos in a new tab so the output can be observed.
+  # ttab is a nodejs module but this could be easily achieved manually without ttab.
+  `ttab 'nodeos --delete-all-blocks --verbose-http-errors'`
+
+  # nodeos --delete-all-blocks --verbose-http-errors &>/dev/null & # Alternative without ttab installed
+
+  puts "Give the chain a chance to settle."
+  sleep 4
+
+end
+
 def seed_system_contracts
   `cleos set contract eosio "#{CONTRACTS_DIR}/eosio.bios" -p eosio`
   `cleos create account eosio eosio.msig #{EOSIO_PUB}`
@@ -53,18 +67,6 @@ def install_contracts
 
   beforescript = <<~SHELL
    set -x
-
-   kill -INT `pgrep nodeos`
-
-   # Launch nodeos in a new tab so the output can be observed.
-   # ttab is a nodejs module but this could be easily achieved manually without ttab.
-   ttab 'nodeos --delete-all-blocks --verbose-http-errors'
-
-   # nodeos --delete-all-blocks --verbose-http-errors &>/dev/null & # Alternative without ttab installed
-
-   echo "Give the chain a chance to settle."
-   
-   sleep 4
    
    cleos wallet unlock --password `cat ~/eosio-wallet/.pass`
    cleos wallet import --private-key #{CONTRACT_ACTIVE_PRIVATE_KEY}
@@ -81,6 +83,8 @@ def install_contracts
    cleos set account permission dacauthority owner '{"threshold": 1,"keys": [{"key": "#{CONTRACT_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' '' -p dacauthority@owner
    # cleos set account permission eosdacthedac active '{"threshold": 1,"keys": [{"key": "#{CONTRACT_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p eosdacthedac@owner
    cleos set account permission eosdacthedac xfer '{"threshold": 1,"keys": [{"key": "#{CONTRACT_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' active -p eosdacthedac@active
+   cleos set action permission eosdacthedac eosdactoken transfer xfer   
+   cleos set action permission eosdacthedac eosio.token transfer xfer   
    cleos set account permission #{ACCOUNT_NAME} active '{"threshold": 1,"keys": [{"key": "#{CONTRACT_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p #{ACCOUNT_NAME}
 
    # eosio-cpp -DTOKEN_CONTRACT='"eosdactokens"' -o #{CONTRACT_NAME}.wast #{CONTRACT_NAME}.cpp
@@ -148,7 +152,7 @@ def configure_contracts
   # configure accounts for eosdactokens
   `cleos push action eosdactokens create '{ "issuer": "eosdactokens", "maximum_supply": "100000.0000 EOSDAC", "transfer_locked": false}' -p eosdactokens`
   `cleos push action eosio.token create '{ "issuer": "eosio.token", "maximum_supply": "1000000.0000 EOS"}' -p eosio.token`
-  `cleos push action eosdactokens issue '{ "to": "eosdactokens", "quantity": "1000.0000 EOSDAC", "memo": "Initial amount of tokens for you."}' -p eosdactokens`
+  `cleos push action eosdactokens issue '{ "to": "eosdactokens", "quantity": "77337.0000 EOSDAC", "memo": "Initial amount of tokens for you."}' -p eosdactokens`
   `cleos push action eosio.token issue '{ "to": "daccustodian", "quantity": "100000.0000 EOS", "memo": "Initial EOS amount."}' -p eosio.token`
   `cleos push action eosio.token issue '{ "to": "eosdacthedac", "quantity": "100000.0000 EOS", "memo": "Initial EOS amount."}' -p eosio.token`
   `cleos push action eosdactokens issue '{ "to": "eosdacthedac", "quantity": "1000.0000 EOSDAC", "memo": "Initial amount of tokens for you."}' -p eosdactokens`
@@ -168,6 +172,8 @@ end
 
 describe "eosdacelect" do
   before(:all) do
+    reset_chain
+    seed_system_contracts
     install_contracts
     configure_contracts
   end

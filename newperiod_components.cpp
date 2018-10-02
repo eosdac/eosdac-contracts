@@ -144,9 +144,24 @@ void daccustodian::setCustodianAuths() {
            N(eosio), N(updateauth),
            std::make_tuple(
                    accountToChange,
-                  LOW_PERMISSION,
+                   LOW_PERMISSION,
                    N(owner),
                    low_contract_authority))
+            .send();
+
+    eosiosystem::authority one_contract_authority{
+            .threshold = 1,
+            .keys = {},
+            .accounts = accounts
+    };
+
+    action(permission_level{accountToChange, N(owner)},
+           N(eosio), N(updateauth),
+           std::make_tuple(
+                   accountToChange,
+                   ONE_PERMISSION,
+                   N(owner),
+                   one_contract_authority))
             .send();
 }
 
@@ -158,16 +173,18 @@ void daccustodian::newperiod(string message) {
 
     // Get the max supply of the lockup asset token (eg. EOSDAC)
     auto tokenStats = stats(eosio::string_to_name(TOKEN_CONTRACT), config.lockupasset.symbol.name()).begin();
-    uint64_t max_supply = tokenStats->max_supply.amount;
+    uint64_t max_supply = tokenStats->supply.amount;
 
     double percent_of_current_voter_engagement =
             double(_currentState.total_weight_of_votes) / double(max_supply) * 100.0;
 
     eosio::print("\n\nToken max supply: ", max_supply, " total votes so far: ", _currentState.total_weight_of_votes);
     eosio::print("\n\nNeed inital engagement of: ", config.initial_vote_quorum_percent, "% to start the DAC.");
+    eosio::print("\n\nToken supply: ", max_supply * 0.0001, " total votes so far: ", _currentState.total_weight_of_votes * 0.0001);
+    eosio::print("\n\nNeed initial engagement of: ", config.initial_vote_quorum_percent, "% to start the DAC.");
     eosio::print("\n\nNeed ongoing engagement of: ", config.vote_quorum_percent,
                  "% to allow new periods to trigger after initial activation.");
-    eosio::print("\n\nPercent of current voter engagement: ", percent_of_current_voter_engagement);
+    eosio::print("\n\nPercent of current voter engagement: ", percent_of_current_voter_engagement, "\n\n");
 
     eosio_assert(_currentState.met_initial_votes_threshold == true ||
                  percent_of_current_voter_engagement > config.initial_vote_quorum_percent,

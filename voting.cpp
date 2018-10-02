@@ -2,6 +2,9 @@
 
 
 void daccustodian::votecust(name voter, vector<name> newvotes) {
+#ifdef VOTING_DISABLED
+    eosio_assert(false,"Voting is currently disabled.");
+#endif
 
     require_auth(voter);
     getValidMember(voter);
