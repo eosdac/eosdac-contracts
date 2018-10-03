@@ -1,3 +1,4 @@
+const char* const eosio_token_wast = R"=====(
 (module
  (type $FUNCSIG$viji (func (param i32 i64 i32)))
  (type $FUNCSIG$vijjii (func (param i32 i64 i64 i32 i32)))
@@ -12249,3 +12250,4 @@
   (unreachable)
  )
 )
+)=====";

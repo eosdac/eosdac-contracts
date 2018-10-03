@@ -1,3 +1,4 @@
+const char* const eosio_token_abi = R"=====(
 {
    "version": "eosio::abi/1.0",
    "types": [{
@@ -76,3 +77,4 @@
   "ricardian_clauses": [],
   "abi_extensions": []
 }
+)=====";
