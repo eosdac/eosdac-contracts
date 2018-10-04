@@ -6,6 +6,10 @@
 #define TOKEN_CONTRACT "eosdactokens"
 #endif
 
+#ifndef TRANSFER_DELAY
+#define TRANSFER_DELAY 24*60*60
+#endif
+
 const permission_name ONE_PERMISSION = N(one);
 const permission_name LOW_PERMISSION = N(low);
 const permission_name MEDIUM_PERMISSION = N(med);

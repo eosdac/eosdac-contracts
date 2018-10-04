@@ -62,11 +62,18 @@ void daccustodian::unstake(name cand) {
     registered_candidates.modify(reg_candidate, cand, [&](candidate &c) {
         // Ensure the candidate's tokens are not locked up for a time delay period.
         // Send back the locked up tokens
-        action(permission_level{_self, N(active)},
+        transaction deferredTrans{};
+
+        deferredTrans.actions.emplace_back(
+        action(permission_level{configs().tokenholder, N(xfer)},
                eosio::string_to_name(TOKEN_CONTRACT), N(transfer),
                make_tuple(_self, cand, c.locked_tokens,
                           string("Returning locked up stake. Thank you."))
-        ).send();
+        ));
+
+        deferredTrans.delay_sec = TRANSFER_DELAY;
+        deferredTrans.send(cand, _self);
+
         c.locked_tokens = asset(0, configs().lockupasset.symbol);
     });
 }
