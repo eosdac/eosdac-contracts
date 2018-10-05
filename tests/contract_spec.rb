@@ -132,7 +132,7 @@ def install_contracts
    cleos set account permission eosdacthedac xfer '{"threshold": 1,"keys": [{"key": "#{CONTRACT_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' active -p eosdacthedac@active
      cleos push action eosio.token issue '["eosdacthedac", "100000.0000 EOS", "Initial EOS amount."]' -p eosio
 
-   cleos set action permission eosdacthedac eosdactoken transfer xfer   
+   cleos set action permission eosdacthedac eosdactokens transfer xfer
    cleos set action permission eosdacthedac eosio.token transfer xfer   
    cleos set account permission #{ACCOUNT_NAME} active '{"threshold": 1,"keys": [{"key": "#{CONTRACT_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p #{ACCOUNT_NAME}
 
@@ -1509,6 +1509,12 @@ describe "eosdacelect" do
     end
 
     context "After successful unstaking the token should have been transferred back" do
+      command %(cleos get currency balance eosdactokens unreguser2 EOSDAC), allow_error: true
+      its(:stdout) {is_expected.to include('77.0000 EOSDAC')}
+    end
+
+    context "After successful unstaking the token should have been transferred back" do
+      before(:each) { sleep 11 }
       command %(cleos get currency balance eosdactokens unreguser2 EOSDAC), allow_error: true
       its(:stdout) {is_expected.to include('100.0000 EOSDAC')}
     end
