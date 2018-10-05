@@ -7,7 +7,7 @@ void daccustodian::votecust(name voter, vector<name> newvotes) {
 #endif
 
     require_auth(voter);
-    getValidMember(voter);
+    assertValidMember(voter);
 
     eosio_assert(newvotes.size() <= configs().maxvotes, "Max number of allowed votes was exceeded.");
     std::set<name> dupSet{};
@@ -45,7 +45,7 @@ void daccustodian::votecust(name voter, vector<name> newvotes) {
 //void daccustodian::voteproxy(name voter, name proxy) {
 //
 //    require_auth(voter);
-//    getValidMember(voter);
+//    assertValidMember(voter);
 //
 //    string error_msg = "Member cannot proxy vote for themselves: " + voter.to_string();
 //    eosio_assert(voter != proxy, error_msg.c_str());

@@ -442,7 +442,7 @@ private: // Private helper methods used by other actions.
 
     contr_config configs();
 
-    member getValidMember(name member);
+    void assertValidMember(name member);
     
     void updateVoteWeight(name custodian, int64_t weight);
 

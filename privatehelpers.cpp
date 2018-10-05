@@ -5,7 +5,7 @@ contr_config daccustodian::configs() {
     return conf;
 }
 
-member daccustodian::getValidMember(name member) {
+void daccustodian::assertValidMember(name member) {
     account_name tokenContract = eosio::string_to_name(TOKEN_CONTRACT);
     regmembers reg_members(tokenContract, tokenContract);
     memterms memberterms(tokenContract, tokenContract);
@@ -14,7 +14,6 @@ member daccustodian::getValidMember(name member) {
     eosio_assert((regmem.agreedterms != 0), "Account has not agreed to any terms");
     auto latest_member_terms = (--memberterms.end());
     eosio_assert(latest_member_terms->version == regmem.agreedterms, "Agreed terms isn't the latest.");
-    return regmem;
 }
 
 void daccustodian::updateVoteWeight(name custodian, int64_t weight) {
