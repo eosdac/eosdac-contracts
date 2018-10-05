@@ -2,7 +2,7 @@
 
 void daccustodian::nominatecand(name cand, asset requestedpay) {
     require_auth(cand);
-    getValidMember(cand);
+    assertValidMember(cand);
 
     // This implicitly asserts that the symbol of requestedpay matches the configs.max pay.
     eosio_assert(requestedpay <= configs().requested_pay_max,
@@ -65,7 +65,7 @@ void daccustodian::unstake(name cand) {
         transaction deferredTrans{};
 
         deferredTrans.actions.emplace_back(
-        action(permission_level{configs().tokenholder, N(xfer)},
+        action(permission_level{_self, N(active)},
                eosio::string_to_name(TOKEN_CONTRACT), N(transfer),
                make_tuple(_self, cand, c.locked_tokens,
                           string("Returning locked up stake. Thank you."))
