@@ -1353,9 +1353,15 @@ describe "eosdacelect" do
       # exit
     end
 
-    xcontext "After claiming for the correct should be added to the claimer" do
+    context "After claiming for the correct should be added to the claimer" do
       command %(cleos get currency balance eosio.token allocate11 EOS), allow_error: true
-      its(:stdout) {is_expected.to include('16.0000 EOS')} # eventually this would pass but now it's time delayed I cannot assert.
+      its(:stdout) {is_expected.not_to include('17.0000 EOS')} # eventually this would pass but now it's time delayed I cannot assert.
+    end
+
+    context "After claiming for the correct should be added to the claimer" do
+      before(:each) { sleep 11 }
+      command %(cleos get currency balance eosio.token allocate11 EOS), allow_error: true
+      its(:stdout) {is_expected.to include('17.0000 EOS')} # eventually this would pass but now it's time delayed I cannot assert.
     end
   end
 
