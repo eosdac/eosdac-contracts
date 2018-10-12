@@ -11,7 +11,6 @@ Eg. 12 custodians are elected and their median `requestedpay` is 100 EOSDAC If o
 ### candidates
 
 - candidate_name (name)   - Account name of the candidate (INDEX)
-- bio (hash)              - Link to IPFS file containing structured data about the candidate (schema.org preferred)
 - isactive (int8) 			- Boolean indicating if the candidate is currently available for election. (INDEX)
 - locked_tokens (asset) - An asset object representing the number of tokens locked when registering
 - requestedpay (asset) - The amount of pay requested by the candidate to be paid if they were elected for the following period.
