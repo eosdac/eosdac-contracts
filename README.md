@@ -67,7 +67,7 @@ This action is used to nominate a candidate for custodian elections. It must be 
 -   The candidate has transferred sufficient funds for staking if they are a new candidate.
 -   The candidate has enough staked if they are re-nominating as a candidate and the required stake has changed since they last nominated.
 
-#####Parameters:
+##### Parameters:
 
     cand  			- The account id for the candidate nominating.
     requestedpay  	- The amount of pay the candidate would like to receive if they are elected as a custodian. This amount must not exceed the maximum allowed amount of the contract config parameter (`requested_pay_max`) and the symbol must also match.
@@ -77,7 +77,7 @@ This action is used to nominate a candidate for custodian elections. It must be 
 The candidate should be present in the candidates table and be set to active. If they are a returning candidate they should be set to active again. The `locked_tokens` value should reflect the total of the tokens they have transferred to the contract for staking. The number of active candidates in the contract will incremented.
 
 ---
-###withdrawcand
+### withdrawcand
 
 This action is used to withdraw a candidate from being active for custodian elections.
 
@@ -86,7 +86,7 @@ This action is used to withdraw a candidate from being active for custodian elec
 -   The account performing the action is authorised.
 -   The candidate is already a nominated candidate.
 
-#####Parameters:
+##### Parameters:
 
     cand  - The account id for the candidate nominating.
 
@@ -103,7 +103,7 @@ This action is used to resign as a custodian.
 -   The `cust` account performing the action is authorised to do so.
 -   The `cust` account is currently an elected custodian.
 
-#####Parameters:
+##### Parameters:
 
     cust  - The account id for the candidate nominating.
 
@@ -123,7 +123,7 @@ Update the bio for this candidate / custodian. This will be available on the acc
  - the length of the bio must be less than 256 characters.
 
 ---
-###updatereqpay
+### updatereqpay
 
 This action is used to update the requested pay for a candidate.
 
@@ -143,7 +143,7 @@ This action is used to update the requested pay for a candidate.
 The requested pay for the candidate should be updated to the new asset.
 
 ---
-###votecust
+### votecust
 
 This action is to facilitate voting for candidates to become custodians of the DAC. Each member will be able to vote a configurable number of custodians set by the contract configuration. When a voter calls this action either a new vote will be recorded or the existing vote for that voter will be modified. If an empty array of candidates is passed to the action an existing vote for that voter will be removed.
 
@@ -155,13 +155,13 @@ This action is to facilitate voting for candidates to become custodians of the D
 -   Ensure there are no duplicate candidates in the voting vector.
 -   Ensure all the candidates in the vector are registered and active candidates.
 
-####Parameters:
+#### Parameters:
 
     voter     - The account id for the voter account.
     newvotes  - A vector of account ids for the candidate that the voter is voting for.
 
 
-#####Post Condition:
+##### Post Condition:
 
 An active vote record for the voter will have been created or modified to reflect the newvotes. Each of the candidates will have their total_votes amount updated to reflect the delta in voter's token balance. Eg. If a voter has 1000 tokens and votes for 5 candidates, each of those candidates will have their total_votes value increased by 1000. Then if they change their votes to now vote 2 different candidates while keeping the other 3 the same there would be a change of -1000 for 2 old candidates +1000 for 2 new candidates and the other 3 will remain unchanged.
 
@@ -190,7 +190,7 @@ Save the votes in the `votes` table, update if the voting account already has a 
 
 Updates the contract configuration parameters to allow changes without needing to redeploy the source code.
 
-####Message
+#### Message
 updateconfig(<params>)
  
 This action asserts:
@@ -215,7 +215,7 @@ The paramters are:
 
 ---
 
-###newperiod
+### newperiod
 
 This action is to be run to end and begin each period in the DAC life cycle. It performs multiple tasks for the DAC including:
 
@@ -231,7 +231,7 @@ This action is to be run to end and begin each period in the DAC life cycle. It 
      message - a string that be used to log a message in the chain history logs. It serves no function in the contract logic.
 
 ---
-###claimpay
+### claimpay
 
 This action is to claim pay as a custodian.
 
@@ -241,7 +241,7 @@ This action is to claim pay as a custodian.
 -   The payid is for a valid pay record in the pending pay table.
 -   The caller account is the same as the intended destination account for the pay record.
 
-#####Parameters:
+##### Parameters:
 
      payid - The id for the pay record to claim from the pending pay table.
 
@@ -250,7 +250,7 @@ This action is to claim pay as a custodian.
 The quantity owed to the custodian as referred to by the pay record is transferred to the claimer and then the pay record is removed from the pending pay table.
 
 ---
-###unstake
+### unstake
 
 This action is used to unstake a candidates tokens and have them transferred to their account.
 
@@ -260,7 +260,7 @@ This action is used to unstake a candidates tokens and have them transferred to 
 -   The candidate is not already a nominated candidate.
 -   The tokens held under candidate's account are not currently locked in a time delay.
 
-#####Parameters:
+##### Parameters:
 
     cand  - The account id for the candidate nominating.
 
@@ -269,11 +269,11 @@ This action is used to unstake a candidates tokens and have them transferred to 
 The candidate should still be present in the candidates table and should be still set to inactive. The candidates tokens will be transferred back to their account and their `locked_tokens` value will be reduced to 0.
 
 ---
-###firecand
+### firecand
 
 This action is used to remove a candidate from being a candidate for custodian elections.
 
-##### Assertions:
+## Assertions:
 
 -   The action is authorised by the mid level permission the auth account for the contract.
 -   The candidate is already a nominated candidate.
@@ -288,7 +288,7 @@ This action is used to remove a candidate from being a candidate for custodian e
 The candidate should still be present in the candidates table and be set to inactive. If the `lockupstake` parameter is true the stake will be locked until the time delay has passed. If not the candidate will be able to unstake their tokens immediately using the unstake action to have them returned.
 
 ---
-###firecust
+### firecust
 
 This action is used to remove a custodian.
 
@@ -297,7 +297,7 @@ This action is used to remove a custodian.
 -   The action is authorised by the mid level of the auth account (currently elected custodian board).
 -   The `cust` account is currently an elected custodian.
 
-#####Parameters:
+##### Parameters:
 
      cand - The account id for the candidate nominating.
 
@@ -306,7 +306,7 @@ This action is used to remove a custodian.
 The custodian will be removed from the active custodians and should still be present in the candidates table but will be set to inactive. Their staked tokens will be locked up for the time delay added from the moment this action was called so they will not able to unstake until that time has passed. A replacement custodian will selected from the candidates to fill the missing place (based on vote ranking) then the auths for the controlling dac auth account will be set for the custodian board.
 
 ---
-#Compile
+# Compile
 
 
 The contract code has some compile time constants used for configuration. As a compile time constant the code has more flexibility for reuse on other DACs, and extra layer of safety over exposing another configuration variable which could be changed after the code has been set and the ability to unit test the code without needing to modify the source just for testing.
