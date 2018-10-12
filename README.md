@@ -77,7 +77,7 @@ This action is used to nominate a candidate for custodian elections. It must be 
 The candidate should be present in the candidates table and be set to active. If they are a returning candidate they should be set to active again. The `locked_tokens` value should reflect the total of the tokens they have transferred to the contract for staking. The number of active candidates in the contract will incremented.
 
 ---
-###withdrawcand
+### withdrawcand
 
 This action is used to withdraw a candidate from being active for custodian elections.
 
@@ -103,7 +103,7 @@ This action is used to resign as a custodian.
 -   The `cust` account performing the action is authorised to do so.
 -   The `cust` account is currently an elected custodian.
 
-#####Parameters:
+##### Parameters:
 
     cust  - The account id for the candidate nominating.
 
@@ -269,11 +269,11 @@ This action is used to unstake a candidates tokens and have them transferred to 
 The candidate should still be present in the candidates table and should be still set to inactive. The candidates tokens will be transferred back to their account and their `locked_tokens` value will be reduced to 0.
 
 ---
-###firecand
+### firecand
 
 This action is used to remove a candidate from being a candidate for custodian elections.
 
-##### Assertions:
+## Assertions:
 
 -   The action is authorised by the mid level permission the auth account for the contract.
 -   The candidate is already a nominated candidate.
@@ -297,7 +297,7 @@ This action is used to remove a custodian.
 -   The action is authorised by the mid level of the auth account (currently elected custodian board).
 -   The `cust` account is currently an elected custodian.
 
-#####Parameters:
+##### Parameters:
 
      cand - The account id for the candidate nominating.
 
