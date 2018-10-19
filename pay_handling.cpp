@@ -2,7 +2,7 @@
 
 void daccustodian::claimpay(uint64_t payid) {
 
-    const pay &payClaim = pending_pay.get(payid, "Invalid pay claim id.");
+    const pay &payClaim = pending_pay.get(payid, "ERR::CLAIMPAY_INVALID_CLAIM_ID::Invalid pay claim id.");
     assertValidMember(payClaim.receiver);
 
     require_auth(payClaim.receiver);

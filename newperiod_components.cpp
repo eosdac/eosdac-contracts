@@ -30,7 +30,7 @@ void daccustodian::assertPeriodTime() {
     uint32_t timestamp = now();
     uint32_t periodBlockCount = timestamp - _currentState.lastperiodtime;
     eosio_assert(periodBlockCount > configs().periodlength,
-                 "New period is being called too soon. Wait until the period has completed.");
+                 "ERR::NEWPERIOD_EARLY::New period is being called too soon. Wait until the period has completed.");
 }
 
 void daccustodian::allocateCustodians(bool early_election) {
@@ -48,7 +48,7 @@ void daccustodian::allocateCustodians(bool early_election) {
         eosio::print("Empty the custodians table to get a full set of new custodians based on the current votes.");
         auto cust_itr = custodians.begin();
         while (cust_itr != custodians.end()) {
-            const auto &reg_candidate = registered_candidates.get(cust_itr->cust_name, "Corrupt data: Trying to set a lockup delay on candidate leaving office.");
+            const auto &reg_candidate = registered_candidates.get(cust_itr->cust_name, "ERR::NEWPERIOD_EXPECTED_CAND_NOT_FOUND::Corrupt data: Trying to set a lockup delay on candidate leaving office.");
             registered_candidates.modify(reg_candidate, cust_itr->cust_name, [&](candidate &c) {
                 eosio::print("Lockup stake for release delay.");
                 c.custodian_end_time_stamp = now() + configs().lockup_release_time_delay;
@@ -188,11 +188,11 @@ void daccustodian::newperiod(string message) {
 
     eosio_assert(_currentState.met_initial_votes_threshold == true ||
                  percent_of_current_voter_engagement > config.initial_vote_quorum_percent,
-                 "Voter engagement is insufficient to activate the DAC.");
+                 "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_ACTIVATE::Voter engagement is insufficient to activate the DAC.");
     _currentState.met_initial_votes_threshold = true;
 
     eosio_assert(percent_of_current_voter_engagement > config.vote_quorum_percent,
-                 "Voter engagement is insufficient to process a new period");
+                 "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_PROCESS::Voter engagement is insufficient to process a new period");
 
     // Distribute pay to the current custodians.
     distributePay();
