@@ -6,7 +6,7 @@ void daccustodian::nominatecand(name cand, asset requestedpay) {
 
     // This implicitly asserts that the symbol of requestedpay matches the configs.max pay.
     eosio_assert(requestedpay <= configs().requested_pay_max,
-                 "Requested pay limit for a candidate was exceeded.");
+                 "ERR::NOMINATECAND_PAY_LIMIT_EXCEEDED::Requested pay limit for a candidate was exceeded.");
 
     _currentState.number_active_candidates++;
 
@@ -15,7 +15,7 @@ void daccustodian::nominatecand(name cand, asset requestedpay) {
 
     auto reg_candidate = registered_candidates.find(cand);
     if (reg_candidate != registered_candidates.end()) {
-        eosio_assert(!reg_candidate->is_active, "Candidate is already registered and active.");
+        eosio_assert(!reg_candidate->is_active, "ERR::NOMINATECAND_ALREADY_REGISTERED::Candidate is already registered and active.");
         registered_candidates.modify(reg_candidate, cand, [&](candidate &c) {
             c.is_active = 1;
             c.requestedpay = requestedpay;
@@ -24,12 +24,12 @@ void daccustodian::nominatecand(name cand, asset requestedpay) {
                 c.locked_tokens += pending->quantity;
                 pendingstake.erase(pending);
             }
-            eosio_assert(c.locked_tokens >= configs().lockupasset, "Insufficient funds have been staked.");
+            eosio_assert(c.locked_tokens >= configs().lockupasset, "ERR::NOMINATECAND_INSUFFICIENT_FUNDS_TO_STAKE::Insufficient funds have been staked.");
         });
     } else {
         eosio_assert(pending != pendingstake.end() &&
                      pending->quantity >= configs().lockupasset,
-                     "A registering candidate must transfer sufficient tokens to the contract for staking.");
+                     "ERR::NOMINATECAND_STAKING_FUNDS_INCOMPLETE::A registering candidate must transfer sufficient tokens to the contract for staking.");
 
         registered_candidates.emplace(cand, [&](candidate &c) {
             c.candidate_name = cand;
@@ -54,10 +54,10 @@ void daccustodian::firecand(name cand, bool lockupStake) {
 }
 
 void daccustodian::unstake(name cand) {
-    const auto &reg_candidate = registered_candidates.get(cand, "Candidate is not already registered.");
-    eosio_assert(!reg_candidate.is_active, "Cannot unstake tokens for an active candidate. Call withdrawcand first.");
+    const auto &reg_candidate = registered_candidates.get(cand, "ERR::UNSTAKE_CAND_NOT_REGISTERED::Candidate is not already registered.");
+    eosio_assert(!reg_candidate.is_active, "ERR::UNSTAKE_CANNOT_UNSTAKE_FROM_ACTIVE_CAND::Cannot unstake tokens for an active candidate. Call withdrawcand first.");
 
-    eosio_assert(reg_candidate.custodian_end_time_stamp < now(), "Cannot unstake tokens before they are unlocked from the time delay.");
+    eosio_assert(reg_candidate.custodian_end_time_stamp < now(), "ERR::UNSTAKE_CANNOT_UNSTAKE_FROM_ACTIVE_CAND::Cannot unstake tokens before they are unlocked from the time delay.");
 
     registered_candidates.modify(reg_candidate, cand, [&](candidate &c) {
         // Ensure the candidate's tokens are not locked up for a time delay period.
@@ -94,7 +94,7 @@ void daccustodian::removeCustodian(name cust) {
 
     custodians_table custodians(_self, _self);
     auto elected = custodians.find(cust);
-    eosio_assert(elected != custodians.end(), "The entered account name is not for a current custodian.");
+    eosio_assert(elected != custodians.end(), "ERR::REMOVECUSTODIAN_NOT_CURRENT_CUSTODIAN::The entered account name is not for a current custodian.");
 
     eosio::print("Remove custodian from the custodians table.");
     custodians.erase(elected);
@@ -112,7 +112,7 @@ void daccustodian::removeCustodian(name cust) {
 void daccustodian::removeCandidate(name cand, bool lockupStake) {
     _currentState.number_active_candidates--;
 
-    const auto &reg_candidate = registered_candidates.get(cand, "Candidate is not already registered.");
+    const auto &reg_candidate = registered_candidates.get(cand, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
 
     eosio::print("Remove from nominated candidate by setting them to inactive.");
     // Set the is_active flag to false instead of deleting in order to retain votes if they return to he dac.

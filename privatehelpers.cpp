@@ -10,15 +10,15 @@ void daccustodian::assertValidMember(name member) {
     regmembers reg_members(tokenContract, tokenContract);
     memterms memberterms(tokenContract, tokenContract);
 
-    const auto &regmem = reg_members.get(member, "Account is not registered with members");
-    eosio_assert((regmem.agreedterms != 0), "Account has not agreed to any terms");
+    const auto &regmem = reg_members.get(member, "ERR::GENERAL_REG_MEMBER_NOT_FOUND::Account is not registered with members.");
+    eosio_assert((regmem.agreedterms != 0), "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_ANY_TERMS::Account has not agreed to any terms");
     auto latest_member_terms = (--memberterms.end());
-    eosio_assert(latest_member_terms->version == regmem.agreedterms, "Agreed terms isn't the latest.");
+    eosio_assert(latest_member_terms->version == regmem.agreedterms, "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_LATEST_TERMS::Agreed terms isn't the latest.");
 }
 
 void daccustodian::updateVoteWeight(name custodian, int64_t weight) {
     if (weight == 0) {
-        print("\n Vote has no weight - No need to contrinue.");
+        print("\n Vote has no weight - No need to continue.");
     }
 
     auto candItr = registered_candidates.find(custodian);

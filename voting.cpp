@@ -1,20 +1,18 @@
 
-
-
 void daccustodian::votecust(name voter, vector<name> newvotes) {
 #ifdef VOTING_DISABLED
-    eosio_assert(false,"Voting is currently disabled.");
+    eosio_assert(false,"ERR::VOTECUST_VOTING_IS_DISABLED::Voting is currently disabled.");
 #endif
 
     require_auth(voter);
     assertValidMember(voter);
 
-    eosio_assert(newvotes.size() <= configs().maxvotes, "Max number of allowed votes was exceeded.");
+    eosio_assert(newvotes.size() <= configs().maxvotes, "ERR::VOTECUST_MAX_VOTES_EXCEEDED::Max number of allowed votes was exceeded.");
     std::set<name> dupSet{};
     for (name vote: newvotes) {
-        eosio_assert(dupSet.insert(vote).second, "Added duplicate votes for the same candidate");
-        auto candidate = registered_candidates.get(vote, "candidate could not be found.");
-        eosio_assert(candidate.is_active, "Attempting to vote for an inactive candidate.");
+        eosio_assert(dupSet.insert(vote).second, "ERR::VOTECUST_DUPLICATE_VOTES::Added duplicate votes for the same candidate.");
+        auto candidate = registered_candidates.get(vote, "ERR::VOTECUST_CANDIDATE_NOT_FOUND::Candidate could not be found.");
+        eosio_assert(candidate.is_active, "ERR::VOTECUST_VOTING_FOR_INACTIVE_CAND::Attempting to vote for an inactive candidate.");
     }
 
     // Find a vote that has been cast by this voter previously.
