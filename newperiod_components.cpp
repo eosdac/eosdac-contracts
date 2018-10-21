@@ -130,7 +130,7 @@ void daccustodian::setCustodianAuths() {
            std::make_tuple(
                    accountToChange,
                    MEDIUM_PERMISSION,
-                   N(owner),
+                   N(high),
                    medium_contract_authority))
             .send();
 
@@ -145,7 +145,7 @@ void daccustodian::setCustodianAuths() {
            std::make_tuple(
                    accountToChange,
                    LOW_PERMISSION,
-                   N(owner),
+                   N(med),
                    low_contract_authority))
             .send();
 
@@ -160,7 +160,7 @@ void daccustodian::setCustodianAuths() {
            std::make_tuple(
                    accountToChange,
                    ONE_PERMISSION,
-                   N(owner),
+                   N(low),
                    one_contract_authority))
             .send();
 }
