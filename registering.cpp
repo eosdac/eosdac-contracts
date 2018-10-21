@@ -48,8 +48,7 @@ void daccustodian::withdrawcand(name cand) {
 }
 
 void daccustodian::firecand(name cand, bool lockupStake) {
-
-    require_auth2(configs().authaccount, MEDIUM_PERMISSION);
+    require_auth(configs().authaccount);
     removeCandidate(cand, lockupStake);
 }
 
@@ -84,7 +83,7 @@ void daccustodian::resigncust(name cust) {
 }
 
 void daccustodian::firecust(name cust) {
-    require_auth2(configs().authaccount, MEDIUM_PERMISSION);
+    require_auth(configs().authaccount);
     removeCustodian(cust);
 }
 
