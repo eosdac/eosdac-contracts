@@ -15,7 +15,7 @@ void daccustodian::updateconfig(
         asset requested_pay_max
 ) {
 
-    require_auth(_self);
+    require_auth(configs().authaccount);
 
     eosio_assert(auth_threshold_high < numelected,
                  "The auth threshold can never be satisfied with a value greater than the number of elected custodians");
