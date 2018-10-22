@@ -411,6 +411,47 @@ describe "eosdacelect" do
       seed_account("unregvoter", issue: "109.0000 EOSDAC")
     end
 
+    context "Read the candidates table after _change_ vote" do
+      command %(cleos get table daccustodian daccustodian candidates), allow_error: true
+      it do
+
+        json = JSON.parse(subject.stdout)
+        expect(json["rows"].count).to eq 10
+
+        candidate = json["rows"][4]
+
+        expect(candidate["candidate_name"]).to eq 'votedcust1'
+        expect(candidate["requestedpay"]).to eq '11.0000 EOS'
+        expect(candidate["total_votes"]).to eq 0
+        expect(candidate["is_active"]).to eq 1
+        expect(candidate["custodian_end_time_stamp"]).to eq "1970-01-01T00:00:00"
+
+        candidate = json["rows"][6]
+
+        expect(candidate["candidate_name"]).to eq 'votedcust2'
+        expect(candidate["requestedpay"]).to eq '12.0000 EOS'
+        expect(candidate["total_votes"]).to eq 0
+        expect(candidate["is_active"]).to eq 1
+        expect(candidate["custodian_end_time_stamp"]).to eq "1970-01-01T00:00:00"
+
+        candidate = json["rows"][7]
+
+        expect(candidate["candidate_name"]).to eq 'votedcust3'
+        expect(candidate["requestedpay"]).to eq '13.0000 EOS'
+        expect(candidate["total_votes"]).to eq 0
+        expect(candidate["is_active"]).to eq 1
+        expect(candidate["custodian_end_time_stamp"]).to eq "1970-01-01T00:00:00"
+
+        candidate = json["rows"][8]
+
+        expect(candidate["candidate_name"]).to eq 'votedcust4'
+        expect(candidate["requestedpay"]).to eq '14.0000 EOS'
+        expect(candidate["total_votes"]).to eq 0
+        expect(candidate["is_active"]).to eq 1
+        expect(candidate["custodian_end_time_stamp"]).to eq "1970-01-01T00:00:00"
+      end
+    end
+
     context "with invalid auth" do
       command %(cleos push action daccustodian votecust '{ "voter": "voter1", "newvotes": ["votedcust1","votedcust2","votedcust3","votedcust4","votedcust5"]}' -p testreguser3), allow_error: true
       its(:stderr) {is_expected.to include('Error 3090004')}
@@ -438,7 +479,7 @@ describe "eosdacelect" do
 
     context "Voted for an candidate not in the list of candidates" do
       command %(cleos push action daccustodian votecust '{ "voter": "voter1", "newvotes": ["votedcust1","testreguser5","votedcust2","votedcust5", "votedcust11"]}' -p voter1), allow_error: true
-      its(:stderr) {is_expected.to include('candidate could not be found')}
+      its(:stderr) {is_expected.to include('ERR::VOTECUST_CANDIDATE_NOT_FOUND::')}
     end
 
     context "with valid auth create new vote" do
@@ -1359,7 +1400,7 @@ describe "eosdacelect" do
     end
 
     context "After claiming for the correct should be added to the claimer" do
-      before(:each) { sleep 11 }
+      before(:each) { sleep 22 }
       command %(cleos get currency balance eosio.token allocate11 EOS), allow_error: true
       its(:stdout) {is_expected.to include('17.0000 EOS')} # eventually this would pass but now it's time delayed I cannot assert.
     end
@@ -1520,7 +1561,7 @@ describe "eosdacelect" do
     end
 
     context "After successful unstaking the token should have been transferred back" do
-      before(:each) { sleep 11 }
+      before(:each) { sleep 22 }
       command %(cleos get currency balance eosdactokens unreguser2 EOSDAC), allow_error: true
       its(:stdout) {is_expected.to include('100.0000 EOSDAC')}
     end
