@@ -1,0 +1,65 @@
+{
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Wed Oct 24 00:40:37 2018",
+    "version": "eosio::abi/1.0",
+    "structs": [
+        {
+            "name": "proposal",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposalid",
+                    "type": "int64"
+                },
+                {
+                    "name": "transactionid",
+                    "type": "string"
+                },
+                {
+                    "name": "proposer",
+                    "type": "name"
+                },
+                {
+                    "name": "proposalname",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "stproposal",
+            "base": "",
+            "fields": [
+                {
+                    "name": "transactionid",
+                    "type": "string"
+                },
+                {
+                    "name": "proposer",
+                    "type": "name"
+                },
+                {
+                    "name": "proposalname",
+                    "type": "name"
+                }
+            ]
+        }
+    ],
+    "types": [],
+    "actions": [
+        {
+            "name": "stproposal",
+            "type": "stproposal",
+            "ricardian_contract": ""
+        }
+    ],
+    "tables": [
+        {
+            "name": "proposals",
+            "type": "proposal",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        }
+    ],
+    "ricardian_clauses": [],
+    "abi_extensions": []
+}
