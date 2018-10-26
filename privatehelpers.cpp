@@ -1,7 +1,7 @@
 
-contr_config2 daccustodian::configs() {
-    contr_config2 conf = config_singleton2.get_or_default(contr_config2());
-    config_singleton2.set(conf, _self);
+contr_config daccustodian::configs() {
+    contr_config conf = config_singleton.get_or_default(contr_config());
+    config_singleton.set(conf, _self);
     return conf;
 }
 

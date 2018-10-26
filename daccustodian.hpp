@@ -254,7 +254,6 @@ class daccustodian : public contract {
 
 private: // Variables used throughout the other actions.
     configscontainer config_singleton;
-    configscontainer2 config_singleton2;
     statecontainer contract_state;
     candidates_table registered_candidates;
     votes_table votes_cast_by_members;
@@ -269,7 +268,6 @@ public:
                                       votes_cast_by_members(_self, _self),
                                       pending_pay(_self, _self),
                                       config_singleton(_self, _self),
-                                      config_singleton2(_self, _self),
                                       contract_state(_self, _self) {
 
         _currentState = contract_state.get_or_default(contr_state());
@@ -491,7 +489,7 @@ Nothing from this action is stored on the blockchain. It is only intended to ens
 
 private: // Private helper methods used by other actions.
 
-    contr_config2 configs();
+    contr_config configs();
 
     void assertValidMember(name member);
     
