@@ -34,6 +34,12 @@ struct [[eosio::table("config")]] contr_config {
     // The contract that holds the fund for the DAC. This is used as the source for custodian pay.
     account_name tokenholder = string_to_name("eosdacthedac");
 
+    // The contract that will act as the service provider account for the dac. This is used as the source for custodian pay.
+    account_name serviceprovider;
+
+    // The contract will direct all payments via the service provider.
+    bool should_pay_via_service_provider;
+
     // Amount of token value in votes required to trigger the initial set of custodians
     uint32_t initial_vote_quorum_percent;
 
@@ -57,6 +63,8 @@ struct [[eosio::table("config")]] contr_config {
                              (periodlength)
                              (authaccount)
                              (tokenholder)
+                             (serviceprovider)
+                             (should_pay_via_service_provider)
                              (initial_vote_quorum_percent)
                              (vote_quorum_percent)
                              (auth_threshold_high)
