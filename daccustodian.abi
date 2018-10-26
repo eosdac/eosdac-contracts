@@ -155,7 +155,56 @@
 			"name": "requested_pay_max",
 			"type": "asset"
 		}]
-	}, {
+	},{
+			"name": "config2",
+			"base": "",
+			"fields": [{
+				"name": "lockupasset",
+				"type": "asset"
+			}, {
+				"name": "maxvotes",
+				"type": "uint8"
+			}, {
+				"name": "numelected",
+				"type": "uint8"
+			}, {
+				"name": "periodlength",
+				"type": "uint32"
+			}, {
+				"name": "authaccount",
+				"type": "name"
+			},{
+				"name": "tokenholder",
+				"type": "name"
+			},{
+				"name": "serviceprovider",
+				"type": "name"
+			},{
+				"name": "should_pay_via_service_provider",
+				"type": "bool"
+			}, {
+				"name": "initial_vote_quorum_percent",
+				"type": "uint32"
+			}, {
+				"name": "vote_quorum_percent",
+				"type": "uint32"
+			}, {
+				"name": "auth_threshold_high",
+				"type": "uint8"
+			}, {
+				"name": "auth_threshold_mid",
+				"type": "uint8"
+			}, {
+				"name": "auth_threshold_low",
+				"type": "uint8"
+			}, {
+				"name": "lockup_release_time_delay",
+				"type": "uint32"
+			}, {
+				"name": "requested_pay_max",
+				"type": "asset"
+			}]
+		}, {
 		"name": "nominatecand",
 		"base": "",
 		"fields": [{
@@ -438,6 +487,17 @@
 				"name"
 			],
 			"type": "updateconfig"
+		},
+		{
+			"name": "config2",
+			"index_type": "i64",
+			"key_names": [
+				"config"
+			],
+			"key_types": [
+				"name"
+			],
+			"type": "config2"
 		},
 		{
 			"name": "state",

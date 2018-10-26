@@ -69,6 +69,65 @@ struct [[eosio::table("config")]] contr_config {
 
 typedef singleton<N(config), contr_config> configscontainer;
 
+struct [[eosio::table("config2")]] contr_config2 {
+//    The amount of assets that are locked up by each candidate applying for election.
+    asset lockupasset;
+//    The maximum number of votes that each member can make for a candidate.
+    uint8_t maxvotes = 5;
+//    Number of custodians to be elected for each election count.
+    uint8_t numelected = 3;
+//    Length of a period in seconds.
+//     - used for pay calculations if an eary election is called and to trigger deferred `newperiod` calls.
+    uint32_t periodlength = 7 * 24 * 60 * 60;
+    // account to have active auth set with all all custodians on the newperiod.
+    account_name authaccount = string_to_name("dacauthority");
+
+    // The contract that holds the fund for the DAC. This is used as the source for custodian pay.
+    account_name tokenholder = string_to_name("eosdacthedac");
+
+    // The contract that will act as the service provider account for the dac. This is used as the source for custodian pay.
+    account_name serviceprovider;
+
+    // The contract will direct all payments via the service provider.
+    bool should_pay_via_service_provider;
+
+    // Amount of token value in votes required to trigger the initial set of custodians
+    uint32_t initial_vote_quorum_percent;
+
+    // Amount of token value in votes required to trigger the allow a new set of custodians to be set after the initial threshold has been achieved.
+    uint32_t vote_quorum_percent;
+
+    // required number of custodians required to approve different levels of authenticated actions.
+    uint8_t auth_threshold_high;
+    uint8_t auth_threshold_mid;
+    uint8_t auth_threshold_low;
+
+    // The time before locked up stake can be released back to the candidate using the unstake action
+    uint32_t lockup_release_time_delay;
+
+    asset requested_pay_max;
+
+    EOSLIB_SERIALIZE(contr_config2,
+    (lockupasset)
+            (maxvotes)
+            (numelected)
+            (periodlength)
+            (authaccount)
+            (tokenholder)
+            (serviceprovider)
+            (should_pay_via_service_provider)
+            (initial_vote_quorum_percent)
+            (vote_quorum_percent)
+            (auth_threshold_high)
+            (auth_threshold_mid)
+            (auth_threshold_low)
+            (lockup_release_time_delay)
+            (requested_pay_max)
+    )
+};
+
+typedef singleton<N(config2), contr_config2> configscontainer2;
+
 struct [[eosio::table("state")]] contr_state {
     uint32_t lastperiodtime = 0;
     int64_t total_weight_of_votes = 0;
@@ -76,12 +135,11 @@ struct [[eosio::table("state")]] contr_state {
     uint32_t number_active_candidates = 0;
     bool met_initial_votes_threshold = false;
 
-    EOSLIB_SERIALIZE(contr_state,
-                     (lastperiodtime)
-                             (total_weight_of_votes)
-                             (total_votes_on_candidates)
-                             (number_active_candidates)
-                             (met_initial_votes_threshold)
+    EOSLIB_SERIALIZE(contr_state, (lastperiodtime)
+            (total_weight_of_votes)
+            (total_votes_on_candidates)
+            (number_active_candidates)
+            (met_initial_votes_threshold)
     )
 };
 
@@ -188,11 +246,11 @@ class daccustodian : public contract {
 
 private: // Variables used throughout the other actions.
     configscontainer config_singleton;
+    configscontainer2 config_singleton2;
     statecontainer contract_state;
     candidates_table registered_candidates;
     votes_table votes_cast_by_members;
     pending_pay_table pending_pay;
-
 
     contr_state _currentState;
 
@@ -203,33 +261,18 @@ public:
                                       votes_cast_by_members(_self, _self),
                                       pending_pay(_self, _self),
                                       config_singleton(_self, _self),
+                                      config_singleton2(_self, _self),
                                       contract_state(_self, _self) {
 
         _currentState = contract_state.get_or_default(contr_state());
     }
 
     ~daccustodian() {
-#ifndef MIGRATE
-        contract_state.set(_currentState, _self); // This should always run unless we are doing a migration.
-#endif
+        contract_state.set(_currentState, _self); // This should not run during a contract_state migration since it will prevent changing the schema with data saved between runs.
     }
 
     [[eosio::action]]
-    void updateconfig(
-            asset lockupasset,
-            uint8_t maxvotes,
-            uint8_t numelected,
-            uint32_t periodlength,
-            name authaccount,
-            name tokenholder,
-            uint32_t initial_vote_quorum_percent,
-            uint32_t vote_quorum_percent,
-            uint8_t auth_threshold_high,
-            uint8_t auth_threshold_mid,
-            uint8_t auth_threshold_low,
-            uint32_t lockup_release_time_delay,
-            asset requested_pay_max
-    );
+    void updateconfig(contr_config newconfig);
 
     /** Action to listen to from the associated token contract to ensure registering should be allowed.
  *
@@ -319,7 +362,7 @@ public:
  * ### Assertions:
  * - The action is authorised by the mid level of the auth account (currently elected custodian board).
  * - The `cust` account is currently an elected custodian.
- * @param cand - The account id for the candidate nominating.
+ * @param cust - The account id for the candidate nominating.
  *
  *
  * ### Post Condition:
@@ -463,6 +506,7 @@ private: // Private helper methods used by other actions.
     void allocateCustodians(bool early_election);
 
 
+#define MIGRATE
 
 #ifdef MIGRATE
 public: // Exposed publicy for development only.
