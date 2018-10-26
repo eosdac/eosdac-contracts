@@ -143,8 +143,9 @@ def install_contracts
      exit 1
    fi
    # cd ..
-   cleos set code #{ACCOUNT_NAME} #{ACCOUNT_NAME}.wast -p #{ACCOUNT_NAME}
-   cleos set abi #{ACCOUNT_NAME} #{ACCOUNT_NAME}.abi -p #{ACCOUNT_NAME}
+   cleos set contract #{ACCOUNT_NAME} output/mainnet_votingenabled/#{CONTRACT_NAME}
+   # cleos set code #{ACCOUNT_NAME} #{ACCOUNT_NAME}.wast -p #{ACCOUNT_NAME}
+   # cleos set abi #{ACCOUNT_NAME} #{ACCOUNT_NAME}.abi -p #{ACCOUNT_NAME}
    
    echo ""
    echo ""

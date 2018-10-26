@@ -133,6 +133,12 @@
 		},{
 			"name": "tokenholder",
 			"type": "name"
+		},{
+			"name": "serviceprovider",
+			"type": "name"
+		},{
+			"name": "should_pay_via_service_provider",
+			"type": "bool"
 		}, {
 			"name": "initial_vote_quorum_percent",
 			"type": "uint32"
