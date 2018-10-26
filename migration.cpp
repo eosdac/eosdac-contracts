@@ -35,8 +35,8 @@ void daccustodian::migrate() {
 
 
 // Remove the old configs so the schema can be changed.
-    configscontainer2 configs(_self, _self);
-    configs.remove();
+//    configscontainer2 configs(_self, _self);
+//    configs.remove();
 
 //    contract_state.remove();
 //    _currentState = contr_state{};
