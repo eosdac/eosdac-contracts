@@ -169,7 +169,7 @@ void daccustodian::newperiod(string message) {
 
     assertPeriodTime();
 
-    contr_config config = configs();
+    contr_config2 config = configs();
 
     // Get the max supply of the lockup asset token (eg. EOSDAC)
     auto tokenStats = stats(eosio::string_to_name(TOKEN_CONTRACT), config.lockupasset.symbol.name()).begin();

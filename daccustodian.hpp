@@ -483,7 +483,7 @@ Nothing from this action is stored on the blockchain. It is only intended to ens
 
 private: // Private helper methods used by other actions.
 
-    contr_config configs();
+    contr_config2 configs();
 
     void assertValidMember(name member);
     

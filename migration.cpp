@@ -12,29 +12,31 @@ void cleanTable(uint64_t code, uint64_t account){
 
 void daccustodian::migrate() {
 
-    contr_config oldconf = configs();
+//    contr_config oldconf = configs();
 
-    contr_config2 newconfig{
-            oldconf.lockupasset,
-            oldconf.maxvotes,
-            oldconf.numelected,
-            oldconf.periodlength,
-            oldconf.authaccount,
-            oldconf.tokenholder,
-            oldconf.tokenholder,
-            true,
-            oldconf.initial_vote_quorum_percent,
-            oldconf.vote_quorum_percent,
-            oldconf.auth_threshold_high,
-            oldconf.auth_threshold_mid,
-            oldconf.auth_threshold_low,
-            oldconf.lockup_release_time_delay,
-            oldconf.requested_pay_max};
+//    contr_config2 newconfig{
+//            oldconf.lockupasset,
+//            oldconf.maxvotes,
+//            oldconf.numelected,
+//            oldconf.periodlength,
+//            oldconf.authaccount,
+//            oldconf.tokenholder,
+//            oldconf.tokenholder,
+//            true,
+//            oldconf.initial_vote_quorum_percent,
+//            oldconf.vote_quorum_percent,
+//            oldconf.auth_threshold_high,
+//            oldconf.auth_threshold_mid,
+//            oldconf.auth_threshold_low,
+//            oldconf.lockup_release_time_delay,
+//            oldconf.requested_pay_max};
+//
+//    config_singleton2.set(newconfig, _self);
 
-    config_singleton2.set(newconfig, _self);
 
-
-//    configs.remove();
+// Remove the old configs so the schema can be changed.
+    configscontainer configs(_self, _self);
+    configs.remove();
 
 //    contract_state.remove();
 //    _currentState = contr_state{};
