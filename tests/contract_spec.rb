@@ -21,8 +21,8 @@ CONTRACT_OWNER_PUBLIC_KEY = 'EOS54b6gLjogLNRS4Ay3JRxAke5r35FC6ZmJTTgVVeCrtbsYaNs
 CONTRACT_ACTIVE_PRIVATE_KEY = '5KYuGgAQUagSKsM66BpGsBhp9vFNnPEWuNjP5v4XHubUBY8j4KW'
 CONTRACT_ACTIVE_PUBLIC_KEY = 'EOS54b6gLjogLNRS4Ay3JRxAke5r35FC6ZmJTTgVVeCrtbsYaNs9k'
 
-CONTRACT_NAME = 'eosdacmsigs'
-ACCOUNT_NAME = 'eosdacmsigs'
+CONTRACT_NAME = 'dacmultisigs'
+ACCOUNT_NAME = 'dacmultisigs'
 
 CONTRACTS_DIR = 'tests/dependencies'
 
@@ -91,8 +91,8 @@ def install_contracts
   beforescript = <<~SHELL
     set -x
 
-    # eosio-abigen eosdacmsigs.cpp -output eosdacmsigs.abi
-    eosio-cpp -o eosdacmsigs.wast eosdacmsigs.cpp
+    # eosio-abigen dacmultisigs.cpp -output dacmultisigs.abi
+    eosio-cpp -o dacmultisigs.wast dacmultisigs.cpp
 
     cleos system newaccount --stake-cpu \"10.0000 EOS\" --stake-net \"10.0000 EOS\" --transfer --buy-ram-kbytes 1024 eosio #{ACCOUNT_NAME} #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
 
@@ -117,7 +117,7 @@ def configure_contracts_for_tests
   seed_account("invaliduser1")
 end
 
-describe "eosdacmsigs" do
+describe "dacmultisigs" do
   before(:all) do
     reset_chain
     configure_wallet
@@ -132,15 +132,15 @@ describe "eosdacmsigs" do
 
   describe "stproposal" do
     context "without valid auth" do
-      command %(cleos push action eosdacmsigs stproposal '{ "transactionid": "579159b224ebd9c0a3d36b1c53ae97a2df96025a054b29b62f1534ecfed080bf", "proposer": "validuser1", "proposalname": "myproposal"}' -p invaliduser1
+      command %(cleos push action dacmultisigs stproposal '{ "transactionid": "579159b224ebd9c0a3d36b1c53ae97a2df96025a054b29b62f1534ecfed080bf", "proposer": "validuser1", "proposalname": "myproposal"}' -p invaliduser1
 ), allow_error: true
       its(:stderr) {is_expected.to include('Error 3090004')}
     end
 
     context "with valid auth" do
-      command %(cleos push action eosdacmsigs stproposal '{ "transactionid": "579159b224ebd9c0a3d36b1c53ae97a2df96025a054b29b62f1534ecfed080bf", "proposer": "validuser1", "proposalname": "myproposal"}' -p validuser1
+      command %(cleos push action dacmultisigs stproposal '{ "transactionid": "579159b224ebd9c0a3d36b1c53ae97a2df96025a054b29b62f1534ecfed080bf", "proposer": "validuser1", "proposalname": "myproposal"}' -p validuser1
 ), allow_error: true
-      its(:stdout) {is_expected.to include('eosdacmsigs::stproposal')}
+      its(:stdout) {is_expected.to include('dacmultisigs::stproposal')}
     end
   end
 end

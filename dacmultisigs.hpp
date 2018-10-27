@@ -24,18 +24,17 @@ typedef multi_index<N(proposals), proposal
 >
 proposals_table;
 
-class eosdacmsigs : public contract {
+class dacmultisigs : public contract {
 
 private:
 
 public:
 
-    eosdacmsigs(account_name self) : contract(self) {}
+    dacmultisigs(account_name self) : contract(self) {}
 
     [[eosio::action]]
     void stproposal(string transactionid, name proposer, name proposalname);
 
-//    void voteprop(name custodian, uint32_t proposal, uint8_t vote);
-//    void claim(name worker, uint64_t proposalid);
-//    void cancel(name worker, uint64_t proposalid);
+    [[eosio::action]]
+    void delproposal(uint64_t proposalid);
 };
