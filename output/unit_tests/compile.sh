@@ -1,0 +1,1 @@
+eosio-cpp -DTOKEN_CONTRACT='"eosdactokens"' -DTRANSFER_DELAY=10 -o output/unit_tests/daccustodian/daccustodian.wast daccustodian.cpp
