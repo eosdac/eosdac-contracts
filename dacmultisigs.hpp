@@ -6,23 +6,17 @@ using namespace eosio;
 using namespace std;
 
 // @abi table proposals
-struct [[eosio::table]] proposal {
-    uint64_t proposalid;
-    std::string transactionid;
-    eosio::name proposer;
-    name proposalname;
+struct storedproposal {
+    account_name proposalname;
+    checksum256 transactionid;
 
-    uint64_t primary_key() const { return proposalid; }
-    eosio::name by_proposer() const { return proposer; }
+    uint64_t primary_key() const { return proposalname; }
 
-    EOSLIB_SERIALIZE(proposal, (proposalid)(transactionid)(proposer)(proposalname)
+    EOSLIB_SERIALIZE(storedproposal, (proposalname)(transactionid)
     )
 };
 
-typedef multi_index<N(proposals), proposal
-//        indexed_by < N(byproposer), const_mem_fun < proposal, eosio::name, &proposal::by_proposer> >
->
-proposals_table;
+typedef multi_index<N(proposals), storedproposal> proposals_table;
 
 class dacmultisigs : public contract {
 
@@ -32,9 +26,15 @@ public:
 
     dacmultisigs(account_name self) : contract(self) {}
 
-    [[eosio::action]]
-    void stproposal(string transactionid, name proposer, name proposalname);
+    void stproposal(account_name proposer, name proposalname, checksum256 transactionid, string metadata);
 
-    [[eosio::action]]
-    void delproposal(uint64_t proposalid);
+    void stinproposal();
+
+    void approve( account_name proposer, name proposal_name, permission_level level );
+
+    void unapprove( account_name proposer, name proposal_name, permission_level level );
+
+    void cancel( account_name proposer, name proposal_name, account_name canceler );
+
+    void exec( account_name proposer, name proposal_name, account_name executer );
 };

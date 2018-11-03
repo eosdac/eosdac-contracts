@@ -1,0 +1,1 @@
+eosio-cpp -o `dirname ${BASH_SOURCE[0]}`/dacmultisigs/dacmultisigs.wast dacmultisigs.cpp
