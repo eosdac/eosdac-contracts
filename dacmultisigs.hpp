@@ -1,40 +1,54 @@
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/multi_index.hpp>
 #include <eosiolib/eosio.hpp>
+#include <eosiolib/transaction.hpp>
 
 using namespace eosio;
 using namespace std;
 
 // @abi table proposals
-struct storedproposal {
-    account_name proposalname;
-    checksum256 transactionid;
+struct [[eosio::table]] storedproposal {
+    name proposalname;
+    capi_checksum256 transactionid;
 
-    uint64_t primary_key() const { return proposalname; }
+    uint64_t primary_key() const { return proposalname.value; }
 
-    EOSLIB_SERIALIZE(storedproposal, (proposalname)(transactionid)
+    EOSLIB_SERIALIZE(
+        storedproposal,
+            (proposalname)
+            (transactionid)
     )
 };
 
-typedef multi_index<N(proposals), storedproposal> proposals_table;
+typedef multi_index<"proposals"_n, storedproposal> proposals_table;
 
-class dacmultisigs : public contract {
+class [[eosio::contract("dacmultisigs")]] dacmultisigs : public contract {
 
-private:
+    private:
 
-public:
+    public:
 
-    dacmultisigs(account_name self) : contract(self) {}
+        using contract::contract;
 
-    void stproposal(account_name proposer, name proposalname, string metadata);
+        [[eosio::action]]
+        void stproposal(name proposer, name proposalname, string metadata);
 
-    void stinproposal();
+        [[eosio::action]]
+        void stinproposal(name proposer,
+                          name proposal_name,
+                          std::vector<permission_level> requested,
+                          eosio::transaction trx,
+                          string metadata);
 
-    void approve( account_name proposer, name proposal_name, permission_level level );
+        [[eosio::action]]
+        void approve( name proposer, name proposal_name, permission_level level );
 
-    void unapprove( account_name proposer, name proposal_name, permission_level level );
+        [[eosio::action]]
+        void unapprove( name proposer, name proposal_name, permission_level level );
 
-    void cancel( account_name proposer, name proposal_name, account_name canceler );
+        [[eosio::action]]
+        void cancel( name proposer, name proposal_name, name canceler );
 
-    void exec( account_name proposer, name proposal_name, account_name executer );
+        [[eosio::action]]
+        void exec( name proposer, name proposal_name, name executer );
 };
