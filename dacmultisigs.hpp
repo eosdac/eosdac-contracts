@@ -26,7 +26,7 @@ public:
 
     dacmultisigs(account_name self) : contract(self) {}
 
-    void stproposal(account_name proposer, name proposalname, checksum256 transactionid, string metadata);
+    void stproposal(account_name proposer, name proposalname, string metadata);
 
     void stinproposal();
 

@@ -7,14 +7,22 @@
 #include <eosiolib/permission.hpp>
 #include <eosiolib/crypto.h>
 
-void dacmultisigs::stproposal(account_name proposer, name proposalname, checksum256 transactionid, string metadata) {
+void dacmultisigs::stproposal(account_name proposer, name proposalname, string metadata) {
     require_auth( name{N(dacauthority)} );
+
+    auto size = transaction_size();
+    char* buffer = (char*)( 512 < size ? malloc(size) : alloca(size) );
+    uint32_t read = read_transaction( buffer, size );
+    eosio_assert( size == read, "read_transaction failed");
+
+    checksum256 trx_id;
+    sha256(buffer, read, &trx_id);
 
     proposals_table proposals(_self, proposer);
 
     proposals.emplace(_self, [&](storedproposal &p) {
         p.proposalname = proposalname;
-        p.transactionid = transactionid;
+        p.transactionid = trx_id;
     });
 }
 

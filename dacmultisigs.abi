@@ -217,10 +217,6 @@
             "type": "name"
           },
           {
-            "name": "transactionid",
-            "type": "checksum256"
-          },
-          {
             "name": "metadata",
             "type": "string"
           }
