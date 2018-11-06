@@ -1,5 +1,5 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Tue Nov  6 17:40:15 2018",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Tue Nov  6 20:26:17 2018",
     "version": "eosio::abi/1.0",
     "structs": [
         {
@@ -56,6 +56,20 @@
                 },
                 {
                     "name": "canceler",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "clean",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposer",
+                    "type": "name"
+                },
+                {
+                    "name": "proposal_name",
                     "type": "name"
                 }
             ]
@@ -227,6 +241,11 @@
         {
             "name": "cancel",
             "type": "cancel",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "clean",
+            "type": "clean",
             "ricardian_contract": ""
         },
         {

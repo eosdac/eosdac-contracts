@@ -7,8 +7,9 @@
 #include <eosiolib/permission.hpp>
 #include <eosiolib/transaction.hpp>
 #include <eosiolib/crypto.h>
+#include <eosiolib/system.h>
 
-void dacmultisigs::stproposal(name proposer, name proposalname, string metadata) {
+void dacmultisigs::stproposal( name proposer, name proposalname, string metadata ) {
     require_auth( "dacauthority"_n );
 
     auto size = transaction_size();
@@ -21,17 +22,18 @@ void dacmultisigs::stproposal(name proposer, name proposalname, string metadata)
 
     proposals_table proposals(_self, proposer.value);
 
-    proposals.emplace(_self, [&](storedproposal &p) {
+    proposals.emplace(proposer, [&](storedproposal &p) {
         p.proposalname = proposalname;
         p.transactionid = trx_id;
+        p.modifieddate = now();
     });
 }
 
-void dacmultisigs::stinproposal(name proposer,
-                                name proposal_name,
-                                std::vector<permission_level> requested,
-                                transaction trx,
-                                string metadata) {
+void dacmultisigs::stinproposal( name proposer,
+                                 name proposal_name,
+                                 std::vector<permission_level> requested,
+                                 transaction trx,
+                                 string metadata ) {
 
     require_auth("dacauthority"_n);
     require_auth(proposer);
@@ -56,22 +58,28 @@ void dacmultisigs::stinproposal(name proposer,
     proposals.emplace(proposer, [&](storedproposal &p) {
         p.proposalname = proposal_name;
         p.transactionid = trx_id;
+        p.modifieddate = now();
     });
 
 }
 
 void dacmultisigs::approve( name proposer, name proposal_name, permission_level level ){
-    require_auth(level.actor.value);
+    require_auth(level.actor);
     action(
             level,
             "eosio.msig"_n,
             "approve"_n,
             std::make_tuple(proposer, proposal_name, level)
     ).send();
+
+    proposals_table proposals(_self, proposer.value);
+    proposals.emplace(level.actor, [&](storedproposal &p) {
+        p.modifieddate = now();
+    });
 }
 
 void dacmultisigs::unapprove( name proposer, name proposal_name, permission_level level ){
-    require_auth(level.actor.value);
+    require_auth(level.actor);
     // forward to multisig contract
     action(
             level,
@@ -79,10 +87,15 @@ void dacmultisigs::unapprove( name proposer, name proposal_name, permission_leve
             "unapprove"_n,
             std::make_tuple(proposer, proposal_name, level)
     ).send();
+
+    proposals_table proposals(_self, proposer.value);
+    proposals.emplace(level.actor, [&](storedproposal &p) {
+        p.modifieddate = now();
+    });
 }
 
 void dacmultisigs::cancel( name proposer, name proposal_name, name canceler ){
-    require_auth(canceler.value);
+    require_auth(canceler);
     // forward to multisig contract
     action(
             permission_level{ canceler, "active"_n },
@@ -91,14 +104,16 @@ void dacmultisigs::cancel( name proposer, name proposal_name, name canceler ){
             std::make_tuple(proposer, proposal_name, canceler)
     ).send();
 
-    //Clean up after canceling the proposal in the multisig contract
+    // Change the status so that it can be filtered
     proposals_table proposals(_self, proposer.value);
-    auto& proposal_to_erase = proposals.get(proposal_name.value, "Proposal not found");
-    proposals.erase(proposal_to_erase);
+    auto& proposal = proposals.get(proposal_name.value, "Proposal not found");
+    proposals.modify(proposal, canceler, [&](storedproposal &p) {
+        p.modifieddate = now();
+    });
 }
 
 void dacmultisigs::exec( name proposer, name proposal_name, name executer ) {
-    require_auth(executer.value);
+    require_auth(executer);
 
     // forward to multisig contract
     action(
@@ -108,10 +123,21 @@ void dacmultisigs::exec( name proposer, name proposal_name, name executer ) {
             std::make_tuple(proposer, proposal_name, executer)
     ).send();
 
-    //Clean up after executing the proposal in the multisig contract
     proposals_table proposals(_self, proposer.value);
     auto& proposal_to_erase = proposals.get(proposal_name.value, "Proposal not found");
     proposals.erase(proposal_to_erase);
+}
+
+void dacmultisigs::clean( name proposer, name proposal_name ) {
+    uint32_t dtnow = now();
+    uint32_t two_weeks = 60 * 60 * 24 * 14;
+
+    proposals_table proposals(_self, proposer.value);
+    auto& proposal = proposals.get(proposal_name.value, "Proposal not found");
+
+    eosio_assert(dtnow > (proposal.modifieddate + two_weeks), "Not ready to clean up");
+
+    proposals.erase(proposal);
 }
 
 EOSIO_DISPATCH( dacmultisigs,
@@ -121,4 +147,5 @@ EOSIO_DISPATCH( dacmultisigs,
         (approve)
         (unapprove)
         (exec)
+        (clean)
 )

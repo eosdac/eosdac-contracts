@@ -10,6 +10,7 @@ using namespace std;
 struct [[eosio::table]] storedproposal {
     name proposalname;
     capi_checksum256 transactionid;
+    uint32_t modifieddate;
 
     uint64_t primary_key() const { return proposalname.value; }
 
@@ -17,6 +18,7 @@ struct [[eosio::table]] storedproposal {
         storedproposal,
             (proposalname)
             (transactionid)
+            (modifieddate)
     )
 };
 
@@ -51,4 +53,7 @@ class [[eosio::contract("dacmultisigs")]] dacmultisigs : public contract {
 
         [[eosio::action]]
         void exec( name proposer, name proposal_name, name executer );
+
+        [[eosio::action]]
+        void clean( name proposer, name proposal_name );
 };
