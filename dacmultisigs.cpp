@@ -15,7 +15,7 @@ void dacmultisigs::stproposal( name proposer, name proposalname, string metadata
     auto size = transaction_size();
     char* buffer = (char*)( 512 < size ? malloc(size) : alloca(size) );
     uint32_t read = read_transaction( buffer, size );
-    eosio_assert( size == read, "read_transaction failed");
+    eosio_assert( size == read, "ERR::READ_TRANSACTION_FAILED::read_transaction failed");
 
     capi_checksum256 trx_id;
     sha256(buffer, read, &trx_id);
@@ -41,7 +41,7 @@ void dacmultisigs::stinproposal( name proposer,
     auto size = transaction_size();
     char* buffer = (char*)( 512 < size ? malloc(size) : alloca(size) );
     uint32_t read = read_transaction( buffer, size );
-    eosio_assert( size == read, "read_transaction failed");
+    eosio_assert( size == read, "ERR::READ_TRANSACTION_FAILED::read_transaction failed");
 
     capi_checksum256 trx_id;
     sha256(buffer, read, &trx_id);
@@ -106,7 +106,7 @@ void dacmultisigs::cancel( name proposer, name proposal_name, name canceler ){
 
     // Change the status so that it can be filtered
     proposals_table proposals(_self, proposer.value);
-    auto& proposal = proposals.get(proposal_name.value, "Proposal not found");
+    auto& proposal = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
     proposals.modify(proposal, canceler, [&](storedproposal &p) {
         p.modifieddate = now();
     });
@@ -124,7 +124,7 @@ void dacmultisigs::exec( name proposer, name proposal_name, name executer ) {
     ).send();
 
     proposals_table proposals(_self, proposer.value);
-    auto& proposal_to_erase = proposals.get(proposal_name.value, "Proposal not found");
+    auto& proposal_to_erase = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
     proposals.erase(proposal_to_erase);
 }
 
@@ -133,9 +133,9 @@ void dacmultisigs::clean( name proposer, name proposal_name ) {
     uint32_t two_weeks = 60 * 60 * 24 * 14;
 
     proposals_table proposals(_self, proposer.value);
-    auto& proposal = proposals.get(proposal_name.value, "Proposal not found");
+    auto& proposal = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
 
-    eosio_assert(dtnow > (proposal.modifieddate + two_weeks), "Not ready to clean up");
+    eosio_assert(dtnow > (proposal.modifieddate + two_weeks), "ERR::PROPOSAL_STILL_ACTIVE::This proposal is still active");
 
     proposals.erase(proposal);
 }
