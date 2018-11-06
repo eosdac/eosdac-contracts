@@ -6,27 +6,26 @@
 using namespace eosio;
 using namespace std;
 
-// @abi table proposals
-struct [[eosio::table]] storedproposal {
-    name proposalname;
-    capi_checksum256 transactionid;
-    uint32_t modifieddate;
-
-    uint64_t primary_key() const { return proposalname.value; }
-
-    EOSLIB_SERIALIZE(
-        storedproposal,
-            (proposalname)
-            (transactionid)
-            (modifieddate)
-    )
-};
-
-typedef multi_index<"proposals"_n, storedproposal> proposals_table;
 
 class [[eosio::contract("dacmultisigs")]] dacmultisigs : public contract {
 
     private:
+
+        struct [[eosio::table]] storedproposal {
+            name proposalname;
+            capi_checksum256 transactionid;
+            uint32_t modifieddate;
+
+            uint64_t primary_key() const { return proposalname.value; }
+
+            EOSLIB_SERIALIZE(
+                storedproposal,
+                    (proposalname)
+                    (transactionid)
+                    (modifieddate)
+            )
+        };
+        typedef multi_index<"proposals"_n, storedproposal> proposals_table;
 
     public:
 

@@ -1,5 +1,5 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Tue Nov  6 20:26:17 2018",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Tue Nov  6 22:19:39 2018",
     "version": "eosio::abi/1.0",
     "structs": [
         {
@@ -147,6 +147,24 @@
             ]
         },
         {
+            "name": "storedproposal",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposalname",
+                    "type": "name"
+                },
+                {
+                    "name": "transactionid",
+                    "type": "checksum256"
+                },
+                {
+                    "name": "modifieddate",
+                    "type": "uint32"
+                }
+            ]
+        },
+        {
             "name": "stproposal",
             "base": "",
             "fields": [
@@ -269,7 +287,15 @@
             "ricardian_contract": ""
         }
     ],
-    "tables": [],
+    "tables": [
+        {
+            "name": "proposals",
+            "type": "storedproposal",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        }
+    ],
     "ricardian_clauses": [],
     "abi_extensions": []
 }
