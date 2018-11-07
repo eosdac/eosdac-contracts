@@ -32,7 +32,7 @@ class [[eosio::contract("dacmultisigs")]] dacmultisigs : public contract {
         using contract::contract;
 
         [[eosio::action]]
-        void proposed(name proposer, name proposalname, string metadata);
+        void proposed(name proposer, name proposal_name, string metadata);
 
         [[eosio::action]]
         void approved( name proposer, name proposal_name, permission_level level );

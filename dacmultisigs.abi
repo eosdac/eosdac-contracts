@@ -1,5 +1,5 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Wed Nov  7 00:40:07 2018",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Wed Nov  7 12:24:12 2018",
     "version": "eosio::abi/1.0",
     "structs": [
         {
@@ -85,6 +85,24 @@
             ]
         },
         {
+            "name": "proposed",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposer",
+                    "type": "name"
+                },
+                {
+                    "name": "proposal_name",
+                    "type": "name"
+                },
+                {
+                    "name": "metadata",
+                    "type": "string"
+                }
+            ]
+        },
+        {
             "name": "storedproposal",
             "base": "",
             "fields": [
@@ -99,24 +117,6 @@
                 {
                     "name": "modifieddate",
                     "type": "uint32"
-                }
-            ]
-        },
-        {
-            "name": "stproposal",
-            "base": "",
-            "fields": [
-                {
-                    "name": "proposer",
-                    "type": "name"
-                },
-                {
-                    "name": "proposalname",
-                    "type": "name"
-                },
-                {
-                    "name": "metadata",
-                    "type": "string"
                 }
             ]
         },
@@ -162,8 +162,8 @@
             "ricardian_contract": ""
         },
         {
-            "name": "stproposal",
-            "type": "stproposal",
+            "name": "proposed",
+            "type": "proposed",
             "ricardian_contract": ""
         },
         {

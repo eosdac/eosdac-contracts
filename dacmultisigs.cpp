@@ -1,16 +1,21 @@
 //
 // Created by Dallas Johnson on 23/10/2018.
 //
-
-#include "dacmultisigs.hpp"
 #include <eosiolib/action.hpp>
 #include <eosiolib/permission.hpp>
 #include <eosiolib/transaction.hpp>
 #include <eosiolib/crypto.h>
 #include <eosiolib/system.h>
 
-void dacmultisigs::proposed( name proposer, name proposalname, string metadata ) {
+#include "external_types.hpp"
+#include "dacmultisigs.hpp"
+
+void dacmultisigs::proposed( name proposer, name proposal_name, string metadata ) {
     require_auth( "dacauthority"_n );
+    require_auth( proposer );
+
+    msig_proposals_table msig_proposals("eosio.msig"_n, proposer.value);
+    auto i = msig_proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND_MSIG::Proposal not found in eosio.msig");
 
     auto size = transaction_size();
     char* buffer = (char*)( 512 < size ? malloc(size) : alloca(size) );
@@ -23,7 +28,7 @@ void dacmultisigs::proposed( name proposer, name proposalname, string metadata )
     proposals_table proposals(_self, proposer.value);
 
     proposals.emplace(proposer, [&](storedproposal &p) {
-        p.proposalname = proposalname;
+        p.proposalname = proposal_name;
         p.transactionid = trx_id;
         p.modifieddate = now();
     });
@@ -32,6 +37,9 @@ void dacmultisigs::proposed( name proposer, name proposalname, string metadata )
 void dacmultisigs::approved( name proposer, name proposal_name, permission_level level ){
     require_auth(level.actor);
     require_auth( "dacauthority"_n );
+
+    msig_proposals_table msig_proposals("eosio.msig"_n, proposer.value);
+    msig_proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND_MSIG::Proposal not found in eosio.msig");
 
     proposals_table proposals(_self, proposer.value);
     auto& proposal = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
@@ -44,6 +52,9 @@ void dacmultisigs::unapproved( name proposer, name proposal_name, permission_lev
     require_auth(level.actor);
     require_auth( "dacauthority"_n );
 
+    msig_proposals_table msig_proposals("eosio.msig"_n, proposer.value);
+    msig_proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND_MSIG::Proposal not found in eosio.msig");
+
     proposals_table proposals(_self, proposer.value);
     auto& proposal = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
     proposals.modify(proposal, level.actor, [&](storedproposal &p) {
@@ -54,6 +65,10 @@ void dacmultisigs::unapproved( name proposer, name proposal_name, permission_lev
 void dacmultisigs::cancelled( name proposer, name proposal_name, name canceler ){
     require_auth(canceler);
     require_auth( "dacauthority"_n );
+
+    msig_proposals_table msig_proposals("eosio.msig"_n, proposer.value);
+    auto prop = msig_proposals.find(proposal_name.value);
+    eosio_assert(prop == msig_proposals.end(), "ERR::PROPOSAL_EXISTS::The proposal still exists in eosio.msig");
 
     proposals_table proposals(_self, proposer.value);
     auto& proposal_to_erase = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
