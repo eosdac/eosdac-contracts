@@ -27,7 +27,7 @@ void dacmultisigs::proposed( name proposer, name proposal_name, string metadata 
 
     proposals_table proposals(_self, proposer.value);
 
-    proposals.emplace(proposer, [&](storedproposal &p) {
+    proposals.emplace(_self, [&](storedproposal &p) {
         p.proposalname = proposal_name;
         p.transactionid = trx_id;
         p.modifieddate = now();
@@ -43,7 +43,7 @@ void dacmultisigs::approved( name proposer, name proposal_name, name approver ){
 
     proposals_table proposals(_self, proposer.value);
     auto& proposal = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
-    proposals.modify(proposal, approver, [&](storedproposal &p) {
+    proposals.modify(proposal, _self, [&](storedproposal &p) {
         p.modifieddate = now();
     });
 }
@@ -57,7 +57,7 @@ void dacmultisigs::unapproved( name proposer, name proposal_name, name unapprove
 
     proposals_table proposals(_self, proposer.value);
     auto& proposal = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
-    proposals.modify(proposal, unapprover, [&](storedproposal &p) {
+    proposals.modify(proposal, _self, [&](storedproposal &p) {
         p.modifieddate = now();
     });
 }
