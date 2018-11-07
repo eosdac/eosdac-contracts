@@ -1,5 +1,5 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Wed Nov  7 12:24:12 2018",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Wed Nov  7 13:05:03 2018",
     "version": "eosio::abi/1.0",
     "structs": [
         {
@@ -15,8 +15,8 @@
                     "type": "name"
                 },
                 {
-                    "name": "level",
-                    "type": "permission_level"
+                    "name": "approver",
+                    "type": "name"
                 }
             ]
         },
@@ -71,20 +71,6 @@
             ]
         },
         {
-            "name": "permission_level",
-            "base": "",
-            "fields": [
-                {
-                    "name": "actor",
-                    "type": "name"
-                },
-                {
-                    "name": "permission",
-                    "type": "name"
-                }
-            ]
-        },
-        {
             "name": "proposed",
             "base": "",
             "fields": [
@@ -133,8 +119,8 @@
                     "type": "name"
                 },
                 {
-                    "name": "level",
-                    "type": "permission_level"
+                    "name": "unapprover",
+                    "type": "name"
                 }
             ]
         }

@@ -34,8 +34,8 @@ void dacmultisigs::proposed( name proposer, name proposal_name, string metadata 
     });
 }
 
-void dacmultisigs::approved( name proposer, name proposal_name, permission_level level ){
-    require_auth(level.actor);
+void dacmultisigs::approved( name proposer, name proposal_name, name approver ){
+    require_auth(approver);
     require_auth( "dacauthority"_n );
 
     msig_proposals_table msig_proposals("eosio.msig"_n, proposer.value);
@@ -43,13 +43,13 @@ void dacmultisigs::approved( name proposer, name proposal_name, permission_level
 
     proposals_table proposals(_self, proposer.value);
     auto& proposal = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
-    proposals.modify(proposal, level.actor, [&](storedproposal &p) {
+    proposals.modify(proposal, approver, [&](storedproposal &p) {
         p.modifieddate = now();
     });
 }
 
-void dacmultisigs::unapproved( name proposer, name proposal_name, permission_level level ){
-    require_auth(level.actor);
+void dacmultisigs::unapproved( name proposer, name proposal_name, name unapprover ){
+    require_auth(unapprover);
     require_auth( "dacauthority"_n );
 
     msig_proposals_table msig_proposals("eosio.msig"_n, proposer.value);
@@ -57,7 +57,7 @@ void dacmultisigs::unapproved( name proposer, name proposal_name, permission_lev
 
     proposals_table proposals(_self, proposer.value);
     auto& proposal = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
-    proposals.modify(proposal, level.actor, [&](storedproposal &p) {
+    proposals.modify(proposal, unapprover, [&](storedproposal &p) {
         p.modifieddate = now();
     });
 }
