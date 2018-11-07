@@ -1,31 +1,9 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Tue Nov  6 22:19:39 2018",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Wed Nov  7 00:40:07 2018",
     "version": "eosio::abi/1.0",
     "structs": [
         {
-            "name": "action",
-            "base": "",
-            "fields": [
-                {
-                    "name": "account",
-                    "type": "name"
-                },
-                {
-                    "name": "name",
-                    "type": "name"
-                },
-                {
-                    "name": "authorization",
-                    "type": "permission_level[]"
-                },
-                {
-                    "name": "data",
-                    "type": "bytes"
-                }
-            ]
-        },
-        {
-            "name": "approve",
+            "name": "approved",
             "base": "",
             "fields": [
                 {
@@ -43,7 +21,7 @@
             ]
         },
         {
-            "name": "cancel",
+            "name": "cancelled",
             "base": "",
             "fields": [
                 {
@@ -75,7 +53,7 @@
             ]
         },
         {
-            "name": "exec",
+            "name": "executed",
             "base": "",
             "fields": [
                 {
@@ -93,20 +71,6 @@
             ]
         },
         {
-            "name": "extension",
-            "base": "",
-            "fields": [
-                {
-                    "name": "type",
-                    "type": "uint16"
-                },
-                {
-                    "name": "data",
-                    "type": "bytes"
-                }
-            ]
-        },
-        {
             "name": "permission_level",
             "base": "",
             "fields": [
@@ -117,32 +81,6 @@
                 {
                     "name": "permission",
                     "type": "name"
-                }
-            ]
-        },
-        {
-            "name": "stinproposal",
-            "base": "",
-            "fields": [
-                {
-                    "name": "proposer",
-                    "type": "name"
-                },
-                {
-                    "name": "proposal_name",
-                    "type": "name"
-                },
-                {
-                    "name": "requested",
-                    "type": "permission_level[]"
-                },
-                {
-                    "name": "trx",
-                    "type": "transaction"
-                },
-                {
-                    "name": "metadata",
-                    "type": "string"
                 }
             ]
         },
@@ -183,55 +121,7 @@
             ]
         },
         {
-            "name": "transaction",
-            "base": "transaction_header",
-            "fields": [
-                {
-                    "name": "context_free_actions",
-                    "type": "action[]"
-                },
-                {
-                    "name": "actions",
-                    "type": "action[]"
-                },
-                {
-                    "name": "transaction_extensions",
-                    "type": "extension[]"
-                }
-            ]
-        },
-        {
-            "name": "transaction_header",
-            "base": "",
-            "fields": [
-                {
-                    "name": "expiration",
-                    "type": "time_point_sec"
-                },
-                {
-                    "name": "ref_block_num",
-                    "type": "uint16"
-                },
-                {
-                    "name": "ref_block_prefix",
-                    "type": "uint32"
-                },
-                {
-                    "name": "max_net_usage_words",
-                    "type": "varuint32"
-                },
-                {
-                    "name": "max_cpu_usage_ms",
-                    "type": "uint8"
-                },
-                {
-                    "name": "delay_sec",
-                    "type": "varuint32"
-                }
-            ]
-        },
-        {
-            "name": "unapprove",
+            "name": "unapproved",
             "base": "",
             "fields": [
                 {
@@ -252,13 +142,13 @@
     "types": [],
     "actions": [
         {
-            "name": "approve",
-            "type": "approve",
+            "name": "approved",
+            "type": "approved",
             "ricardian_contract": ""
         },
         {
-            "name": "cancel",
-            "type": "cancel",
+            "name": "cancelled",
+            "type": "cancelled",
             "ricardian_contract": ""
         },
         {
@@ -267,13 +157,8 @@
             "ricardian_contract": ""
         },
         {
-            "name": "exec",
-            "type": "exec",
-            "ricardian_contract": ""
-        },
-        {
-            "name": "stinproposal",
-            "type": "stinproposal",
+            "name": "executed",
+            "type": "executed",
             "ricardian_contract": ""
         },
         {
@@ -282,8 +167,8 @@
             "ricardian_contract": ""
         },
         {
-            "name": "unapprove",
-            "type": "unapprove",
+            "name": "unapproved",
+            "type": "unapproved",
             "ricardian_contract": ""
         }
     ],

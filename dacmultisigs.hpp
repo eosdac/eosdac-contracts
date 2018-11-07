@@ -35,23 +35,16 @@ class [[eosio::contract("dacmultisigs")]] dacmultisigs : public contract {
         void stproposal(name proposer, name proposalname, string metadata);
 
         [[eosio::action]]
-        void stinproposal(name proposer,
-                          name proposal_name,
-                          std::vector<permission_level> requested,
-                          eosio::transaction trx,
-                          string metadata);
+        void approved( name proposer, name proposal_name, permission_level level );
 
         [[eosio::action]]
-        void approve( name proposer, name proposal_name, permission_level level );
+        void unapproved( name proposer, name proposal_name, permission_level level );
 
         [[eosio::action]]
-        void unapprove( name proposer, name proposal_name, permission_level level );
+        void cancelled( name proposer, name proposal_name, name canceler );
 
         [[eosio::action]]
-        void cancel( name proposer, name proposal_name, name canceler );
-
-        [[eosio::action]]
-        void exec( name proposer, name proposal_name, name executer );
+        void executed( name proposer, name proposal_name, name executer );
 
         [[eosio::action]]
         void clean( name proposer, name proposal_name );
