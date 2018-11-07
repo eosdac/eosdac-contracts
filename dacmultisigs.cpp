@@ -79,6 +79,10 @@ void dacmultisigs::executed( name proposer, name proposal_name, name executer ) 
     require_auth(executer);
     require_auth( "dacauthority"_n );
 
+    msig_proposals_table msig_proposals("eosio.msig"_n, proposer.value);
+    auto prop = msig_proposals.find(proposal_name.value);
+    eosio_assert(prop == msig_proposals.end(), "ERR::PROPOSAL_EXISTS::The proposal still exists in eosio.msig");
+
     proposals_table proposals(_self, proposer.value);
     auto& proposal_to_erase = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
     proposals.erase(proposal_to_erase);
