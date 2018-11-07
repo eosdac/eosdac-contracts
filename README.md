@@ -91,7 +91,7 @@ The proposal will be removed from the database.
 Will remove a proposal from the database to free RAM.
 
 #### Assertions:
-* The proposal being cleaned from the database must have a `modifieddate` more than 2 weeks in the past.
+* The proposal being cleaned from the database must have a `modifieddate` more than 2 weeks in the past.  Transaction must provide `dacauthority` permission.
 
 ##### Parameters:
 * `proposer` (name)        - account name for the user making the proposal
