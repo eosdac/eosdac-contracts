@@ -9,7 +9,7 @@
 #include <eosiolib/crypto.h>
 #include <eosiolib/system.h>
 
-void dacmultisigs::stproposal( name proposer, name proposalname, string metadata ) {
+void dacmultisigs::proposed( name proposer, name proposalname, string metadata ) {
     require_auth( "dacauthority"_n );
 
     auto size = transaction_size();
@@ -82,7 +82,7 @@ void dacmultisigs::clean( name proposer, name proposal_name ) {
 }
 
 EOSIO_DISPATCH( dacmultisigs,
-        (stproposal)
+        (proposed)
         (cancelled)
         (approved)
         (unapproved)
