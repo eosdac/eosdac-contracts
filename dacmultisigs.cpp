@@ -15,7 +15,7 @@ void dacmultisigs::proposed( name proposer, name proposal_name, string metadata 
     require_auth( proposer );
 
     msig_proposals_table msig_proposals("eosio.msig"_n, proposer.value);
-    auto i = msig_proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND_MSIG::Proposal not found in eosio.msig");
+    msig_proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND_MSIG::Proposal not found in eosio.msig");
 
     auto size = transaction_size();
     char* buffer = (char*)( 512 < size ? malloc(size) : alloca(size) );
