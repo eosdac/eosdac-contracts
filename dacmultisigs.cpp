@@ -85,6 +85,8 @@ void dacmultisigs::executed( name proposer, name proposal_name, name executer ) 
 }
 
 void dacmultisigs::clean( name proposer, name proposal_name ) {
+    require_auth( "dacauthority"_n );
+
     uint32_t dtnow = now();
     uint32_t two_weeks = 60 * 60 * 24 * 14;
 
