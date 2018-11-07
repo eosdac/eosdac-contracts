@@ -10,9 +10,9 @@ Approvals, cancellations etc must also be notified, this will update the `modifi
 ### proposals
 Stored in the scope of the respective
 
-* proposalname (name) - name for the proposal (should follow the character limitations similar to the account names on EOS)
-* transactionid (string) - transaction id containing the metadata for a proposal.
-* modifieddate (uint32) - timestamp of last activity on this proposal, used to allow cleaning of abandoned proposals
+* `proposalname` (name) - name for the proposal (should follow the character limitations similar to the account names on EOS)
+* `transactionid` (string) - transaction id containing the metadata for a proposal.
+* `modifieddate` (uint32) - timestamp of last activity on this proposal, used to allow cleaning of abandoned proposals
 
 ## Actions
 
@@ -23,9 +23,9 @@ Should be called after proposing to the system multisig contract, the metadata w
 * The action must be authorised by the `proposer` and `dacauthority@one` (ie they must be a currently elected custodian).  There must be an entry in the eosio.msig `proposal` table with the scope of the proposer and primary key of the `proposalname`
 
 ##### Parameters:
-    proposer (name)        - account name for the user making the proposal
-    proposal_name (name)    - name for the proposal (should follow the character limitations similar to the account names on EOS, but can be less than 12 characters)
-    metadata (string)      - JSON string with metadata about the proposal.  Currently the metadata should be a JSON string with `name` and `description` properties.
+* `proposer` (name)        - account name for the user making the proposal
+* `proposal_name` (name)    - name for the proposal (should follow the character limitations similar to the account names on EOS, but can be less than 12 characters)
+* `metadata` (string)      - JSON string with metadata about the proposal.  Currently the metadata should be a JSON string with `name` and `description` properties.
 
 ##### Postconditions:
 
@@ -38,9 +38,9 @@ Signals that a proposal has been approved on the system msig contract.
 * The action must be authorised by the `approver` and `dacauthority@one` (ie they must be a currently elected custodian).  There must be an entry in the eosio.msig `proposal` table with the scope of the proposer and primary key of the `proposalname`.
 
 ##### Parameters:
-proposer (name)        - account name for the user making the proposal
-proposal_name (name)   - name for the proposal (should follow the character limitations similar to the account names on EOS, but can be less than 12 characters)
-approver (name)        - account name which approved the proposal
+* `proposer` (name)        - account name for the user making the proposal
+* `proposal_name` (name)   - name for the proposal (should follow the character limitations similar to the account names on EOS, but can be less than 12 characters)
+* `approver` (name)        - account name which approved the proposal
 
 ##### Postconditions:
 The `modifieddate` will be updated for this proposal.
@@ -52,9 +52,9 @@ Signals that a proposal has been unapproved on the system msig contract.
 * The action must be authorised by the `unapprover` and `dacauthority@one` (ie they must be a currently elected custodian).  There must be an entry in the eosio.msig `proposal` table with the scope of the proposer and primary key of the `proposalname`.
 
 ##### Parameters:
-proposer (name)        - account name for the user making the proposal
-proposal_name (name)   - name for the proposal (should follow the character limitations similar to the account names on EOS, but can be less than 12 characters)
-unapprover (name)      - account name which unapproved the proposal
+* `proposer` (name)        - account name for the user making the proposal
+* `proposal_name` (name)   - name for the proposal (should follow the character limitations similar to the account names on EOS, but can be less than 12 characters)
+* `unapprover` (name)      - account name which unapproved the proposal
 
 ##### Postconditions:
 The `modifieddate` will be updated for this proposal.
@@ -66,9 +66,9 @@ Notify the contract that you executed a proposal.
 * The action must be authorised by the `unapprover` and `dacauthority@one` (ie they must be a currently elected custodian).  There must *NOT* be an entry in the eosio.msig `proposal` table with the scope of the proposer and primary key of the `proposalname`.
 
 ##### Parameters:
-proposer (name)        - account name for the user making the proposal
-proposal_name (name)   - name for the proposal (should follow the character limitations similar to the account names on EOS, but can be less than 12 characters)
-executer (name)        - account name which executed the proposal
+* `proposer` (name)        - account name for the user making the proposal
+* `proposal_name` (name)   - name for the proposal (should follow the character limitations similar to the account names on EOS, but can be less than 12 characters)
+* `executer` (name)        - account name which executed the proposal
 
 ##### Postconditions:
 The proposal will be removed from the database.
@@ -80,9 +80,9 @@ Notify the contract that you cancelled a proposal.
 * The action must be authorised by the `unapprover` and `dacauthority@one` (ie they must be a currently elected custodian).  There must *NOT* be an entry in the eosio.msig `proposal` table with the scope of the proposer and primary key of the `proposalname`.
 
 ##### Parameters:
-proposer (name)        - account name for the user making the proposal
-proposal_name (name)   - name for the proposal (should follow the character limitations similar to the account names on EOS, but can be less than 12 characters)
-canceler (name)        - account name which cancelled the proposal
+* `proposer` (name)        - account name for the user making the proposal
+* `proposal_name` (name)   - name for the proposal (should follow the character limitations similar to the account names on EOS, but can be less than 12 characters)
+* `canceler` (name)        - account name which cancelled the proposal
 
 ##### Postconditions:
 The proposal will be removed from the database.
@@ -94,8 +94,8 @@ Will remove a proposal from the database to free RAM.
 * The proposal being cleaned from the database must have a `modifieddate` more than 2 weeks in the past.
 
 ##### Parameters:
-proposer (name)        - account name for the user making the proposal
-proposal_name (name)   - name for the proposal (should follow the character limitations similar to the account names on EOS, but can be less than 12 characters)
+* `proposer` (name)        - account name for the user making the proposal
+* `proposal_name` (name)   - name for the proposal (should follow the character limitations similar to the account names on EOS, but can be less than 12 characters)
 
 ##### Postconditions:
 The proposal will be removed from the database.
