@@ -20,7 +20,7 @@ Stored in the scope of the respective
 Should be called after proposing to the system multisig contract, the metadata will be ignored and the current transaction id will be stored so that external tools can fetch the metadata.
 
 ##### Assertions:
-* The action must be authorised by the `proposer` and `dacauthority@one` (ie they must be a currently elected custodian).  There must be an entry in the eosio.msig `proposal` table with the scope of the proposer and primary key of the `proposalname`
+* The action must be authorised by the `proposer` and `dacauthority@one` (ie they must be a currently elected custodian).  There must be an entry in the eosio.msig `proposal` table with the scope of the proposer and primary key of the `proposal_name`
 
 ##### Parameters:
 * `proposer` (name)        - account name for the user making the proposal
@@ -35,7 +35,7 @@ After success a new proposal will be added to the `proposals` table in this cont
 Signals that a proposal has been approved on the system msig contract.
 
 #### Assertions:
-* The action must be authorised by the `approver` and `dacauthority@one` (ie they must be a currently elected custodian).  There must be an entry in the eosio.msig `proposal` table with the scope of the proposer and primary key of the `proposalname`.
+* The action must be authorised by the `approver` and `dacauthority@one` (ie they must be a currently elected custodian).  There must be an entry in the eosio.msig `proposal` table with the scope of the proposer and primary key of the `proposal_name`.
 
 ##### Parameters:
 * `proposer` (name)        - account name for the user making the proposal
@@ -49,7 +49,7 @@ The `modifieddate` will be updated for this proposal.
 Signals that a proposal has been unapproved on the system msig contract.
 
 #### Assertions:
-* The action must be authorised by the `unapprover` and `dacauthority@one` (ie they must be a currently elected custodian).  There must be an entry in the eosio.msig `proposal` table with the scope of the proposer and primary key of the `proposalname`.
+* The action must be authorised by the `unapprover` and `dacauthority@one` (ie they must be a currently elected custodian).  There must be an entry in the eosio.msig `proposal` table with the scope of the proposer and primary key of the `proposal_name`.
 
 ##### Parameters:
 * `proposer` (name)        - account name for the user making the proposal
@@ -63,7 +63,7 @@ The `modifieddate` will be updated for this proposal.
 Notify the contract that you executed a proposal.
 
 #### Assertions:
-* The action must be authorised by the `unapprover` and `dacauthority@one` (ie they must be a currently elected custodian).  There must *NOT* be an entry in the eosio.msig `proposal` table with the scope of the proposer and primary key of the `proposalname`.
+* The action must be authorised by the `unapprover` and `dacauthority@one` (ie they must be a currently elected custodian).  There must *NOT* be an entry in the eosio.msig `proposal` table with the scope of the proposer and primary key of the `proposal_name`.
 
 ##### Parameters:
 * `proposer` (name)        - account name for the user making the proposal
@@ -77,7 +77,7 @@ The proposal will be removed from the database.
 Notify the contract that you cancelled a proposal.
 
 #### Assertions:
-* The action must be authorised by the `unapprover` and `dacauthority@one` (ie they must be a currently elected custodian).  There must *NOT* be an entry in the eosio.msig `proposal` table with the scope of the proposer and primary key of the `proposalname`.
+* The action must be authorised by the `unapprover` and `dacauthority@one` (ie they must be a currently elected custodian).  There must *NOT* be an entry in the eosio.msig `proposal` table with the scope of the proposer and primary key of the `proposal_name`.
 
 ##### Parameters:
 * `proposer` (name)        - account name for the user making the proposal
