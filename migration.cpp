@@ -41,16 +41,16 @@ void daccustodian::migrate() {
 //    contract_state.remove();
 //    _currentState = contr_state{};
 
-//    cleanTable<candidates_table>(_self, _self);
-//    cleanTable<custodians_table>(_self, _self);
-//    cleanTable<votes_table>(_self, _self);
-//    cleanTable<pending_pay_table>(_self, _self);
+//    cleanTable<candidates_table>(_self, _self.value);
+//    cleanTable<custodians_table>(_self, _self.value);
+//    cleanTable<votes_table>(_self, _self.value);
+//    cleanTable<pending_pay_table>(_self, _self.value);
 
     /*
     //Copy to a holding table - Enable this for the first step
 
-        candidates_table oldcands(_self, _self);
-        candidates_table2 holding_table(_self, _self);
+        candidates_table oldcands(_self, _self.value);
+        candidates_table2 holding_table(_self, _self.value);
         auto it = oldcands.begin();
         while (it != oldcands.end()) {
             holding_table.emplace(_self, [&](candidate2 &c) {
@@ -66,8 +66,8 @@ void daccustodian::migrate() {
 
     // Copy back to the original table with the new schema - Enable this for the second step *after* modifying the original object's schema before copying back to the original table location.
 
-        candidates_table2 holding_table(_self, _self);
-        candidates_table oldcands(_self, _self);
+        candidates_table2 holding_table(_self, _self.value);
+        candidates_table oldcands(_self, _self.value);
         auto it = holding_table.begin();
         while (it != holding_table.end()) {
             oldcands.emplace(_self, [&](candidate &c) {

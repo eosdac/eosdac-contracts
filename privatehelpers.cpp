@@ -6,11 +6,11 @@ contr_config daccustodian::configs() {
 }
 
 void daccustodian::assertValidMember(name member) {
-    account_name tokenContract = eosio::string_to_name(TOKEN_CONTRACT);
-    regmembers reg_members(tokenContract, tokenContract);
-    memterms memberterms(tokenContract, tokenContract);
+    name tokenContract = name(TOKEN_CONTRACT);
+    regmembers reg_members(tokenContract, tokenContract.value);
+    memterms memberterms(tokenContract, tokenContract.value);
 
-    const auto &regmem = reg_members.get(member, "ERR::GENERAL_REG_MEMBER_NOT_FOUND::Account is not registered with members.");
+    const auto &regmem = reg_members.get(member.value, "ERR::GENERAL_REG_MEMBER_NOT_FOUND::Account is not registered with members.");
     eosio_assert((regmem.agreedterms != 0), "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_ANY_TERMS::Account has not agreed to any terms");
     auto latest_member_terms = (--memberterms.end());
     eosio_assert(latest_member_terms->version == regmem.agreedterms, "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_LATEST_TERMS::Agreed terms isn't the latest.");
@@ -21,7 +21,7 @@ void daccustodian::updateVoteWeight(name custodian, int64_t weight) {
         print("\n Vote has no weight - No need to continue.");
     }
 
-    auto candItr = registered_candidates.find(custodian);
+    auto candItr = registered_candidates.find(custodian.value);
     if (candItr == registered_candidates.end()) {
         eosio::print("Candidate not found while updating from a transfer: ", custodian);
         return; // trying to avoid throwing errors from here since it's unrelated to a transfer action.?!?!?!?!
@@ -45,9 +45,9 @@ void daccustodian::modifyVoteWeights(name voter, vector<name> oldVotes, vector<n
     // This could be optimised with set diffing to avoid remove then add for unchanged votes. - later
     eosio::print("Modify vote weights: ", voter, "\n");
 
-    uint64_t asset_name = configs().lockupasset.symbol.name();
+    uint64_t asset_name = configs().lockupasset.symbol.code().raw();
 
-    accounts accountstable(eosio::string_to_name(TOKEN_CONTRACT), voter);
+    accounts accountstable(name(TOKEN_CONTRACT), voter.value);
     const auto ac = accountstable.find(asset_name);
     if (ac == accountstable.end()) {
         print("Voter has no balance therefore no need to update vote weights");

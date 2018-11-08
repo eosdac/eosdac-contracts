@@ -6,13 +6,13 @@ using namespace std;
 struct currency_stats {
     asset supply;
     asset max_supply;
-    account_name issuer;
+    name issuer;
     bool transfer_locked = false;
 
-    uint64_t primary_key() const { return supply.symbol.name(); }
+    uint64_t primary_key() const { return supply.symbol.code().raw(); }
 };
 
-typedef eosio::multi_index<N(stat), currency_stats> stats;
+typedef eosio::multi_index<"stat"_n, currency_stats> stats;
 
 
 // This is a reference to the member struct as used in the eosdactoken contract.
@@ -38,23 +38,23 @@ struct termsinfo {
     EOSLIB_SERIALIZE(termsinfo, (terms)(hash)(version))
 };
 
-typedef multi_index<N(memberterms), termsinfo> memterms;
+typedef multi_index<"memberterms"_n, termsinfo> memterms;
 
 struct account {
     asset balance;
 
-    uint64_t primary_key() const { return balance.symbol.name(); }
+    uint64_t primary_key() const { return balance.symbol.code().raw(); }
 };
 
-typedef multi_index<N(members), member> regmembers;
-typedef eosio::multi_index<N(accounts), account> accounts;
+typedef multi_index<"members"_n, member> regmembers;
+typedef eosio::multi_index<"accounts"_n, account> accounts;
 
 //Authority Structs
 namespace eosiosystem {
 
     struct key_weight {
         eosio::public_key key;
-        weight_type weight;
+        uint16_t weight;
 
         // explicit serialization macro is not necessary, used here only to improve compilation time
         EOSLIB_SERIALIZE(key_weight, (key)(weight))
@@ -62,7 +62,7 @@ namespace eosiosystem {
 
     struct permission_level_weight {
         permission_level permission;
-        weight_type weight;
+        uint16_t weight;
 
         // explicit serialization macro is not necessary, used here only to improve compilation time
         EOSLIB_SERIALIZE(permission_level_weight, (permission)(weight))
@@ -70,7 +70,7 @@ namespace eosiosystem {
 
     struct wait_weight {
         uint32_t wait_sec;
-        weight_type weight;
+        uint16_t weight;
 
         // explicit serialization macro is not necessary, used here only to improve compilation time
         EOSLIB_SERIALIZE(wait_weight, (wait_sec)(weight))
