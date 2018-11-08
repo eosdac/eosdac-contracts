@@ -22,7 +22,7 @@ struct member {
     /// Hash of agreed terms
     uint64_t agreedterms;
 
-    name primary_key() const { return sender; }
+    uint64_t primary_key() const { return sender.value; }
 
     EOSLIB_SERIALIZE(member, (sender)(agreedterms))
 };
