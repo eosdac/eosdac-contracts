@@ -216,7 +216,7 @@ public:
     }
 
     ~daccustodian() {
-        contract_state.set(_currentState, _self.value); // This should not run during a contract_state migration since it will prevent changing the schema with data saved between runs.
+        contract_state.set(_currentState, _self); // This should not run during a contract_state migration since it will prevent changing the schema with data saved between runs.
     }
 
     [[eosio::action]]
