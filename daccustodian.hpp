@@ -2,6 +2,13 @@
 #include <eosiolib/multi_index.hpp>
 #include "external_types.hpp"
 
+#define _STRINGIZE(x) #x
+#define STRINGIZE(x) _STRINGIZE(x)
+
+#ifdef TOKENCONTRACT
+#define TOKEN_CONTRACT STRINGIZE(TOKENCONTRACT)
+#endif
+
 #ifndef TOKEN_CONTRACT
 #define TOKEN_CONTRACT "eosdactokens"
 #endif

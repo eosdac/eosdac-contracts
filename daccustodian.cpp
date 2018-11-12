@@ -32,9 +32,8 @@ extern "C" { \
       } \
       auto self = receiver; \
       if( (code == self  && action != "transfer"_n.value) || (code == name(TOKEN_CONTRACT).value && action == "transfer"_n.value) ) { \
-         TYPE thiscontract( self ); \
          switch( action ) { \
-            EOSIO_API( TYPE, MEMBERS ) \
+            EOSIO_DISPATCH_HELPER( TYPE, MEMBERS ) \
          } \
          /* does not allow destructor of thiscontract to run: eosio_exit(0); */ \
       } \

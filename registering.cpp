@@ -64,11 +64,13 @@ void daccustodian::unstake(name cand) {
         transaction deferredTrans{};
 
         deferredTrans.actions.emplace_back(
-        action(permission_level{_self, "active"_n},
-               name(TOKEN_CONTRACT), "transfer"_n),
+        action(permission_level{_self, "xfer"_n},
+               name( TOKEN_CONTRACT ),
+               "transfer"_n,
                make_tuple(_self, cand, c.locked_tokens,
                           string("Returning locked up stake. Thank you."))
-        ));
+        )
+        );
 
         deferredTrans.delay_sec = TRANSFER_DELAY;
         deferredTrans.send(cand.value, _self);
