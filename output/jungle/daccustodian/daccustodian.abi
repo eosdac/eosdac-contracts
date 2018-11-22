@@ -1,0 +1,499 @@
+{
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Thu Nov 22 23:25:30 2018",
+    "version": "eosio::abi/1.1",
+    "structs": [
+        {
+            "name": "candidate",
+            "base": "",
+            "fields": [
+                {
+                    "name": "candidate_name",
+                    "type": "name"
+                },
+                {
+                    "name": "requestedpay",
+                    "type": "asset"
+                },
+                {
+                    "name": "locked_tokens",
+                    "type": "asset"
+                },
+                {
+                    "name": "total_votes",
+                    "type": "uint64"
+                },
+                {
+                    "name": "is_active",
+                    "type": "uint8"
+                },
+                {
+                    "name": "custodian_end_time_stamp",
+                    "type": "time_point_sec"
+                }
+            ]
+        },
+        {
+            "name": "claimpay",
+            "base": "",
+            "fields": [
+                {
+                    "name": "payid",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "contr_config",
+            "base": "",
+            "fields": [
+                {
+                    "name": "lockupasset",
+                    "type": "asset"
+                },
+                {
+                    "name": "maxvotes",
+                    "type": "uint8"
+                },
+                {
+                    "name": "numelected",
+                    "type": "uint8"
+                },
+                {
+                    "name": "periodlength",
+                    "type": "uint32"
+                },
+                {
+                    "name": "authaccount",
+                    "type": "name"
+                },
+                {
+                    "name": "tokenholder",
+                    "type": "name"
+                },
+                {
+                    "name": "serviceprovider",
+                    "type": "name"
+                },
+                {
+                    "name": "should_pay_via_service_provider",
+                    "type": "bool"
+                },
+                {
+                    "name": "initial_vote_quorum_percent",
+                    "type": "uint32"
+                },
+                {
+                    "name": "vote_quorum_percent",
+                    "type": "uint32"
+                },
+                {
+                    "name": "auth_threshold_high",
+                    "type": "uint8"
+                },
+                {
+                    "name": "auth_threshold_mid",
+                    "type": "uint8"
+                },
+                {
+                    "name": "auth_threshold_low",
+                    "type": "uint8"
+                },
+                {
+                    "name": "lockup_release_time_delay",
+                    "type": "uint32"
+                },
+                {
+                    "name": "requested_pay_max",
+                    "type": "asset"
+                }
+            ]
+        },
+        {
+            "name": "contr_state",
+            "base": "",
+            "fields": [
+                {
+                    "name": "lastperiodtime",
+                    "type": "uint32"
+                },
+                {
+                    "name": "total_weight_of_votes",
+                    "type": "int64"
+                },
+                {
+                    "name": "total_votes_on_candidates",
+                    "type": "int64"
+                },
+                {
+                    "name": "number_active_candidates",
+                    "type": "uint32"
+                },
+                {
+                    "name": "met_initial_votes_threshold",
+                    "type": "bool"
+                }
+            ]
+        },
+        {
+            "name": "custodian",
+            "base": "",
+            "fields": [
+                {
+                    "name": "cust_name",
+                    "type": "name"
+                },
+                {
+                    "name": "requestedpay",
+                    "type": "asset"
+                },
+                {
+                    "name": "total_votes",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "firecand",
+            "base": "",
+            "fields": [
+                {
+                    "name": "cand",
+                    "type": "name"
+                },
+                {
+                    "name": "lockupStake",
+                    "type": "bool"
+                }
+            ]
+        },
+        {
+            "name": "firecust",
+            "base": "",
+            "fields": [
+                {
+                    "name": "cust",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "newperiod",
+            "base": "",
+            "fields": [
+                {
+                    "name": "message",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "nominatecand",
+            "base": "",
+            "fields": [
+                {
+                    "name": "cand",
+                    "type": "name"
+                },
+                {
+                    "name": "requestedpay",
+                    "type": "asset"
+                }
+            ]
+        },
+        {
+            "name": "pay",
+            "base": "",
+            "fields": [
+                {
+                    "name": "key",
+                    "type": "uint64"
+                },
+                {
+                    "name": "receiver",
+                    "type": "name"
+                },
+                {
+                    "name": "quantity",
+                    "type": "asset"
+                },
+                {
+                    "name": "memo",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "resigncust",
+            "base": "",
+            "fields": [
+                {
+                    "name": "cust",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "stprofile",
+            "base": "",
+            "fields": [
+                {
+                    "name": "cand",
+                    "type": "name"
+                },
+                {
+                    "name": "profile",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "stprofileuns",
+            "base": "",
+            "fields": [
+                {
+                    "name": "cand",
+                    "type": "name"
+                },
+                {
+                    "name": "profile",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "tempstake",
+            "base": "",
+            "fields": [
+                {
+                    "name": "sender",
+                    "type": "name"
+                },
+                {
+                    "name": "quantity",
+                    "type": "asset"
+                },
+                {
+                    "name": "memo",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "unstake",
+            "base": "",
+            "fields": [
+                {
+                    "name": "cand",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "updatebio",
+            "base": "",
+            "fields": [
+                {
+                    "name": "cand",
+                    "type": "name"
+                },
+                {
+                    "name": "bio",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "updateconfig",
+            "base": "",
+            "fields": [
+                {
+                    "name": "newconfig",
+                    "type": "contr_config"
+                }
+            ]
+        },
+        {
+            "name": "updatereqpay",
+            "base": "",
+            "fields": [
+                {
+                    "name": "cand",
+                    "type": "name"
+                },
+                {
+                    "name": "requestedpay",
+                    "type": "asset"
+                }
+            ]
+        },
+        {
+            "name": "vote",
+            "base": "",
+            "fields": [
+                {
+                    "name": "voter",
+                    "type": "name"
+                },
+                {
+                    "name": "proxy",
+                    "type": "name"
+                },
+                {
+                    "name": "candidates",
+                    "type": "name[]"
+                }
+            ]
+        },
+        {
+            "name": "votecust",
+            "base": "",
+            "fields": [
+                {
+                    "name": "voter",
+                    "type": "name"
+                },
+                {
+                    "name": "newvotes",
+                    "type": "name[]"
+                }
+            ]
+        },
+        {
+            "name": "withdrawcand",
+            "base": "",
+            "fields": [
+                {
+                    "name": "cand",
+                    "type": "name"
+                }
+            ]
+        }
+    ],
+    "types": [],
+    "actions": [
+        {
+            "name": "claimpay",
+            "type": "claimpay",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "firecand",
+            "type": "firecand",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "firecust",
+            "type": "firecust",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "newperiod",
+            "type": "newperiod",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "nominatecand",
+            "type": "nominatecand",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "resigncust",
+            "type": "resigncust",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "stprofile",
+            "type": "stprofile",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "stprofileuns",
+            "type": "stprofileuns",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "unstake",
+            "type": "unstake",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "updatebio",
+            "type": "updatebio",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "updateconfig",
+            "type": "updateconfig",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "updatereqpay",
+            "type": "updatereqpay",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "votecust",
+            "type": "votecust",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "withdrawcand",
+            "type": "withdrawcand",
+            "ricardian_contract": ""
+        }
+    ],
+    "tables": [
+        {
+            "name": "candidates",
+            "type": "candidate",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "config",
+            "type": "contr_config",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "custodians",
+            "type": "custodian",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "pendingpay",
+            "type": "pay",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "pendingstake",
+            "type": "tempstake",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "state",
+            "type": "contr_state",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "votes",
+            "type": "vote",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        }
+    ],
+    "ricardian_clauses": [],
+    "variants": [],
+    "abi_extensions": []
+}
