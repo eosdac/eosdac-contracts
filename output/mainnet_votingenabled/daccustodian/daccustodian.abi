@@ -1,5 +1,5 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Thu Nov 22 23:25:44 2018",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Fri Nov 23 01:24:17 2018",
     "version": "eosio::abi/1.1",
     "structs": [
         {
@@ -374,72 +374,72 @@
         {
             "name": "claimpay",
             "type": "claimpay",
-            "ricardian_contract": ""
+            "ricardian_contract": "## ACTION: claimpay\n**PARAMETERS:**\n* __claimer__ account claiming the pay. This account must match the destination account for which the claim is for.\n\n**INTENT:** The intent of {{ claimpay }} is to allow an account to claim pending payment amounts due to the account. The pay claim they are claiming needs to be visible in the `pendingpay` table. transfers to the claimer via an inline transfer on the eosdactoken contract and then removes the pending payment record from the `pending_pay` table. The active auth of this claimer is required to complete this action.\n\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
         },
         {
             "name": "firecand",
             "type": "firecand",
-            "ricardian_contract": ""
+            "ricardian_contract": "## ACTION: firecand\n**PARAMETERS:**\n* __cand__ is an eosio account name. \n* __lockupStake__ is an indicator to show whether stake is being locked up or not\n\n**INTENT:** \nThe intent of forehand is to set a candidate to a state of inactive so they will be excluded from the next election round. This action may only be run by the by elected custodians (where quorum and configured majorities are met). There is an option to lock up the candidate's tokens until a delay period has passed based on the delay set in the config after which the tokens can be claimed with the unstake action. If the option passed is false and there is an existing lockup delay on the tokens then this lockup will continue to be active until the lock up time has passed.\n\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
         },
         {
             "name": "firecust",
             "type": "firecust",
-            "ricardian_contract": ""
+            "ricardian_contract": "## ACTION: firecust\n**PARAMETERS:**\n* __cand__ is an eosio account name.\n\n**INTENT:** The intent of firecust is to allow elected custodians to (where quorum and configured majorities are met) to remove a fellow custodian and lock up their tokens until the configured delay period has passed.\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
         },
         {
             "name": "newperiod",
             "type": "newperiod",
-            "ricardian_contract": ""
+            "ricardian_contract": "## ACTION: newperiod\n**PARAMETERS:**\n* __message__ is string used only for logging in the blockchain history and serves no purpose in the action contract logic.\n\n**INTENT:** The intent of {{ newperiod }} is to signal the end of one election period and commence the next. It performs several actions after the following conditions are met:\n * The action is not called before the period should have ended\n * Enough voter value has participated to trigger the initial running of the DAC\n * After the Dac has started enough voter value has continued engagement with the dac voting process. \n1. Calculate the mean `requestedpay` of all the currently elected custodians.\n2. Distribute the median pay amount to all the currently elected custodians. This is achieved by adding a record to the `pendingpay` table with the custodian and the amount payable in preparation for an authorised action to `claimpay`.\n3. Captures the highest voted candidates to set them as the custodians for the next period based on the accumulated vote weight.\n4. Set the permissions for the elected custodians so they have sufficient permission to run the dac according to the constitution and technical permissions design.\n5. Set the time for the beginning of the next period to mark the reset anniversary for the dac. \n\n**TERM:** The action changes the relevant contract data until a subsequent newperiod is called."
         },
         {
             "name": "nominatecand",
             "type": "nominatecand",
-            "ricardian_contract": ""
+            "ricardian_contract": "## ACTION: nominatecand\n**PARAMETERS:**\n* __cand__ is an account_name parameter for the nominating candidate.\n* __requestedpay__ is an asset requested by the candidate as pay for being an elected custodian. It should be passed to the action in the format: \\\"10.0000 EOSDAC\\\".\n\n**INTENT:** The intent of {{ nominatecand }} is to nominates a candidate to custodian election, Accounts must nominate as a candidate before they can be voted for. The candidate must lock a configurable number of tokens before trying to nominate (configurable via {{ updateconfig }} in the parameter lockupasset which will be sent from the token contract as defined and set in the code of the contract. If a user previously been a candidate they may have enough staked tokens to not require further staking but will otherwise need to transfer the difference to meet the required stake. \n\n**TERM:** A candidate remains a candidate until they are removed from candidate status by a subsequent transaction."
         },
         {
             "name": "resigncust",
             "type": "resigncust",
-            "ricardian_contract": ""
+            "ricardian_contract": "## ACTION: resigncust\n**PARAMETERS:**\n* __cust__ is an eosio account name.\n\n**INTENT:** The intent of resigncust is to remove an elected custodian. This action must be run by the resigning custodian and the outcome should remove the elected custodian and lock up their tokens until the delay period has passed so the tokens can be claimed with the unstake action.\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
         },
         {
             "name": "stprofile",
             "type": "stprofile",
-            "ricardian_contract": ""
+            "ricardian_contract": "## ACTION: stprofile\n**PARAMETERS:**\n* __cand__ is an eosio account name. \n* __profile__ is a string that provides a hash of the details of the candidate.\n\n**INTENT** The intent of stprofile is to record an update the user's profile. \n#### Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later so therefore should only store a unidentifiable hash of content rather than human readable content."
         },
         {
             "name": "stprofileuns",
             "type": "stprofileuns",
-            "ricardian_contract": ""
+            "ricardian_contract": "## ACTION: stprofileuns\n**PARAMETERS:**\n* __cand__ is an eosio account name. \n* __profile__ is a string that provides a hash of the details of the candidate.\n\n**INTENT:** \nThe intent of stprofileuns is to record an update the user's profile.  ##Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later."
         },
         {
             "name": "unstake",
             "type": "unstake",
-            "ricardian_contract": ""
+            "ricardian_contract": "## ACTION: unstake\n**PARAMETERS:**\n* __cand__ is an eosio account name.\n\n**INTENT** The intent of unstake is to return staked tokens back to the candidate if the user is no longer an active candidate and there is no delay set on the candidate the staked tokens will be returned to the candidate.\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
         },
         {
             "name": "updatebio",
             "type": "updatebio",
-            "ricardian_contract": ""
+            "ricardian_contract": "## ACTION: updatebio\n**PARAMETERS:**\n* __cand__ is an eosio account name. \n* __profile__ is a string that provides a hash of the details of the candidate.\n\n**INTENT:** \nThe intent of updatebio is to record an update the user's bio. Unlike `stprofileuns` this action does not require auth of the cand to execute.\n ####Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later."
         },
         {
             "name": "updateconfig",
             "type": "updateconfig",
-            "ricardian_contract": ""
+            "ricardian_contract": "## ACTION: updateconfig\n**PARAMETERS:**\n* __lockupasset__ is an asset to be locked up as part of the nominating process for a custodian passed to the action in the format: \\\"10.0000 EOSDAC\\\". default value: \\\"10.0000 EOSDAC\\\"\n* __maxvotes__ is a integer to configure the maximum number of allowed votes for a nominated member in any single voting action. The default value is 5.\n* __numelected__ is a integer to configure the number of candidates that will be elected as custodians of the DAC. default value is 12.\n* __periodlength__ the length of office of a custodian vote (in seconds) before a new period . Default to 7 days. \n* __authaccount__ The authorised account to change the contract which should be protected via a multisig of custodians, \n* __tokenholder__ The account that controls the funds for the DAC. \n* __initial_vote_quorum_percent__ The percent of voters required to activate the DAC for the first election period. \n* __auth_threshold_high__ percentage of votes of custodians required to approve highest level actions. \n* __auth_threshold_mid__ percentage of votes of custodians required to approve medium level actions.\n* __auth_threshold_low__ percentage of votes of custodians required to approve lowest level actions.\n* __lockup_release_time_delay__ The time before locked up stake can be released back to the candidate using the unstake action.\n* __asset requested_pay_max__ \n\n**INTENT:** The intent of {{ updateconfig }} is update the configuration for the running contract of selected parameters without needing change the source code. This requires a privileged account.\n**TERM:** The action sets the configuration until it is set by a subsequent updateconfig action."
         },
         {
             "name": "updatereqpay",
             "type": "updatereqpay",
-            "ricardian_contract": ""
+            "ricardian_contract": "## ACTION: updatereqpay\n**PARAMETERS:**\n* __cand__ is an account_name parameter for the nominating candidate.\n* __requestedpay__ is an asset requested by the candidate as pay for being an elected custodian. It should be passed to the action in the format: \\\"10.0000 EOSDAC\\\".\n\n**INTENT:** The intent of updatereqpay is to allow a candidate update their requested pay after they have nominated. The action ensures the user has agreed to the latest terms and conditions, has the correct authorization of the {{ cand }} to perform the action and is already nominated as a candidate.  All other data of the candidate will remain unchanged. If the custodian is elected, this requested pay is used along with other elected custodians requested pay to determine the level of pay for custodians\n\n**TERM:** The action changes the values until superseded by another action."
         },
         {
             "name": "votecust",
             "type": "votecust",
-            "ricardian_contract": ""
+            "ricardian_contract": "## ACTION: votecust\n**PARAMETERS:**\n* __voter__ is an eosio account_name parameter for the voting member.\n* __newvotes__ is an array of nominated candidates account names that the voter intends to vote for with a maximum number of votes as configured by the contract.\n\n**INTENT:** The intent of votecust is to allow a member of the DAC to vote for candidates that are eligible become custodians after the next call to {{ newperiod }}. The action ensures the user has agreed to the latest terms and conditions and has the correct authorization of the account: {{ voter }} to place or change an active vote. Upon success this action will either update an existing vote with a new set of candidates or create a new active vote for the {{ voter }} for candidates eligible for election. This action will replace an existing vote for a proxy for {{ voter }} if one exists. \n\n**TERM:** The action changes the preferred custodians for an account until superseded by another action."
         },
         {
             "name": "withdrawcand",
             "type": "withdrawcand",
-            "ricardian_contract": ""
+            "ricardian_contract": "## ACTION: withdrawcand\n**PARAMETERS:**\n* __cand__ is an account_name parameter for the nominating candidate.\n\n**INTENT:** The intent of withdrawcand is to withdraw a candidate for becoming an elected custodian. The action ensures the {{ cand }} account is currently nominated. On success the amount of tokens that was locked up via the {{ nominatecand }} action will be added to a list of pending transactions to transfer back to the {{ cand }} account. The actual transfer would be performed by a separate action due to the auth requirement for sending funds from the contract's account.\n\n**TERM:** The account will no longer be a candidate unless they it is nominated again.\n\n## ACTION: updatebio\n**PARAMETERS:**\n* __cand__ is an account_name parameter for the nominating candidate.\n* __bio__ is a string representing a bio for candidate. This should be a hash or a link where data is under the control of the individual.\n\n**INTENT:** The intent of updatebio is to allow a candidate update their bio information after they have nominated. The action ensures the user has agreed to the latest terms and conditions, has the correct authorization of the {{ cand }} to perform the action and is already nominated as a candidate. Then the bio information for the candidate will be updated leaving all other data of the candidate unchanged.\n\n**WARNING:** The action records information on the blockchain and hence should not include directly entered personally identifiable information. Instead hashes or links under the control of the individual should be used."
         }
     ],
     "tables": [
@@ -493,7 +493,16 @@
             "key_types": []
         }
     ],
-    "ricardian_clauses": [],
+    "ricardian_clauses": [
+        {
+            "id": "ENTIRE AGREEMENT",
+            "body": "This contract contains the entire agreement of the parties, for all described actions, and there are no other promises or conditions in any other agreement whether oral or written concerning the subject matter of this Contract. This contract supersedes any prior written or oral agreements between the parties."
+        },
+        {
+            "id": "BINDING CONSTITUTION",
+            "body": "All the the action descibed in this contract are subject to the EOSDAC consitution as held at http://eosdac.io. This includes, but is not limited to membership terms and conditions, dispute resolution and severability."
+        }
+    ],
     "variants": [],
     "abi_extensions": []
 }
