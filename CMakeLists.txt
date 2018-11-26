@@ -1,7 +1,12 @@
-file(GLOB ABI_FILES "*.abi")
-configure_file("${ABI_FILES}" "${CMAKE_CURRENT_BINARY_DIR}" COPYONLY)
-add_wast_executable(TARGET dacproposals
-INCLUDE_FOLDERS "${STANDARD_INCLUDE_FOLDERS}"
-LIBRARIES libc libc++ eosiolib
-DESTINATION_FOLDER ${CMAKE_CURRENT_BINARY_DIR}
-)
+
+
+cmake_minimum_required(VERSION 3.5)
+project(test_example VERSION 1.0.0)
+
+find_package(eosio.cdt)
+
+#link_libraries(LIBRARIES libc libc++ eosiolib)
+
+#include_directories(eosio.cdt)
+
+add_contract( dacproposals dacproposals dacproposals.cpp )

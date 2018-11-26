@@ -1,1 +1,4 @@
 contract_vars
+.idea
+.vscode
+cmake-build-debug

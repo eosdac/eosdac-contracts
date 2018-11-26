@@ -1,0 +1,201 @@
+{
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Mon Nov 26 00:43:42 2018",
+    "version": "eosio::abi/1.1",
+    "structs": [
+        {
+            "name": "cancel",
+            "base": "",
+            "fields": [
+                {
+                    "name": "worker",
+                    "type": "name"
+                },
+                {
+                    "name": "proposalid",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "claim",
+            "base": "",
+            "fields": [
+                {
+                    "name": "worker",
+                    "type": "name"
+                },
+                {
+                    "name": "proposalid",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "createprop",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposer",
+                    "type": "name"
+                },
+                {
+                    "name": "title",
+                    "type": "string"
+                },
+                {
+                    "name": "summary",
+                    "type": "string"
+                },
+                {
+                    "name": "desc",
+                    "type": "string"
+                },
+                {
+                    "name": "arbitrator",
+                    "type": "name"
+                },
+                {
+                    "name": "payamount",
+                    "type": "int32"
+                },
+                {
+                    "name": "contenthash",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "proposal",
+            "base": "",
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "uint32"
+                },
+                {
+                    "name": "proposer",
+                    "type": "name"
+                },
+                {
+                    "name": "arbitrator",
+                    "type": "name"
+                },
+                {
+                    "name": "contenthash",
+                    "type": "string"
+                },
+                {
+                    "name": "payamount",
+                    "type": "int32"
+                }
+            ]
+        },
+        {
+            "name": "proposalvote",
+            "base": "",
+            "fields": [
+                {
+                    "name": "propid",
+                    "type": "uint64"
+                },
+                {
+                    "name": "voter",
+                    "type": "name"
+                },
+                {
+                    "name": "vote",
+                    "type": "uint8"
+                },
+                {
+                    "name": "commenthash",
+                    "type": "int32"
+                }
+            ]
+        },
+        {
+            "name": "vote",
+            "base": "",
+            "fields": [
+                {
+                    "name": "voter",
+                    "type": "int32"
+                },
+                {
+                    "name": "proxy",
+                    "type": "int32"
+                },
+                {
+                    "name": "stake",
+                    "type": "int32"
+                }
+            ]
+        },
+        {
+            "name": "voteprop",
+            "base": "",
+            "fields": [
+                {
+                    "name": "custodian",
+                    "type": "name"
+                },
+                {
+                    "name": "proposal",
+                    "type": "uint32"
+                },
+                {
+                    "name": "vote",
+                    "type": "uint8"
+                }
+            ]
+        }
+    ],
+    "types": [],
+    "actions": [
+        {
+            "name": "cancel",
+            "type": "cancel",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "claim",
+            "type": "claim",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "createprop",
+            "type": "createprop",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "voteprop",
+            "type": "voteprop",
+            "ricardian_contract": ""
+        }
+    ],
+    "tables": [
+        {
+            "name": "proposal",
+            "type": "proposal",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "proposalvote",
+            "type": "proposalvote",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "vote",
+            "type": "vote",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        }
+    ],
+    "ricardian_clauses": [],
+    "variants": [],
+    "abi_extensions": []
+}
