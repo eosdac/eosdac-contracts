@@ -1,11 +1,12 @@
 #include <eosiolib/eosio.hpp>
+#include <eosiolib/asset.hpp>
 
 using namespace eosio;
 using namespace std;
 
 struct currency_stats {
-    asset supply;
-    asset max_supply;
+    eosio::asset supply;
+    eosio::asset max_supply;
     name issuer;
     bool transfer_locked = false;
 

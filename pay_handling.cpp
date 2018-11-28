@@ -11,7 +11,7 @@ void daccustodian::claimpay(uint64_t payid) {
 
     string memo = payClaim.receiver.to_string() + ":" + payClaim.memo;
 
-    eosio::print("constructed memo for the service contract: ", memo);
+    print("constructed memo for the service contract: " + memo);
 
     name serviceAccount = configs().serviceprovider;
 

@@ -1,8 +1,20 @@
-file(GLOB ABI_FILES "*.abi")
-configure_file("${ABI_FILES}" "${CMAKE_CURRENT_BINARY_DIR}" COPYONLY)
-# Change "daccustodian" with the name of the folder containing your smart contracts
-add_wast_executable(TARGET daccustodian
-INCLUDE_FOLDERS "${STANDARD_INCLUDE_FOLDERS}"
-LIBRARIES libc libc++ eosiolib
-DESTINATION_FOLDER ${CMAKE_CURRENT_BINARY_DIR}
-)
+
+cmake_minimum_required(VERSION 3.5)
+project(daccustodian VERSION 1.0.0)
+
+find_package(eosio.cdt)
+
+### Generate the wasm and abi
+add_contract( daccustodian daccustodian
+        daccustodian.cpp
+        external_observable_actions.cpp
+        newperiod_components.cpp
+        pay_handling.cpp
+        migration.cpp
+        privatehelpers.cpp
+        registering.cpp
+        update_member_details.cpp
+        )
+
+### add the path to where the ricardian contracts/clauses are found
+target_compile_options( daccustodian.wasm PUBLIC -R${CMAKE_CURRENT_SOURCE_DIR} )

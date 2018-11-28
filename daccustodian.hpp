@@ -1,5 +1,8 @@
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/multi_index.hpp>
+#include <eosiolib/singleton.hpp>
+#include <eosiolib/time.hpp>
+
 #include "external_types.hpp"
 
 #define _STRINGIZE(x) #x
@@ -25,7 +28,7 @@ const name HIGH_PERMISSION = "high"_n;
 using namespace eosio;
 using namespace std;
 
-struct [[eosio::table("config")]] contr_config {
+struct [[eosio::table("config"), eosio::contract("daccustodian")]] contr_config {
 //    The amount of assets that are locked up by each candidate applying for election.
     asset lockupasset;
 //    The maximum number of votes that each member can make for a candidate.
@@ -84,7 +87,7 @@ struct [[eosio::table("config")]] contr_config {
 
 typedef singleton<"config"_n, contr_config> configscontainer;
 
-struct [[eosio::table("state")]] contr_state {
+struct [[eosio::table("state"), eosio::contract("daccustodian")]] contr_state {
     uint32_t lastperiodtime = 0;
     int64_t total_weight_of_votes = 0;
     int64_t total_votes_on_candidates = 0;
@@ -106,13 +109,13 @@ uint128_t combine_ids(const uint8_t &boolvalue, const uint64_t &longValue) {
     return (uint128_t{boolvalue} << 8) | longValue;
 }
 
-struct [[eosio::table("candidates")]] candidate {
+struct [[eosio::table("candidates"), eosio::contract("daccustodian")]] candidate {
     name candidate_name;
     asset requestedpay;
     asset locked_tokens;
     uint64_t total_votes;
     uint8_t is_active;
-    uint32_t custodian_end_time_stamp;
+    time_point_sec custodian_end_time_stamp;
 
     uint64_t primary_key() const { return candidate_name.value; }
 
@@ -133,7 +136,7 @@ typedef multi_index<"candidates"_n, candidate,
         indexed_by<"byreqpay"_n, const_mem_fun<candidate, uint64_t, &candidate::by_requested_pay> >
 > candidates_table;
 
-struct [[eosio::table("custodians")]] custodian {
+struct [[eosio::table("custodians"), eosio::contract("daccustodian")]] custodian {
     name cust_name;
     asset requestedpay;
     uint64_t total_votes;
@@ -153,7 +156,7 @@ typedef multi_index<"custodians"_n, custodian,
         indexed_by<"byreqpay"_n, const_mem_fun<custodian, uint64_t, &custodian::by_requested_pay> >
 > custodians_table;
 
-struct [[eosio::table("votes")]]vote {
+struct [[eosio::table("votes"), eosio::contract("daccustodian")]] vote {
     name voter;
     name proxy;
     std::vector<name> candidates;
@@ -169,7 +172,7 @@ typedef eosio::multi_index<"votes"_n, vote,
         indexed_by<"byproxy"_n, const_mem_fun<vote, uint64_t, &vote::by_proxy> >
 > votes_table;
 
-struct [[eosio::table("pendingpay")]] pay {
+struct [[eosio::table("pendingpay"), eosio::contract("daccustodian")]] pay {
     uint64_t key;
     name receiver;
     asset quantity;
@@ -185,7 +188,7 @@ typedef multi_index<"pendingpay"_n, pay,
         indexed_by<"byreceiver"_n, const_mem_fun<pay, uint64_t, &pay::byreceiver> >
 > pending_pay_table;
 
-struct [[eosio::table("pendingstake")]] tempstake {
+struct [[eosio::table("pendingstake"), eosio::contract("daccustodian")]] tempstake {
     name sender;
     asset quantity;
     string memo;
