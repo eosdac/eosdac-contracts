@@ -1,6 +1,6 @@
 
 void daccustodian::distributePay() {
-    custodians_table custodians(_self, _self);
+    custodians_table custodians(_self, _self.value);
 
     //Find the median pay using a temporary vector to hold the requestedpay amounts.
     std::vector<asset> reqpays;
@@ -37,8 +37,8 @@ void daccustodian::allocateCustodians(bool early_election) {
 
     eosio::print("Configure custodians for the next period.");
 
-    custodians_table custodians(_self, _self);
-    auto byvotes = registered_candidates.get_index<N(byvotesrank)>();
+    custodians_table custodians(_self, _self.value);
+    auto byvotes = registered_candidates.get_index<"byvotesrank"_n>();
     auto cand_itr = byvotes.begin();
 
     int32_t electcount = configs().numelected;
@@ -48,7 +48,7 @@ void daccustodian::allocateCustodians(bool early_election) {
         eosio::print("Empty the custodians table to get a full set of new custodians based on the current votes.");
         auto cust_itr = custodians.begin();
         while (cust_itr != custodians.end()) {
-            const auto &reg_candidate = registered_candidates.get(cust_itr->cust_name, "ERR::NEWPERIOD_EXPECTED_CAND_NOT_FOUND::Corrupt data: Trying to set a lockup delay on candidate leaving office.");
+            const auto &reg_candidate = registered_candidates.get(cust_itr->cust_name.value, "ERR::NEWPERIOD_EXPECTED_CAND_NOT_FOUND::Corrupt data: Trying to set a lockup delay on candidate leaving office.");
             registered_candidates.modify(reg_candidate, cust_itr->cust_name, [&](candidate &c) {
                 eosio::print("Lockup stake for release delay.");
                 c.custodian_end_time_stamp = now() + configs().lockup_release_time_delay;
@@ -67,7 +67,7 @@ void daccustodian::allocateCustodians(bool early_election) {
         }
 
         //  If the candidate is inactive or is already a custodian skip to the next one.
-        if (!cand_itr->is_active || custodians.find(cand_itr->candidate_name) != custodians.end()) {
+        if (!cand_itr->is_active || custodians.find(cand_itr->candidate_name.value) != custodians.end()) {
             cand_itr++;
         } else {
             custodians.emplace(_self, [&](custodian &c) {
@@ -89,15 +89,15 @@ void daccustodian::allocateCustodians(bool early_election) {
 
 void daccustodian::setCustodianAuths() {
 
-    custodians_table custodians(_self, _self);
+    custodians_table custodians(_self, _self.value);
 
-    account_name accountToChange = configs().authaccount;
+    name accountToChange = configs().authaccount;
 
     vector<eosiosystem::permission_level_weight> accounts;
 
     for (auto it = custodians.begin(); it != custodians.end(); it++) {
         eosiosystem::permission_level_weight account{
-                .permission = eosio::permission_level(it->cust_name, N(active)),
+                .permission = eosio::permission_level(it->cust_name, "active"_n),
                 .weight = (uint16_t) 1,
         };
         accounts.push_back(account);
@@ -109,13 +109,12 @@ void daccustodian::setCustodianAuths() {
             .accounts = accounts
     };
 
-    action(permission_level{accountToChange,
-                            N(owner)},
-           N(eosio), N(updateauth),
+    action(permission_level{accountToChange, "owner"_n},
+           "eosio"_n, "updateauth"_n,
            std::make_tuple(
                    accountToChange,
                    HIGH_PERMISSION,
-                   N(owner),
+                   "owner"_n,
                    high_contract_authority))
             .send();
 
@@ -125,12 +124,12 @@ void daccustodian::setCustodianAuths() {
             .accounts = accounts
     };
 
-    action(permission_level{accountToChange, N(owner)},
-           N(eosio), N(updateauth),
+    action(permission_level{accountToChange, "owner"_n},
+            "eosio"_n, "updateauth"_n,
            std::make_tuple(
                    accountToChange,
                    MEDIUM_PERMISSION,
-                   N(high),
+                   "high"_n,
                    medium_contract_authority))
             .send();
 
@@ -140,12 +139,12 @@ void daccustodian::setCustodianAuths() {
             .accounts = accounts
     };
 
-    action(permission_level{accountToChange, N(owner)},
-           N(eosio), N(updateauth),
+    action(permission_level{accountToChange, "owner"_n},
+            "eosio"_n, "updateauth"_n,
            std::make_tuple(
                    accountToChange,
                    LOW_PERMISSION,
-                   N(med),
+                   "med"_n,
                    low_contract_authority))
             .send();
 
@@ -155,12 +154,12 @@ void daccustodian::setCustodianAuths() {
             .accounts = accounts
     };
 
-    action(permission_level{accountToChange, N(owner)},
-           N(eosio), N(updateauth),
+    action(permission_level{accountToChange, "owner"_n},
+            "eosio"_n, "updateauth"_n,
            std::make_tuple(
                    accountToChange,
                    ONE_PERMISSION,
-                   N(low),
+                   "low"_n,
                    one_contract_authority))
             .send();
 }
@@ -172,7 +171,7 @@ void daccustodian::newperiod(string message) {
     contr_config config = configs();
 
     // Get the max supply of the lockup asset token (eg. EOSDAC)
-    auto tokenStats = stats(eosio::string_to_name(TOKEN_CONTRACT), config.lockupasset.symbol.name()).begin();
+    auto tokenStats = stats(name(TOKEN_CONTRACT), config.lockupasset.symbol.code().raw()).begin();
     uint64_t max_supply = tokenStats->supply.amount;
 
     double percent_of_current_voter_engagement =

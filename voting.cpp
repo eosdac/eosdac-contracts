@@ -11,12 +11,12 @@ void daccustodian::votecust(name voter, vector<name> newvotes) {
     std::set<name> dupSet{};
     for (name vote: newvotes) {
         eosio_assert(dupSet.insert(vote).second, "ERR::VOTECUST_DUPLICATE_VOTES::Added duplicate votes for the same candidate.");
-        auto candidate = registered_candidates.get(vote, "ERR::VOTECUST_CANDIDATE_NOT_FOUND::Candidate could not be found.");
+        auto candidate = registered_candidates.get(vote.value, "ERR::VOTECUST_CANDIDATE_NOT_FOUND::Candidate could not be found.");
         eosio_assert(candidate.is_active, "ERR::VOTECUST_VOTING_FOR_INACTIVE_CAND::Attempting to vote for an inactive candidate.");
     }
 
     // Find a vote that has been cast by this voter previously.
-    auto existingVote = votes_cast_by_members.find(voter);
+    auto existingVote = votes_cast_by_members.find(voter.value);
     if (existingVote != votes_cast_by_members.end()) {
         modifyVoteWeights(voter, existingVote->candidates, newvotes);
 

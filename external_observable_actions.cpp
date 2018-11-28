@@ -5,10 +5,10 @@ void daccustodian::transfer(name from,
                             string memo) {
     eosio::print("\nlistening to transfer with memo == dacaccountId");
     if (to == _self) {
-        account_name dacId = eosio::string_to_name(memo.c_str());
+        name dacId = name(memo.c_str());
         if (is_account(dacId)) {
-            pendingstake_table_t pendingstake(_self, dacId);
-            auto source = pendingstake.find(from);
+            pendingstake_table_t pendingstake(_self, dacId.value);
+            auto source = pendingstake.find(from.value);
             if (source != pendingstake.end()) {
                 pendingstake.modify(source, _self, [&](tempstake &s) {
                     s.quantity += quantity;
@@ -27,14 +27,14 @@ void daccustodian::transfer(name from,
 
     if (quantity.symbol == configs().lockupasset.symbol) {
         // Update vote weight for the 'from' in the transfer if vote exists
-        auto existingVote = votes_cast_by_members.find(from);
+        auto existingVote = votes_cast_by_members.find(from.value);
         if (existingVote != votes_cast_by_members.end()) {
             updateVoteWeights(existingVote->candidates, -quantity.amount);
             _currentState.total_weight_of_votes -= quantity.amount;
         }
 
         // Update vote weight for the 'to' in the transfer if vote exists
-        existingVote = votes_cast_by_members.find(to);
+        existingVote = votes_cast_by_members.find(to.value);
         if (existingVote != votes_cast_by_members.end()) {
             updateVoteWeights(existingVote->candidates, quantity.amount);
             _currentState.total_weight_of_votes += quantity.amount;

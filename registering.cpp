@@ -10,10 +10,10 @@ void daccustodian::nominatecand(name cand, asset requestedpay) {
 
     _currentState.number_active_candidates++;
 
-    pendingstake_table_t pendingstake(_self, _self);
-    auto pending = pendingstake.find(cand);
+    pendingstake_table_t pendingstake(_self, _self.value);
+    auto pending = pendingstake.find(cand.value);
 
-    auto reg_candidate = registered_candidates.find(cand);
+    auto reg_candidate = registered_candidates.find(cand.value);
     if (reg_candidate != registered_candidates.end()) {
         eosio_assert(!reg_candidate->is_active, "ERR::NOMINATECAND_ALREADY_REGISTERED::Candidate is already registered and active.");
         registered_candidates.modify(reg_candidate, cand, [&](candidate &c) {
@@ -53,7 +53,7 @@ void daccustodian::firecand(name cand, bool lockupStake) {
 }
 
 void daccustodian::unstake(name cand) {
-    const auto &reg_candidate = registered_candidates.get(cand, "ERR::UNSTAKE_CAND_NOT_REGISTERED::Candidate is not already registered.");
+    const auto &reg_candidate = registered_candidates.get(cand.value, "ERR::UNSTAKE_CAND_NOT_REGISTERED::Candidate is not already registered.");
     eosio_assert(!reg_candidate.is_active, "ERR::UNSTAKE_CANNOT_UNSTAKE_FROM_ACTIVE_CAND::Cannot unstake tokens for an active candidate. Call withdrawcand first.");
 
     eosio_assert(reg_candidate.custodian_end_time_stamp < now(), "ERR::UNSTAKE_CANNOT_UNSTAKE_UNDER_TIME_LOCK::Cannot unstake tokens before they are unlocked from the time delay.");
@@ -64,14 +64,16 @@ void daccustodian::unstake(name cand) {
         transaction deferredTrans{};
 
         deferredTrans.actions.emplace_back(
-        action(permission_level{_self, N(xfer)},
-               eosio::string_to_name(TOKEN_CONTRACT), N(transfer),
+        action(permission_level{_self, "xfer"_n},
+               name( TOKEN_CONTRACT ),
+               "transfer"_n,
                make_tuple(_self, cand, c.locked_tokens,
                           string("Returning locked up stake. Thank you."))
-        ));
+        )
+        );
 
         deferredTrans.delay_sec = TRANSFER_DELAY;
-        deferredTrans.send(cand, _self);
+        deferredTrans.send(cand.value, _self);
 
         c.locked_tokens = asset(0, configs().lockupasset.symbol);
     });
@@ -91,8 +93,8 @@ void daccustodian::firecust(name cust) {
 
 void daccustodian::removeCustodian(name cust) {
 
-    custodians_table custodians(_self, _self);
-    auto elected = custodians.find(cust);
+    custodians_table custodians(_self, _self.value);
+    auto elected = custodians.find(cust.value);
     eosio_assert(elected != custodians.end(), "ERR::REMOVECUSTODIAN_NOT_CURRENT_CUSTODIAN::The entered account name is not for a current custodian.");
 
     eosio::print("Remove custodian from the custodians table.");
@@ -111,7 +113,7 @@ void daccustodian::removeCustodian(name cust) {
 void daccustodian::removeCandidate(name cand, bool lockupStake) {
     _currentState.number_active_candidates--;
 
-    const auto &reg_candidate = registered_candidates.get(cand, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
+    const auto &reg_candidate = registered_candidates.get(cand.value, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
 
     eosio::print("Remove from nominated candidate by setting them to inactive.");
     // Set the is_active flag to false instead of deleting in order to retain votes if they return to he dac.
