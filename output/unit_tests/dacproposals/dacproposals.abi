@@ -1,5 +1,5 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Mon Nov 26 08:59:31 2018",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Sun Dec  2 01:08:05 2018",
     "version": "eosio::abi/1.1",
     "structs": [
         {
@@ -7,11 +7,11 @@
             "base": "",
             "fields": [
                 {
-                    "name": "worker",
+                    "name": "proposer",
                     "type": "name"
                 },
                 {
-                    "name": "proposalid",
+                    "name": "proposal_id",
                     "type": "uint64"
                 }
             ]
@@ -21,12 +21,38 @@
             "base": "",
             "fields": [
                 {
-                    "name": "worker",
+                    "name": "proposer",
                     "type": "name"
                 },
                 {
-                    "name": "proposalid",
+                    "name": "proposal_id",
                     "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "config_type",
+            "base": "",
+            "fields": [
+                {
+                    "name": "service_account",
+                    "type": "name"
+                },
+                {
+                    "name": "proposal_threshold",
+                    "type": "uint16"
+                },
+                {
+                    "name": "proposal_approval_threshold_percent",
+                    "type": "uint16"
+                },
+                {
+                    "name": "claim_threshold",
+                    "type": "uint16"
+                },
+                {
+                    "name": "claim_approval_threshold_percent",
+                    "type": "uint16"
                 }
             ]
         },
@@ -55,11 +81,11 @@
                     "type": "name"
                 },
                 {
-                    "name": "payamount",
-                    "type": "asset"
+                    "name": "pay_amount",
+                    "type": "extended_asset"
                 },
                 {
-                    "name": "contenthash",
+                    "name": "content_hash",
                     "type": "string"
                 }
             ]
@@ -69,8 +95,8 @@
             "base": "",
             "fields": [
                 {
-                    "name": "propid",
-                    "type": "uint32"
+                    "name": "key",
+                    "type": "uint64"
                 },
                 {
                     "name": "proposer",
@@ -81,12 +107,16 @@
                     "type": "name"
                 },
                 {
-                    "name": "contenthash",
+                    "name": "content_hash",
                     "type": "string"
                 },
                 {
-                    "name": "payamount",
-                    "type": "asset"
+                    "name": "pay_amount",
+                    "type": "extended_asset"
+                },
+                {
+                    "name": "state",
+                    "type": "ProposalState"
                 }
             ]
         },
@@ -95,7 +125,11 @@
             "base": "",
             "fields": [
                 {
-                    "name": "propid",
+                    "name": "vote_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "proposal_id",
                     "type": "uint64"
                 },
                 {
@@ -104,29 +138,25 @@
                 },
                 {
                     "name": "vote",
-                    "type": "uint8"
+                    "type": "VoteType"
                 },
                 {
-                    "name": "commenthash",
+                    "name": "comment_hash",
                     "type": "string"
                 }
             ]
         },
         {
-            "name": "vote",
+            "name": "startwork",
             "base": "",
             "fields": [
                 {
-                    "name": "voter",
+                    "name": "proposer",
                     "type": "name"
                 },
                 {
-                    "name": "proxy",
-                    "type": "name"
-                },
-                {
-                    "name": "stake",
-                    "type": "asset"
+                    "name": "proposal_id",
+                    "type": "uint64"
                 }
             ]
         },
@@ -139,12 +169,12 @@
                     "type": "name"
                 },
                 {
-                    "name": "proposal",
-                    "type": "uint32"
+                    "name": "proposal_id",
+                    "type": "uint64"
                 },
                 {
                     "name": "vote",
-                    "type": "uint8"
+                    "type": "VoteType"
                 }
             ]
         }
@@ -167,6 +197,11 @@
             "ricardian_contract": ""
         },
         {
+            "name": "startwork",
+            "type": "startwork",
+            "ricardian_contract": ""
+        },
+        {
             "name": "voteprop",
             "type": "voteprop",
             "ricardian_contract": ""
@@ -174,22 +209,22 @@
     ],
     "tables": [
         {
-            "name": "proposal",
+            "name": "config_type",
+            "type": "config_type",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "proposals",
             "type": "proposal",
             "index_type": "i64",
             "key_names": [],
             "key_types": []
         },
         {
-            "name": "proposalvote",
+            "name": "propvotes",
             "type": "proposalvote",
-            "index_type": "i64",
-            "key_names": [],
-            "key_types": []
-        },
-        {
-            "name": "vote",
-            "type": "vote",
             "index_type": "i64",
             "key_names": [],
             "key_types": []
