@@ -125,7 +125,7 @@ namespace eosdac {
 
         auto approvals = esc_itr->approvals;
 
-        eosio_assert(approvals.size() >= 2, "This escrow does not have the required approvals to claim");
+        eosio_assert(approvals.size() >= 2, "This escrow has not received the required approvals to claim");
 
         //inline transfer the required funds
         eosio::action(
