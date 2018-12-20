@@ -78,8 +78,7 @@ namespace eosdac {
     ACTION dacescrow::approve(uint64_t key, name approver) {
         require_auth(approver);
 
-        auto esc_itr = escrows.find(key);
-        eosio_assert(esc_itr != escrows.end(), "Could not find escrow with that index");
+        auto esc_itr = escrows.get(key, "Could not find escrow with that index");
 
         eosio_assert(esc_itr->sender == approver || esc_itr->receiver == approver || esc_itr->arb == approver, "You are not involved in this escrow");
 
