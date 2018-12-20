@@ -11,6 +11,11 @@ using namespace std;
 
 namespace eosdac {
 
+    time_point current_time_point() {
+        const static time_point ct{ microseconds{ static_cast<int64_t>( current_time() ) } };
+        return ct;
+    }
+
     dacescrow::~dacescrow() {}
 
 
@@ -138,6 +143,22 @@ namespace eosdac {
         eosio_assert(esc_itr != escrows.end(), "Could not find escrow with that index");
 
         require_auth(esc_itr->sender);
+
+        time_point_sec time_now = time_point_sec(current_time_point());
+
+        eosio_assert(time_now >= esc_itr->expires, "Escrow has not expired");
+        eosio_assert(esc_itr->approvals.size() >= 2, "Escrow has received required approvals");
+
+        transaction pay_trans{};
+
+        pay_trans.actions.emplace_back(
+            action(permission_level{_self, "active"_n},
+                   "eosio.token"_n, "transfer"_n,
+                   std::make_tuple(_self, esc_itr->sender, esc_itr->amount, esc_itr->memo)
+            )
+        );
+
+        pay_trans.send(key, esc_itr->receiver);
 
     }
 
