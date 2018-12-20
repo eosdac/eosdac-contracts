@@ -57,6 +57,9 @@ namespace eosdac {
         ACTION refund(uint64_t key);
 
         [[eosio::action]]
+        ACTION cancel(uint64_t key);
+
+        [[eosio::action]]
         ACTION clean();
 
     };

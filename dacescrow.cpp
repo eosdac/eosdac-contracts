@@ -135,6 +135,23 @@ namespace eosdac {
     }
 
     /*
+     * Empties an unfilled escrow request
+     */
+    ACTION dacescrow::cancel(uint64_t key) {
+
+        auto esc_itr = escrows.find(key);
+        eosio_assert(esc_itr != escrows.end(), "Could not find escrow with that index");
+
+        require_auth(esc_itr->sender);
+
+        asset zero_asset{0, symbol{"EOS", 4}};
+
+        eosio_assert(zero_asset == esc_itr->amount, "Amount is not zero, this escrow is locked down");
+
+        escrows.erase(esc_itr);
+    }
+
+    /*
      * Allows the sender to withdraw the funds if there are not enough approvals and the escrow has expired
      */
     ACTION dacescrow::refund(uint64_t key) {
@@ -152,14 +169,15 @@ namespace eosdac {
         transaction pay_trans{};
 
         pay_trans.actions.emplace_back(
-            action(permission_level{_self, "active"_n},
-                   "eosio.token"_n, "transfer"_n,
-                   std::make_tuple(_self, esc_itr->sender, esc_itr->amount, esc_itr->memo)
-            )
+                action(permission_level{_self, "active"_n},
+                       "eosio.token"_n, "transfer"_n,
+                       std::make_tuple(_self, esc_itr->sender, esc_itr->amount, esc_itr->memo)
+                )
         );
 
         pay_trans.send(key, esc_itr->receiver);
 
+        escrows.erase(esc_itr);
     }
 
     ACTION dacescrow::clean() {
@@ -198,5 +216,6 @@ EOSIO_ABI_EX(eosdac::dacescrow,
              (unapprove)
              (claim)
              (refund)
+             (cancel)
              (clean)
 )
