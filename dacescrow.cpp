@@ -169,7 +169,7 @@ namespace eosdac {
         time_point_sec time_now = time_point_sec(current_time_point());
 
         eosio_assert(time_now >= esc_itr->expires, "Escrow has not expired");
-        eosio_assert(esc_itr->approvals.size() >= 2, "Escrow has received required approvals");
+        eosio_assert(esc_itr->approvals.size() >= 2, "Escrow has not received the required number of approvals");
 
 
         eosio::action(
