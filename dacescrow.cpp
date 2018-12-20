@@ -28,6 +28,8 @@ namespace eosdac {
             return;
         }
 
+        require_auth(from);
+
         asset zero_asset{0, symbol{"EOS", 4}};
 
         auto by_sender = escrows.get_index<"bysender"_n>();
