@@ -30,6 +30,8 @@ namespace eosdac {
 
         require_auth(from);
 
+        eosio_assert(quantity.symbol.raw() == symbol{"EOS", 4}.raw(), "Only EOS tokens");
+
         asset zero_asset{0, symbol{"EOS", 4}};
 
         auto by_sender = escrows.get_index<"bysender"_n>();
@@ -80,7 +82,10 @@ namespace eosdac {
     ACTION dacescrow::approve(uint64_t key, name approver) {
         require_auth(approver);
 
-        auto esc_itr = escrows.get(key, "Could not find escrow with that index");
+        auto esc_itr = escrows.find(key);
+        eosio_assert(esc_itr != escrows.end(), "Could not find escrow with that index");
+
+        eosio_assert(esc_itr->amount.amount > 0, "This has not been initialized with a transfer");
 
         eosio_assert(esc_itr->sender == approver || esc_itr->receiver == approver || esc_itr->arb == approver, "You are not involved in this escrow");
 
@@ -116,21 +121,18 @@ namespace eosdac {
 
         require_auth(esc_itr->receiver);
 
+        eosio_assert(esc_itr->amount.amount > 0, "This has not been initialized with a transfer");
+
         auto approvals = esc_itr->approvals;
 
         eosio_assert(approvals.size() >= 2, "This escrow does not have the required approvals to claim");
 
         //inline transfer the required funds
-        transaction pay_trans{};
+        eosio::action(
+                eosio::permission_level{_self , "active"_n }, "eosio.token"_n, "transfer"_n,
+                make_tuple( _self, esc_itr->sender, esc_itr->amount, esc_itr->memo)
+        ).send();
 
-        pay_trans.actions.emplace_back(
-            action(permission_level{_self, "active"_n},
-                   "eosio.token"_n, "transfer"_n,
-                   std::make_tuple(_self, esc_itr->receiver, esc_itr->amount, esc_itr->memo)
-            )
-        );
-
-        pay_trans.send(key, esc_itr->receiver);
 
         escrows.erase(esc_itr);
     }
@@ -162,21 +164,19 @@ namespace eosdac {
 
         require_auth(esc_itr->sender);
 
+        eosio_assert(esc_itr->amount.amount > 0, "This has not been initialized with a transfer");
+
         time_point_sec time_now = time_point_sec(current_time_point());
 
         eosio_assert(time_now >= esc_itr->expires, "Escrow has not expired");
         eosio_assert(esc_itr->approvals.size() >= 2, "Escrow has received required approvals");
 
-        transaction pay_trans{};
 
-        pay_trans.actions.emplace_back(
-                action(permission_level{_self, "active"_n},
-                       "eosio.token"_n, "transfer"_n,
-                       std::make_tuple(_self, esc_itr->sender, esc_itr->amount, esc_itr->memo)
-                )
-        );
+        eosio::action(
+                eosio::permission_level{_self , "active"_n }, "eosio.token"_n, "transfer"_n,
+                make_tuple( _self, esc_itr->sender, esc_itr->amount, esc_itr->memo)
+        ).send();
 
-        pay_trans.send(key, esc_itr->receiver);
 
         escrows.erase(esc_itr);
     }
