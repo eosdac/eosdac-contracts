@@ -61,11 +61,9 @@ namespace eosdac {
         asset zero_asset{0, symbol{"EOS", 4}};
 
         auto by_sender = escrows.get_index<"bysender"_n>();
-        auto existing = by_sender.begin();
 
-        while (existing != by_sender.end()){
-            eosio_assert(existing->amount != zero_asset, "You already have an empty escrow.  Either fill it or delete it");
-            existing++;
+        for (auto esc_itr = by_sender.lower_bound(sender.value), end_itr = by_sender.upper_bound(sender.value); esc_itr != end_itr; ++esc_itr) {
+            eosio_assert(esc_itr->amount != zero_asset, "You already have an empty escrow.  Either fill it or delete it");
         }
 
         escrows.emplace(sender, [&](escrow_info &p) {
