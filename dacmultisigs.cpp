@@ -42,7 +42,7 @@ void dacmultisigs::approved( name proposer, name proposal_name, name approver ){
 
     proposals_table proposals(_self, proposer.value);
     auto& proposal = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
-    proposals.modify(proposal, name{}, [&](storedproposal &p) {
+    proposals.modify(proposal, same_payer, [&](storedproposal &p) {
         p.modifieddate = now();
     });
 }
@@ -56,7 +56,7 @@ void dacmultisigs::unapproved( name proposer, name proposal_name, name unapprove
 
     proposals_table proposals(_self, proposer.value);
     auto& proposal = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
-    proposals.modify(proposal, name{}, [&](storedproposal &p) {
+    proposals.modify(proposal, same_payer, [&](storedproposal &p) {
         p.modifieddate = now();
     });
 }
