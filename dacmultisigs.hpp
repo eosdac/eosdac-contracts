@@ -2,6 +2,7 @@
 #include <eosiolib/multi_index.hpp>
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/transaction.hpp>
+#include <eosiolib/fixed_bytes.hpp>
 
 using namespace eosio;
 using namespace std;
@@ -13,7 +14,7 @@ class [[eosio::contract("dacmultisigs")]] dacmultisigs : public contract {
 
         struct [[eosio::table]] storedproposal {
             name proposalname;
-            capi_checksum256 transactionid;
+            checksum256 transactionid;
             uint32_t modifieddate;
 
             uint64_t primary_key() const { return proposalname.value; }

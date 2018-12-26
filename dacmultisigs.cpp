@@ -22,8 +22,7 @@ void dacmultisigs::proposed( name proposer, name proposal_name, string metadata 
     uint32_t read = read_transaction( buffer, size );
     eosio_assert( size == read, "ERR::READ_TRANSACTION_FAILED::read_transaction failed");
 
-    capi_checksum256 ALIGNED(trx_id);
-    sha256(buffer, read, &trx_id);
+    checksum256 trx_id = sha256(buffer, read);
 
     proposals_table proposals(_self, proposer.value);
 
