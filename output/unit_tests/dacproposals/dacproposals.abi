@@ -1,5 +1,5 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Sun Dec  2 01:08:05 2018",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Tue Jan  8 20:08:00 2019",
     "version": "eosio::abi/1.1",
     "structs": [
         {
@@ -31,7 +31,7 @@
             ]
         },
         {
-            "name": "config_type",
+            "name": "configtype",
             "base": "",
             "fields": [
                 {
@@ -73,16 +73,12 @@
                     "type": "string"
                 },
                 {
-                    "name": "desc",
-                    "type": "string"
-                },
-                {
                     "name": "arbitrator",
                     "type": "name"
                 },
                 {
                     "name": "pay_amount",
-                    "type": "extended_asset"
+                    "type": "asset"
                 },
                 {
                     "name": "content_hash",
@@ -112,11 +108,11 @@
                 },
                 {
                     "name": "pay_amount",
-                    "type": "extended_asset"
+                    "type": "asset"
                 },
                 {
                     "name": "state",
-                    "type": "ProposalState"
+                    "type": "uint8"
                 }
             ]
         },
@@ -138,7 +134,7 @@
                 },
                 {
                     "name": "vote",
-                    "type": "VoteType"
+                    "type": "uint8"
                 },
                 {
                     "name": "comment_hash",
@@ -161,6 +157,16 @@
             ]
         },
         {
+            "name": "updateconfig",
+            "base": "",
+            "fields": [
+                {
+                    "name": "new_config",
+                    "type": "configtype"
+                }
+            ]
+        },
+        {
             "name": "voteprop",
             "base": "",
             "fields": [
@@ -174,7 +180,7 @@
                 },
                 {
                     "name": "vote",
-                    "type": "VoteType"
+                    "type": "uint8"
                 }
             ]
         }
@@ -184,33 +190,38 @@
         {
             "name": "cancel",
             "type": "cancel",
-            "ricardian_contract": ""
+            "ricardian_contract": "## ACTION: cancel\n  **PARAMETERS:**\n  * __proposer__ is an eosio account name.\n  * __proposal_id__ is an integer id for an existing proposal for the proposer to cancel.\n\n  **INTENT:**\n  The intent of cancel is to cancel a proposal."
         },
         {
             "name": "claim",
             "type": "claim",
-            "ricardian_contract": ""
+            "ricardian_contract": "## ACTION: claim\n **PARAMETERS:**\n * __proposer__ is an eosio account name.\n * __proposal_id__ is an integer id for an existing proposal for the proposer to claim.\n\n **INTENT:**\n The intent of claim is to indicate the proposer has completed the required work for a worker proposal and would like to claim the escrowed funds as payment."
         },
         {
             "name": "createprop",
             "type": "createprop",
-            "ricardian_contract": ""
+            "ricardian_contract": "## ACTION: createprop\n**PARAMETERS:**\n* __proposer__ is an eosio account name.\n* __title__ is a string that provides a title for the proposal.\n* __summary__ is a string that provides a summary for the proposal.\n* __arbitrator__ is an eosio account name for a nominated arbitrator on the proposal.\n* __pay_amount__ is an eosio asset amount representing the requested pay amount for the worker proposal.\n* __content_hash__ is a string that provides a hash of the details of the proposal.\n\n**INTENT** The intent of createprop is to enter a new worker proposal.\n#### Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later so therefore should only store a unidentifiable hash of content rather than human readable content."
         },
         {
             "name": "startwork",
             "type": "startwork",
-            "ricardian_contract": ""
+            "ricardian_contract": "## ACTION: startwork\n**PARAMETERS:**\n* __proposer__ is an eosio account name.\n* __proposal_id__ is an integer id for an existing proposal for the custodian to vote on.\n\n**INTENT:** \nThe intent of startwork is to indicate the intention for the proposer to start work on an existing proposal."
+        },
+        {
+            "name": "updateconfig",
+            "type": "updateconfig",
+            "ricardian_contract": "## ACTION: updateconfig\n**PARAMETERS:**\n* __new_config__ is a config_type object to update the settings for the contract.\n\n**INTENT:** The intent of updateconfig is to update the contract settings within the contract.\nThe fields in the config object the their default values are:\n* name service_account - The service account to manage the escrow funds for worker proposals.\n* uint16_t proposal_threshold = 7 - The number of required votes to make a decision on approving a worker proposal submission.\n* uint16_t proposal_approval_threshold_percent = 50 - The percent threshold required to approve a proposal submission.\n* uint16_t claim_threshold = 5 - The number of required votes to make a decision on approving a claim for a worker proposal.\n* uint16_t claim_approval_threshold_percent = 50 - The percent threshold required to approve for a proposal claim.\n\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
         },
         {
             "name": "voteprop",
             "type": "voteprop",
-            "ricardian_contract": ""
+            "ricardian_contract": "## ACTION: voteprop\n**PARAMETERS:**\n* __custodian__ is an eosio account name.\n* __proposal_id__ is an integer id for an existing proposal for the custodian to vote on.\n* __vote__ is an integer repesenting a vote type on the proposal.\n\n**INTENT:** \nThe intent of voteprop is to record a vote on an existing proposal."
         }
     ],
     "tables": [
         {
-            "name": "config_type",
-            "type": "config_type",
+            "name": "configtype",
+            "type": "configtype",
             "index_type": "i64",
             "key_names": [],
             "key_types": []
@@ -230,7 +241,16 @@
             "key_types": []
         }
     ],
-    "ricardian_clauses": [],
+    "ricardian_clauses": [
+        {
+            "id": "ENTIRE AGREEMENT",
+            "body": "This contract contains the entire agreement of the parties, for all described actions, and there are no other promises or conditions in any other agreement whether oral or written concerning the subject matter of this Contract. This contract supersedes any prior written or oral agreements between the parties."
+        },
+        {
+            "id": "BINDING CONSTITUTION",
+            "body": "All the the action descibed in this contract are subject to the EOSDAC consitution as held at http://eosdac.io. This includes, but is not limited to membership terms and conditions, dispute resolution and severability."
+        }
+    ],
     "variants": [],
     "abi_extensions": []
 }

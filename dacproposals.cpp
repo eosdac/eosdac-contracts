@@ -7,8 +7,12 @@
 using namespace eosio;
 using namespace std;
 
-    ACTION dacproposals::createprop(name proposer, string title, string summary, string desc, name arbitrator, extended_asset pay_amount, string content_hash){
+    ACTION dacproposals::createprop(name proposer, string title, string summary, name arbitrator, asset pay_amount, string content_hash){
         require_auth(proposer);
+
+        eosio_assert(title.length() > 3, "Title length is too short.");
+        eosio_assert(summary.length() > 3, "Summary length is too short.");
+        eosio_assert(content_hash.length() == 32, "Invalid content hash.");
 
         proposals.emplace(proposer, [&](proposal &p) {
             p.key = proposals.available_primary_key();
@@ -20,7 +24,7 @@ using namespace std;
         });
     }
 
-    ACTION dacproposals::voteprop(name custodian, uint64_t proposal_id, VoteType vote){
+    ACTION dacproposals::voteprop(name custodian, uint64_t proposal_id, uint8_t vote){
         require_auth(custodian);
         
         const proposal& prop = proposals.get(proposal_id, "Proposal not found.");
@@ -52,8 +56,10 @@ using namespace std;
         }
     }
 
-    ACTION dacproposals::startwork(name proposer, uint64_t proposal_id) {
+    ACTION dacproposals::startwork(name proposer, uint64_t proposal_id){
+
         require_auth(proposer);
+
         const proposal& prop = proposals.get(proposal_id, "Proposal not found.");
         eosio_assert(prop.state == pending_approval,"Proposal is not in the pending approval state therefore cannot start work.");
         auto by_voters = prop_votes.get_index<"proposal"_n>();
@@ -66,11 +72,12 @@ using namespace std;
             }
             if (vote_idx->vote == proposal_deny) {
                 deny_count++;
-            }        
+            }
+            vote_idx++;
         }
-        eosio_assert(approved_count + deny_count >= configs.get().proposal_threshold, "Insufficient votes on worker proposal");
-        double percent_approval = double(approved_count) / double(deny_count) * 100.0;
-        eosio_assert(percent_approval >= configs.get().proposal_approval_threshold_percent, "Vote approval threshold not met.");
+        eosio_assert(approved_count + deny_count >= current_configs().proposal_threshold, "Insufficient votes on worker proposal");
+        double percent_approval = double(approved_count) / double(approved_count + deny_count) * 100.0;
+        eosio_assert(percent_approval >= current_configs().proposal_approval_threshold_percent, "Vote approval threshold not met.");
         proposals.modify(prop, proposer, [&](proposal &p){
             p.state = work_in_progress;
         });
@@ -89,19 +96,25 @@ using namespace std;
         while(vote_idx != by_voters.end()) {
             if (vote_idx->vote == claim_approve) {
                 approved_count++;
-            }
+}
             if (vote_idx->vote == claim_deny) {
                 deny_count++;
-            }        
+}
+            vote_idx++;
         }
-        eosio_assert(approved_count + deny_count >= configs.get().claim_threshold, "Insufficient votes on worker proposal to approve or deny claim.");
-        double percent_approval = double(approved_count) / double(deny_count) * 100.0;
-        eosio_assert(percent_approval >= configs.get().claim_approval_threshold_percent, "Vote claim approval threshold not met.");
-                proposals.modify(prop, proposer, [&](proposal &p){
-            p.state = work_in_progress;
+        eosio_assert(approved_count + deny_count >= current_configs().claim_threshold, "Insufficient votes on worker proposal to approve or deny claim.");
+        double percent_approval = double(approved_count) / double(approved_count + deny_count) * 100.0;
+        eosio_assert(percent_approval >= current_configs().claim_approval_threshold_percent, "Claim approval threshold not met.");
+
+        proposals.modify(prop, proposer, [&](proposal &p){
+            if (percent_approval >= current_configs().claim_approval_threshold_percent) {
+                p.state = claim_approved;
+                //TODO: Transfer funds from escrow account
+                print("Transfer funds from escrow account to proposer.");
+            } else {
+                p.state = claim_denied;
+            }
         });
-        //TODO: Transfer funds from escrow account
-        print("Transfer funds from escrow account to proposer.");
     }
 
     ACTION dacproposals::cancel(name proposer, uint64_t proposal_id){
@@ -117,9 +130,17 @@ using namespace std;
         }
     }
 
+    ACTION dacproposals::updateconfig(configtype new_config) {
+        require_auth("dacauthority"_n);
+        configs.set(new_config, _self);
+    }
+
+
 EOSIO_DISPATCH(dacproposals,
                 (createprop)
+                (startwork)
                 (voteprop)
                 (claim)
                 (cancel)
+                (updateconfig)
         )
