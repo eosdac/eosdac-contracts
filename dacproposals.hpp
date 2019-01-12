@@ -7,32 +7,21 @@ using namespace eosio;
 using namespace std;
 
 CONTRACT dacproposals : public contract {
-    enum VoteType {  
-        none = 0,
-        // a vote type to indicate a custodian's approval of a worker proposal.
+    enum VoteType {
         proposal_approve, 
         // a vote type to indicate a custodian's denial of a worker proposal.
-        proposal_deny, 
-        // a vote type to indicate a custodian's acceptance of a worker proposal as completed.
-        claim_approve,
-        // a vote type to indicate a custodian's rejection of a worker proposal as completed.
-        claim_deny
+        proposal_deny
     };
 
     enum ProposalState {  
         pending_approval = 0, 
-        work_in_progress,
-        pending_claim, 
-        claim_approved, 
-        claim_denied
+        work_in_progress
     };
 
     TABLE configtype {
             name service_account;
             uint16_t proposal_threshold = 7;
             uint16_t proposal_approval_threshold_percent = 50;
-            uint16_t claim_threshold = 5;
-            uint16_t claim_approval_threshold_percent = 50;
     };
 
     typedef eosio::singleton<"configtype"_n, configtype> configs_table;
@@ -48,7 +37,6 @@ public:
     ACTION createprop(name proposer, string title, string summary, name arbitrator, asset pay_amount, string content_hash);
     ACTION voteprop(name custodian, uint64_t proposal_id, uint8_t vote);
     ACTION startwork(name proposer, uint64_t proposal_id);
-    ACTION claim(name proposer, uint64_t proposal_id);
     ACTION cancel(name proposer, uint64_t proposal_id);
     ACTION updateconfig(configtype new_config);
 
@@ -107,5 +95,4 @@ private:
         configs.set(conf, _self);
         return conf;
     }
-
 };
