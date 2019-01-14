@@ -1,9 +1,23 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Sat Jan 12 14:43:35 2019",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Tue Jan  8 20:08:00 2019",
     "version": "eosio::abi/1.1",
     "structs": [
         {
             "name": "cancel",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposer",
+                    "type": "name"
+                },
+                {
+                    "name": "proposal_id",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "claim",
             "base": "",
             "fields": [
                 {
@@ -30,6 +44,14 @@
                 },
                 {
                     "name": "proposal_approval_threshold_percent",
+                    "type": "uint16"
+                },
+                {
+                    "name": "claim_threshold",
+                    "type": "uint16"
+                },
+                {
+                    "name": "claim_approval_threshold_percent",
                     "type": "uint16"
                 }
             ]
@@ -169,6 +191,11 @@
             "name": "cancel",
             "type": "cancel",
             "ricardian_contract": "## ACTION: cancel\n  **PARAMETERS:**\n  * __proposer__ is an eosio account name.\n  * __proposal_id__ is an integer id for an existing proposal for the proposer to cancel.\n\n  **INTENT:**\n  The intent of cancel is to cancel a proposal."
+        },
+        {
+            "name": "claim",
+            "type": "claim",
+            "ricardian_contract": "## ACTION: claim\n **PARAMETERS:**\n * __proposer__ is an eosio account name.\n * __proposal_id__ is an integer id for an existing proposal for the proposer to claim.\n\n **INTENT:**\n The intent of claim is to indicate the proposer has completed the required work for a worker proposal and would like to claim the escrowed funds as payment."
         },
         {
             "name": "createprop",

@@ -32,6 +32,9 @@ using namespace std;
             case pending_approval:
                 eosio_assert(vote == proposal_approve || vote == proposal_deny, "Invalid vote for the current proposal state.");
                 break;
+            case work_in_progress:
+                eosio_assert(vote == claim_approve || vote == claim_deny, "Invalid vote for the current proposal state.");
+                break;
             default:
                 eosio_assert(false, "Invalid proposal state to accept votes.");
         }
@@ -82,6 +85,38 @@ using namespace std;
         print("Transfer funds to escrow account");
     }
 
+    ACTION dacproposals::claim(name proposer, uint64_t proposal_id){
+        require_auth(proposer);
+        const proposal& prop = proposals.get(proposal_id, "Proposal not found.");
+        eosio_assert(prop.state == work_in_progress,"Proposal is not in the work-in-progress state therefore cannot be claimed as complete.");
+        auto by_voters = prop_votes.get_index<"proposal"_n>();
+        auto vote_idx = by_voters.find(proposal_id);
+        int16_t approved_count = 0;
+        int16_t deny_count = 0;
+        while(vote_idx != by_voters.end()) {
+            if (vote_idx->vote == claim_approve) {
+                approved_count++;
+}
+            if (vote_idx->vote == claim_deny) {
+                deny_count++;
+}
+            vote_idx++;
+        }
+        eosio_assert(approved_count + deny_count >= current_configs().claim_threshold, "Insufficient votes on worker proposal to approve or deny claim.");
+        double percent_approval = double(approved_count) / double(approved_count + deny_count) * 100.0;
+        eosio_assert(percent_approval >= current_configs().claim_approval_threshold_percent, "Claim approval threshold not met.");
+
+        proposals.modify(prop, proposer, [&](proposal &p){
+            if (percent_approval >= current_configs().claim_approval_threshold_percent) {
+                p.state = claim_approved;
+                //TODO: Transfer funds from escrow account
+                print("Transfer funds from escrow account to proposer.");
+            } else {
+                p.state = claim_denied;
+            }
+        });
+    }
+
     ACTION dacproposals::cancel(name proposer, uint64_t proposal_id){
         require_auth(proposer);
         
@@ -105,6 +140,7 @@ EOSIO_DISPATCH(dacproposals,
                 (createprop)
                 (startwork)
                 (voteprop)
+                (claim)
                 (cancel)
                 (updateconfig)
         )

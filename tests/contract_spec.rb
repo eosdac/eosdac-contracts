@@ -287,15 +287,19 @@ describe "eosdacelect" do
       # end
       context "proposal in pending_approval state" do
         context "claim_approve vote" do
-          command %(cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 0, "vote": 0 }' -p custodian1), allow_error: true
+          command %(cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 0, "vote": 1 }' -p custodian1), allow_error: true
+          its(:stdout) {is_expected.to include('dacproposals <= dacproposals::voteprop')}
+        end
+        context "claim_deny vote" do
+          command %(cleos push action dacproposals voteprop '{"custodian": "custodian2", "proposal_id": 0, "vote": 2 }' -p custodian2), allow_error: true
           its(:stdout) {is_expected.to include('dacproposals <= dacproposals::voteprop')}
         end
         context "proposal_approve vote" do
-          command %(cleos push action dacproposals voteprop '{"custodian": "custodian3", "proposal_id": 0, "vote": 0 }' -p custodian3), allow_error: true
+          command %(cleos push action dacproposals voteprop '{"custodian": "custodian3", "proposal_id": 0, "vote": 1 }' -p custodian3), allow_error: true
           its(:stdout) {is_expected.to include('dacproposals <= dacproposals::voteprop')}
         end
         context "proposal_deny vote of existing vote" do
-          command %(cleos push action dacproposals voteprop '{"custodian": "custodian3", "proposal_id": 0, "vote": 1 }' -p custodian3), allow_error: true
+          command %(cleos push action dacproposals voteprop '{"custodian": "custodian3", "proposal_id": 0, "vote": 2 }' -p custodian3), allow_error: true
           its(:stdout) {is_expected.to include('dacproposals <= dacproposals::voteprop')}
         end
       end
@@ -323,14 +327,14 @@ describe "eosdacelect" do
         context "with enough votes to activate" do
           context "with more denied than approved votes" do
             before(:all) do
-              `cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 1, "vote": 1 }' -p custodian1`
-              `cleos push action dacproposals voteprop '{"custodian": "custodian2", "proposal_id": 1, "vote": 1 }' -p custodian2`
-              `cleos push action dacproposals voteprop '{"custodian": "custodian3", "proposal_id": 1, "vote": 1 }' -p custodian3`
-              `cleos push action dacproposals voteprop '{"custodian": "custodian4", "proposal_id": 1, "vote": 1 }' -p custodian4`
-              `cleos push action dacproposals voteprop '{"custodian": "custodian5", "proposal_id": 1, "vote": 1 }' -p custodian5`
-              `cleos push action dacproposals voteprop '{"custodian": "custodian11", "proposal_id": 1, "vote": 0 }' -p custodian11`
-              `cleos push action dacproposals voteprop '{"custodian": "custodian12", "proposal_id": 1, "vote": 0 }' -p custodian12`
-              `cleos push action dacproposals voteprop '{"custodian": "custodian13", "proposal_id": 1, "vote": 0 }' -p custodian13`
+              `cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 1, "vote": 2 }' -p custodian1`
+              `cleos push action dacproposals voteprop '{"custodian": "custodian2", "proposal_id": 1, "vote": 2 }' -p custodian2`
+              `cleos push action dacproposals voteprop '{"custodian": "custodian3", "proposal_id": 1, "vote": 2 }' -p custodian3`
+              `cleos push action dacproposals voteprop '{"custodian": "custodian4", "proposal_id": 1, "vote": 2 }' -p custodian4`
+              `cleos push action dacproposals voteprop '{"custodian": "custodian5", "proposal_id": 1, "vote": 2 }' -p custodian5`
+              `cleos push action dacproposals voteprop '{"custodian": "custodian11", "proposal_id": 1, "vote": 1 }' -p custodian11`
+              `cleos push action dacproposals voteprop '{"custodian": "custodian12", "proposal_id": 1, "vote": 1 }' -p custodian12`
+              `cleos push action dacproposals voteprop '{"custodian": "custodian13", "proposal_id": 1, "vote": 1 }' -p custodian13`
             end
             command %(cleos push action dacproposals startwork '{ "proposer": "proposeracc1", "proposal_id": 1}' -p proposeracc1), allow_error: true
             its(:stderr) {is_expected.to include('Vote approval threshold not met.')}
@@ -339,14 +343,14 @@ describe "eosdacelect" do
         context "with enough votes to approve the proposal" do
           before(:all) do
             sleep 2
-            `cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 1, "vote": 0 }' -p custodian1`
-            `cleos push action dacproposals voteprop '{"custodian": "custodian2", "proposal_id": 1, "vote": 0 }' -p custodian2`
-            `cleos push action dacproposals voteprop '{"custodian": "custodian3", "proposal_id": 1, "vote": 0 }' -p custodian3`
-            `cleos push action dacproposals voteprop '{"custodian": "custodian4", "proposal_id": 1, "vote": 1 }' -p custodian4`
-            `cleos push action dacproposals voteprop '{"custodian": "custodian5", "proposal_id": 1, "vote": 1 }' -p custodian5`
-            `cleos push action dacproposals voteprop '{"custodian": "custodian11", "proposal_id": 1, "vote": 0 }' -p custodian11`
-            `cleos push action dacproposals voteprop '{"custodian": "custodian12", "proposal_id": 1, "vote": 0 }' -p custodian12`
-            `cleos push action dacproposals voteprop '{"custodian": "custodian13", "proposal_id": 1, "vote": 0 }' -p custodian13`
+            `cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 1, "vote": 1 }' -p custodian1`
+            `cleos push action dacproposals voteprop '{"custodian": "custodian2", "proposal_id": 1, "vote": 1 }' -p custodian2`
+            `cleos push action dacproposals voteprop '{"custodian": "custodian3", "proposal_id": 1, "vote": 1 }' -p custodian3`
+            `cleos push action dacproposals voteprop '{"custodian": "custodian4", "proposal_id": 1, "vote": 2 }' -p custodian4`
+            `cleos push action dacproposals voteprop '{"custodian": "custodian5", "proposal_id": 1, "vote": 2 }' -p custodian5`
+            `cleos push action dacproposals voteprop '{"custodian": "custodian11", "proposal_id": 1, "vote": 1 }' -p custodian11`
+            `cleos push action dacproposals voteprop '{"custodian": "custodian12", "proposal_id": 1, "vote": 1 }' -p custodian12`
+            `cleos push action dacproposals voteprop '{"custodian": "custodian13", "proposal_id": 1, "vote": 1 }' -p custodian13`
           end
           command %(cleos push action dacproposals startwork '{ "proposer": "proposeracc1", "proposal_id": 1}' -p proposeracc1), allow_error: true
           its(:stdout) {is_expected.to include('dacproposals::startwork')}
@@ -388,15 +392,73 @@ describe "eosdacelect" do
 
   context "voteprop with valid auth and proposal in work_in_progress state" do
     context "voteup" do
-      command %(cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 1, "vote": 0 }' -p custodian1), allow_error: true
-      its(:stderr) {is_expected.to include('Invalid proposal state to accept votes.')}
+      command %(cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 1, "vote": 1 }' -p custodian1), allow_error: true
+      its(:stderr) {is_expected.to include('Invalid vote for the current proposal state.')}
     end
     context "votedown" do
-      command %(cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 1, "vote": 1 }' -p custodian1), allow_error: true
-      its(:stderr) {is_expected.to include('Invalid proposal state to accept votes.')}
+      command %(cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 1, "vote": 2 }' -p custodian1), allow_error: true
+      its(:stderr) {is_expected.to include('Invalid vote for the current proposal state.')}
     end
   end
-  
+
+  describe "claim" do
+    context "without valid auth" do
+      before(:all) do
+        `cleos push action eosdactokens transfer '{ "from": "testreguser1", "to": "daccustodian", "quantity": "5.0000 EOSDAC","memo":"daccustodian"}' -p testreguser1 -f`
+        # Verify that a transaction with an invalid account memo still is insufficient funds.
+        `cleos push action eosdactokens transfer '{ "from": "testreguser1", "to": "daccustodian", "quantity": "25.0000 EOSDAC","memo":"noncaccount"}' -p testreguser1 -f`
+      end
+      command %(cleos push action dacproposals claim '{ "proposer": "proposeracc1", "proposal_id": "1"}' -p proposeracc2), allow_error: true
+      its(:stderr) {is_expected.to include('missing authority of proposeracc1')}
+    end
+    context "with valid auth" do
+      context "with invalid proposal id" do
+        command %(cleos push action dacproposals claim '{ "proposer": "proposeracc1", "proposal_id": "4"}' -p proposeracc1), allow_error: true
+        its(:stderr) {is_expected.to include('Proposal not found')}
+      end
+      context "proposal in not in work_in_progress state" do
+        command %(cleos push action dacproposals claim '{ "proposer": "proposeracc1", "proposal_id": "0"}' -p proposeracc1), allow_error: true
+        its(:stderr) {is_expected.to include('Proposal is not in the work-in-progress state therefore cannot be claimed as complete.')}
+      end
+      context "proposal in work_in_progress state" do
+        context "with insufficient votes count" do
+          command %(cleos push action dacproposals claim '{ "proposer": "proposeracc1", "proposal_id": "1"}' -p proposeracc1), allow_error: true
+          its(:stderr) {is_expected.to include('Insufficient votes on worker proposal to approve or deny claim.')}
+        end
+        context "with enough votes to to complete claim with denial" do
+          context "with more denied than approved votes" do
+            before(:all) do
+              `cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 1, "vote": 4 }' -p custodian1`
+              `cleos push action dacproposals voteprop '{"custodian": "custodian2", "proposal_id": 1, "vote": 4 }' -p custodian2`
+              `cleos push action dacproposals voteprop '{"custodian": "custodian3", "proposal_id": 1, "vote": 4 }' -p custodian3`
+              `cleos push action dacproposals voteprop '{"custodian": "custodian4", "proposal_id": 1, "vote": 4 }' -p custodian4`
+              `cleos push action dacproposals voteprop '{"custodian": "custodian5", "proposal_id": 1, "vote": 4 }' -p custodian5`
+              `cleos push action dacproposals voteprop '{"custodian": "custodian11", "proposal_id": 1, "vote": 3 }' -p custodian11`
+              `cleos push action dacproposals voteprop '{"custodian": "custodian12", "proposal_id": 1, "vote": 3 }' -p custodian12`
+              `cleos push action dacproposals voteprop '{"custodian": "custodian13", "proposal_id": 1, "vote": 3 }' -p custodian13`
+            end
+            command %(cleos push action dacproposals claim '{ "proposer": "proposeracc1", "proposal_id": "1"}' -p proposeracc1), allow_error: true
+            its(:stderr) {is_expected.to include('Claim approval threshold not met.')}
+          end
+          context "with enough votes to approve the claim" do
+            before(:all) do
+              `cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 1, "vote": 3 }' -p custodian1`
+              `cleos push action dacproposals voteprop '{"custodian": "custodian2", "proposal_id": 1, "vote": 3 }' -p custodian2`
+              `cleos push action dacproposals voteprop '{"custodian": "custodian3", "proposal_id": 1, "vote": 3 }' -p custodian3`
+              `cleos push action dacproposals voteprop '{"custodian": "custodian4", "proposal_id": 1, "vote": 4 }' -p custodian4`
+              `cleos push action dacproposals voteprop '{"custodian": "custodian5", "proposal_id": 1, "vote": 4 }' -p custodian5`
+              `cleos push action dacproposals voteprop '{"custodian": "custodian11", "proposal_id": 1, "vote": 3 }' -p custodian11`
+              `cleos push action dacproposals voteprop '{"custodian": "custodian12", "proposal_id": 1, "vote": 3 }' -p custodian12`
+              `cleos push action dacproposals voteprop '{"custodian": "custodian13", "proposal_id": 1, "vote": 3 }' -p custodian13`
+            end
+            command %(cleos push action dacproposals claim '{ "proposer": "proposeracc1", "proposal_id": "1"}' -p proposeracc1), allow_error: true
+            its(:stdout) {is_expected.to include('dacproposals <= dacproposals::claim')}
+          end
+        end
+      end
+    end
+  end
+
   describe "cancel" do
     context "without valid auth" do
       command %(cleos push action dacproposals cancel '{ "proposer": "proposeracc1", "proposal_id": "1"}' -p proposeracc2), allow_error: true
@@ -431,7 +493,9 @@ describe "eosdacelect" do
   "rows": [{
       "service_account": "proposeracc1",
       "proposal_threshold": 4,
-      "proposal_approval_threshold_percent": 30
+      "proposal_approval_threshold_percent": 30,
+      "claim_threshold": 3,
+      "claim_approval_threshold_percent": 20
     }
   ],
   "more": false

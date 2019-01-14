@@ -43,6 +43,14 @@ The intent of startwork is to indicate the intention for the proposer to start w
 claim
 </h1>
 
+## ACTION: claim
+ **PARAMETERS:**
+ * __proposer__ is an eosio account name.
+ * __proposal_id__ is an integer id for an existing proposal for the proposer to claim.
+
+ **INTENT:**
+ The intent of claim is to indicate the proposer has completed the required work for a worker proposal and would like to claim the escrowed funds as payment.
+
  <h1 class="contract">
  cancel
  </h1>
