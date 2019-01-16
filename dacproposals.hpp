@@ -7,7 +7,26 @@ using namespace eosio;
 using namespace std;
 
 CONTRACT dacproposals : public contract {
-    enum VoteType {  
+    TABLE proposal {
+            uint64_t key;
+            name proposer;
+            name arbitrator;
+            string content_hash;
+            asset pay_amount;
+            uint8_t state;
+
+            uint64_t primary_key() const { return key; }
+            uint64_t proposer_key() const { return proposer.value; }
+            uint64_t arbitrator_key() const { return arbitrator.value; }
+    };
+
+    typedef eosio::multi_index<"proposals"_n, proposal,
+            eosio::indexed_by<"proposer"_n, eosio::const_mem_fun<proposal, uint64_t, &proposal::proposer_key>>,
+    eosio::indexed_by<"arbitrator"_n, eosio::const_mem_fun<proposal, uint64_t, &proposal::arbitrator_key>>
+    > proposal_table;
+
+
+    enum VoteType {
         none = 0,
         // a vote type to indicate a custodian's approval of a worker proposal.
         proposal_approve, 
@@ -47,32 +66,17 @@ public:
 
     ACTION createprop(name proposer, string title, string summary, name arbitrator, asset pay_amount, string content_hash);
     ACTION voteprop(name custodian, uint64_t proposal_id, uint8_t vote);
-    ACTION startwork(name proposer, uint64_t proposal_id);
-    ACTION claim(name proposer, uint64_t proposal_id);
-    ACTION cancel(name proposer, uint64_t proposal_id);
+    ACTION startwork(uint64_t proposal_id);
+    ACTION completework(uint64_t proposal_id);
+    ACTION claim(uint64_t proposal_id);
+    ACTION cancel(uint64_t proposal_id);
     ACTION updateconfig(configtype new_config);
 
 private:
 
+    void clearprop(const proposal& proposal);
+
     configs_table configs;
-
-    TABLE proposal {
-        uint64_t key;
-        name proposer;
-        name arbitrator;
-        string content_hash; 
-        asset pay_amount;
-        uint8_t state;
-
-        uint64_t primary_key() const { return key; }
-        uint64_t proposer_key() const { return proposer.value; }
-        uint64_t arbitrator_key() const { return arbitrator.value; }
-};
-
-    typedef eosio::multi_index<"proposals"_n, proposal,
-    eosio::indexed_by<"proposer"_n, eosio::const_mem_fun<proposal, uint64_t, &proposal::proposer_key>>,
-    eosio::indexed_by<"arbitrator"_n, eosio::const_mem_fun<proposal, uint64_t, &proposal::arbitrator_key>>
-    > proposal_table;
 
     proposal_table proposals;
 

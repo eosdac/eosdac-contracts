@@ -33,11 +33,21 @@ startwork
 
 ## ACTION: startwork
 **PARAMETERS:**
-* __proposer__ is an eosio account name.
-* __proposal_id__ is an integer id for an existing proposal for the custodian to vote on.
+* __proposal_id__ is an integer id for an existing proposal created by this proposer.
 
 **INTENT:** 
 The intent of startwork is to indicate the intention for the proposer to start work on an existing proposal.
+
+<h1 class="contract">
+completework
+</h1>
+
+## ACTION: completework
+**PARAMETERS:**
+* __proposal_id__ is an integer id for an existing proposal created by this proposer.
+
+**INTENT:**
+The intent of completework is to indicate that proposer to gas completed the work on an existing proposal and intends to claim. The proposal is then put in the pending_claim state and will await the custodians approval.
 
 <h1 class="contract">
 claim
@@ -45,7 +55,6 @@ claim
 
 ## ACTION: claim
  **PARAMETERS:**
- * __proposer__ is an eosio account name.
  * __proposal_id__ is an integer id for an existing proposal for the proposer to claim.
 
  **INTENT:**
@@ -57,7 +66,6 @@ claim
 
  ## ACTION: cancel
   **PARAMETERS:**
-  * __proposer__ is an eosio account name.
   * __proposal_id__ is an integer id for an existing proposal for the proposer to cancel.
 
   **INTENT:**

@@ -259,32 +259,14 @@ describe "eosdacelect" do
 
   describe "voteprop" do
     context "without valid auth" do
-      before(:all) do
-        # `cleos push action eosdactokens transfer '{ "from": "testreguser1", "to": "daccustodian", "quantity": "5.0000 EOSDAC","memo":"daccustodian"}' -p testreguser1 -f`
-        # Verify that a transaction with an invalid account memo still is insufficient funds.
-        # `cleos push action eosdactokens transfer '{ "from": "testreguser1", "to": "daccustodian", "quantity": "25.0000 EOSDAC","memo":"noncaccount"}' -p testreguser1 -f`
-      end
       command %(cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 0, "vote": 1 }' -p proposeracc2), allow_error: true
       its(:stderr) {is_expected.to include('missing authority of custodian1')}
     end
-
     context "with valid auth" do
-      before(:all) do
-        # `cleos push action eosdactokens transfer '{ "from": "testreguser1", "to": "daccustodian", "quantity": "5.0000 EOSDAC","memo":"daccustodian"}' -p testreguser1 -f`
-      end
       context "with invalid proposal id" do
         command %(cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 1, "vote": 1 }' -p custodian1), allow_error: true
         its(:stderr) {is_expected.to include('Proposal not found')}
       end
-
-      # xcontext "proposal in claim_approved state" do
-      #   command %(cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 0, "vote": 1 }' -p custodian1), allow_error: true
-      #   its(:stderr) {is_expected.to include('daccustodian::nominatecand')}
-      # end
-      # xcontext "proposal in claim_denied state" do
-      #   command %(cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 0, "vote": 1 }' -p custodian1), allow_error: true
-      #   its(:stderr) {is_expected.to include('daccustodian::nominatecand')}
-      # end
       context "proposal in pending_approval state" do
         context "claim_approve vote" do
           command %(cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 0, "vote": 1 }' -p custodian1), allow_error: true
@@ -363,6 +345,78 @@ describe "eosdacelect" do
       end
     end
     context "Read the proposals table after createprop" do
+      command %(cleos get table dacproposals dacproposals propvotes), allow_error: true
+      it do
+        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
+            {
+  "rows": [{
+      "vote_id": 0,
+      "proposal_id": 0,
+      "voter": "custodian1",
+      "vote": 1,
+      "comment_hash": ""
+    },{
+      "vote_id": 1,
+      "proposal_id": 0,
+      "voter": "custodian2",
+      "vote": 2,
+      "comment_hash": ""
+    },{
+      "vote_id": 2,
+      "proposal_id": 0,
+      "voter": "custodian3",
+      "vote": 2,
+      "comment_hash": ""
+    },{
+      "vote_id": 3,
+      "proposal_id": 1,
+      "voter": "custodian1",
+      "vote": 1,
+      "comment_hash": ""
+    },{
+      "vote_id": 4,
+      "proposal_id": 1,
+      "voter": "custodian2",
+      "vote": 1,
+      "comment_hash": ""
+    },{
+      "vote_id": 5,
+      "proposal_id": 1,
+      "voter": "custodian3",
+      "vote": 1,
+      "comment_hash": ""
+    },{
+      "vote_id": 6,
+      "proposal_id": 1,
+      "voter": "custodian4",
+      "vote": 2,
+      "comment_hash": ""
+    },{
+      "vote_id": 7,
+      "proposal_id": 1,
+      "voter": "custodian5",
+      "vote": 2,
+      "comment_hash": ""
+    },{
+      "vote_id": 8,
+      "proposal_id": 1,
+      "voter": "custodian11",
+      "vote": 1,
+      "comment_hash": ""
+    },{
+      "vote_id": 9,
+      "proposal_id": 1,
+      "voter": "custodian12",
+      "vote": 1,
+      "comment_hash": ""
+    }
+  ],
+  "more": true
+}
+        JSON
+      end
+    end
+    context "Read the proposals table after createprop" do
       command %(cleos get table dacproposals dacproposals proposals), allow_error: true
       it do
         expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
@@ -393,11 +447,11 @@ describe "eosdacelect" do
   context "voteprop with valid auth and proposal in work_in_progress state" do
     context "voteup" do
       command %(cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 1, "vote": 1 }' -p custodian1), allow_error: true
-      its(:stderr) {is_expected.to include('Invalid vote for the current proposal state.')}
+      its(:stderr) {is_expected.to include('Invalid proposal state to accept votes.')}
     end
     context "votedown" do
       command %(cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 1, "vote": 2 }' -p custodian1), allow_error: true
-      its(:stderr) {is_expected.to include('Invalid vote for the current proposal state.')}
+      its(:stderr) {is_expected.to include('Invalid proposal state to accept votes.')}
     end
   end
 
@@ -416,12 +470,15 @@ describe "eosdacelect" do
         command %(cleos push action dacproposals claim '{ "proposer": "proposeracc1", "proposal_id": "4"}' -p proposeracc1), allow_error: true
         its(:stderr) {is_expected.to include('Proposal not found')}
       end
-      context "proposal in not in work_in_progress state" do
+      context "proposal in not in pending_claim state" do
         command %(cleos push action dacproposals claim '{ "proposer": "proposeracc1", "proposal_id": "0"}' -p proposeracc1), allow_error: true
-        its(:stderr) {is_expected.to include('Proposal is not in the work-in-progress state therefore cannot be claimed as complete.')}
+        its(:stderr) {is_expected.to include('Proposal is not in the pending_claim state therefore cannot be claimed for payment')}
       end
-      context "proposal in work_in_progress state" do
-        context "with insufficient votes count" do
+      context "proposal is in pending_claim state" do
+        before(:all) do
+          `cleos push action dacproposals completework '{ "proposer": "proposeracc1", "proposal_id": "1"}' -p proposeracc1`
+        end
+        context "without enough votes to approve the claim" do
           command %(cleos push action dacproposals claim '{ "proposer": "proposeracc1", "proposal_id": "1"}' -p proposeracc1), allow_error: true
           its(:stderr) {is_expected.to include('Insufficient votes on worker proposal to approve or deny claim.')}
         end
@@ -457,11 +514,60 @@ describe "eosdacelect" do
         end
       end
     end
+    context "Read the proposals table after createprop" do
+      command %(cleos get table dacproposals dacproposals propvotes), allow_error: true
+      it do
+        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
+            {
+  "rows": [{
+      "vote_id": 0,
+      "proposal_id": 0,
+      "voter": "custodian1",
+      "vote": 1,
+      "comment_hash": ""
+    },{
+      "vote_id": 1,
+      "proposal_id": 0,
+      "voter": "custodian2",
+      "vote": 2,
+      "comment_hash": ""
+    },{
+      "vote_id": 2,
+      "proposal_id": 0,
+      "voter": "custodian3",
+      "vote": 2,
+      "comment_hash": ""
+    }
+  ],
+  "more": false
+}
+        JSON
+      end
+    end
+    context "Read the proposals table after claim" do
+      command %(cleos get table dacproposals dacproposals proposals), allow_error: true
+      it do
+        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
+            {
+          "rows": [{
+              "key": 0,
+              "proposer": "proposeracc1",
+              "arbitrator": "arbitrator11",
+              "content_hash": "asdfasdfasdfasdfasdfasdfasdfasdf",
+              "pay_amount": "100.0000 EOS",
+              "state": 0
+            } 
+          ],
+          "more": false
+        }
+        JSON
+      end
+    end
   end
 
   describe "cancel" do
     context "without valid auth" do
-      command %(cleos push action dacproposals cancel '{ "proposer": "proposeracc1", "proposal_id": "1"}' -p proposeracc2), allow_error: true
+      command %(cleos push action dacproposals cancel '{ "proposer": "proposeracc1", "proposal_id": "0"}' -p proposeracc2), allow_error: true
       its(:stderr) {is_expected.to include('missing authority of proposeracc1')}
     end
     context "with valid auth" do
@@ -470,8 +576,20 @@ describe "eosdacelect" do
         its(:stderr) {is_expected.to include('Proposal not found')}
       end
       context "with valid proposal id"
-      command %(cleos push action dacproposals cancel '{ "proposer": "proposeracc1", "proposal_id": "1"}' -p proposeracc1), allow_error: true
+      command %(cleos push action dacproposals cancel '{ "proposer": "proposeracc1", "proposal_id": "0"}' -p proposeracc1), allow_error: true
       its(:stdout) {is_expected.to include('dacproposals <= dacproposals::cancel')}
+    end
+    context "Read the proposals table after cancel" do
+      command %(cleos get table dacproposals dacproposals proposals), allow_error: true
+      it do
+        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
+            {
+          "rows": [ 
+          ],
+          "more": false
+        }
+        JSON
+      end
     end
   end
 
