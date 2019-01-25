@@ -1,5 +1,4 @@
 #include <eosiolib/eosio.hpp>
-#include <eosiolib/asset.hpp>
 #include <eosiolib/transaction.hpp>
 
 #include <string>
@@ -20,9 +19,9 @@ namespace eosdac {
 
 
     ACTION dacescrow::transfer(name from,
-                             name to,
-                             asset quantity,
-                             string memo) {
+                               name to,
+                               asset quantity,
+                               string memo) {
 
         if (to != _self){
             return;
