@@ -402,17 +402,20 @@ describe "eosdacelect" do
             command %(cleos push action dacescrow unapprove '{ "key": 0, "unapprover": "arb2"}' -p arb2), allow_error: true
             its(:stderr) {is_expected.to include('You are not involved in this escrow')}
           end
-          xcontext "with involved approver" do
+          context "with involved approver" do
+            before(:all) do
+              `cleos push action dacescrow approve '{ "key": 0, "approver": "sender1"}' -p sender1`
+            end
             command %(cleos push action dacescrow unapprove '{ "key": 0, "unapprover": "arb1"}' -p arb1), allow_error: true
-            its(:stderr) {is_expected.to include('dacescrow <= dacescrow::unapprove')}
+            its(:stdout) {is_expected.to include('dacescrow <= dacescrow::unapprove')}
           end
-          xcontext "with already approved escrow" do
+          context "with already approved escrow" do
             before(:all) {sleep 1}
-            command %(cleos push action dacescrow unapprove '{ "key": 0, "unapprover": "arb1", "none": "anything"}' -p arb1), allow_error: true
-            its(:stderr) {is_expected.to include('You have already unapproved this escrow')}
+            command %(cleos push action dacescrow unapprove '{ "key": 0, "unapprover": "arb1"}' -p arb1), allow_error: true
+            its(:stderr) {is_expected.to include('You have NOT approved this escrow')}
           end
         end
-        xcontext "Read the escrow table after unapprove" do
+        context "Read the escrow table after unapprove" do
           command %(cleos get table dacescrow dacescrow escrows), allow_error: true
           it do
             expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
@@ -422,7 +425,7 @@ describe "eosdacelect" do
                   "sender": "sender1",
                   "receiver": "receiver1",
                   "arb": "arb1",
-                  "approvals": [],
+                  "approvals": ["sender1"],
                   "amount": "5.0000 EOS",
                   "memo": "some memo",
                   "expires": "2019-01-20T23:21:43"
@@ -467,7 +470,7 @@ describe "eosdacelect" do
         end
         context "with enough approvals" do
           before(:all) do
-            `cleos push action dacescrow approve '{ "key": 0, "approver": "sender1"}' -p sender1`
+            `cleos push action dacescrow approve '{ "key": 0, "approver": "arb1"}' -p arb1`
           end
           command %(cleos push action dacescrow claim '{ "key": 0 }' -p receiver1), allow_error: true
           its(:stdout) {is_expected.to include('dacescrow <= dacescrow::claim')}

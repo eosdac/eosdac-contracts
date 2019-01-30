@@ -102,11 +102,9 @@ namespace eosdac {
 
         eosio_assert(esc_itr->sender == disapprover || esc_itr->receiver == disapprover || esc_itr->arb == disapprover, "You are not involved in this escrow");
 
-        auto approvals = esc_itr->approvals;
-        auto existing = std::find(approvals.begin(), approvals.end(), disapprover);
-        eosio_assert(existing != approvals.end(), "You have NOT approved this escrow");
-
         escrows.modify(esc_itr, name{0}, [&](escrow_info &e){
+            auto existing = std::find(e.approvals.begin(), e.approvals.end(), disapprover);
+            eosio_assert(existing != e.approvals.end(), "You have NOT approved this escrow");
             e.approvals.erase(existing);
         });
     }
