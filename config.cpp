@@ -1,7 +1,11 @@
 
 void daccustodian::updateconfig(contr_config new_config) {
 
-    require_auth(configs().authaccount);
+    if (configs().authaccount == name{0}) {
+        require_auth(_self);
+    } else {
+        require_auth(configs().authaccount);
+    }
 
     eosio_assert(new_config.auth_threshold_high < new_config.numelected,
                  "ERR::UPDATECONFIG_INVALID_AUTH_HIGH_TO_NUM_ELECTED::The auth threshold can never be satisfied with a value greater than the number of elected custodians");

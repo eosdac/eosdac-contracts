@@ -39,7 +39,7 @@ struct [[eosio::table("config"), eosio::contract("daccustodian")]] contr_config 
 //     - used for pay calculations if an eary election is called and to trigger deferred `newperiod` calls.
     uint32_t periodlength = 7 * 24 * 60 * 60;
     // account to have active auth set with all all custodians on the newperiod.
-    name authaccount = "dacauthority"_n;
+    name authaccount = name{0};
 
     // The contract that holds the fund for the DAC. This is used as the source for custodian pay.
     name tokenholder = "eosdacthedac"_n;
