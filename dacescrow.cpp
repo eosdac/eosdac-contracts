@@ -8,6 +8,8 @@
 using namespace eosio;
 using namespace std;
 
+#define NOT_FOUND -1
+
 namespace eosdac {
 
     time_point current_time_point() {
@@ -53,8 +55,7 @@ namespace eosdac {
         eosio_assert(found, "Could not find existing escrow to deposit to, transfer cancelled");
     }
 
-
-    ACTION dacescrow::init(name sender, name receiver, name arb, time_point_sec expires, string memo) {
+    ACTION dacescrow::init(name sender, name receiver, name arb, time_point_sec expires, string memo, std::optional<uint64_t> ext_reference ) {
         require_auth(sender);
 
         asset zero_asset{0, symbol{"EOS", 4}};
@@ -65,6 +66,10 @@ namespace eosdac {
             eosio_assert(esc_itr->amount != zero_asset, "You already have an empty escrow.  Either fill it or delete it");
         }
 
+        if (ext_reference) {
+            eosio_assert(key_for_external_key(*ext_reference) == NOT_FOUND,
+                         "Already have an escrow with this external reference");
+        }
         escrows.emplace(sender, [&](escrow_info &p) {
             p.key = escrows.available_primary_key();
             p.sender = sender;
@@ -73,6 +78,11 @@ namespace eosdac {
             p.amount = zero_asset;
             p.expires = expires;
             p.memo = memo;
+            if (!ext_reference) {
+                p.external_reference = -1;
+            } else {
+                p.external_reference = *ext_reference;
+            }
         });
     }
 
@@ -94,7 +104,13 @@ namespace eosdac {
         });
     }
 
-    ACTION dacescrow::unapprove(uint64_t key, name disapprover) {
+    ACTION dacescrow::approveext(uint64_t ext_key, name approver) {
+        auto key = key_for_external_key(ext_key);
+        eosio_assert(*key, "No escrow exists for this external key.");
+        approve(*key, approver);
+    }
+
+        ACTION dacescrow::unapprove(uint64_t key, name disapprover) {
         require_auth(disapprover);
 
         auto esc_itr = escrows.find(key);
@@ -107,6 +123,12 @@ namespace eosdac {
             eosio_assert(existing != e.approvals.end(), "You have NOT approved this escrow");
             e.approvals.erase(existing);
         });
+    }
+
+    ACTION dacescrow::unapproveext(uint64_t ext_key, name unapprover) {
+        auto key = key_for_external_key(ext_key);
+        eosio_assert(*key, "No escrow exists for this external key.");
+        unapprove(*key, unapprover);
     }
 
     ACTION dacescrow::claim(uint64_t key) {
@@ -132,6 +154,12 @@ namespace eosdac {
         escrows.erase(esc_itr);
     }
 
+    ACTION dacescrow::claimext(uint64_t ext_key) {
+        auto key = key_for_external_key(ext_key);
+        eosio_assert(*key, "No escrow exists for this external key.");
+        claim(*key);
+    }
+
     /*
      * Empties an unfilled escrow request
      */
@@ -147,6 +175,12 @@ namespace eosdac {
         eosio_assert(zero_asset == esc_itr->amount, "Amount is not zero, this escrow is locked down");
 
         escrows.erase(esc_itr);
+    }
+
+    ACTION dacescrow::cancelext(uint64_t ext_key) {
+        auto key = key_for_external_key(ext_key);
+        eosio_assert(*key, "No escrow exists for this external key.");
+        cancel(*key);
     }
 
     /*
@@ -176,6 +210,12 @@ namespace eosdac {
         escrows.erase(esc_itr);
     }
 
+    ACTION dacescrow::refundext(uint64_t ext_key) {
+        auto key = key_for_external_key(ext_key);
+        eosio_assert(*key, "No escrow exists for this external key.");
+        refund(*key);
+    }
+
     ACTION dacescrow::clean() {
         require_auth(_self);
 
@@ -183,7 +223,19 @@ namespace eosdac {
         while (itr != escrows.end()){
             itr = escrows.erase(itr);
         }
+    }
 
+    // private helper
+
+    std::optional<uint64_t> dacescrow::key_for_external_key(std::optional<uint64_t> ext_key) {
+
+
+        auto by_external_ref = escrows.get_index<"byextref"_n>();
+
+        for (auto esc_itr = by_external_ref.lower_bound(*ext_key), end_itr = by_external_ref.upper_bound(*ext_key); esc_itr != end_itr; ++esc_itr) {
+            return esc_itr->key;
+        }
+        return std::nullopt;
     }
 }
 

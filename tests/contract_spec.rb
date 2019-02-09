@@ -198,7 +198,7 @@ def killchain
   `sleep 0.5; kill \`pgrep nodeos\``
 end
 
-describe "eosdacelect" do
+describe "dacescrow" do
   before(:all) do
     reset_chain
     configure_wallet
@@ -215,17 +215,17 @@ describe "eosdacelect" do
   describe "init" do
     context "Without valid permission" do
       context "with valid and registered member" do
-        command %(cleos push action dacescrow init '{"sender": "sender1", "receiver": "receiver1", "arb": "arb1", "expires": "2019-01-20T23:21:43.528", "memo": "some memo"}' -p sender2), allow_error: true
+        command %(cleos push action dacescrow init '{"sender": "sender1", "receiver": "receiver1", "arb": "arb1", "expires": "2019-01-20T23:21:43.528", "memo": "some memo", "ext_reference": null}' -p sender2), allow_error: true
         its(:stderr) {is_expected.to include('missing authority of sender1')}
       end
     end
 
     context "with valid auth" do
-      command %(cleos push action dacescrow init '{"sender": "sender1", "receiver": "receiver1", "arb": "arb1", "expires": "2019-01-20T23:21:43.528", "memo": "some memo"}' -p sender1), allow_error: true
+      command %(cleos push action dacescrow init '{"sender": "sender1", "receiver": "receiver1", "arb": "arb1", "expires": "2019-01-20T23:21:43.528", "memo": "some memo", "ext_reference": null}' -p sender1), allow_error: true
       its(:stdout) {is_expected.to include('dacescrow <= dacescrow::init')}
 
       context "with an existing escrow entry" do
-        command %(cleos push action dacescrow init '{"sender": "sender1", "receiver": "receiver1", "arb": "arb1", "expires": "2019-01-20T23:21:43.528", "memo": "some other memo"}' -p sender1), allow_error: true
+        command %(cleos push action dacescrow init '{"sender": "sender1", "receiver": "receiver1", "arb": "arb1", "expires": "2019-01-20T23:21:43.528", "memo": "some other memo", "ext_reference": null}' -p sender1), allow_error: true
         its(:stderr) {is_expected.to include('You already have an empty escrow.  Either fill it or delete it')}
       end
     end
@@ -242,7 +242,8 @@ describe "eosdacelect" do
                   "approvals": [],
                   "amount": "0.0000 EOS",
                   "memo": "some memo",
-                  "expires": "2019-01-20T23:21:43"
+                  "expires": "2019-01-20T23:21:43",
+                  "external_reference": "18446744073709551615"
                 }
               ],
               "more": false
@@ -302,7 +303,8 @@ describe "eosdacelect" do
                   "approvals": [],
                   "amount": "5.0000 EOS",
                   "memo": "some memo",
-                  "expires": "2019-01-20T23:21:43"
+                  "expires": "2019-01-20T23:21:43",
+                  "external_reference": "18446744073709551615"
                 }
               ],
               "more": false
@@ -325,7 +327,7 @@ describe "eosdacelect" do
       context "with valid escrow id" do
         context "before a corresponding transfer has been made" do
           before(:all) do
-            `cleos push action dacescrow init '{"sender": "sender2", "receiver": "receiver1", "arb": "arb1", "expires": "2019-01-20T23:21:43.528", "memo": "another empty escrow"}' -p sender2`
+            `cleos push action dacescrow init '{"sender": "sender2", "receiver": "receiver1", "arb": "arb1", "expires": "2019-01-20T23:21:43.528", "memo": "another empty escrow", "ext_reference": null}' -p sender2`
           end
           command %(cleos push action dacescrow approve '{ "key": 1, "approver": "arb1"}' -p arb1), allow_error: true
           its(:stderr) {is_expected.to include('This has not been initialized with a transfer')}
@@ -361,7 +363,8 @@ describe "eosdacelect" do
                   ],
                   "amount": "5.0000 EOS",
                   "memo": "some memo",
-                  "expires": "2019-01-20T23:21:43"
+                  "expires": "2019-01-20T23:21:43",
+                  "external_reference": "18446744073709551615"
                 },{
                   "key": 1,
                   "sender": "sender2",
@@ -370,7 +373,8 @@ describe "eosdacelect" do
                   "approvals": [],
                   "amount": "0.0000 EOS",
                   "memo": "another empty escrow",
-                  "expires": "2019-01-20T23:21:43"
+                  "expires": "2019-01-20T23:21:43",
+                  "external_reference": "18446744073709551615"
                 }
               ],
               "more": false
@@ -428,7 +432,8 @@ describe "eosdacelect" do
                   "approvals": ["sender1"],
                   "amount": "5.0000 EOS",
                   "memo": "some memo",
-                  "expires": "2019-01-20T23:21:43"
+                  "expires": "2019-01-20T23:21:43",
+                  "external_reference": "18446744073709551615"
                 },{
                   "key": 1,
                   "sender": "sender2",
@@ -437,7 +442,8 @@ describe "eosdacelect" do
                   "approvals": [],
                   "amount": "0.0000 EOS",
                   "memo": "another empty escrow",
-                  "expires": "2019-01-20T23:21:43"
+                  "expires": "2019-01-20T23:21:43",
+                  "external_reference": "18446744073709551615"
                 }
               ],
               "more": false
@@ -495,7 +501,8 @@ describe "eosdacelect" do
                   "approvals": [],
                   "amount": "0.0000 EOS",
                   "memo": "another empty escrow",
-                  "expires": "2019-01-20T23:21:43"
+                  "expires": "2019-01-20T23:21:43",
+                  "external_reference": "18446744073709551615"
                 }
               ],
               "more": false
@@ -525,7 +532,7 @@ describe "eosdacelect" do
         end
         context "before a transfer has been made" do
           before(:all) do
-            `cleos push action dacescrow init '{"sender": "sender1", "receiver": "receiver1", "arb": "arb2", "expires": "2019-01-20T23:21:43.528", "memo": "third memo"}' -p sender1`
+            `cleos push action dacescrow init '{"sender": "sender1", "receiver": "receiver1", "arb": "arb2", "expires": "2019-01-20T23:21:43.528", "memo": "third memo", "ext_reference": null}' -p sender1`
           end
           command %(cleos push action dacescrow cancel '{ "key": 2}' -p sender1), allow_error: true
           its(:stdout) {is_expected.to include('dacescrow <= dacescrow::cancel')}
@@ -543,7 +550,8 @@ describe "eosdacelect" do
                   "approvals": [],
                   "amount": "6.0000 EOS",
                   "memo": "another empty escrow",
-                  "expires": "2019-01-20T23:21:43"
+                  "expires": "2019-01-20T23:21:43",
+                  "external_reference": "18446744073709551615"
                 }
               ],
               "more": false
@@ -568,7 +576,7 @@ describe "eosdacelect" do
       context "with valid auth" do
         context "before a corresponding transfer has been made" do
           before(:all) do
-            `cleos push action dacescrow init '{"sender": "sender1", "receiver": "receiver1", "arb": "arb2", "expires": "2019-01-20T23:21:43.528", "memo": "some empty memo"}' -p sender1`
+            `cleos push action dacescrow init '{"sender": "sender1", "receiver": "receiver1", "arb": "arb2", "expires": "2019-01-20T23:21:43.528", "memo": "some empty memo", "ext_reference": null}' -p sender1`
           end
           command %(cleos push action dacescrow refund '{ "key": 2 }' -p sender1), allow_error: true
           its(:stderr) {is_expected.to include('This has not been initialized with a transfer')}
@@ -576,7 +584,7 @@ describe "eosdacelect" do
         context "after a transfer has been made" do
           context "before the escrow has expired" do
             before(:all) do
-              `cleos push action dacescrow init '{"sender": "sender4", "receiver": "receiver1", "arb": "arb2", "expires": "2035-01-20T23:21:43.528", "memo": "distant future escrow"}' -p sender4`
+              `cleos push action dacescrow init '{"sender": "sender4", "receiver": "receiver1", "arb": "arb2", "expires": "2035-01-20T23:21:43.528", "memo": "distant future escrow", "ext_reference": null}' -p sender4`
               `cleos push action eosio.token transfer '{"from": "sender4", "to": "dacescrow", "quantity": "5.0000 EOS", "memo": "here is a memo" }' -p sender4`
               `cleos push action dacescrow approve '{ "key": 3, "approver": "sender4"}' -p sender4`
               `cleos push action dacescrow approve '{ "key": 3, "approver": "receiver1"}' -p receiver1`
@@ -607,7 +615,7 @@ describe "eosdacelect" do
         end
         context "after the escrow has expired" do
           before(:all) do
-            `cleos push action dacescrow init '{"sender": "sender3", "receiver": "receiver1", "arb": "arb2", "expires": "2019-01-19T23:21:43.528", "memo": "some expired memo"}' -p sender3`
+            `cleos push action dacescrow init '{"sender": "sender3", "receiver": "receiver1", "arb": "arb2", "expires": "2019-01-19T23:21:43.528", "memo": "some expired memo", "ext_reference": null}' -p sender3`
             `cleos push action eosio.token transfer '{"from": "sender3", "to": "dacescrow", "quantity": "5.0000 EOS", "memo": "here is a memo" }' -p sender3`
             `cleos push action dacescrow approve '{ "key": 4, "approver": "sender3"}' -p sender3`
             `cleos push action dacescrow approve '{ "key": 4, "approver": "receiver1"}' -p receiver1`
@@ -664,7 +672,8 @@ describe "eosdacelect" do
                   "approvals": [],
                   "amount": "6.0000 EOS",
                   "memo": "another empty escrow",
-                  "expires": "2019-01-20T23:21:43"
+                  "expires": "2019-01-20T23:21:43",
+                  "external_reference": "18446744073709551615"
                 },{
                   "key": 2,
                   "sender": "sender1",
@@ -673,7 +682,8 @@ describe "eosdacelect" do
                   "approvals": [],
                   "amount": "0.0000 EOS",
                   "memo": "some empty memo",
-                  "expires": "2019-01-20T23:21:43"
+                  "expires": "2019-01-20T23:21:43",
+                  "external_reference": "18446744073709551615"
                 },{
                   "key": 3,
                   "sender": "sender4",
@@ -685,7 +695,8 @@ describe "eosdacelect" do
                   ],
                   "amount": "5.0000 EOS",
                   "memo": "distant future escrow",
-                  "expires": "2035-01-20T23:21:43"
+                  "expires": "2035-01-20T23:21:43",
+                  "external_reference": "18446744073709551615"
                 }
               ],
               "more": false
