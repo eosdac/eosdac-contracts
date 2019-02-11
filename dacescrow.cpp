@@ -67,7 +67,8 @@ namespace eosdac {
         }
 
         if (ext_reference) {
-            eosio_assert(key_for_external_key(*ext_reference) == NOT_FOUND,
+            print("Has external reference: ", ext_reference.value());
+            eosio_assert(!key_for_external_key(*ext_reference),
                          "Already have an escrow with this external reference");
         }
         escrows.emplace(sender, [&](escrow_info &p) {
@@ -106,7 +107,8 @@ namespace eosdac {
 
     ACTION dacescrow::approveext(uint64_t ext_key, name approver) {
         auto key = key_for_external_key(ext_key);
-        eosio_assert(*key, "No escrow exists for this external key.");
+        eosio_assert(key.has_value(), "No escrow exists for this external key.");
+        print("found key to approve :", key.value());
         approve(*key, approver);
     }
 
@@ -127,7 +129,7 @@ namespace eosdac {
 
     ACTION dacescrow::unapproveext(uint64_t ext_key, name unapprover) {
         auto key = key_for_external_key(ext_key);
-        eosio_assert(*key, "No escrow exists for this external key.");
+        eosio_assert(key.has_value(), "No escrow exists for this external key.");
         unapprove(*key, unapprover);
     }
 
@@ -156,7 +158,8 @@ namespace eosdac {
 
     ACTION dacescrow::claimext(uint64_t ext_key) {
         auto key = key_for_external_key(ext_key);
-        eosio_assert(*key, "No escrow exists for this external key.");
+        eosio_assert(key.has_value(), "No escrow exists for this external key.");
+        print("found key to approve :", key.value());
         claim(*key);
     }
 
@@ -179,7 +182,8 @@ namespace eosdac {
 
     ACTION dacescrow::cancelext(uint64_t ext_key) {
         auto key = key_for_external_key(ext_key);
-        eosio_assert(*key, "No escrow exists for this external key.");
+        eosio_assert(key.has_value(), "No escrow exists for this external key.");
+        print("found key to approve :", key.value());
         cancel(*key);
     }
 
@@ -212,7 +216,8 @@ namespace eosdac {
 
     ACTION dacescrow::refundext(uint64_t ext_key) {
         auto key = key_for_external_key(ext_key);
-        eosio_assert(*key, "No escrow exists for this external key.");
+        eosio_assert(key.has_value(), "No escrow exists for this external key.");
+        print("found key to approve :", key.value());
         refund(*key);
     }
 
@@ -229,12 +234,17 @@ namespace eosdac {
 
     std::optional<uint64_t> dacescrow::key_for_external_key(std::optional<uint64_t> ext_key) {
 
+        if (!ext_key.has_value()) {
+            return std::nullopt;
+        }
 
         auto by_external_ref = escrows.get_index<"byextref"_n>();
 
-        for (auto esc_itr = by_external_ref.lower_bound(*ext_key), end_itr = by_external_ref.upper_bound(*ext_key); esc_itr != end_itr; ++esc_itr) {
+        for (auto esc_itr = by_external_ref.lower_bound(ext_key.value()), end_itr = by_external_ref.upper_bound(ext_key.value()); esc_itr != end_itr; ++esc_itr) {
+            print("found a match key");
             return esc_itr->key;
         }
+        print("no match key");
         return std::nullopt;
     }
 }
@@ -259,11 +269,16 @@ extern "C" { \
 
 EOSIO_ABI_EX(eosdac::dacescrow,
              (transfer)
-             (init)
-             (approve)
-             (unapprove)
-             (claim)
-             (refund)
-             (cancel)
-             (clean)
+                     (init)
+                     (approve)
+                     (approveext)
+                     (unapprove)
+                     (unapproveext)
+                     (claim)
+                     (claimext)
+                     (refund)
+                     (refundext)
+                     (cancel)
+                     (cancelext)
+                     (clean)
 )

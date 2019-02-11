@@ -212,6 +212,8 @@ describe "dacescrow" do
     # killchain
   end
 
+  context "Using internal key" do
+
   describe "init" do
     context "Without valid permission" do
       context "with valid and registered member" do
@@ -702,6 +704,506 @@ describe "dacescrow" do
               "more": false
             }
         JSON
+      end
+    end
+  end
+  end
+
+  context "Using External key" do
+    describe "init" do
+    before(:all) do
+      `cleos push action dacescrow clean '{}' -p dacescrow`
+    end
+      context "Without valid permission" do
+        context "with valid and registered member" do
+          command %(cleos push action dacescrow init '{"sender": "sender1", "receiver": "receiver1", "arb": "arb1", "expires": "2019-01-20T23:21:43.528", "memo": "some memo", "ext_reference": 23}' -p sender2), allow_error: true
+          its(:stderr) {is_expected.to include('missing authority of sender1')}
+        end
+      end
+
+      context "with valid auth" do
+        command %(cleos push action dacescrow init '{"sender": "sender1", "receiver": "receiver1", "arb": "arb1", "expires": "2019-01-20T23:21:43.528", "memo": "some memo", "ext_reference": 23}' -p sender1), allow_error: true
+        its(:stdout) {is_expected.to include('dacescrow <= dacescrow::init')}
+
+        context "with an existing escrow entry" do
+          command %(cleos push action dacescrow init '{"sender": "sender1", "receiver": "receiver1", "arb": "arb1", "expires": "2019-01-20T23:21:43.528", "memo": "some other memo", "ext_reference": 23}' -p sender1), allow_error: true
+          its(:stderr) {is_expected.to include('You already have an empty escrow.  Either fill it or delete it')}
+        end
+      end
+      context "Read the escrow table after init" do
+        command %(cleos get table dacescrow dacescrow escrows), allow_error: true
+        it do
+          expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
+            {
+              "rows": [{
+                  "key": 0,
+                  "sender": "sender1",
+                  "receiver": "receiver1",
+                  "arb": "arb1",
+                  "approvals": [],
+                  "amount": "0.0000 EOS",
+                  "memo": "some memo",
+                  "expires": "2019-01-20T23:21:43",
+                  "external_reference": 23
+                }
+              ],
+              "more": false
+            }
+          JSON
+        end
+      end
+    end
+
+    describe "transfer" do
+      context "without valid auth" do
+        command %(cleos push action eosio.token transfer '{"from": "sender1", "to": "dacescrow", "quantity": "5.0000 EOS", "memo": "here is a memo" }' -p sender2), allow_error: true
+        its(:stderr) {is_expected.to include('missing authority of sender1')}
+      end
+      context "without a valid escrow" do
+        command %(cleos push action eosio.token transfer '{"from": "sender2", "to": "dacescrow", "quantity": "5.0000 EOS", "memo": "here is a memo" }' -p sender2), allow_error: true
+        its(:stderr) {is_expected.to include('Could not find existing escrow to deposit to, transfer cancelled')}
+      end
+      context "balance should not have reduced from 1000.0000 EOS" do
+        command %(cleos get currency balance eosio.token sender1 EOS), allow_error: true
+        it do
+          expect(subject.stdout).to eq <<~JSON
+            1000.0000 EOS
+          JSON
+        end
+      end
+      context "with a valid escrow" do
+        command %(cleos push action eosio.token transfer '{"from": "sender1", "to": "dacescrow", "quantity": "5.0000 EOS", "memo": "here is a memo" }' -p sender1), allow_error: true
+        its(:stdout) {is_expected.to include('dacescrow <= eosio.token::transfer')}
+      end
+      context "balance should have reduced to 995.0000 EOS" do
+        command %(cleos get currency balance eosio.token sender1 EOS), allow_error: true
+        it do
+          expect(subject.stdout).to eq <<~JSON
+            995.0000 EOS
+          JSON
+        end
+      end
+      context "balance of dacescrow should have increased by 5.0000 EOS" do
+        command %(cleos get currency balance eosio.token dacescrow EOS), allow_error: true
+        it do
+          expect(subject.stdout).to eq <<~JSON
+            16.0000 EOS
+          JSON
+        end
+      end
+      context "Read the escrow table after init" do
+        command %(cleos get table dacescrow dacescrow escrows), allow_error: true
+        it do
+          expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
+            {
+              "rows": [{
+                  "key": 0,
+                  "sender": "sender1",
+                  "receiver": "receiver1",
+                  "arb": "arb1",
+                  "approvals": [],
+                  "amount": "5.0000 EOS",
+                  "memo": "some memo",
+                  "expires": "2019-01-20T23:21:43",
+                  "external_reference": 23
+                }
+              ],
+              "more": false
+            }
+          JSON
+        end
+      end
+    end
+
+    describe "approve" do
+      context "without valid auth" do
+        command %(cleos push action dacescrow approveext '{ "ext_key": 23, "approver": "arb1"}' -p sender2), allow_error: true
+        its(:stderr) {is_expected.to include('missing authority of arb1')}
+      end
+      context "with valid auth" do
+        context "with invalid escrow key" do
+          command %(cleos push action dacescrow approveext '{ "ext_key": 45, "approver": "arb1"}' -p arb1), allow_error: true
+          its(:stderr) {is_expected.to include('No escrow exists for this external key.')}
+        end
+        context "with valid escrow id" do
+          context "before a corresponding transfer has been made" do
+            before(:all) do
+              `cleos push action dacescrow init '{"sender": "sender2", "receiver": "receiver1", "arb": "arb1", "expires": "2019-01-20T23:21:43.528", "memo": "another empty escrow", "ext_reference": "666"}' -p sender2`
+            end
+            command %(cleos push action dacescrow approveext '{ "ext_key": 666, "approver": "arb1"}' -p arb1), allow_error: true
+            its(:stderr) {is_expected.to include('This has not been initialized with a transfer')}
+          end
+          context "with a valid escrow for approval" do
+            context "with uninvolved approver" do
+              command %(cleos push action dacescrow approveext '{ "ext_key": 23, "approver": "arb2"}' -p arb2), allow_error: true
+              its(:stderr) {is_expected.to include('You are not involved in this escrow')}
+            end
+            context "with involved approver" do
+              command %(cleos push action dacescrow approveext '{ "ext_key": 23, "approver": "arb1"}' -p arb1), allow_error: true
+              its(:stdout) {is_expected.to include('dacescrow <= dacescrow::approve')}
+            end
+            context "with already approved escrow" do
+              before(:all) {sleep 1}
+              command %(cleos push action dacescrow approveext '{ "ext_key": 23, "approver": "arb1", "none": "anything"}' -p arb1), allow_error: true
+              its(:stderr) {is_expected.to include('You have already approved this escrow')}
+            end
+
+          end
+          context "Read the escrow table after approve" do
+            command %(cleos get table dacescrow dacescrow escrows), allow_error: true
+            it do
+              expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
+            {
+              "rows": [{
+                  "key": 0,
+                  "sender": "sender1",
+                  "receiver": "receiver1",
+                  "arb": "arb1",
+                  "approvals": [
+                    "arb1"
+                  ],
+                  "amount": "5.0000 EOS",
+                  "memo": "some memo",
+                  "expires": "2019-01-20T23:21:43",
+                  "external_reference": 23
+                },{
+                  "key": 1,
+                  "sender": "sender2",
+                  "receiver": "receiver1",
+                  "arb": "arb1",
+                  "approvals": [],
+                  "amount": "0.0000 EOS",
+                  "memo": "another empty escrow",
+                  "expires": "2019-01-20T23:21:43",
+                  "external_reference": 666
+                }
+              ],
+              "more": false
+            }
+              JSON
+            end
+          end
+        end
+      end
+    end
+
+    describe "unapprove" do
+      context "without valid auth" do
+        command %(cleos push action dacescrow unapproveext '{ "ext_key": 23, "unapprover": "arb1"}' -p sender2), allow_error: true
+        its(:stderr) {is_expected.to include('missing authority of arb1')}
+      end
+      context "with valid auth" do
+        context "with invalid escrow key" do
+          command %(cleos push action dacescrow unapproveext '{ "ext_key": 45, "unapprover": "arb1"}' -p arb1), allow_error: true
+          its(:stderr) {is_expected.to include('No escrow exists for this external key.')}
+        end
+        context "with valid escrow id" do
+          context "before the escrow has been previously approved" do
+            command %(cleos push action dacescrow unapproveext '{ "ext_key": 666, "unapprover": "arb1"}' -p arb1), allow_error: true
+            its(:stderr) {is_expected.to include('You have NOT approved this escrow')}
+          end
+          context "with a valid escrow for unapproval" do
+            context "with uninvolved approver" do
+              command %(cleos push action dacescrow unapproveext '{ "ext_key": 23, "unapprover": "arb2"}' -p arb2), allow_error: true
+              its(:stderr) {is_expected.to include('You are not involved in this escrow')}
+            end
+            context "with involved approver" do
+              before(:all) do
+                `cleos push action dacescrow approveext '{ "ext_key": 23, "approver": "sender1"}' -p sender1`
+              end
+              command %(cleos push action dacescrow unapproveext '{ "ext_key": 23, "unapprover": "arb1"}' -p arb1), allow_error: true
+              its(:stdout) {is_expected.to include('dacescrow <= dacescrow::unapprove')}
+            end
+            context "with already unapproved escrow" do
+              before(:all) {sleep 1}
+              command %(cleos push action dacescrow unapproveext '{ "ext_key": 23, "unapprover": "arb1"}' -p arb1), allow_error: true
+              its(:stderr) {is_expected.to include('You have NOT approved this escrow')}
+            end
+          end
+          context "Read the escrow table after unapproveext" do
+            command %(cleos get table dacescrow dacescrow escrows), allow_error: true
+            it do
+              expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
+            {
+              "rows": [{
+                  "key": 0,
+                  "sender": "sender1",
+                  "receiver": "receiver1",
+                  "arb": "arb1",
+                  "approvals": ["sender1"],
+                  "amount": "5.0000 EOS",
+                  "memo": "some memo",
+                  "expires": "2019-01-20T23:21:43",
+                  "external_reference": 23
+                },{
+                  "key": 1,
+                  "sender": "sender2",
+                  "receiver": "receiver1",
+                  "arb": "arb1",
+                  "approvals": [],
+                  "amount": "0.0000 EOS",
+                  "memo": "another empty escrow",
+                  "expires": "2019-01-20T23:21:43",
+                  "external_reference": 666
+                }
+              ],
+              "more": false
+            }
+              JSON
+            end
+          end
+        end
+      end
+    end
+
+    describe "claim" do
+      context "without valid auth" do
+        command %(cleos push action dacescrow claimext '{ "ext_key": 23}' -p sender2), allow_error: true
+        its(:stderr) {is_expected.to include('Missing required authority')}
+      end
+      context "with valid auth" do
+        context "with invalid escrow key" do
+          command %(cleos push action dacescrow claimext '{ "ext_key": 45}' -p arb1), allow_error: true
+          its(:stderr) {is_expected.to include('No escrow exists for this external key.')}
+        end
+        context "with valid escrow id" do
+          context "before a corresponding transfer has been made" do
+            command %(cleos push action dacescrow claimext '{ "ext_key": 666 }' -p receiver1), allow_error: true
+            its(:stderr) {is_expected.to include('This has not been initialized with a transfer')}
+          end
+          context "without enough approvals for a claim" do
+            command %(cleos push action dacescrow claimext '{ "ext_key": 23 }' -p receiver1), allow_error: true
+            its(:stderr) {is_expected.to include('This escrow has not received the required approvals to claim')}
+          end
+          context "with enough approvals" do
+            before(:all) do
+              `cleos push action dacescrow approveext '{ "ext_key": 23, "approver": "arb1"}' -p arb1`
+            end
+            command %(cleos push action dacescrow claimext '{ "ext_key": 23 }' -p receiver1), allow_error: true
+            its(:stdout) {is_expected.to include('dacescrow <= dacescrow::claim')}
+          end
+          context "with already claimed escrow" do
+            before(:all) {sleep 1}
+            command %(cleos push action dacescrow claimext '{ "ext_key": 23}' -p receiver1), allow_error: true
+            its(:stderr) {is_expected.to include('No escrow exists for this external key.')}
+          end
+        end
+      end
+      context "Read the escrow table after approve" do
+        command %(cleos get table dacescrow dacescrow escrows), allow_error: true
+        it do
+          expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
+            {
+              "rows": [{
+                  "key": 1,
+                  "sender": "sender2",
+                  "receiver": "receiver1",
+                  "arb": "arb1",
+                  "approvals": [],
+                  "amount": "0.0000 EOS",
+                  "memo": "another empty escrow",
+                  "expires": "2019-01-20T23:21:43",
+                  "external_reference": 666
+                }
+              ],
+              "more": false
+            }
+          JSON
+        end
+      end
+    end
+
+    describe "cancel" do
+      context "without valid auth" do
+        command %(cleos push action dacescrow cancelext '{ "ext_key": 666}' -p sender1), allow_error: true
+        its(:stderr) {is_expected.to include('missing authority of sender2')}
+      end
+      context "with valid auth" do
+        context "with invalid escrow key" do
+          command %(cleos push action dacescrow cancelext '{ "ext_key": 45}' -p sender1), allow_error: true
+          its(:stderr) {is_expected.to include('No escrow exists for this external key.')}
+        end
+        context "with valid escrow id" do
+          context "after a transfer has been made" do
+            before(:all) do
+              `cleos push action eosio.token transfer '{"from": "sender2", "to": "dacescrow", "quantity": "6.0000 EOS", "memo": "here is a second memo" }' -p sender2`
+            end
+            command %(cleos push action dacescrow cancelext '{ "ext_key": 666}' -p sender2), allow_error: true
+            its(:stderr) {is_expected.to include('Amount is not zero, this escrow is locked down')}
+          end
+          context "before a transfer has been made" do
+            before(:all) do
+              `cleos push action dacescrow init '{"sender": "sender1", "receiver": "receiver1", "arb": "arb2", "expires": "2019-01-20T23:21:43.528", "memo": "third memo", "ext_reference": 777}' -p sender1`
+            end
+            command %(cleos push action dacescrow cancelext '{ "ext_key": 777}' -p sender1), allow_error: true
+            its(:stdout) {is_expected.to include('dacescrow <= dacescrow::cancel')}
+          end
+          context "Read the escrow table after approve" do
+            command %(cleos get table dacescrow dacescrow escrows), allow_error: true
+            it do
+              expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
+            {
+              "rows": [{
+                  "key": 1,
+                  "sender": "sender2",
+                  "receiver": "receiver1",
+                  "arb": "arb1",
+                  "approvals": [],
+                  "amount": "6.0000 EOS",
+                  "memo": "another empty escrow",
+                  "expires": "2019-01-20T23:21:43",
+                  "external_reference": 666
+                }
+              ],
+              "more": false
+            }
+              JSON
+            end
+          end
+        end
+      end
+    end
+
+    describe "refund" do
+      context "with invalid escrow key" do
+        command %(cleos push action dacescrow refundext '{ "ext_key": 777}' -p arb1), allow_error: true
+        its(:stderr) {is_expected.to include('No escrow exists for this external key.')}
+      end
+      context "with valid escrow id" do
+        context "with invalid auth" do
+          command %(cleos push action dacescrow refundext '{ "ext_key": 666}' -p arb1), allow_error: true
+          its(:stderr) {is_expected.to include('missing authority of sender2')}
+        end
+        context "with valid auth" do
+          context "before a corresponding transfer has been made" do
+            before(:all) do
+              `cleos push action dacescrow init '{"sender": "sender1", "receiver": "receiver1", "arb": "arb2", "expires": "2019-01-20T23:21:43.528", "memo": "some empty memo", "ext_reference": 821}' -p sender1`
+            end
+            command %(cleos push action dacescrow refundext '{ "ext_key": 821 }' -p sender1), allow_error: true
+            its(:stderr) {is_expected.to include('This has not been initialized with a transfer')}
+          end
+          context "after a transfer has been made" do
+            context "before the escrow has expired" do
+              before(:all) do
+                `cleos push action dacescrow init '{"sender": "sender4", "receiver": "receiver1", "arb": "arb2", "expires": "2035-01-20T23:21:43.528", "memo": "distant future escrow", "ext_reference": 123}' -p sender4`
+                `cleos push action eosio.token transfer '{"from": "sender4", "to": "dacescrow", "quantity": "5.0000 EOS", "memo": "here is a memo" }' -p sender4`
+                `cleos push action dacescrow approveext '{ "ext_key": 123, "approver": "sender4"}' -p sender4`
+                `cleos push action dacescrow approveext '{ "ext_key": 123, "approver": "receiver1"}' -p receiver1`
+              end
+              command %(cleos push action dacescrow refundext '{ "ext_key": 123 }' -p sender4), allow_error: true
+              its(:stderr) {is_expected.to include('Escrow has not expired')}
+            end
+          end
+          context "before the escrow has has received enough approvals" do
+            command %(cleos push action dacescrow refundext '{ "ext_key": 666 }' -p sender2), allow_error: true
+            its(:stderr) {is_expected.to include('Escrow has not received the required number of approvals')}
+          end
+          context "balance of escrow should be set before preparing the escrow with a known balance starting point" do
+            command %(cleos get currency balance eosio.token dacescrow EOS), allow_error: true
+            it do
+              expect(subject.stdout).to eq <<~JSON
+                  22.0000 EOS
+              JSON
+            end
+          end
+          context "balance of escrow should be set before preparing the escrow with a known balance starting point" do
+            command %(cleos get currency balance eosio.token sender3 EOS), allow_error: true
+            it do
+              expect(subject.stdout).to eq <<~JSON
+                  1000.0000 EOS
+              JSON
+            end
+          end
+          context "after the escrow has expired" do
+            before(:all) do
+              `cleos push action dacescrow init '{"sender": "sender3", "receiver": "receiver1", "arb": "arb2", "expires": "2019-01-19T23:21:43.528", "memo": "some expired memo", "ext_reference": 456}' -p sender3`
+              `cleos push action eosio.token transfer '{"from": "sender3", "to": "dacescrow", "quantity": "5.0000 EOS", "memo": "here is a memo" }' -p sender3`
+              `cleos push action dacescrow approveext '{ "ext_key": 456, "approver": "sender3"}' -p sender3`
+              `cleos push action dacescrow approveext '{ "ext_key": 456, "approver": "receiver1"}' -p receiver1`
+            end
+            context "balance of dacescrow should have adjusted after preparing the escrow" do
+              command %(cleos get currency balance eosio.token dacescrow EOS), allow_error: true
+              it do
+                expect(subject.stdout).to eq <<~JSON
+                  27.0000 EOS
+                JSON
+              end
+            end
+            context "balance of sender3 should have adjusted after preparing the escrow" do
+              command %(cleos get currency balance eosio.token sender3 EOS), allow_error: true
+              it do
+                expect(subject.stdout).to eq <<~JSON
+                  995.0000 EOS
+                JSON
+              end
+            end
+            context "after refund succeeds" do
+              command %(cleos push action dacescrow refundext '{ "ext_key": 456 }' -p sender3), allow_error: true
+              its(:stdout) {is_expected.to include('dacescrow <= dacescrow::refund')}
+            end
+            context "balance of dacescrow should have changed back after refunding an escrow" do
+              command %(cleos get currency balance eosio.token dacescrow EOS), allow_error: true
+              it do
+                expect(subject.stdout).to eq <<~JSON
+                  22.0000 EOS
+                JSON
+              end
+            end
+            context "balance of sender3 should have changed back after refunding an escrow" do
+              command %(cleos get currency balance eosio.token sender3 EOS), allow_error: true
+              it do
+                expect(subject.stdout).to eq <<~JSON
+                  1000.0000 EOS
+                JSON
+              end
+            end
+          end
+        end
+      end
+      context "Read the escrow table after refund" do
+        command %(cleos get table dacescrow dacescrow escrows), allow_error: true
+        it do
+          expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
+            {
+              "rows": [{
+                  "key": 1,
+                  "sender": "sender2",
+                  "receiver": "receiver1",
+                  "arb": "arb1",
+                  "approvals": [],
+                  "amount": "6.0000 EOS",
+                  "memo": "another empty escrow",
+                  "expires": "2019-01-20T23:21:43",
+                  "external_reference": 666
+                },{
+                  "key": 2,
+                  "sender": "sender1",
+                  "receiver": "receiver1",
+                  "arb": "arb2",
+                  "approvals": [],
+                  "amount": "0.0000 EOS",
+                  "memo": "some empty memo",
+                  "expires": "2019-01-20T23:21:43",
+                  "external_reference": 821
+                },{
+                  "key": 3,
+                  "sender": "sender4",
+                  "receiver": "receiver1",
+                  "arb": "arb2",
+                  "approvals": [
+                    "sender4",
+                    "receiver1"
+                  ],
+                  "amount": "5.0000 EOS",
+                  "memo": "distant future escrow",
+                  "expires": "2035-01-20T23:21:43",
+                  "external_reference": 123
+                }
+              ],
+              "more": false
+            }
+          JSON
+        end
       end
     end
   end
