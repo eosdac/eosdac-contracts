@@ -1,7 +1,8 @@
 #include <eosiolib/multi_index.hpp>
 #include <eosiolib/singleton.hpp>
 #include <eosiolib/eosio.hpp>
-#include <eosiolib/asset.hpp> 
+#include <eosiolib/asset.hpp>
+#include <eosiolib/singleton.hpp>
 
 using namespace eosio;
 using namespace std;
@@ -25,8 +26,15 @@ CONTRACT dacproposals : public contract {
     eosio::indexed_by<"arbitrator"_n, eosio::const_mem_fun<proposal, uint64_t, &proposal::arbitrator_key>>
     > proposal_table;
 
+    struct [[eosio::table("state"), eosio::contract("dacproposals")]] contr_state {
+        uint32_t last_proposal_id = 0;
 
-    enum VoteType {
+        EOSLIB_SERIALIZE(contr_state, (last_proposal_id))
+    };
+
+    typedef singleton<"state"_n, contr_state> statecontainer;
+
+enum VoteType {
         none = 0,
         // a vote type to indicate a custodian's approval of a worker proposal.
         proposal_approve, 
@@ -47,11 +55,12 @@ CONTRACT dacproposals : public contract {
     };
 
     TABLE configtype {
-            name service_account;
+            name service_account = "dacescrow"_n;
             uint16_t proposal_threshold = 7;
             uint16_t proposal_approval_threshold_percent = 50;
             uint16_t claim_threshold = 5;
             uint16_t claim_approval_threshold_percent = 50;
+            uint32_t escrow_expiry = 30 * 24 * 60 * 60;
     };
 
     typedef eosio::singleton<"configtype"_n, configtype> configs_table;
@@ -62,7 +71,15 @@ public:
          : contract(receiver, code, ds), 
          proposals(receiver, receiver.value),
          prop_votes(receiver, receiver.value),
-         configs(receiver, receiver.value) {}
+         configs(receiver, receiver.value),
+         contract_state(receiver, receiver.value) {
+
+            _currentState = contract_state.get_or_default(contr_state());
+        }
+
+    ~dacproposals() {
+        contract_state.set(_currentState, _self); // This should not run during a contract_state migration since it will prevent changing the schema with data saved between runs.
+    }
 
     ACTION createprop(name proposer, string title, string summary, name arbitrator, asset pay_amount, string content_hash);
     ACTION voteprop(name custodian, uint64_t proposal_id, uint8_t vote);
@@ -79,8 +96,10 @@ private:
     configs_table configs;
 
     proposal_table proposals;
+    statecontainer contract_state;
+    contr_state _currentState;
 
-    TABLE proposalvote {
+TABLE proposalvote {
         uint64_t vote_id;
         uint64_t proposal_id;
         name voter;

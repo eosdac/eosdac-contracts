@@ -1,4 +1,0 @@
-[submodule "tests/contract-shared-dependencies"]
-	path = tests/contract-shared-dependencies
-	url = git@github.com:eosdac/contract-shared-dependencies.git
-	branch = master
