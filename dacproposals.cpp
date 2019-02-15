@@ -1,5 +1,7 @@
 #include <eosiolib/eosio.hpp>
+#include <eosiolib/action.hpp>
 #include "dacproposals.hpp"
+#include <eosiolib/time.hpp>
 #include <typeinfo>
 
 #include <string>
@@ -15,7 +17,7 @@ using namespace std;
         eosio_assert(content_hash.length() == 32, "Invalid content hash.");
 
         proposals.emplace(proposer, [&](proposal &p) {
-            p.key = proposals.available_primary_key();
+            p.key = _currentState.last_proposal_id++;
             p.proposer = proposer;
             p.arbitrator = arbitrator;
             p.content_hash = content_hash;
@@ -24,10 +26,10 @@ using namespace std;
         });
     }
 
-    ACTION dacproposals::voteprop(name custodian, uint64_t proposal_id, uint8_t vote){
+    ACTION dacproposals::voteprop(name custodian, uint64_t proposal_id, uint8_t vote) {
         require_auth(custodian);
 //        require_auth(dacauthority) //TODO: Permission needed to here to ensure the correct custodian only permission.
-        
+
         const proposal& prop = proposals.get(proposal_id, "Proposal not found.");
         switch (prop.state) {
             case pending_approval:
@@ -44,7 +46,7 @@ using namespace std;
         uint128_t joint_id = dacproposals::combine_ids(proposal_id, custodian.value);
         auto vote_idx = by_prop_and_voter.find(joint_id);
         if (vote_idx == by_prop_and_voter.end()) {
-            prop_votes.emplace(_self, [&](proposalvote &v) { //TODO: Check here if it's OK for the contract to supply RAM for the votes or should the custodian?
+            prop_votes.emplace(_self, [&](proposalvote &v) {
                 v.vote_id = prop_votes.available_primary_key();
                 v.proposal_id = proposal_id;
                 v.voter = custodian;
@@ -84,8 +86,24 @@ using namespace std;
         proposals.modify(prop, prop.proposer, [&](proposal &p){
             p.state = work_in_progress;
         });
-        //TODO: Transfer funds to escrow account
+
         print("Transfer funds to escrow account");
+        time_point_sec time_now = time_point_sec(now());
+        string memo = prop.proposer.to_string() + ":" + to_string(proposal_id) + ":" + prop.content_hash;
+
+        auto inittuple = make_tuple( _self, prop.proposer, prop.arbitrator, time_now + current_configs().escrow_expiry, memo, std::optional<uint64_t>(proposal_id));
+
+        eosio::action(
+                eosio::permission_level{_self , "active"_n },
+                current_configs().service_account, "init"_n,
+                inittuple
+        ).send();
+
+        eosio::action(
+                eosio::permission_level{_self , "active"_n },
+                "eosio.token"_n, "transfer"_n,
+                make_tuple( _self, current_configs().service_account, prop.pay_amount, "payment for wp: " + to_string(proposal_id))
+        ).send();
     }
 
     ACTION dacproposals::completework(uint64_t proposal_id){
@@ -103,7 +121,7 @@ using namespace std;
         const proposal& prop = proposals.get(proposal_id, "Proposal not found.");
         require_auth(prop.proposer);
 
-        eosio_assert(prop.state == pending_claim,"Proposal is not in the pending_claim state therefore cannot be claimed for payment.");
+        eosio_assert(prop.state == pending_claim, "Proposal is not in the pending_claim state therefore cannot be claimed for payment.");
         auto by_voters = prop_votes.get_index<"proposal"_n>();
         auto vote_idx = by_voters.find(proposal_id);
         int16_t approved_count = 0;
@@ -122,8 +140,14 @@ using namespace std;
         eosio_assert(percent_approval >= current_configs().claim_approval_threshold_percent, "Claim approval threshold not met.");
 
         if (percent_approval >= current_configs().claim_approval_threshold_percent) {
-            //TODO: Transfer funds from escrow account as an inline transaction and remove if it succeeds.
             print("Transfer funds from escrow account to proposer.");
+
+            eosio::action(
+                    eosio::permission_level{_self , "active"_n },
+                    current_configs().service_account, "approveext"_n,
+                    make_tuple( proposal_id, _self)
+            ).send();
+
             clearprop(prop);
         } else {
             proposals.modify(prop, prop.proposer, [&](proposal &p){

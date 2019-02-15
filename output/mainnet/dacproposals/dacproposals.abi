@@ -1,5 +1,5 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Wed Jan 16 00:31:06 2019",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Thu Feb 14 23:10:59 2019",
     "version": "eosio::abi/1.1",
     "structs": [
         {
@@ -55,6 +55,20 @@
                 {
                     "name": "claim_approval_threshold_percent",
                     "type": "uint16"
+                },
+                {
+                    "name": "escrow_expiry",
+                    "type": "uint32"
+                }
+            ]
+        },
+        {
+            "name": "contr_state",
+            "base": "",
+            "fields": [
+                {
+                    "name": "last_proposal_id",
+                    "type": "uint32"
                 }
             ]
         },
@@ -239,6 +253,13 @@
         {
             "name": "propvotes",
             "type": "proposalvote",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "state",
+            "type": "contr_state",
             "index_type": "i64",
             "key_names": [],
             "key_types": []
