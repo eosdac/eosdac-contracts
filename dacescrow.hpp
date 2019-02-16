@@ -12,12 +12,15 @@ namespace eosdac {
 
     private:
         escrows_table escrows;
+        name sending_code;
 
     public:
 
         dacescrow(name s, name code, datastream<const char *> ds)
                 : contract(s, code, ds),
-                  escrows(_self, _self.value) {}
+                  escrows(_self, _self.value) {
+            sending_code = name{code};
+        }
 
         ~dacescrow();
 

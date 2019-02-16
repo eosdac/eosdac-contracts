@@ -12,7 +12,7 @@ struct [[eosio::table("escrows"), eosio::contract("dacescrow")]] escrow_info {
     name            receiver;
     name            arb;
     vector<name>    approvals;
-    asset           amount;
+    extended_asset  ext_asset;
     string          memo;
     time_point_sec  expires;
     uint64_t        external_reference;

@@ -241,7 +241,7 @@ describe "dacescrow" do
                   "receiver": "receiver1",
                   "arb": "arb1",
                   "approvals": [],
-                  "amount": "0.0000 EOS",
+                  "ext_asset": {"quantity":"0.0000 EOS", "contract":"eosio.token"},    
                   "memo": "some memo",
                   "expires": "2019-01-20T23:21:43",
                   "external_reference": "18446744073709551615"
@@ -302,7 +302,7 @@ describe "dacescrow" do
                   "receiver": "receiver1",
                   "arb": "arb1",
                   "approvals": [],
-                  "amount": "5.0000 EOS",
+                  "ext_asset": {"quantity":"5.0000 EOS", "contract":"eosio.token"},    
                   "memo": "some memo",
                   "expires": "2019-01-20T23:21:43",
                   "external_reference": "18446744073709551615"
@@ -362,7 +362,7 @@ describe "dacescrow" do
                   "approvals": [
                     "arb1"
                   ],
-                  "amount": "5.0000 EOS",
+                  "ext_asset": {"quantity":"5.0000 EOS", "contract":"eosio.token"},    
                   "memo": "some memo",
                   "expires": "2019-01-20T23:21:43",
                   "external_reference": "18446744073709551615"
@@ -372,7 +372,7 @@ describe "dacescrow" do
                   "receiver": "receiver1",
                   "arb": "arb1",
                   "approvals": [],
-                  "amount": "0.0000 EOS",
+                  "ext_asset": {"quantity":"0.0000 EOS", "contract":"eosio.token"},    
                   "memo": "another empty escrow",
                   "expires": "2019-01-20T23:21:43",
                   "external_reference": "18446744073709551615"
@@ -431,7 +431,7 @@ describe "dacescrow" do
                   "receiver": "receiver1",
                   "arb": "arb1",
                   "approvals": ["sender1"],
-                  "amount": "5.0000 EOS",
+                  "ext_asset": {"quantity":"5.0000 EOS", "contract":"eosio.token"},    
                   "memo": "some memo",
                   "expires": "2019-01-20T23:21:43",
                   "external_reference": "18446744073709551615"
@@ -441,7 +441,7 @@ describe "dacescrow" do
                   "receiver": "receiver1",
                   "arb": "arb1",
                   "approvals": [],
-                  "amount": "0.0000 EOS",
+                  "ext_asset": {"quantity":"0.0000 EOS", "contract":"eosio.token"},    
                   "memo": "another empty escrow",
                   "expires": "2019-01-20T23:21:43",
                   "external_reference": "18446744073709551615"
@@ -500,7 +500,7 @@ describe "dacescrow" do
                   "receiver": "receiver1",
                   "arb": "arb1",
                   "approvals": [],
-                  "amount": "0.0000 EOS",
+                  "ext_asset": {"quantity": "0.0000 EOS", "contract": "eosio.token"},
                   "memo": "another empty escrow",
                   "expires": "2019-01-20T23:21:43",
                   "external_reference": "18446744073709551615"
@@ -549,7 +549,7 @@ describe "dacescrow" do
                   "receiver": "receiver1",
                   "arb": "arb1",
                   "approvals": [],
-                  "amount": "6.0000 EOS",
+                  "ext_asset": {"quantity": "6.0000 EOS", "contract": "eosio.token"},
                   "memo": "another empty escrow",
                   "expires": "2019-01-20T23:21:43",
                   "external_reference": "18446744073709551615"
@@ -671,7 +671,7 @@ describe "dacescrow" do
                   "receiver": "receiver1",
                   "arb": "arb1",
                   "approvals": [],
-                  "amount": "6.0000 EOS",
+                  "ext_asset": {"quantity": "6.0000 EOS", "contract": "eosio.token"},
                   "memo": "another empty escrow",
                   "expires": "2019-01-20T23:21:43",
                   "external_reference": "18446744073709551615"
@@ -681,7 +681,7 @@ describe "dacescrow" do
                   "receiver": "receiver1",
                   "arb": "arb2",
                   "approvals": [],
-                  "amount": "0.0000 EOS",
+                  "ext_asset": {"quantity": "0.0000 EOS", "contract": "eosio.token"},
                   "memo": "some empty memo",
                   "expires": "2019-01-20T23:21:43",
                   "external_reference": "18446744073709551615"
@@ -694,7 +694,7 @@ describe "dacescrow" do
                     "sender4",
                     "receiver1"
                   ],
-                  "amount": "5.0000 EOS",
+                  "ext_asset": {"quantity": "5.0000 EOS", "contract": "eosio.token"},
                   "memo": "distant future escrow",
                   "expires": "2035-01-20T23:21:43",
                   "external_reference": "18446744073709551615"
@@ -740,7 +740,7 @@ describe "dacescrow" do
                   "receiver": "receiver1",
                   "arb": "arb1",
                   "approvals": [],
-                  "amount": "0.0000 EOS",
+                  "ext_asset": {"quantity": "0.0000 EOS", "contract": "eosio.token"},
                   "memo": "some memo",
                   "expires": "2019-01-20T23:21:43",
                   "external_reference": 23
@@ -801,7 +801,7 @@ describe "dacescrow" do
                   "receiver": "receiver1",
                   "arb": "arb1",
                   "approvals": [],
-                  "amount": "5.0000 EOS",
+                  "ext_asset": {"quantity": "5.0000 EOS", "contract": "eosio.token"},
                   "memo": "some memo",
                   "expires": "2019-01-20T23:21:43",
                   "external_reference": 23
@@ -861,7 +861,7 @@ describe "dacescrow" do
                   "approvals": [
                     "arb1"
                   ],
-                  "amount": "5.0000 EOS",
+                  "ext_asset": {"quantity": "5.0000 EOS", "contract": "eosio.token"},
                   "memo": "some memo",
                   "expires": "2019-01-20T23:21:43",
                   "external_reference": 23
@@ -871,7 +871,7 @@ describe "dacescrow" do
                   "receiver": "receiver1",
                   "arb": "arb1",
                   "approvals": [],
-                  "amount": "0.0000 EOS",
+                  "ext_asset": {"quantity": "0.0000 EOS", "contract": "eosio.token"},
                   "memo": "another empty escrow",
                   "expires": "2019-01-20T23:21:43",
                   "external_reference": 666
@@ -930,7 +930,7 @@ describe "dacescrow" do
                   "receiver": "receiver1",
                   "arb": "arb1",
                   "approvals": ["sender1"],
-                  "amount": "5.0000 EOS",
+                  "ext_asset": {"quantity": "5.0000 EOS", "contract": "eosio.token"},
                   "memo": "some memo",
                   "expires": "2019-01-20T23:21:43",
                   "external_reference": 23
@@ -940,7 +940,7 @@ describe "dacescrow" do
                   "receiver": "receiver1",
                   "arb": "arb1",
                   "approvals": [],
-                  "amount": "0.0000 EOS",
+                  "ext_asset": {"quantity": "0.0000 EOS", "contract": "eosio.token"},
                   "memo": "another empty escrow",
                   "expires": "2019-01-20T23:21:43",
                   "external_reference": 666
@@ -999,7 +999,7 @@ describe "dacescrow" do
                   "receiver": "receiver1",
                   "arb": "arb1",
                   "approvals": [],
-                  "amount": "0.0000 EOS",
+                  "ext_asset": {"quantity": "0.0000 EOS", "contract": "eosio.token"},
                   "memo": "another empty escrow",
                   "expires": "2019-01-20T23:21:43",
                   "external_reference": 666
@@ -1048,7 +1048,7 @@ describe "dacescrow" do
                   "receiver": "receiver1",
                   "arb": "arb1",
                   "approvals": [],
-                  "amount": "6.0000 EOS",
+                  "ext_asset": {"quantity": "6.0000 EOS", "contract": "eosio.token"},
                   "memo": "another empty escrow",
                   "expires": "2019-01-20T23:21:43",
                   "external_reference": 666
@@ -1170,7 +1170,7 @@ describe "dacescrow" do
                   "receiver": "receiver1",
                   "arb": "arb1",
                   "approvals": [],
-                  "amount": "6.0000 EOS",
+                  "ext_asset": {"quantity": "6.0000 EOS", "contract": "eosio.token"},
                   "memo": "another empty escrow",
                   "expires": "2019-01-20T23:21:43",
                   "external_reference": 666
@@ -1180,7 +1180,7 @@ describe "dacescrow" do
                   "receiver": "receiver1",
                   "arb": "arb2",
                   "approvals": [],
-                  "amount": "0.0000 EOS",
+                  "ext_asset": {"quantity": "0.0000 EOS", "contract": "eosio.token"},
                   "memo": "some empty memo",
                   "expires": "2019-01-20T23:21:43",
                   "external_reference": 821
@@ -1193,7 +1193,7 @@ describe "dacescrow" do
                     "sender4",
                     "receiver1"
                   ],
-                  "amount": "5.0000 EOS",
+                  "ext_asset": {"quantity": "5.0000 EOS", "contract": "eosio.token"},
                   "memo": "distant future escrow",
                   "expires": "2035-01-20T23:21:43",
                   "external_reference": 123

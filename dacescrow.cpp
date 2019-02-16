@@ -8,8 +8,6 @@
 using namespace eosio;
 using namespace std;
 
-#define NOT_FOUND -1
-
 namespace eosdac {
 
     time_point current_time_point() {
@@ -31,19 +29,15 @@ namespace eosdac {
 
         require_auth(from);
 
-        eosio_assert(quantity.symbol.raw() == symbol{"EOS", 4}.raw(), "Only EOS tokens");
-
-        asset zero_asset{0, symbol{"EOS", 4}};
-
         auto by_sender = escrows.get_index<"bysender"_n>();
 
         uint8_t found = 0;
 
         for (auto esc_itr = by_sender.lower_bound(from.value), end_itr = by_sender.upper_bound(from.value); esc_itr != end_itr; ++esc_itr) {
-            if (esc_itr->amount == zero_asset){
+            if (esc_itr->ext_asset.quantity.amount == 0){
 
                 by_sender.modify(esc_itr, from, [&](escrow_info &e) {
-                    e.amount = quantity;
+                    e.ext_asset = extended_asset{quantity, sending_code};
                 });
 
                 found = 1;
@@ -58,12 +52,12 @@ namespace eosdac {
     ACTION dacescrow::init(name sender, name receiver, name arb, time_point_sec expires, string memo, std::optional<uint64_t> ext_reference ) {
         require_auth(sender);
 
-        asset zero_asset{0, symbol{"EOS", 4}};
+        extended_asset zero_asset{{0, symbol{"EOS", 4}}, "eosio.token"_n};
 
         auto by_sender = escrows.get_index<"bysender"_n>();
 
         for (auto esc_itr = by_sender.lower_bound(sender.value), end_itr = by_sender.upper_bound(sender.value); esc_itr != end_itr; ++esc_itr) {
-            eosio_assert(esc_itr->amount != zero_asset, "You already have an empty escrow.  Either fill it or delete it");
+            eosio_assert(esc_itr->ext_asset.quantity.amount != 0, "You already have an empty escrow.  Either fill it or delete it");
         }
 
         if (ext_reference) {
@@ -76,7 +70,7 @@ namespace eosdac {
             p.sender = sender;
             p.receiver = receiver;
             p.arb = arb;
-            p.amount = zero_asset;
+            p.ext_asset = zero_asset;
             p.expires = expires;
             p.memo = memo;
             if (!ext_reference) {
@@ -93,7 +87,7 @@ namespace eosdac {
         auto esc_itr = escrows.find(key);
         eosio_assert(esc_itr != escrows.end(), "Could not find escrow with that index");
 
-        eosio_assert(esc_itr->amount.amount > 0, "This has not been initialized with a transfer");
+        eosio_assert(esc_itr->ext_asset.quantity.amount > 0, "This has not been initialized with a transfer");
 
         eosio_assert(esc_itr->sender == approver || esc_itr->receiver == approver || esc_itr->arb == approver, "You are not involved in this escrow");
 
@@ -108,7 +102,6 @@ namespace eosdac {
     ACTION dacescrow::approveext(uint64_t ext_key, name approver) {
         auto key = key_for_external_key(ext_key);
         eosio_assert(key.has_value(), "No escrow exists for this external key.");
-        print("found key to approve :", key.value());
         approve(*key, approver);
     }
 
@@ -140,7 +133,7 @@ namespace eosdac {
 
         require_auth(esc_itr->receiver);
 
-        eosio_assert(esc_itr->amount.amount > 0, "This has not been initialized with a transfer");
+        eosio_assert(esc_itr->ext_asset.quantity.amount > 0, "This has not been initialized with a transfer");
 
         auto approvals = esc_itr->approvals;
 
@@ -148,8 +141,9 @@ namespace eosdac {
 
         //inline transfer the required funds
         eosio::action(
-                eosio::permission_level{_self , "active"_n }, "eosio.token"_n, "transfer"_n,
-                make_tuple( _self, esc_itr->sender, esc_itr->amount, esc_itr->memo)
+                eosio::permission_level{_self , "active"_n },
+                esc_itr->ext_asset.contract, "transfer"_n,
+                make_tuple( _self, esc_itr->sender, esc_itr->ext_asset.quantity, esc_itr->memo)
         ).send();
 
 
@@ -172,10 +166,8 @@ namespace eosdac {
         eosio_assert(esc_itr != escrows.end(), "Could not find escrow with that index");
 
         require_auth(esc_itr->sender);
-
-        asset zero_asset{0, symbol{"EOS", 4}};
-
-        eosio_assert(zero_asset == esc_itr->amount, "Amount is not zero, this escrow is locked down");
+        
+        eosio_assert(0 == esc_itr->ext_asset.quantity.amount, "Amount is not zero, this escrow is locked down");
 
         escrows.erase(esc_itr);
     }
@@ -197,7 +189,7 @@ namespace eosdac {
 
         require_auth(esc_itr->sender);
 
-        eosio_assert(esc_itr->amount.amount > 0, "This has not been initialized with a transfer");
+        eosio_assert(esc_itr->ext_asset.quantity.amount > 0, "This has not been initialized with a transfer");
 
         time_point_sec time_now = time_point_sec(current_time_point());
 
@@ -206,8 +198,8 @@ namespace eosdac {
 
 
         eosio::action(
-                eosio::permission_level{_self , "active"_n }, "eosio.token"_n, "transfer"_n,
-                make_tuple( _self, esc_itr->sender, esc_itr->amount, esc_itr->memo)
+                eosio::permission_level{_self , "active"_n }, esc_itr->ext_asset.contract, "transfer"_n,
+                make_tuple( _self, esc_itr->sender, esc_itr->ext_asset.quantity, esc_itr->memo)
         ).send();
 
 
@@ -257,7 +249,7 @@ extern "C" { \
          eosio_assert(code == "eosio"_n.value, "onerror action's are only valid from the \"eosio\" system account"); \
       } \
       auto self = receiver; \
-      if( (code == self  && action != "transfer"_n.value) || (code == "eosio.token"_n.value && action == "transfer"_n.value) ) { \
+      if( (code == self  && action != "transfer"_n.value) || (action == "transfer"_n.value) ) { \
          switch( action ) { \
             EOSIO_DISPATCH_HELPER( TYPE, MEMBERS ) \
          } \
