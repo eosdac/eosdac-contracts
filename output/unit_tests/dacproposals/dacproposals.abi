@@ -1,5 +1,5 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Tue Feb 19 23:08:02 2019",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Wed Feb 20 23:07:52 2019",
     "version": "eosio::abi/1.1",
     "structs": [
         {
@@ -19,6 +19,28 @@
                 {
                     "name": "proposal_id",
                     "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "comment",
+            "base": "",
+            "fields": [
+                {
+                    "name": "commenter",
+                    "type": "name"
+                },
+                {
+                    "name": "proposal_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "comment",
+                    "type": "string"
+                },
+                {
+                    "name": "comment_category",
+                    "type": "string"
                 }
             ]
         },
@@ -212,6 +234,11 @@
             "name": "claim",
             "type": "claim",
             "ricardian_contract": "## ACTION: claim\n **PARAMETERS:**\n * __proposal_id__ is an integer id for an existing proposal for the proposer to claim.\n\n **INTENT:**\n The intent of claim is to indicate the proposer has completed the required work for a worker proposal and would like to claim the escrowed funds as payment."
+        },
+        {
+            "name": "comment",
+            "type": "comment",
+            "ricardian_contract": "## ACTION: comment\n  **PARAMETERS:*\n  * __commenter__ The commenter eos account name \n  * __proposal_id__ is an integer id for an existing proposal for the proposer to comment on.\n  * __comment__ The string representing the comment for the proposal\n  * __comment_category__ The string for comment category to help categorise comments.\n\n  **INTENT:**\n  The intent of comment is to capture and authorise comments related to a proposal."
         },
         {
             "name": "completework",
