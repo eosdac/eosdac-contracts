@@ -56,6 +56,7 @@ enum VoteType {
 
     TABLE configtype {
             name service_account = "dacescrow"_n;
+            name authority_account = "dacauthority"_n;
             uint16_t proposal_threshold = 7;
             uint16_t proposal_approval_threshold_percent = 50;
             uint16_t claim_threshold = 5;

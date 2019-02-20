@@ -28,7 +28,7 @@ using namespace std;
 
     ACTION dacproposals::voteprop(name custodian, uint64_t proposal_id, uint8_t vote) {
         require_auth(custodian);
-//        require_auth(dacauthority) //TODO: Permission needed to here to ensure the correct custodian only permission.
+        require_auth(current_configs().authority_account);
 
         const proposal& prop = proposals.get(proposal_id, "Proposal not found.");
         switch (prop.state) {
@@ -162,7 +162,7 @@ using namespace std;
     }
 
     ACTION dacproposals::updateconfig(configtype new_config) {
-        require_auth("dacauthority"_n);
+        require_auth(current_configs().authority_account);
         configs.set(new_config, _self);
     }
 
