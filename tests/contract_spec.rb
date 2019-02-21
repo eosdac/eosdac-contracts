@@ -380,25 +380,30 @@ describe "eosdacelect" do
     end
 
     context "with valid auth" do
-      command %(cleos push action daccustodian updatereqpay '{ "cand": "updatepay2", "requestedpay": "410.5000 EOS"}' -p updatepay2), allow_error: true
-      its(:stdout) {is_expected.to include('daccustodian::updatereqpay')}
-    end
+      context "exceeding the req pay limit" do
+        command %(cleos push action daccustodian updatereqpay '{ "cand": "updatepay2", "requestedpay": "450.5000 EOS"}' -p updatepay2), allow_error: true
+        its(:stderr) {is_expected.to include('ERR::UPDATEREQPAY_EXCESS_MAX_PAY')}
+      end
+      context "equal to the max req pay limit" do
+        command %(cleos push action daccustodian updatereqpay '{ "cand": "updatepay2", "requestedpay": "450.0000 EOS"}' -p updatepay2), allow_error: true
+        its(:stdout) {is_expected.to include('daccustodian::updatereqpay')}
+      end
 
-    context "with valid auth" do
-      command %(cleos push action daccustodian updatereqpay '{ "cand": "updatepay2", "requestedpay": "41.5000 EOS"}' -p updatepay2), allow_error: true
-      its(:stdout) {is_expected.to include('daccustodian::updatereqpay')}
-    end
+      context "with normal valid value" do
+        command %(cleos push action daccustodian updatereqpay '{ "cand": "updatepay2", "requestedpay": "41.5000 EOS"}' -p updatepay2), allow_error: true
+        its(:stdout) {is_expected.to include('daccustodian::updatereqpay')}
+      end
 
-    context "Read the candidates table after change reqpay" do
-      command %(cleos get table daccustodian daccustodian candidates), allow_error: true
-      it do
-        json = JSON.parse(subject.stdout)
-        expect(json["rows"].count).to eq 4
+      context "Read the candidates table after change reqpay" do
+        command %(cleos get table daccustodian daccustodian candidates), allow_error: true
+        it do
+          json = JSON.parse(subject.stdout)
+          expect(json["rows"].count).to eq 4
 
-        expect(json["rows"][-1]["candidate_name"]).to eq 'updatepay2'
-        expect(json["rows"][-1]["requestedpay"]).to eq '41.5000 EOS'
-        expect(json["rows"][-1]["locked_tokens"]).to eq '23.0000 EOSDAC'
-
+          expect(json["rows"][-1]["candidate_name"]).to eq 'updatepay2'
+          expect(json["rows"][-1]["requestedpay"]).to eq '41.5000 EOS'
+          expect(json["rows"][-1]["locked_tokens"]).to eq '23.0000 EOSDAC'
+        end
       end
     end
   end
