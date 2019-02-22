@@ -89,7 +89,7 @@ namespace eosdac {
 
         eosio_assert(esc_itr->ext_asset.quantity.amount > 0, "This has not been initialized with a transfer");
 
-        eosio_assert(esc_itr->sender == approver || esc_itr->receiver == approver || esc_itr->arb == approver, "You are not involved in this escrow");
+        eosio_assert(esc_itr->sender == approver || esc_itr->arb == approver, "You are not allowed to approve this escrow.");
 
         auto approvals = esc_itr->approvals;
         eosio_assert(std::find(approvals.begin(), approvals.end(), approver) == approvals.end(), "You have already approved this escrow");
@@ -110,8 +110,6 @@ namespace eosdac {
 
         auto esc_itr = escrows.find(key);
         eosio_assert(esc_itr != escrows.end(), "Could not find escrow with that index");
-
-        eosio_assert(esc_itr->sender == disapprover || esc_itr->receiver == disapprover || esc_itr->arb == disapprover, "You are not involved in this escrow");
 
         escrows.modify(esc_itr, name{0}, [&](escrow_info &e){
             auto existing = std::find(e.approvals.begin(), e.approvals.end(), disapprover);
@@ -137,7 +135,7 @@ namespace eosdac {
 
         auto approvals = esc_itr->approvals;
 
-        eosio_assert(approvals.size() >= 2, "This escrow has not received the required approvals to claim");
+        eosio_assert(approvals.size() >= 1, "This escrow has not received the required approvals to claim");
 
         //inline transfer the required funds
         eosio::action(
@@ -166,7 +164,7 @@ namespace eosdac {
         eosio_assert(esc_itr != escrows.end(), "Could not find escrow with that index");
 
         require_auth(esc_itr->sender);
-        
+
         eosio_assert(0 == esc_itr->ext_asset.quantity.amount, "Amount is not zero, this escrow is locked down");
 
         escrows.erase(esc_itr);
@@ -194,7 +192,7 @@ namespace eosdac {
         time_point_sec time_now = time_point_sec(current_time_point());
 
         eosio_assert(time_now >= esc_itr->expires, "Escrow has not expired");
-        eosio_assert(esc_itr->approvals.size() >= 2, "Escrow has not received the required number of approvals");
+        // eosio_assert(esc_itr->approvals.size() >= 2, "Escrow has not received the required number of approvals");
 
 
         eosio::action(
@@ -274,3 +272,4 @@ EOSIO_ABI_EX(eosdac::dacescrow,
                      (cancelext)
                      (clean)
 )
+    
