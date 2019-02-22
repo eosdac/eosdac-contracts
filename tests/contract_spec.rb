@@ -717,11 +717,11 @@ describe "eosdacelect" do
 
   describe "updateconfig" do
     context "without valid auth" do
-      command %(cleos push action dacproposals updateconfig '{"new_config": { "service_account": "proposeracc1", "proposal_threshold": 5,"proposal_approval_threshold_percent": 90, "claim_threshold": 3, "claim_approval_threshold_percent": 20, "escrow_expiry": 2592000, "authority_account": "dacauthority"}}' -p proposeracc1), allow_error: true
+      command %(cleos push action dacproposals updateconfig '{"new_config": { "service_account": "proposeracc1", "member_terms_account": "eosdactokens", "proposal_threshold": 5,"proposal_approval_threshold_percent": 90, "claim_threshold": 3, "claim_approval_threshold_percent": 20, "escrow_expiry": 2592000, "authority_account": "dacauthority"}}' -p proposeracc1), allow_error: true
       its(:stderr) {is_expected.to include('missing authority of dacauthority')}
     end
     context "with valid auth" do
-      command %(cleos push action dacproposals updateconfig '{"new_config": { "service_account": "proposeracc1", "proposal_threshold": 4,"proposal_approval_threshold_percent": 30, "claim_threshold": 3, "claim_approval_threshold_percent": 20, "escrow_expiry": 2592000, "authority_account": "dacauthority"}}' -p dacauthority), allow_error: true
+      command %(cleos push action dacproposals updateconfig '{"new_config": { "service_account": "proposeracc1", "member_terms_account": "eosdactokens", "proposal_threshold": 4,"proposal_approval_threshold_percent": 30, "claim_threshold": 3, "claim_approval_threshold_percent": 20, "escrow_expiry": 2592000, "authority_account": "dacauthority"}}' -p dacauthority), allow_error: true
       its(:stdout) {is_expected.to include('dacproposals <= dacproposals::updateconfig')}
     end
   end
@@ -733,6 +733,7 @@ describe "eosdacelect" do
           "rows": [{
               "service_account": "proposeracc1",
               "authority_account": "dacauthority",
+              "member_terms_account": "eosdactokens",
               "proposal_threshold": 4,
               "proposal_approval_threshold_percent": 30,
               "claim_threshold": 3,

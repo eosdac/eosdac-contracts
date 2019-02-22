@@ -1,5 +1,5 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Wed Feb 20 23:07:47 2019",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Fri Feb 22 00:53:46 2019",
     "version": "eosio::abi/1.1",
     "structs": [
         {
@@ -64,6 +64,10 @@
                 },
                 {
                     "name": "authority_account",
+                    "type": "name"
+                },
+                {
+                    "name": "member_terms_account",
                     "type": "name"
                 },
                 {
