@@ -71,6 +71,20 @@ claim
   **INTENT:**
   The intent of cancel is to cancel a proposal.
 
+ <h1 class="contract">
+ comment
+ </h1>
+
+ ## ACTION: comment
+  **PARAMETERS:*
+  * __commenter__ The commenter eos account name 
+  * __proposal_id__ is an integer id for an existing proposal for the proposer to comment on.
+  * __comment__ The string representing the comment for the proposal
+  * __comment_category__ The string for comment category to help categorise comments.
+
+  **INTENT:**
+  The intent of comment is to capture and authorise comments related to a proposal.
+
 <h1 class="contract">
  updateconfig
 </h1>

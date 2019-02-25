@@ -161,6 +161,14 @@ using namespace std;
         clearprop(prop);
     }
 
+    ACTION dacproposals::comment(name commenter, uint64_t proposal_id, string comment, string comment_category) {
+        require_auth(commenter);
+        const proposal& prop = proposals.get(proposal_id, "Proposal not found.");
+        if (!has_auth(prop.proposer)) {
+            require_auth(current_configs().authority_account);
+        }
+    }
+
     ACTION dacproposals::updateconfig(configtype new_config) {
         require_auth(current_configs().authority_account);
         configs.set(new_config, _self);
@@ -182,7 +190,6 @@ using namespace std;
         proposals.erase(proposal);
     }
 
-
 EOSIO_DISPATCH(dacproposals,
                 (createprop)
                 (startwork)
@@ -190,5 +197,6 @@ EOSIO_DISPATCH(dacproposals,
                 (voteprop)
                 (claim)
                 (cancel)
+                (comment)
                 (updateconfig)
         )

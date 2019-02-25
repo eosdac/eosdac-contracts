@@ -88,6 +88,7 @@ public:
     ACTION completework(uint64_t proposal_id);
     ACTION claim(uint64_t proposal_id);
     ACTION cancel(uint64_t proposal_id);
+    ACTION comment(name commenter, uint64_t proposal_id, string comment, string comment_category);
     ACTION updateconfig(configtype new_config);
 
 private:
