@@ -28,6 +28,18 @@ createprop
 The intent of voteprop is to record a vote on an existing proposal.
 
 <h1 class="contract">
+    arbapprove
+</h1>
+
+## ACTION: arbapprove
+**PARAMETERS:**
+* __arbitrator__ is an eosio account name of the nominated arbitrator for the proposal.
+* __proposal_id__ is an integer id for an existing proposal for the custodian to vote on.
+
+**INTENT:** 
+The intent of arbapprove is to cleanup a proposal after the arbitrator has directly approved the escrow in the escrow contract. This cannot perform the approval on the escrow contract without weakening the security integrity of the escrow contract model, since this would require this contract to have the permission for approving an escrow transfer from both the sender and arbitrator's perspective. Since only the escrow contract was intended to be secured from modification then this would be a potential attack vector to the escrow contract. 
+
+<h1 class="contract">
 startwork
 </h1>
 
