@@ -11,6 +11,7 @@ using namespace std;
 
     ACTION dacproposals::createprop(name proposer, string title, string summary, name arbitrator, asset pay_amount, string content_hash){
         require_auth(proposer);
+        assertValidMember(proposer);
 
         eosio_assert(title.length() > 3, "Title length is too short.");
         eosio_assert(summary.length() > 3, "Summary length is too short.");
@@ -29,6 +30,7 @@ using namespace std;
     ACTION dacproposals::voteprop(name custodian, uint64_t proposal_id, uint8_t vote) {
         require_auth(custodian);
         require_auth(current_configs().authority_account);
+        assertValidMember(custodian);
 
         const proposal& prop = proposals.get(proposal_id, "Proposal not found.");
         switch (prop.state) {
@@ -64,6 +66,7 @@ using namespace std;
         const proposal& prop = proposals.get(proposal_id, "Proposal not found.");
 
         require_auth(prop.proposer);
+        assertValidMember(prop.proposer);
 
         eosio_assert(prop.state == pending_approval, "Proposal is not in the pending approval state therefore cannot start work.");
 
@@ -111,15 +114,17 @@ using namespace std;
         const proposal& prop = proposals.get(proposal_id, "Proposal not found.");
 
         require_auth(prop.proposer);
+        assertValidMember(prop.proposer);
 
         proposals.modify(prop, prop.proposer, [&](proposal &p){
             p.state = pending_claim;
         });
     }
 
-    ACTION dacproposals::claim(uint64_t proposal_id){
+    ACTION dacproposals::claim(uint64_t proposal_id) {
         const proposal& prop = proposals.get(proposal_id, "Proposal not found.");
         require_auth(prop.proposer);
+        assertValidMember(prop.proposer);
 
         eosio_assert(prop.state == pending_claim, "Proposal is not in the pending_claim state therefore cannot be claimed for payment.");
         auto by_voters = prop_votes.get_index<"proposal"_n>();
@@ -163,6 +168,7 @@ using namespace std;
 
     ACTION dacproposals::comment(name commenter, uint64_t proposal_id, string comment, string comment_category) {
         require_auth(commenter);
+        assertValidMember(commenter);
         const proposal& prop = proposals.get(proposal_id, "Proposal not found.");
         if (!has_auth(prop.proposer)) {
             require_auth(current_configs().authority_account);
@@ -178,6 +184,7 @@ using namespace std;
 
     void dacproposals::clearprop(const proposal& proposal){
         require_auth(proposal.proposer);
+        assertValidMember(proposal.proposer);
 
         // Remove all the votes associated with that proposal.
         auto by_voters = prop_votes.get_index<"proposal"_n>();
@@ -189,6 +196,17 @@ using namespace std;
 
         proposals.erase(proposal);
     }
+
+    void dacproposals::assertValidMember(name member) {
+    name member_terms_account = current_configs().member_terms_account;
+    regmembers reg_members(member_terms_account, member_terms_account.value);
+    memterms memberterms(member_terms_account, member_terms_account.value);
+
+    const auto &regmem = reg_members.get(member.value, "ERR::GENERAL_REG_MEMBER_NOT_FOUND::Account is not registered with members.");
+    eosio_assert((regmem.agreedterms != 0), "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_ANY_TERMS::Account has not agreed to any terms");
+    auto latest_member_terms = (--memberterms.end());
+    eosio_assert(latest_member_terms->version == regmem.agreedterms, "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_LATEST_TERMS::Agreed terms isn't the latest.");
+}
 
 EOSIO_DISPATCH(dacproposals,
                 (createprop)

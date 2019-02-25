@@ -3,6 +3,7 @@
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/asset.hpp>
 #include <eosiolib/singleton.hpp>
+#include "eosdactokens_types.hpp"
 
 using namespace eosio;
 using namespace std;
@@ -57,6 +58,7 @@ enum VoteType {
     TABLE configtype {
             name service_account = "dacescrow"_n;
             name authority_account = "dacauthority"_n;
+            name member_terms_account = "eosdactokens"_n;
             uint16_t proposal_threshold = 7;
             uint16_t proposal_approval_threshold_percent = 50;
             uint16_t claim_threshold = 5;
@@ -94,6 +96,8 @@ public:
 private:
 
     void clearprop(const proposal& proposal);
+    void assertValidMember(name member);
+
 
     configs_table configs;
 
@@ -132,5 +136,4 @@ TABLE proposalvote {
         configs.set(conf, _self);
         return conf;
     }
-
 };
