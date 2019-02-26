@@ -50,9 +50,7 @@ enum VoteType {
     enum ProposalState {  
         pending_approval = 0, 
         work_in_progress,
-        pending_claim, 
-        claim_approved, 
-        claim_denied
+        pending_claim
     };
 
     TABLE configtype {
@@ -86,6 +84,7 @@ public:
 
     ACTION createprop(name proposer, string title, string summary, name arbitrator, asset pay_amount, string content_hash);
     ACTION voteprop(name custodian, uint64_t proposal_id, uint8_t vote);
+    ACTION arbapprove(name arbitrator, uint64_t proposal_id);
     ACTION startwork(uint64_t proposal_id);
     ACTION completework(uint64_t proposal_id);
     ACTION claim(uint64_t proposal_id);
@@ -96,6 +95,7 @@ public:
 private:
 
     void clearprop(const proposal& proposal);
+    void transferfunds(const proposal &prop);
     void assertValidMember(name member);
 
 

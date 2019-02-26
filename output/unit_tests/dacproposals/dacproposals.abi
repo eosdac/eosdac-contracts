@@ -1,7 +1,21 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Fri Feb 22 00:53:51 2019",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Fri Feb 22 22:11:17 2019",
     "version": "eosio::abi/1.1",
     "structs": [
+        {
+            "name": "arbapprove",
+            "base": "",
+            "fields": [
+                {
+                    "name": "arbitrator",
+                    "type": "name"
+                },
+                {
+                    "name": "proposal_id",
+                    "type": "uint64"
+                }
+            ]
+        },
         {
             "name": "cancel",
             "base": "",
@@ -229,6 +243,11 @@
     ],
     "types": [],
     "actions": [
+        {
+            "name": "arbapprove",
+            "type": "arbapprove",
+            "ricardian_contract": "## ACTION: arbapprove\n**PARAMETERS:**\n* __arbitrator__ is an eosio account name of the nominated arbitrator for the proposal.\n* __proposal_id__ is an integer id for an existing proposal for the custodian to vote on.\n\n**INTENT:** \nThe intent of arbapprove is to cleanup a proposal after the arbitrator has directly approved the escrow in the escrow contract. This cannot perform the approval on the escrow contract without weakening the security integrity of the escrow contract model, since this would require this contract to have the permission for approving an escrow transfer from both the sender and arbitrator's perspective. Since only the escrow contract was intended to be secured from modification then this would be a potential attack vector to the escrow contract."
+        },
         {
             "name": "cancel",
             "type": "cancel",

@@ -61,6 +61,12 @@ using namespace std;
         }
     }
 
+    ACTION dacproposals::arbapprove(name arbitrator, uint64_t proposal_id) {
+        require_auth(arbitrator);
+        const proposal& prop = proposals.get(proposal_id, "Proposal not found.");
+        clearprop(prop);
+    }
+
     ACTION dacproposals::startwork(uint64_t proposal_id){
 
         const proposal& prop = proposals.get(proposal_id, "Proposal not found.");
@@ -145,20 +151,8 @@ using namespace std;
         eosio_assert(percent_approval >= current_configs().claim_approval_threshold_percent, "Claim approval threshold not met.");
 
         if (percent_approval >= current_configs().claim_approval_threshold_percent) {
-            print("Transfer funds from escrow account to proposer.");
-
-            eosio::action(
-                    eosio::permission_level{_self , "active"_n },
-                    current_configs().service_account, "approveext"_n,
-                    make_tuple( proposal_id, _self)
-            ).send();
-
-            clearprop(prop);
-        } else {
-            proposals.modify(prop, prop.proposer, [&](proposal &p){
-                p.state = claim_denied;
-            });
-        }
+            transferfunds(prop);
+        } 
     }
 
     ACTION dacproposals::cancel(uint64_t proposal_id){
@@ -181,6 +175,16 @@ using namespace std;
     }
 
 //    Private methods
+
+    void dacproposals::transferfunds(const proposal &prop) {
+        eosio::action(
+                eosio::permission_level{_self , "active"_n },
+                current_configs().service_account, "approveext"_n,
+                make_tuple( prop.key, _self)
+            ).send();
+
+        clearprop(prop);
+    }
 
     void dacproposals::clearprop(const proposal& proposal){
         require_auth(proposal.proposer);
