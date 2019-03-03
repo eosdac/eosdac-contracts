@@ -9,13 +9,16 @@
 using namespace eosio;
 using namespace std;
 
-    ACTION dacproposals::createprop(name proposer, string title, string summary, name arbitrator, asset pay_amount, string content_hash){
+    ACTION dacproposals::createprop(name proposer, string title, string summary, name arbitrator, extended_asset pay_amount, string content_hash){
         require_auth(proposer);
         assertValidMember(proposer);
 
         eosio_assert(title.length() > 3, "Title length is too short.");
         eosio_assert(summary.length() > 3, "Summary length is too short.");
-        eosio_assert(content_hash.length() == 32, "Invalid content hash.");
+        // eosio_assert(content_hash.length() == 32, "Invalid content hash.");
+        eosio_assert(pay_amount.quantity.symbol.is_valid(), "Invalid pay amount symbol.");
+        eosio_assert(pay_amount.quantity.amount > 0, "Invalid pay amount. Must be greater than 0.");
+        eosio_assert(is_account(arbitrator), "Invalid arbitrator.");
 
         proposals.emplace(proposer, [&](proposal &p) {
             p.key = _currentState.last_proposal_id++;
@@ -110,8 +113,8 @@ using namespace std;
 
         eosio::action(
                 eosio::permission_level{_self , "active"_n },
-                "eosio.token"_n, "transfer"_n,
-                make_tuple( _self, current_configs().service_account, prop.pay_amount, "payment for wp: " + to_string(proposal_id))
+                prop.pay_amount.contract, "transfer"_n,
+                make_tuple( _self, current_configs().service_account, prop.pay_amount.quantity, "payment for wp: " + to_string(proposal_id))
         ).send();
     }
 
