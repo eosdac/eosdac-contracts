@@ -1,6 +1,6 @@
 
 
-void daccustodian::nominatecand(name cand, asset requestedpay) {
+    void daccustodian::nominatecand(name cand, asset requestedpay) {
     require_auth(cand);
     assertValidMember(cand);
 

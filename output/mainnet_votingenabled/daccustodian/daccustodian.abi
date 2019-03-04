@@ -1,5 +1,5 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Fri Feb  1 23:33:32 2019",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Thu Feb 21 22:38:41 2019",
     "version": "eosio::abi/1.1",
     "structs": [
         {
