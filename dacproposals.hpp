@@ -14,7 +14,7 @@ CONTRACT dacproposals : public contract {
             name proposer;
             name arbitrator;
             string content_hash;
-            asset pay_amount;
+            extended_asset pay_amount;
             uint8_t state;
 
             uint64_t primary_key() const { return key; }
@@ -82,7 +82,7 @@ public:
         contract_state.set(_currentState, _self); // This should not run during a contract_state migration since it will prevent changing the schema with data saved between runs.
     }
 
-    ACTION createprop(name proposer, string title, string summary, name arbitrator, asset pay_amount, string content_hash);
+    ACTION createprop(name proposer, string title, string summary, name arbitrator, extended_asset pay_amount, string content_hash);
     ACTION voteprop(name custodian, uint64_t proposal_id, uint8_t vote);
     ACTION arbapprove(name arbitrator, uint64_t proposal_id);
     ACTION startwork(uint64_t proposal_id);

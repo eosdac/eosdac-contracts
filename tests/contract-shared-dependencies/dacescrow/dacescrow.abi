@@ -1,5 +1,5 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Wed Feb 13 09:31:52 2019",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Sat Feb 16 13:54:32 2019",
     "version": "eosio::abi/1.1",
     "structs": [
         {
@@ -100,8 +100,8 @@
                     "type": "name[]"
                 },
                 {
-                    "name": "amount",
-                    "type": "asset"
+                    "name": "ext_asset",
+                    "type": "extended_asset"
                 },
                 {
                     "name": "memo",
