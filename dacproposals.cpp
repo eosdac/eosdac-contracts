@@ -103,18 +103,18 @@ using namespace std;
         time_point_sec time_now = time_point_sec(now());
         string memo = prop.proposer.to_string() + ":" + to_string(proposal_id) + ":" + prop.content_hash;
 
-        auto inittuple = make_tuple( _self, prop.proposer, prop.arbitrator, time_now + current_configs().escrow_expiry, memo, std::optional<uint64_t>(proposal_id));
+        auto inittuple = make_tuple(current_configs().treasury_account, prop.proposer, prop.arbitrator, time_now + current_configs().escrow_expiry, memo, std::optional<uint64_t>(proposal_id));
 
         eosio::action(
-                eosio::permission_level{_self , "active"_n },
+                eosio::permission_level{current_configs().treasury_account , "active"_n },
                 current_configs().service_account, "init"_n,
                 inittuple
         ).send();
 
         eosio::action(
-                eosio::permission_level{_self , "active"_n },
+                eosio::permission_level{current_configs().treasury_account , "xfer"_n },
                 prop.pay_amount.contract, "transfer"_n,
-                make_tuple( _self, current_configs().service_account, prop.pay_amount.quantity, "payment for wp: " + to_string(proposal_id))
+                make_tuple(current_configs().treasury_account, current_configs().service_account, prop.pay_amount.quantity, "payment for wp: " + to_string(proposal_id))
         ).send();
     }
 
@@ -181,9 +181,9 @@ using namespace std;
 
     void dacproposals::transferfunds(const proposal &prop) {
         eosio::action(
-                eosio::permission_level{_self , "active"_n },
+                eosio::permission_level{current_configs().treasury_account, "active"_n },
                 current_configs().service_account, "approveext"_n,
-                make_tuple( prop.key, _self)
+                make_tuple( prop.key, current_configs().treasury_account)
             ).send();
 
         clearprop(prop);
