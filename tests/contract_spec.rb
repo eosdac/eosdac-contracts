@@ -148,6 +148,8 @@ def configure_dac_accounts
     cleos set account permission dacauthority one #{CONTRACT_OWNER_PUBLIC_KEY} low -p dacauthority  
 
     cleos set account permission #{ACCOUNT_NAME} active '{"threshold": 1,"keys": [{"key": "#{CONTRACT_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p #{ACCOUNT_NAME}
+    cleos set account permission eosdacthedac xfer '{"threshold": 1,"keys": [],"accounts": [{"permission":{"actor":"dacproposals","permission":"eosio.code"},"weight":1}]}' active -p eosdacthedac@active
+    cleos set account permission eosdacthedac active '{"threshold": 1,"keys": [],"accounts": [{"permission":{"actor":"dacproposals","permission":"eosio.code"},"weight":1}]}' owner -p eosdacthedac@owner
 
     # Set action permission for the voteprop
       cleos set action permission dacauthority dacproposals voteprop one
@@ -497,7 +499,7 @@ describe "eosdacelect" do
         escrow = json["rows"].detect {|v| v["receiver"] == 'proposeracc1'}
 
         expect(escrow["key"]).to eq 0
-        expect(escrow["sender"]).to eq 'dacproposals'
+        expect(escrow["sender"]).to eq 'eosdacthedac'
         expect(escrow["receiver"]).to eq 'proposeracc1'
         expect(escrow["arb"]).to eq 'arbitrator11'
         expect(escrow["approvals"].count).to eq 0
@@ -638,10 +640,10 @@ describe "eosdacelect" do
         escrow = json["rows"].detect {|v| v["receiver"] == 'proposeracc1'}
 
         expect(escrow["key"]).to eq 0
-        expect(escrow["sender"]).to eq 'dacproposals'
+        expect(escrow["sender"]).to eq 'eosdacthedac'
         expect(escrow["receiver"]).to eq 'proposeracc1'
         expect(escrow["arb"]).to eq 'arbitrator11'
-        expect(escrow["approvals"]).to eq ["dacproposals"]
+        expect(escrow["approvals"]).to eq ["eosdacthedac"]
         expect(escrow["ext_asset"]["quantity"]).to eq "101.0000 EOS"
         expect(escrow["memo"]).to eq "proposeracc1:1:asdfasdfasdfasdfasdfasdfasdffdsa"
         expect(escrow["external_reference"]).to eq 1
@@ -719,10 +721,10 @@ describe "eosdacelect" do
         escrow = json["rows"].detect {|v| v["receiver"] == 'proposeracc1'}
 
         expect(escrow["key"]).to eq 0
-        expect(escrow["sender"]).to eq 'dacproposals'
+        expect(escrow["sender"]).to eq 'eosdacthedac'
         expect(escrow["receiver"]).to eq 'proposeracc1'
         expect(escrow["arb"]).to eq 'arbitrator11'
-        expect(escrow["approvals"]).to eq ["dacproposals"]
+        expect(escrow["approvals"]).to eq ["eosdacthedac"]
         expect(escrow["ext_asset"]["quantity"]).to eq "101.0000 EOS"
         expect(escrow["memo"]).to eq "proposeracc1:1:asdfasdfasdfasdfasdfasdfasdffdsa"
         expect(escrow["external_reference"]).to eq 1
@@ -733,11 +735,11 @@ describe "eosdacelect" do
 
   describe "updateconfig" do
     context "without valid auth" do
-      command %(cleos push action dacproposals updateconfig '{"new_config": { "service_account": "proposeracc1", "member_terms_account": "eosdactokens", "proposal_threshold": 5,"proposal_approval_threshold_percent": 90, "claim_threshold": 3, "claim_approval_threshold_percent": 20, "escrow_expiry": 2592000, "authority_account": "dacauthority"}}' -p proposeracc1), allow_error: true
+      command %(cleos push action dacproposals updateconfig '{"new_config": { "service_account": "proposeracc1", "member_terms_account": "eosdactokens", "treasury_account": "eosdacthedac", "proposal_threshold": 5,"proposal_approval_threshold_percent": 90, "claim_threshold": 3, "claim_approval_threshold_percent": 20, "escrow_expiry": 2592000, "authority_account": "dacauthority"}}' -p proposeracc1), allow_error: true
       its(:stderr) {is_expected.to include('missing authority of dacauthority')}
     end
     context "with valid auth" do
-      command %(cleos push action dacproposals updateconfig '{"new_config": { "service_account": "proposeracc1", "member_terms_account": "eosdactokens", "proposal_threshold": 4,"proposal_approval_threshold_percent": 30, "claim_threshold": 3, "claim_approval_threshold_percent": 20, "escrow_expiry": 2592000, "authority_account": "dacauthority"}}' -p dacauthority), allow_error: true
+      command %(cleos push action dacproposals updateconfig '{"new_config": { "service_account": "proposeracc1", "member_terms_account": "eosdactokens", "treasury_account": "eosdacthedac", "proposal_threshold": 4,"proposal_approval_threshold_percent": 30, "claim_threshold": 3, "claim_approval_threshold_percent": 20, "escrow_expiry": 2592000, "authority_account": "dacauthority"}}' -p dacauthority), allow_error: true
       its(:stdout) {is_expected.to include('dacproposals <= dacproposals::updateconfig')}
     end
   end
@@ -750,6 +752,7 @@ describe "eosdacelect" do
               "service_account": "proposeracc1",
               "authority_account": "dacauthority",
               "member_terms_account": "eosdactokens",
+              "treasury_account": "eosdacthedac",
               "proposal_threshold": 4,
               "proposal_approval_threshold_percent": 30,
               "claim_threshold": 3,

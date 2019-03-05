@@ -1,5 +1,5 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Sat Mar  2 11:26:05 2019",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Mon Mar  4 00:49:26 2019",
     "version": "eosio::abi/1.1",
     "structs": [
         {
@@ -82,6 +82,10 @@
                 },
                 {
                     "name": "member_terms_account",
+                    "type": "name"
+                },
+                {
+                    "name": "treasury_account",
                     "type": "name"
                 },
                 {
