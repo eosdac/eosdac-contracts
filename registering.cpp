@@ -4,6 +4,7 @@
     require_auth(cand);
     assertValidMember(cand);
 
+    eosio_assert(requestedpay.amount > 0, "ERR::UPDATEREQPAY_UNDER_ZERO::Requested pay amount must be greater than 0.");
     // This implicitly asserts that the symbol of requestedpay matches the configs.max pay.
     eosio_assert(requestedpay <= configs().requested_pay_max,
                  "ERR::NOMINATECAND_PAY_LIMIT_EXCEEDED::Requested pay limit for a candidate was exceeded.");
