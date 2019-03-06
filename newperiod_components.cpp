@@ -26,6 +26,34 @@ void daccustodian::distributePay() {
     print("distribute pay");
 }
 
+void daccustodian::distributeMeanPay() {
+    custodians_table custodians(_self, _self.value);
+
+    //Find the mean pay using a temporary vector to hold the requestedpay amounts.
+    asset total = asset{0, configs().requested_pay_max.symbol};
+    int64_t count = 0;
+    for (auto cust: custodians) {
+        total += cust.requestedpay;
+        count += 1;
+        // print_f("cust % with amount %\n", cust.cust_name, cust.requestedpay);
+    }
+
+    asset meanAsset = count == 0 ? total : total / count;
+
+    // print_f("Calclulated mean is: %", meanAsset);
+
+    for (auto cust: custodians) {
+        pending_pay.emplace(_self, [&](pay &p) {
+            p.key = pending_pay.available_primary_key();
+            p.receiver = cust.cust_name;
+            p.quantity = meanAsset;
+            p.memo = "Custodian pay. Thank you.";
+        });
+    }
+
+    print("distribute mean pay");
+}
+
 void daccustodian::assertPeriodTime() {
     uint32_t timestamp = now();
     uint32_t periodBlockCount = timestamp - _currentState.lastperiodtime;
@@ -194,7 +222,7 @@ void daccustodian::newperiod(string message) {
                  "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_PROCESS::Voter engagement is insufficient to process a new period");
 
     // Distribute pay to the current custodians.
-    distributePay();
+    distributeMeanPay();
 
     // Set custodians for the next period.
     allocateCustodians(false);

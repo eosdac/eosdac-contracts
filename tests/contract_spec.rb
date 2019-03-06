@@ -1315,11 +1315,11 @@ describe "eosdacelect" do
         expect(json["rows"].count).to eq 24
 
         custodian = json["rows"].detect {|v| v["receiver"] == 'allocate5'}
-        expect(custodian["quantity"]).to eq '17.0000 EOS'
+        expect(custodian["quantity"]).to eq '16.7500 EOS'
         expect(custodian["memo"]).to eq 'Custodian pay. Thank you.'
 
         custodian = json["rows"].detect {|v| v["receiver"] == 'allocate3'}
-        expect(custodian["quantity"]).to eq '17.0000 EOS'
+        expect(custodian["quantity"]).to eq '16.7500 EOS'
       end
     end
 
@@ -1415,7 +1415,7 @@ describe "eosdacelect" do
     context "After claiming for the correct should be added to the claimer" do
       before(:each) { sleep 12 }
       command %(cleos get currency balance eosio.token dacocoiogmbh EOS), allow_error: true
-      its(:stdout) {is_expected.to include('17.0000 EOS')} # eventually this would pass but now it's time delayed I cannot assert.
+      its(:stdout) {is_expected.to include('16.7500 EOS')} # eventually this would pass but now it's time delayed I cannot assert.
     end
   end
 
