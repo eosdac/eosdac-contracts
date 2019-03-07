@@ -244,6 +244,11 @@ describe "eosdacelect" do
       its(:stderr) {is_expected.to include('A registering candidate must transfer sufficient tokens to the contract for staking')}
     end
 
+    context "with negative requestpay amount" do
+      command %(cleos push action daccustodian nominatecand '{ "cand": "testreguser1", "bio": "any bio", "requestedpay": "-11.5000 EOS"}' -p testreguser1), allow_error: true
+      its(:stderr) {is_expected.to include("ERR::UPDATEREQPAY_UNDER_ZERO")}
+    end
+
     context "with valid and registered member after transferring sufficient staked tokens in multiple transfers" do
       before(:all) do
         `cleos push action eosdactokens transfer '{ "from": "testreguser1", "to": "daccustodian", "quantity": "5.0000 EOSDAC","memo":"daccustodian"}' -p testreguser1 -f`
@@ -377,6 +382,11 @@ describe "eosdacelect" do
     context "with invalid auth" do
       command %(cleos push action daccustodian updatereqpay '{ "cand": "updatepay2", "requestedpay": "11.5000 EOS"}' -p testreguser3), allow_error: true
       its(:stderr) {is_expected.to include('Error 3090004')}
+    end
+
+    context "with negative requestpay amount" do
+      command %(cleos push action daccustodian updatereqpay '{ "cand": "updatepay2", "requestedpay": "-450.5000 EOS"}' -p updatepay2), allow_error: true
+      its(:stderr) {is_expected.to include("ERR::UPDATEREQPAY_UNDER_ZERO")}
     end
 
     context "with valid auth" do
