@@ -454,6 +454,8 @@ private: // Private helper methods used by other actions.
     void assertPeriodTime();
 
     void distributePay();
+    
+    void distributeMeanPay();
 
     void setCustodianAuths();
 
