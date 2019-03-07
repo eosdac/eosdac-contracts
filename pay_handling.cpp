@@ -31,7 +31,7 @@ void daccustodian::claimpay(uint64_t payid) {
     }
 
     deferredTrans.delay_sec = TRANSFER_DELAY;
-    deferredTrans.send(now() + payid, _self);
+    deferredTrans.send(uint128_t(payid) << 64 | now(), _self);
 
     pending_pay.erase(payClaim);
 }
