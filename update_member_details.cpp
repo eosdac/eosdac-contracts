@@ -20,3 +20,4 @@ void daccustodian::updatereqpay(name cand, asset requestedpay) {
         c.requestedpay = requestedpay;
     });
 }
+    
