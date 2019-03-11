@@ -224,6 +224,40 @@ describe "eosdacelect" do
     killchain
   end
 
+  describe "updateconfig" do
+    context "without valid auth" do
+      command %(cleos push action dacproposals updateconfig '{"new_config": { "service_account": "proposeracc1", "member_terms_account": "eosdactokens", "treasury_account": "eosdacthedac", "proposal_threshold": 7,"proposal_approval_threshold_percent": 50, "claim_threshold": 5, "claim_approval_threshold_percent": 50, "escrow_expiry": 2592000, "authority_account": "dacauthority"}}' -p proposeracc1), allow_error: true
+      its(:stderr) {is_expected.to include('missing authority of dacproposals')}
+    end
+    context "with valid auth" do
+      command %(cleos push action dacproposals updateconfig '{"new_config": { "service_account": "proposeracc1", "member_terms_account": "eosdactokens", "treasury_account": "eosdacthedac", "proposal_threshold": 7,"proposal_approval_threshold_percent": 50, "claim_threshold": 5, "claim_approval_threshold_percent": 50, "escrow_expiry": 2592000, "authority_account": "dacauthority"}}' -p dacproposals), allow_error: true
+      its(:stdout) {is_expected.to include('dacproposals <= dacproposals::updateconfig')}
+    end
+  end
+
+  context "Read the config table after createprop" do
+    command %(cleos get table dacproposals dacproposals configtype), allow_error: true
+    it do
+      expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
+        {
+          "rows": [{
+              "service_account": "proposeracc1",
+              "authority_account": "dacauthority",
+              "member_terms_account": "eosdactokens",
+              "treasury_account": "eosdacthedac",
+              "proposal_threshold": 7,
+              "proposal_approval_threshold_percent": 50,
+              "claim_threshold": 5,
+              "claim_approval_threshold_percent": 50,
+              "escrow_expiry": 2592000
+            }
+          ],
+          "more": false
+        }
+      JSON
+    end
+  end
+
   describe "createprop" do
     context "Without valid permission" do
       context "with valid and registered member" do
@@ -730,39 +764,6 @@ describe "eosdacelect" do
         expect(escrow["external_reference"]).to eq 1
         expect(Date.iso8601(escrow["expires"]).day).to eq (Date.today().next_day(30).day)
       end
-    end
-  end
-
-  describe "updateconfig" do
-    context "without valid auth" do
-      command %(cleos push action dacproposals updateconfig '{"new_config": { "service_account": "proposeracc1", "member_terms_account": "eosdactokens", "treasury_account": "eosdacthedac", "proposal_threshold": 5,"proposal_approval_threshold_percent": 90, "claim_threshold": 3, "claim_approval_threshold_percent": 20, "escrow_expiry": 2592000, "authority_account": "dacauthority"}}' -p proposeracc1), allow_error: true
-      its(:stderr) {is_expected.to include('missing authority of dacauthority')}
-    end
-    context "with valid auth" do
-      command %(cleos push action dacproposals updateconfig '{"new_config": { "service_account": "proposeracc1", "member_terms_account": "eosdactokens", "treasury_account": "eosdacthedac", "proposal_threshold": 4,"proposal_approval_threshold_percent": 30, "claim_threshold": 3, "claim_approval_threshold_percent": 20, "escrow_expiry": 2592000, "authority_account": "dacauthority"}}' -p dacauthority), allow_error: true
-      its(:stdout) {is_expected.to include('dacproposals <= dacproposals::updateconfig')}
-    end
-  end
-  context "Read the config table after createprop" do
-    command %(cleos get table dacproposals dacproposals configtype), allow_error: true
-    it do
-      expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-        {
-          "rows": [{
-              "service_account": "proposeracc1",
-              "authority_account": "dacauthority",
-              "member_terms_account": "eosdactokens",
-              "treasury_account": "eosdacthedac",
-              "proposal_threshold": 4,
-              "proposal_approval_threshold_percent": 30,
-              "claim_threshold": 3,
-              "claim_approval_threshold_percent": 20,
-              "escrow_expiry": 2592000
-            }
-          ],
-          "more": false
-        }
-      JSON
     end
   end
 end
