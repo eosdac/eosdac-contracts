@@ -55,13 +55,13 @@ enum VoteType {
 
     TABLE configtype {
             name service_account = "dacescrow"_n;
-            name authority_account = "dacauthority"_n;
+            name authority_account = name{0};
             name member_terms_account = "eosdactokens"_n;
             name treasury_account = "eosdacthedac"_n;
-            uint16_t proposal_threshold = 7;
+            uint16_t proposal_threshold = 4;
             uint16_t proposal_approval_threshold_percent = 50;
-            uint16_t claim_threshold = 5;
-            uint16_t claim_approval_threshold_percent = 50;
+            uint16_t claim_threshold = 1;
+            uint16_t claim_approval_threshold_percent = 100;
             uint32_t escrow_expiry = 30 * 24 * 60 * 60;
     };
 

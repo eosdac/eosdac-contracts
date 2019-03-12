@@ -173,7 +173,12 @@ using namespace std;
     }
 
     ACTION dacproposals::updateconfig(configtype new_config) {
-        require_auth(current_configs().authority_account);
+        if (current_configs().authority_account == name{0}) {
+            require_auth(_self);
+        } else {
+            require_auth(current_configs().authority_account);
+        }
+
         configs.set(new_config, _self);
     }
 
