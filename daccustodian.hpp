@@ -229,8 +229,7 @@ public:
         contract_state.set(_currentState, _self); // This should not run during a contract_state migration since it will prevent changing the schema with data saved between runs.
     }
 
-    [[eosio::action]]
-    void updateconfig(contr_config newconfig);
+    ACTION updateconfig(contr_config newconfig);
 
     /** Action to listen to from the associated token contract to ensure registering should be allowed.
  *
@@ -265,8 +264,7 @@ public:
  * ### Post Condition:
  * The candidate should be present in the candidates table and be set to active. If they are a returning candidate they should be set to active again. The `locked_tokens` value should reflect the total of the tokens they have transferred to the contract for staking. The number of active candidates in the contract will incremented.
  */
-    [[eosio::action]]
-    void nominatecand(name cand, eosio::asset requestedpay);
+    ACTION nominatecand(name cand, eosio::asset requestedpay);
 
     /**
  * This action is used to withdraw a candidate from being active for custodian elections.
@@ -280,8 +278,7 @@ public:
  * ### Post Condition:
  * The candidate should still be present in the candidates table and be set to inactive. If the were recently an elected custodian there may be a time delay on when they can unstake their tokens from the contract. If not they will be able to unstake their tokens immediately using the unstake action.
  */
-    [[eosio::action]]
-    void withdrawcand(name cand);
+    ACTION withdrawcand(name cand);
 
     /**
  * This action is used to remove a candidate from being a candidate for custodian elections.
@@ -296,8 +293,7 @@ public:
  * ### Post Condition:
  * The candidate should still be present in the candidates table and be set to inactive. If the `lockupstake` parameter is true the stake will be locked until the time delay has passed. If not the candidate will be able to unstake their tokens immediately using the unstake action to have them returned.
  */
-    [[eosio::action]]
-    void firecand(name cand, bool lockupStake);
+    ACTION firecand(name cand, bool lockupStake);
 
     /**
  * This action is used to resign as a custodian.
@@ -311,8 +307,7 @@ public:
  * ### Post Condition:
  * The custodian will be removed from the active custodians and should still be present in the candidates table but will be set to inactive. Their staked tokens will be locked up for the time delay added from the moment this action was called so they will not able to unstake until that time has passed. A replacement custodian will selected from the candidates to fill the missing place (based on vote ranking) then the auths for the controlling dac auth account will be set for the custodian board.
  */
-    [[eosio::action]]
-    void resigncust(name cust);
+    ACTION resigncust(name cust);
 
     /**
  * This action is used to remove a custodian.
@@ -326,8 +321,7 @@ public:
  * ### Post Condition:
  * The custodian will be removed from the active custodians and should still be present in the candidates table but will be set to inactive. Their staked tokens will be locked up for the time delay added from the moment this action was called so they will not able to unstake until that time has passed. A replacement custodian will selected from the candidates to fill the missing place (based on vote ranking) then the auths for the controlling dac auth account will be set for the custodian board.
  */
-    [[eosio::action]]
-    void firecust(name cust);
+    ACTION firecust(name cust);
 
     /**
  * This action is used to update the bio for a candidate.
@@ -342,8 +336,7 @@ public:
  * ### Post Condition:
 Nothing from this action is stored on the blockchain. It is only intended to ensure authentication of changing the bio which will be stored off chain.
  */
-    [[eosio::action]]
-    void updatebio(name cand, std::string bio);
+    ACTION updatebio(name cand, std::string bio);
 
     [[eosio::action]]
     inline void stprofile(name cand, std::string profile) { require_auth(cand); };
@@ -365,8 +358,7 @@ Nothing from this action is stored on the blockchain. It is only intended to ens
  * ### Post Condition:
  * The requested pay for the candidate should be updated to the new asset.
  */
-    [[eosio::action]]
-    void updatereqpay(name cand, eosio::asset requestedpay);
+    ACTION updatereqpay(name cand, eosio::asset requestedpay);
 
     /**
 * This action is to facilitate voting for candidates to become custodians of the DAC. Each member will be able to vote a configurable number of custodians set by the contract configuration. When a voter calls this action either a new vote will be recorded or the existing vote for that voter will be modified. If an empty array of candidates is passed to the action an existing vote for that voter will be removed.
@@ -383,8 +375,7 @@ Nothing from this action is stored on the blockchain. It is only intended to ens
 * ### Post Condition:
 * An active vote record for the voter will have been created or modified to reflect the newvotes. Each of the candidates will have their total_votes amount updated to reflect the delta in voter's token balance. Eg. If a voter has 1000 tokens and votes for 5 candidates, each of those candidates will have their total_votes value increased by 1000. Then if they change their votes to now vote 2 different candidates while keeping the other 3 the same there would be a change of -1000 for 2 old candidates +1000 for 2 new candidates and the other 3 will remain unchanged.
 */
-    [[eosio::action]]
-    void votecust(name voter, std::vector<name> newvotes);
+    ACTION votecust(name voter, std::vector<name> newvotes);
 
 //    void voteproxy(name voter, name proxy);
 
@@ -403,8 +394,7 @@ Nothing from this action is stored on the blockchain. It is only intended to ens
  * - After the initial vote quorum percent has been reached subsequent calls to this action will require a minimum of `vote_quorum_percent` to vote for the votes to be considered sufficient to trigger a new period with new custodians.
  * @param message - a string that be used to log a message in the chain history logs. It serves no function in the contract logic.
  */
-    [[eosio::action]]
-    void newperiod(std::string message);
+    ACTION newperiod(std::string message);
 
     /**
  * This action is to claim pay as a custodian.
@@ -418,8 +408,7 @@ Nothing from this action is stored on the blockchain. It is only intended to ens
  * ### Post Condition:
  * The quantity owed to the custodian as referred to by the pay record is transferred to the claimer and then the pay record is removed from the pending pay table.
  */
-    [[eosio::action]]
-    void claimpay(uint64_t payid);
+    ACTION claimpay(uint64_t payid);
 
     /**
  * This action is used to unstake a candidates tokens and have them transferred to their account.
@@ -435,8 +424,7 @@ Nothing from this action is stored on the blockchain. It is only intended to ens
  * ### Post Condition:
  * The candidate should still be present in the candidates table and should be still set to inactive. The candidates tokens will be transferred back to their account and their `locked_tokens` value will be reduced to 0.
  */
-    [[eosio::action]]
-    void unstake(name cand);
+    ACTION unstake(name cand);
 
 
 private: // Private helper methods used by other actions.

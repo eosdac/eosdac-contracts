@@ -14,13 +14,15 @@ void daccustodian::distributePay() {
 
     asset medianAsset = reqpays[mid];
 
-    for (auto cust: custodians) {
-        pending_pay.emplace(_self, [&](pay &p) {
-            p.key = pending_pay.available_primary_key();
-            p.receiver = cust.cust_name;
-            p.quantity = medianAsset;
-            p.memo = "Custodian pay. Thank you.";
-        });
+    if (medianAsset.amount > 0) {
+        for (auto cust: custodians) {
+            pending_pay.emplace(_self, [&](pay &p) {
+                p.key = pending_pay.available_primary_key();
+                p.receiver = cust.cust_name;
+                p.quantity = medianAsset;
+                p.memo = "Custodian pay. Thank you.";
+            });
+        } 
     }
 
     print("distribute pay");
@@ -41,14 +43,15 @@ void daccustodian::distributeMeanPay() {
     asset meanAsset = count == 0 ? total : total / count;
 
     // print_f("Calclulated mean is: %", meanAsset);
-
-    for (auto cust: custodians) {
-        pending_pay.emplace(_self, [&](pay &p) {
-            p.key = pending_pay.available_primary_key();
-            p.receiver = cust.cust_name;
-            p.quantity = meanAsset;
-            p.memo = "Custodian pay. Thank you.";
-        });
+    if (meanAsset.amount > 0) {
+        for (auto cust: custodians) {
+            pending_pay.emplace(_self, [&](pay &p) {
+                p.key = pending_pay.available_primary_key();
+                p.receiver = cust.cust_name;
+                p.quantity = meanAsset;
+                p.memo = "Custodian pay. Thank you.";
+            });
+        }
     }
 
     print("distribute mean pay");

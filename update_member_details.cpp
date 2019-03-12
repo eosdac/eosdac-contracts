@@ -12,6 +12,7 @@ void daccustodian::updatereqpay(name cand, asset requestedpay) {
 
     require_auth(cand);
     assertValidMember(cand);
+    eosio_assert(requestedpay.amount >= 0, "ERR::UPDATEREQPAY_UNDER_ZERO::Requested pay amount must not be negative.");
     eosio_assert(requestedpay <= configs().requested_pay_max, "ERR::UPDATEREQPAY_EXCESS_MAX_PAY::Requested pay amount limit for a candidate was exceeded.");
     const auto &reg_candidate = registered_candidates.get(cand.value, "ERR::UPDATEREQPAY_NOT_CURRENT_REG_CANDIDATE::Candidate is not already registered.");
 
@@ -19,3 +20,4 @@ void daccustodian::updatereqpay(name cand, asset requestedpay) {
         c.requestedpay = requestedpay;
     });
 }
+    
