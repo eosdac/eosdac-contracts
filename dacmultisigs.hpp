@@ -8,11 +8,11 @@ using namespace eosio;
 using namespace std;
 
 
-class [[eosio::contract("dacmultisigs")]] dacmultisigs : public contract {
+CONTRACT dacmultisigs : public contract {
 
     private:
 
-        struct [[eosio::table]] storedproposal {
+        TABLE storedproposal {
             name proposalname;
             checksum256 transactionid;
             uint32_t modifieddate;
@@ -32,21 +32,15 @@ class [[eosio::contract("dacmultisigs")]] dacmultisigs : public contract {
 
         using contract::contract;
 
-        [[eosio::action]]
-        void proposed(name proposer, name proposal_name, string metadata);
+        ACTION proposed(name proposer, name proposal_name, string metadata);
 
-        [[eosio::action]]
-        void approved( name proposer, name proposal_name, name approver );
+        ACTION approved( name proposer, name proposal_name, name approver );
 
-        [[eosio::action]]
-        void unapproved( name proposer, name proposal_name, name unapprover );
+        ACTION unapproved( name proposer, name proposal_name, name unapprover );
 
-        [[eosio::action]]
-        void cancelled( name proposer, name proposal_name, name canceler );
+        ACTION cancelled( name proposer, name proposal_name, name canceler );
 
-        [[eosio::action]]
-        void executed( name proposer, name proposal_name, name executer );
+        ACTION executed( name proposer, name proposal_name, name executer );
 
-        [[eosio::action]]
-        void clean( name proposer, name proposal_name );
+        ACTION clean( name proposer, name proposal_name );
 };
