@@ -330,7 +330,7 @@ The available compile time flags are:
 When put all together a comnpile command with all the bells and whistles might looks like:
 
 ```bash
-eosio-cpp -DTOKENCONTRACT='"eosdactokens"' -DTRANSFER_DELAY=3600 -DVOTING_DISABLED=1 -o daccustodian.wasm daccustodian.cpp
+eosio-cpp -DTOKENCONTRACT=eosdactokens -DTRANSFER_DELAY=3600 -DVOTING_DISABLED=1 -o daccustodian.wasm daccustodian.cpp
 ```
 
 > **Note:** Since there are default values for the above flags they do not all need to be included to compile successfully.
