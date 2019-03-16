@@ -324,13 +324,13 @@ The contract code has some compile time constants used for configuration. As a c
 The available compile time flags are:
 
 - TOKENCONTRACT (default = "eosdactokens") - This is to set the associated token contract to inter-operate with for tracking voting weights, registered members and staking.
-- VOTING_DISABLED (default = 0) - Setting this flag will disable the ability for anyone to vote for custodians by diabling the vote action.
+- VOTING_DISABLED (default = false) - Setting this flag will disable the ability for anyone to vote for custodians by diabling the vote action.
 - TRANSFER_DELAY (default = 60 * 60) - for configuring the time delay on token transfers from the contract
 
 When put all together a comnpile command with all the bells and whistles might looks like:
 
 ```bash
-eosio-cpp -DTOKENCONTRACT=eosdactokens -DTRANSFER_DELAY=3600 -DVOTING_DISABLED=1 -o daccustodian.wasm daccustodian.cpp
+eosio-cpp -DTOKENCONTRACT=eosdactokens -DTRANSFER_DELAY=3600 -DVOTING_DISABLED -o daccustodian.wasm daccustodian.cpp
 ```
 
 > **Note:** Since there are default values for the above flags they do not all need to be included to compile successfully.
