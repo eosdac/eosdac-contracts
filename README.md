@@ -323,7 +323,7 @@ The custodian will be removed from the active custodians and should still be pre
 The contract code has some compile time constants used for configuration. As a compile time constant the code has more flexibility for reuse on other DACs, and extra layer of safety over exposing another configuration variable which could be changed after the code has been set and the ability to unit test the code without needing to modify the source just for testing.
 The available compile time flags are:
 
-- TOKENCONTRACT (default = "eosdactoken") - This is to set the associated token contract to inter-operate with for tracking voting weights, registered members and staking.
+- TOKENCONTRACT (default = "eosdactokens") - This is to set the associated token contract to inter-operate with for tracking voting weights, registered members and staking.
 - VOTING_DISABLED (default = 0) - Setting this flag will disable the ability for anyone to vote for custodians by diabling the vote action.
 - TRANSFER_DELAY (default = 60 * 60) - for configuring the time delay on token transfers from the contract
 
