@@ -9,9 +9,10 @@
 using namespace eosio;
 using namespace std;
 
-    ACTION dacproposals::createprop(name proposer, string title, string summary, name arbitrator, extended_asset pay_amount, string content_hash){
+    ACTION dacproposals::createprop(name proposer, string title, string summary, name arbitrator, extended_asset pay_amount, string content_hash, uint64_t id){
         require_auth(proposer);
         assertValidMember(proposer);
+        eosio_assert(proposals.find(id) == proposals.end(), "A Proposal with the id already exists. Try again with a different id.");
 
         eosio_assert(title.length() > 3, "Title length is too short.");
         eosio_assert(summary.length() > 3, "Summary length is too short.");
@@ -21,7 +22,7 @@ using namespace std;
         eosio_assert(is_account(arbitrator), "Invalid arbitrator.");
 
         proposals.emplace(proposer, [&](proposal &p) {
-            p.key = _currentState.last_proposal_id++;
+            p.key = id;
             p.proposer = proposer;
             p.arbitrator = arbitrator;
             p.content_hash = content_hash;

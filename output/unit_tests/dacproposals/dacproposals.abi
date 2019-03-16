@@ -1,5 +1,5 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Mon Mar 11 23:07:19 2019",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Sat Mar 16 08:36:54 2019",
     "version": "eosio::abi/1.1",
     "structs": [
         {
@@ -111,16 +111,6 @@
             ]
         },
         {
-            "name": "contr_state",
-            "base": "",
-            "fields": [
-                {
-                    "name": "last_proposal_id",
-                    "type": "uint32"
-                }
-            ]
-        },
-        {
             "name": "createprop",
             "base": "",
             "fields": [
@@ -147,6 +137,10 @@
                 {
                     "name": "content_hash",
                     "type": "string"
+                },
+                {
+                    "name": "id",
+                    "type": "uint64"
                 }
             ]
         },
@@ -311,13 +305,6 @@
         {
             "name": "propvotes",
             "type": "proposalvote",
-            "index_type": "i64",
-            "key_names": [],
-            "key_types": []
-        },
-        {
-            "name": "state",
-            "type": "contr_state",
             "index_type": "i64",
             "key_names": [],
             "key_types": []
