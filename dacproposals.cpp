@@ -9,7 +9,7 @@
 using namespace eosio;
 using namespace std;
 
-    ACTION dacproposals::createprop(name proposer, string title, string summary, name arbitrator, extended_asset pay_amount, string content_hash, uint64_t id, name dac_scope){
+    ACTION dacproposals::createprop(name proposer, string title, string summary, name arbitrator, extended_asset pay_amount, string content_hash, uint64_t id, uint16_t category, name dac_scope){
         require_auth(proposer);
         assertValidMember(proposer);
         eosio_assert(proposals.find(id) == proposals.end(), "A Proposal with the id already exists. Try again with a different id.");
@@ -28,6 +28,7 @@ using namespace std;
             p.content_hash = content_hash;
             p.pay_amount = pay_amount;
             p.state = pending_approval;
+            p.category = category;
             p.expiry = time_point_sec(now()) + current_configs().approval_expiry;   
         });
     }
