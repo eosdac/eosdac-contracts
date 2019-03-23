@@ -1,5 +1,5 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Sat Mar 16 08:36:46 2019",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Sat Mar 23 23:19:45 2019",
     "version": "eosio::abi/1.1",
     "structs": [
         {
@@ -69,7 +69,7 @@
             ]
         },
         {
-            "name": "configtype",
+            "name": "config",
             "base": "",
             "fields": [
                 {
@@ -107,6 +107,10 @@
                 {
                     "name": "escrow_expiry",
                     "type": "uint32"
+                },
+                {
+                    "name": "approval_expiry",
+                    "type": "uint32"
                 }
             ]
         },
@@ -141,6 +145,10 @@
                 {
                     "name": "id",
                     "type": "uint64"
+                },
+                {
+                    "name": "dac_scope",
+                    "type": "name"
                 }
             ]
         },
@@ -171,6 +179,10 @@
                 {
                     "name": "state",
                     "type": "uint8"
+                },
+                {
+                    "name": "expiry",
+                    "type": "time_point_sec"
                 }
             ]
         },
@@ -216,7 +228,7 @@
             "fields": [
                 {
                     "name": "new_config",
-                    "type": "configtype"
+                    "type": "config"
                 }
             ]
         },
@@ -289,8 +301,8 @@
     ],
     "tables": [
         {
-            "name": "configtype",
-            "type": "configtype",
+            "name": "config",
+            "type": "config",
             "index_type": "i64",
             "key_names": [],
             "key_types": []

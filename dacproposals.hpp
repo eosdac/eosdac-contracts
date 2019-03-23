@@ -3,7 +3,10 @@
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/asset.hpp>
 #include <eosiolib/singleton.hpp>
+#include <eosiolib/time.hpp>
+
 #include "eosdactokens_types.hpp"
+#include "daccustodian_types.hpp"
 
 using namespace eosio;
 using namespace std;
@@ -16,10 +19,15 @@ CONTRACT dacproposals : public contract {
             string content_hash;
             extended_asset pay_amount;
             uint8_t state;
+            time_point_sec expiry;
 
             uint64_t primary_key() const { return key; }
             uint64_t proposer_key() const { return proposer.value; }
             uint64_t arbitrator_key() const { return arbitrator.value; }
+
+            bool has_expired(time_point_sec time_now) const {
+                return time_now > expiry;
+            }
     };
 
     typedef eosio::multi_index<"proposals"_n, proposal,
@@ -45,7 +53,7 @@ enum VoteType {
         pending_claim
     };
 
-    TABLE configtype {
+    TABLE config {
             name service_account = "dacescrow"_n;
             name authority_account = name{0};
             name member_terms_account = "eosdactokens"_n;
@@ -55,9 +63,10 @@ enum VoteType {
             uint16_t claim_threshold = 1;
             uint16_t claim_approval_threshold_percent = 100;
             uint32_t escrow_expiry = 30 * 24 * 60 * 60;
+            uint32_t approval_expiry = 30 * 24 * 60 * 60;
     };
 
-    typedef eosio::singleton<"configtype"_n, configtype> configs_table;
+    typedef eosio::singleton<"config"_n, config> configs_table;
 
 public:
 
@@ -67,7 +76,7 @@ public:
          prop_votes(receiver, receiver.value),
          configs(receiver, receiver.value) {}
 
-    ACTION createprop(name proposer, string title, string summary, name arbitrator, extended_asset pay_amount, string content_hash, uint64_t id);
+    ACTION createprop(name proposer, string title, string summary, name arbitrator, extended_asset pay_amount, string content_hash, uint64_t id, name dac_scope);
     ACTION voteprop(name custodian, uint64_t proposal_id, uint8_t vote);
     ACTION arbapprove(name arbitrator, uint64_t proposal_id);
     ACTION startwork(uint64_t proposal_id);
@@ -75,7 +84,7 @@ public:
     ACTION claim(uint64_t proposal_id);
     ACTION cancel(uint64_t proposal_id);
     ACTION comment(name commenter, uint64_t proposal_id, string comment, string comment_category);
-    ACTION updateconfig(configtype new_config);
+    ACTION updateconfig(config new_config);
 
 private:
 
@@ -113,8 +122,8 @@ TABLE proposalvote {
         return (uint128_t{x} << 64) | y;
     }
 
-    configtype current_configs() {
-        configtype conf = configs.get_or_default(configtype());
+    config current_configs() {
+        config conf = configs.get_or_default(config());
         configs.set(conf, _self);
         return conf;
     }

@@ -203,6 +203,9 @@ def configure_contracts
   seed_dac_account("custodian12", issue: "100.0000 EOSDAC", memberreg: "New Latest terms")
   seed_dac_account("custodian13", issue: "100.0000 EOSDAC", memberreg: "New Latest terms")
 
+  `cleos push action daccustodian updatecust '[["custodian1", "custodian2", "custodian3", "custodian4", "custodian5", "custodian11", "custodian12", "custodian13"]]' -p proposeracc1`
+
+
   `cleos set account permission dacauthority one '{"threshold": 1,"keys": [],"accounts": [{"permission":{"actor":"custodian1","permission":"active"},"weight":1}, {"permission":{"actor":"custodian11","permission":"active"},"weight":1}, {"permission":{"actor":"custodian12","permission":"active"},"weight":1}, {"permission":{"actor":"custodian13","permission":"active"},"weight":1}, {"permission":{"actor":"custodian2","permission":"active"},"weight":1}, {"permission":{"actor":"custodian3","permission":"active"},"weight":1}, {"permission":{"actor":"custodian4","permission":"active"},"weight":1}, {"permission":{"actor":"custodian5","permission":"active"},"weight":1}]}' low -p dacauthority@low`
 end
 
@@ -226,17 +229,17 @@ describe "eosdacelect" do
 
   describe "updateconfig" do
     context "without valid auth" do
-      command %(cleos push action dacproposals updateconfig '{"new_config": { "service_account": "dacescrow", "member_terms_account": "eosdactokens", "treasury_account": "eosdacthedac", "proposal_threshold": 7,"proposal_approval_threshold_percent": 50, "claim_threshold": 5, "claim_approval_threshold_percent": 50, "escrow_expiry": 2592000, "authority_account": "dacauthority"}}' -p proposeracc1), allow_error: true
+      command %(cleos push action dacproposals updateconfig '{"new_config": { "service_account": "dacescrow", "member_terms_account": "eosdactokens", "treasury_account": "eosdacthedac", "proposal_threshold": 7,"proposal_approval_threshold_percent": 50, "claim_threshold": 5, "claim_approval_threshold_percent": 50, "escrow_expiry": 2592000, "authority_account": "dacauthority", "approval_expiry": 86500}}' -p proposeracc1), allow_error: true
       its(:stderr) {is_expected.to include('missing authority of dacproposals')}
     end
     context "with valid auth" do
-      command %(cleos push action dacproposals updateconfig '{"new_config": { "service_account": "dacescrow", "member_terms_account": "eosdactokens", "treasury_account": "eosdacthedac", "proposal_threshold": 7,"proposal_approval_threshold_percent": 50, "claim_threshold": 5, "claim_approval_threshold_percent": 50, "escrow_expiry": 2592000, "authority_account": "dacauthority"}}' -p dacproposals), allow_error: true
+      command %(cleos push action dacproposals updateconfig '{"new_config": { "service_account": "dacescrow", "member_terms_account": "eosdactokens", "treasury_account": "eosdacthedac", "proposal_threshold": 7,"proposal_approval_threshold_percent": 50, "claim_threshold": 5, "claim_approval_threshold_percent": 50, "escrow_expiry": 2592000, "authority_account": "dacauthority", "approval_expiry": 86500}}' -p dacproposals), allow_error: true
       its(:stdout) {is_expected.to include('dacproposals <= dacproposals::updateconfig')}
     end
   end
 
   context "Read the config table after updateconfig" do
-    command %(cleos get table dacproposals dacproposals configtype), allow_error: true
+    command %(cleos get table dacproposals dacproposals config), allow_error: true
     it do
       expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
         {
@@ -249,7 +252,8 @@ describe "eosdacelect" do
               "proposal_approval_threshold_percent": 50,
               "claim_threshold": 5,
               "claim_approval_threshold_percent": 50,
-              "escrow_expiry": 2592000
+              "escrow_expiry": 2592000,
+              "approval_expiry": 86500
             }
           ],
           "more": false
@@ -261,66 +265,64 @@ describe "eosdacelect" do
   describe "createprop" do
     context "Without valid permission" do
       context "with valid and registered member" do
-        command %(cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "some_title", "summary": "some_summary", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "100.0000 EOS", "contract": "eosio.token"}, "content_hash": "jhsdfkjhsdfkjhkjsdf", "id": 0 }' -p proposeracc2), allow_error: true
+        command %(cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "some_title", "summary": "some_summary", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "100.0000 EOS", "contract": "eosio.token"}, "content_hash": "jhsdfkjhsdfkjhkjsdf", "id": 0, "dac_scope": "dacproposals" }' -p proposeracc2), allow_error: true
         its(:stderr) {is_expected.to include('missing authority of proposeracc1')}
       end
     end
 
     context "with valid auth" do
       context "with an invalid title" do
-        command %(cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "", "summary": "some_summary", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "100.0000 EOS", "contract": "eosio.token"}, "content_hash": "jhsdfkjhsdfkjhkjsdf", "id": 0 }' -p proposeracc1), allow_error: true
+        command %(cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "", "summary": "some_summary", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "100.0000 EOS", "contract": "eosio.token"}, "content_hash": "jhsdfkjhsdfkjhkjsdf", "id": 0, "dac_scope": "dacproposals" }' -p proposeracc1), allow_error: true
         its(:stderr) {is_expected.to include('Title length is too short')}
       end
       context "with an invalid Summary" do
-        command %(cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "some_title", "summary": "", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "100.0000 EOS", "contract": "eosio.token"}, "content_hash": "jhsdfkjhsdfkjhkjsdf", "id": 0 }' -p proposeracc1), allow_error: true
+        command %(cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "some_title", "summary": "", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "100.0000 EOS", "contract": "eosio.token"}, "content_hash": "jhsdfkjhsdfkjhkjsdf", "id": 0, "dac_scope": "dacproposals" }' -p proposeracc1), allow_error: true
         its(:stderr) {is_expected.to include('Summary length is too short')}
       end
       xcontext "with an invalid contentHash" do
-        command %(cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "some_title", "summary": "some_summary", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "100.0000 EOS", "contract": "eosio.token"}, "content_hash": "asdfasdfasdfasdfasdfasdfasdfasd", "id": 0 }' -p proposeracc1), allow_error: true
+        command %(cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "some_title", "summary": "some_summary", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "100.0000 EOS", "contract": "eosio.token"}, "content_hash": "asdfasdfasdfasdfasdfasdfasdfasd", "id": 0, "dac_scope": "dacproposals" }' -p proposeracc1), allow_error: true
         its(:stderr) {is_expected.to include('Invalid content hash.')}
       end
       context "with an invalid pay symbol" do
-        command %(cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "some_title", "summary": "", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "100.0000 soe", "contract": "eosio.token"}, "content_hash": "jhsdfkjhsdfkjhkjsdf", "id": 0 }' -p proposeracc1), allow_error: true
+        command %(cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "some_title", "summary": "", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "100.0000 soe", "contract": "eosio.token"}, "content_hash": "jhsdfkjhsdfkjhkjsdf", "id": 0, "dac_scope": "dacproposals" }' -p proposeracc1), allow_error: true
         its(:stderr) {is_expected.to include('Invalid symbol')}
       end
       context "with an no pay symbol" do
-        command %(cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "some_title", "summary": "", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "100.0000", "contract": "eosio.token"}, "content_hash": "jhsdfkjhsdfkjhkjsdf", "id": 0 }' -p proposeracc1), allow_error: true
+        command %(cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "some_title", "summary": "", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "100.0000", "contract": "eosio.token"}, "content_hash": "jhsdfkjhsdfkjhkjsdf", "id": 0, "dac_scope": "dacproposals" }' -p proposeracc1), allow_error: true
         its(:stderr) {is_expected.to include("Asset's amount and symbol should be separated with space")}
       end
       context "with negative pay amount" do
-        command %(cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "some_title", "summary": "some_summary", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "-100.0000 EOS", "contract": "eosio.token"}, "content_hash": "jhsdfkjhsdfkjhkjsdf", "id": 0 }' -p proposeracc1), allow_error: true
+        command %(cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "some_title", "summary": "some_summary", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "-100.0000 EOS", "contract": "eosio.token"}, "content_hash": "jhsdfkjhsdfkjhkjsdf", "id": 0, "dac_scope": "dacproposals" }' -p proposeracc1), allow_error: true
         its(:stderr) {is_expected.to include('Invalid pay amount. Must be greater than 0.')}
       end
       context "with non-existing arbitrator" do
-        command %(cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "some_title", "summary": "some_summary", "arbitrator": "unknownarbit", "pay_amount": {"quantity": "100.0000 EOS", "contract": "eosio.token"}, "content_hash": "jhsdfkjhsdfkjhkjsdf", "id": 0 }' -p proposeracc1), allow_error: true
+        command %(cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "some_title", "summary": "some_summary", "arbitrator": "unknownarbit", "pay_amount": {"quantity": "100.0000 EOS", "contract": "eosio.token"}, "content_hash": "jhsdfkjhsdfkjhkjsdf", "id": 0, "dac_scope": "dacproposals" }' -p proposeracc1), allow_error: true
         its(:stderr) {is_expected.to include('Invalid arbitrator.')}
       end
       context "with valid params" do
-        command %(cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "some_title", "summary": "some_summary", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "100.0000 EOS", "contract": "eosio.token"}, "content_hash": "asdfasdfasdfasdfasdfasdfasdfasdf", "id": 0 }' -p proposeracc1), allow_error: true
+        command %(cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "some_title", "summary": "some_summary", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "100.0000 EOS", "contract": "eosio.token"}, "content_hash": "asdfasdfasdfasdfasdfasdfasdfasdf", "id": 0, "dac_scope": "dacproposals" }' -p proposeracc1), allow_error: true
         its(:stdout) {is_expected.to include('dacproposals <= dacproposals::createprop')}
       end
       context "with duplicate id" do
-        command %(cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "some_title", "summary": "some_summary", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "110.0000 EOS", "contract": "eosio.token"}, "content_hash": "asdfasdfasdfasdfasdfggggasdfasdf", "id": 0 }' -p proposeracc1), allow_error: true
+        command %(cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "some_title", "summary": "some_summary", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "110.0000 EOS", "contract": "eosio.token"}, "content_hash": "asdfasdfasdfasdfasdfggggasdfasdf", "id": 0, "dac_scope": "dacproposals" }' -p proposeracc1), allow_error: true
         its(:stderr) {is_expected.to include('A Proposal with the id already exists. Try again with a different id.')}
       end
     end
     context "Read the proposals table after createprop" do
       command %(cleos get table dacproposals dacproposals proposals), allow_error: true
       it do
-        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-            {
-              "rows": [{
-              "key": 0,
-              "proposer": "proposeracc1",
-              "arbitrator": "arbitrator11", 
-              "content_hash": "asdfasdfasdfasdfasdfasdfasdfasdf", 
-              "pay_amount": {"quantity": "100.0000 EOS", "contract": "eosio.token"}, 
-              "state": 0
-              }
-            ],
-            "more": false
-          }
-        JSON
+        json = JSON.parse(subject.stdout)
+        expect(json["rows"].count).to eq 1
+
+        prop = json["rows"].detect {|v| v["proposer"] == 'proposeracc1'}
+
+        expect(prop["key"]).to eq 0
+        expect(prop["arbitrator"]).to eq 'arbitrator11'
+        expect(prop["content_hash"]).to eq 'asdfasdfasdfasdfasdfasdfasdfasdf'
+        expect(prop["pay_amount"]["quantity"]).to eq "100.0000 EOS"
+        expect(prop["pay_amount"]["contract"]).to eq "eosio.token"
+        expect(prop["state"]).to eq 0
+        expect(Date.iso8601(prop["expiry"]).day).to eq (Date.today().next_day(1).day)
       end
     end
   end
@@ -376,7 +378,7 @@ describe "eosdacelect" do
 
   describe "startwork" do
     before(:all) do
-      `cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "startwork_title", "summary": "startwork_summary", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "101.0000 EOS", "contract": "eosio.token"}, "content_hash": "asdfasdfasdfasdfasdfasdfasdffdsa", "id": 1 }' -p proposeracc1`
+      `cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "startwork_title", "summary": "startwork_summary", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "101.0000 EOS", "contract": "eosio.token"}, "content_hash": "asdfasdfasdfasdfasdfasdfasdffdsa", "id": 1, "dac_scope": "dacproposals" }' -p proposeracc1`
     end
     context "without valid auth" do
       command %(cleos push action dacproposals startwork '{ "proposer": "proposeracc1", "proposal_id": 1}' -p proposeracc2), allow_error: true
@@ -405,7 +407,7 @@ describe "eosdacelect" do
               `cleos push action dacproposals voteprop '{"custodian": "custodian13", "proposal_id": 1, "vote": 1 }' -p custodian13 -p dacauthority`
             end
             command %(cleos push action dacproposals startwork '{ "proposer": "proposeracc1", "proposal_id": 1}' -p proposeracc1), allow_error: true
-            its(:stderr) {is_expected.to include('Vote approval threshold not met.')}
+            its(:stderr) {is_expected.to include('Insufficient votes on worker proposal')}
           end
         end
         context "with enough votes to approve the proposal" do
@@ -414,11 +416,11 @@ describe "eosdacelect" do
             `cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 1, "vote": 1 }' -p custodian1 -p dacauthority`
             `cleos push action dacproposals voteprop '{"custodian": "custodian2", "proposal_id": 1, "vote": 1 }' -p custodian2 -p dacauthority`
             `cleos push action dacproposals voteprop '{"custodian": "custodian3", "proposal_id": 1, "vote": 1 }' -p custodian3 -p dacauthority`
-            `cleos push action dacproposals voteprop '{"custodian": "custodian4", "proposal_id": 1, "vote": 2 }' -p custodian4 -p dacauthority`
-            `cleos push action dacproposals voteprop '{"custodian": "custodian5", "proposal_id": 1, "vote": 2 }' -p custodian5 -p dacauthority`
+            `cleos push action dacproposals voteprop '{"custodian": "custodian4", "proposal_id": 1, "vote": 1 }' -p custodian4 -p dacauthority`
+            `cleos push action dacproposals voteprop '{"custodian": "custodian5", "proposal_id": 1, "vote": 1 }' -p custodian5 -p dacauthority`
             `cleos push action dacproposals voteprop '{"custodian": "custodian11", "proposal_id": 1, "vote": 1 }' -p custodian11 -p dacauthority`
             `cleos push action dacproposals voteprop '{"custodian": "custodian12", "proposal_id": 1, "vote": 1 }' -p custodian12 -p dacauthority`
-            `cleos push action dacproposals voteprop '{"custodian": "custodian13", "proposal_id": 1, "vote": 1 }' -p custodian13 -p dacauthority`
+            `cleos push action dacproposals voteprop '{"custodian": "custodian13", "proposal_id": 1, "vote": 2   }' -p custodian13 -p dacauthority`
           end
             command %(cleos push action dacproposals startwork '{ "proposer": "proposeracc1", "proposal_id": 1}' -p proposeracc1), allow_error: true
           its(:stdout) {is_expected.to include('dacproposals::startwork')}
@@ -429,6 +431,41 @@ describe "eosdacelect" do
         command %(cleos push action dacproposals startwork '{ "proposer": "proposeracc1", "proposal_id": 1, "nonce": "stuff"}' -p proposeracc1), allow_error: true
         its(:stderr) {is_expected.to include('Proposal is not in the pending approval state therefore cannot start work.')}
       end
+      context "proposal has expired" do
+        before(:all) do
+          `cleos push action dacproposals updateconfig '{"new_config": { "service_account": "dacescrow", "member_terms_account": "eosdactokens", "treasury_account": "eosdacthedac", "proposal_threshold": 7,"proposal_approval_threshold_percent": 50, "claim_threshold": 5, "claim_approval_threshold_percent": 50, "escrow_expiry": 2592000, "authority_account": "dacauthority", "approval_expiry": 1}}' -p dacauthority`
+
+          `cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "startwork_title", "summary": "startwork_summary", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "102.0000 EOS", "contract": "eosio.token"}, "content_hash": "asdfasdfasdfasdfasdfasdfasdffttt", "id": 5, "dac_scope": "dacproposals" }' -p proposeracc1`
+        end
+        context "Read the proposals table after create prop before expiring" do
+          command %(cleos get table dacproposals dacproposals proposals), allow_error: true
+          it do
+            json = JSON.parse(subject.stdout)
+            expect(json["rows"].count).to eq 3
+
+            prop = json["rows"].detect {|v| v["key"] == 5}
+
+            expect(prop["proposer"]).to eq 'proposeracc1'
+            expect(prop["arbitrator"]).to eq 'arbitrator11'
+            expect(prop["content_hash"]).to eq 'asdfasdfasdfasdfasdfasdfasdffttt'
+            expect(prop["pay_amount"]["quantity"]).to eq "102.0000 EOS"
+            expect(prop["pay_amount"]["contract"]).to eq "eosio.token"
+            expect(prop["state"]).to eq 0
+            expect(Date.iso8601(prop["expiry"]).day).to eq (Date.today().day)
+          end
+        end
+      end
+    end
+    context "startwork before expiry proposal" do
+      command %(cleos push action dacproposals startwork '{ "proposer": "proposeracc1", "proposal_id": 5}' -p proposeracc1), allow_error: true
+      its(:stderr) {is_expected.to include('Insufficient votes on worker proposal')}
+    end
+    context "startwork after expiry on proposal" do
+      before(:all) do
+        sleep 2 # wait for expiry
+      end
+      command %(cleos push action dacproposals startwork '{ "proposer": "proposeracc1", "proposal_id": 5}' -p proposeracc1), allow_error: true
+      its(:stdout) {is_expected.to include('The proposal with proposal_id: 5 has expired and will now be removed.')}
     end
     context "Read the propvotes table after voting" do
       command %(cleos get table dacproposals dacproposals propvotes), allow_error: true
@@ -475,13 +512,13 @@ describe "eosdacelect" do
                 "vote_id": 6,
                 "proposal_id": 1,
                 "voter": "custodian4",
-                "vote": 2,
+                "vote": 1,
                 "comment_hash": ""
               },{
                 "vote_id": 7,
                 "proposal_id": 1,
                 "voter": "custodian5",
-                "vote": 2,
+                "vote": 1,
                 "comment_hash": ""
               },{
                 "vote_id": 8,
@@ -505,27 +542,18 @@ describe "eosdacelect" do
     context "Read the proposals table after startwork" do
       command %(cleos get table dacproposals dacproposals proposals), allow_error: true
       it do
-        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-              {
-            "rows": [{
-                "key": 0,
-                "proposer": "proposeracc1",
-                "arbitrator": "arbitrator11",
-                "content_hash": "asdfasdfasdfasdfasdfasdfasdfasdf",
-                "pay_amount": {"quantity": "100.0000 EOS", "contract": "eosio.token"},
-                "state": 0
-              },{
-                "key": 1,
-                "proposer": "proposeracc1",
-                "arbitrator": "arbitrator11",
-                "content_hash": "asdfasdfasdfasdfasdfasdfasdffdsa",
-                "pay_amount": {"quantity": "101.0000 EOS", "contract": "eosio.token"},
-                "state": 1
-              }
-            ],
-            "more": false
-          }
-        JSON
+        json = JSON.parse(subject.stdout)
+        expect(json["rows"].count).to eq 2
+
+        prop = json["rows"].detect {|v| v["key"] == 1}
+
+        expect(prop["proposer"]).to eq 'proposeracc1'
+        expect(prop["arbitrator"]).to eq 'arbitrator11'
+        expect(prop["content_hash"]).to eq 'asdfasdfasdfasdfasdfasdfasdffdsa'
+        expect(prop["pay_amount"]["quantity"]).to eq "101.0000 EOS"
+        expect(prop["pay_amount"]["contract"]).to eq "eosio.token"
+        expect(prop["state"]).to eq 1
+        expect(Date.iso8601(prop["expiry"]).day).to eq (Date.today().next_day(1).day)
       end
     end
     context "Read the escrow table after startwork" do
@@ -560,6 +588,13 @@ describe "eosdacelect" do
     end
   end
 
+  describe "complete work" do
+    context "proposal in pending approval state should fail" do
+      command %(cleos push action dacproposals completework '{ "proposer": "proposeracc1", "proposal_id": "0"}' -p proposeracc1), allow_error: true
+      its(:stderr) {is_expected.to include('Worker proposal can only be completed from work_in_progress state')}
+    end
+  end
+
   describe "claim" do
     context "without valid auth" do
       before(:all) do
@@ -581,7 +616,12 @@ describe "eosdacelect" do
       end
       context "proposal is in pending_claim state" do
         before(:all) do
-          `cleos push action dacproposals completework '{ "proposer": "proposeracc1", "proposal_id": "1"}' -p proposeracc1`
+          `cleos push action dacproposals completework '{ "proposer": "proposeracc1", "proposal_id": "1", "nonce": "some nonce"}' -p proposeracc1`
+          `sleep 1`
+        end
+        context "proposal in pending claim state should fail completework" do
+          command %(cleos push action dacproposals completework '{ "proposer": "proposeracc1", "proposal_id": "1"}' -p proposeracc1), allow_error: true
+          its(:stderr) {is_expected.to include('Worker proposal can only be completed from work_in_progress state')}
         end
         context "without enough votes to approve the claim" do
           command %(cleos push action dacproposals claim '{ "proposer": "proposeracc1", "proposal_id": "1"}' -p proposeracc1), allow_error: true
@@ -653,20 +693,18 @@ describe "eosdacelect" do
     context "Read the proposals table after claim" do
       command %(cleos get table dacproposals dacproposals proposals), allow_error: true
       it do
-        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-              {
-            "rows": [{
-                "key": 0,
-                "proposer": "proposeracc1",
-                "arbitrator": "arbitrator11",
-                "content_hash": "asdfasdfasdfasdfasdfasdfasdfasdf",
-                "pay_amount": {"quantity": "100.0000 EOS", "contract": "eosio.token"},
-                "state": 0
-              } 
-            ],
-            "more": false
-          }
-        JSON
+        json = JSON.parse(subject.stdout)
+        expect(json["rows"].count).to eq 1
+
+        prop = json["rows"].detect {|v| v["key"] == 0}
+
+        expect(prop["proposer"]).to eq 'proposeracc1'
+        expect(prop["arbitrator"]).to eq 'arbitrator11'
+        expect(prop["content_hash"]).to eq 'asdfasdfasdfasdfasdfasdfasdfasdf'
+        expect(prop["pay_amount"]["quantity"]).to eq "100.0000 EOS"
+        expect(prop["pay_amount"]["contract"]).to eq "eosio.token"
+        expect(prop["state"]).to eq 0
+        expect(Date.iso8601(prop["expiry"]).day).to eq (Date.today().next_day(1).day)
       end
     end
     context "Read the escrow table after startwork" do
@@ -707,7 +745,7 @@ describe "eosdacelect" do
       context "with valid proposal id after successfully started work but before completing" do
         before(:all) do
           sleep 1
-          `cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "startwork_title", "summary": "startwork_summary", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "101.0000 EOS", "contract": "eosio.token"}, "content_hash": "asdfasdfasdfasdfasdfasdfasdfzzzz", "id": 2 }' -p proposeracc1`
+          `cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "startwork_title", "summary": "startwork_summary", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "101.0000 EOS", "contract": "eosio.token"}, "content_hash": "asdfasdfasdfasdfasdfasdfasdfzzzz", "id": 2, "dac_scope": "dacproposals" }' -p proposeracc1`
 
           `cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 2, "vote": 1 }' -p custodian1 -p dacauthority`
           `cleos push action dacproposals voteprop '{"custodian": "custodian2", "proposal_id": 2, "vote": 1 }' -p custodian2 -p dacauthority`
@@ -754,7 +792,7 @@ describe "eosdacelect" do
       command %(cleos get table dacescrow dacescrow escrows), allow_error: true
       it do
         json = JSON.parse(subject.stdout)
-        expect(json["rows"].count).to eq 2
+        expect(json["rows"].count).to eq 1
 
         escrow = json["rows"].detect {|v| v["receiver"] == 'proposeracc1'}
 
