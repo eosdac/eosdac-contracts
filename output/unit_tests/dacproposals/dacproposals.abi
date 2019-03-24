@@ -1,5 +1,5 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Sat Mar 23 23:53:07 2019",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Sun Mar 24 00:16:59 2019",
     "version": "eosio::abi/1.1",
     "structs": [
         {
@@ -93,15 +93,7 @@
                     "type": "uint16"
                 },
                 {
-                    "name": "proposal_approval_threshold_percent",
-                    "type": "uint16"
-                },
-                {
                     "name": "claim_threshold",
-                    "type": "uint16"
-                },
-                {
-                    "name": "claim_approval_threshold_percent",
                     "type": "uint16"
                 },
                 {

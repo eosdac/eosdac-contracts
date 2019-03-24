@@ -152,23 +152,15 @@ using namespace std;
         auto by_voters = prop_votes.get_index<"proposal"_n>();
         auto vote_idx = by_voters.find(proposal_id);
         int16_t approved_count = 0;
-        int16_t deny_count = 0;
         while(vote_idx != by_voters.end()) {
             if (vote_idx->vote == claim_approve) {
                 approved_count++;
             }
-            if (vote_idx->vote == claim_deny) {
-                deny_count++;
-            }
             vote_idx++;
         }
-        eosio_assert(approved_count + deny_count >= current_configs().claim_threshold, "Insufficient votes on worker proposal to approve or deny claim.");
-        double percent_approval = double(approved_count) / double(approved_count + deny_count) * 100.0;
-        eosio_assert(percent_approval >= current_configs().claim_approval_threshold_percent, "Claim approval threshold not met.");
+        eosio_assert(approved_count >= current_configs().claim_threshold, "Insufficient votes on worker proposal to approve claim.");
 
-        if (percent_approval >= current_configs().claim_approval_threshold_percent) {
-            transferfunds(prop);
-        } 
+        transferfunds(prop);
     }
 
     ACTION dacproposals::cancel(uint64_t proposal_id){
