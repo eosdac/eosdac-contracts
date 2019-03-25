@@ -2,6 +2,7 @@
 
 #include <eosio/eosio.hpp>
 #include <eosio/multi_index.hpp>
+#include <eosio/symbol.hpp>
 
 using namespace eosio;
 using namespace std;
@@ -24,20 +25,8 @@ public:
     };
 
     struct ref {
-        int8_t  type;
         string  data;
-    };
-
-    TABLE dac {
-        name         owner;
-        name         name;
-        string       title;
-        vector<ref>  refs;
-
-        uint64_t primary_key()const { return name.value; }
-        uint64_t by_owner()const { return owner.value; }
-
-        EOSLIB_SERIALIZE( dac, (owner)(name)(title)(refs) )
+        int8_t  type;
     };
 
     struct act {
@@ -45,22 +34,24 @@ public:
         uint8_t type;
     };
 
-    TABLE dacaccount {
-        name             dac;
-        std::vector<act> accounts;
+    TABLE dac {
+        name         owner;
+        name         name;
+        string       title;
+        symbol       symbol;
+        vector<ref>  refs;
+        vector<act>  accounts;
 
-        uint64_t primary_key()const { return dac.value; }
+        uint64_t primary_key()const { return name.value; }
+        uint64_t by_owner()const { return owner.value; }
 
-        EOSLIB_SERIALIZE( dacaccount, (dac)(accounts) )
+        EOSLIB_SERIALIZE( dac, (owner)(name)(title)(symbol)(refs)(accounts) )
     };
 
     typedef multi_index< "dacs"_n,  dac,
                         indexed_by<"byowner"_n, const_mem_fun<dac, uint64_t, &dac::by_owner> > > dac_table;
-    typedef multi_index< "accounts"_n,  dacaccount > accounts_table;
 
-
-
-    ACTION regdac( name owner, name name, string title, vector<ref> refs );
+    ACTION regdac( name owner, name name, symbol dac_symbol, string title, vector<ref> refs,  vector<act> accounts );
     ACTION unregdac( name dac_name );
     ACTION regaccount( name dac_name, name account, uint8_t type );
     ACTION unregaccount( name dac_name, name account );
@@ -68,5 +59,4 @@ public:
 
 protected:
     dac_table      _dacs;
-    accounts_table _accounts;
 };

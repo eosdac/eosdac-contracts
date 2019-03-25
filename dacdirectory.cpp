@@ -6,29 +6,32 @@ using namespace std;
 dacdirectory::dacdirectory( eosio::name self, eosio::name first_receiver, eosio::datastream<const char*> ds )
         :contract( self, first_receiver, ds )
         ,_dacs( get_self(), get_self().value )
-        ,_accounts( get_self(), get_self().value )
 {}
 
-void dacdirectory::regdac( name owner, name name, string title, vector<ref> refs ) {
+void dacdirectory::regdac( name owner, name name, symbol dac_symbol, string title, vector<ref> refs,  vector<dacdirectory::act> accounts ) {
     require_auth(owner);
 
     auto existing = _dacs.find(name.value);
 
     if (existing == _dacs.end()){
-        _dacs.emplace(owner, [&](dac& i) {
-            i.owner = owner;
-            i.name = name;
-            i.title = title;
-            i.refs = refs;
+        _dacs.emplace(owner, [&](dac& d) {
+            d.owner = owner;
+            d.name = name;
+            d.symbol = dac_symbol;
+            d.title = title;
+            d.refs = refs;
+            d.accounts = accounts;
         });
     }
     else {
         require_auth(existing->owner);
 
-        _dacs.modify(existing, same_payer, [&](dac& i) {
-            i.name = name;
-            i.title = title;
-            i.refs = refs;
+        _dacs.modify(existing, same_payer, [&](dac& d) {
+            d.name = name;
+            d.symbol = dac_symbol;
+            d.title = title;
+            d.refs = refs;
+            d.accounts = accounts;
         });
     }
 }
@@ -39,11 +42,6 @@ void dacdirectory::unregdac( name dac_name ) {
 
     require_auth(dac->owner);
 
-    auto dac_account = _accounts.find(dac_name.value);
-    if (dac_account != _accounts.end()){
-        _accounts.erase(dac_account);
-    }
-
     _dacs.erase(dac);
 }
 
@@ -52,44 +50,28 @@ void dacdirectory::regaccount( name dac_name, name account, uint8_t type ){
 
     check(is_account(account), "Invalid or non-existent account supplied");
 
-    auto dac = _dacs.find(dac_name.value);
-    check(dac != _dacs.end(), "DAC not found in directory");
+    auto dac_inst = _dacs.find(dac_name.value);
+    check(dac_inst != _dacs.end(), "DAC not found in directory");
 
-    require_auth(dac->owner);
+    require_auth(dac_inst->owner);
 
-    bool modified = false;
-    auto dac_account = _accounts.find(dac_name.value);
+    vector<act> accounts = dac_inst->accounts;
+    accounts.emplace_back(act{account, type});
 
-    if (dac_account != _accounts.end()){
-        vector<act> accounts = dac_account->accounts;
-        accounts.emplace_back(act{account, type});
+    _dacs.modify(dac_inst, same_payer, [&](dac& d) {
+        d.accounts = accounts;
+    });
 
-        _accounts.modify(dac_account, same_payer, [&](dacaccount& a) {
-            a.accounts = accounts;
-        });
-    }
-    else {
-        vector<act> accounts;
-        accounts.emplace_back(act{account, type});
-
-        _accounts.emplace(dac->owner, [&](dacaccount& a) {
-            a.dac = dac_name;
-            a.accounts = accounts;
-        });
-    }
 }
 
 void dacdirectory::unregaccount( name dac_name, name account ){
 
-    auto dac = _dacs.find(dac_name.value);
-    check(dac != _dacs.end(), "DAC not found in directory");
+    auto dac_inst = _dacs.find(dac_name.value);
+    check(dac_inst != _dacs.end(), "DAC not found in directory");
 
-    require_auth(dac->owner);
+    require_auth(dac_inst->owner);
 
-    auto dac_account = _accounts.find(dac_name.value);
-    check(dac_account != _accounts.end(), "Accounts entry not found");
-
-    vector<act> accounts = dac_account->accounts;
+    vector<act> accounts = dac_inst->accounts;
     vector<act> new_accounts;
 
     while (!accounts.empty()){
@@ -100,7 +82,7 @@ void dacdirectory::unregaccount( name dac_name, name account ){
         accounts.pop_back();
     }
 
-    _accounts.modify(dac_account, same_payer, [&](dacaccount& a) {
+    _dacs.modify(dac_inst, same_payer, [&](dac& a) {
         a.accounts = new_accounts;
     });
 }
