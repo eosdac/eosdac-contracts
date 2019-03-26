@@ -31,6 +31,19 @@ createprop
 The intent of voteprop is to record a vote on an existing proposal.
 
 <h1 class="contract">
+    delegatevote
+</h1>
+
+## ACTION: delegatevote
+**PARAMETERS:**
+* __custodian__ is an eosio account name.
+* __proposal_id__ is an integer id for an existing proposal for the custodian to vote on.
+* __dalegatee_custodian__ is an eosio account name for a custodian to delegate worker proposal votes to.
+
+**INTENT:** 
+The intent of delegatevote is to delegate an active custodian's vote to another custodian because they trust their opinion over their own.
+
+<h1 class="contract">
     arbapprove
 </h1>
 
@@ -52,6 +65,7 @@ startwork
 
 **INTENT:** 
 The intent of startwork is to indicate the intention for the proposer to start work on an existing proposal.
+This action checks that there are enough approval votes from active custodians to approve the proposal and if successful transfers the required amount to an escrow account in preparation for the payment of the worker proposal at the completion of the work. 
 
 <h1 class="contract">
 completework
@@ -62,20 +76,20 @@ completework
 * __proposal_id__ is an integer id for an existing proposal created by this proposer.
 
 **INTENT:**
-The intent of completework is to indicate that proposer to gas completed the work on an existing proposal and intends to claim. The proposal is then put in the pending_claim state and will await the custodians approval.
+The intent of completework is to indicate that proposer has completed the work on an existing proposal and intends to claim the agreed payment for work. The proposal is then put in the pending_claim state and will await the custodians approval.
 
 <h1 class="contract">
-claim
+finalize
 </h1>
 
-## ACTION: claim
+## ACTION: finalize
  **PARAMETERS:**
- * __proposal_id__ is an integer id for an existing proposal for the proposer to claim.
+ * __proposal_id__ is an integer id for an existing proposal for the proposer to finalize.
 
  **INTENT:**
- The intent of claim is to indicate the proposer has completed the required work for a worker proposal and would like to claim the escrowed funds as payment.
+ The intent of finalize is to trigger the transfer of funds to the worker from the escrow account. Upon successful transfer the proposal will cleaned from the contract table to free up RAM.
 
- <h1 class="contract">
+ <h1 class="contract">  
  cancel
  </h1>
 
