@@ -1,5 +1,5 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Sat Mar 23 23:19:49 2019",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Sat Mar 23 23:53:02 2019",
     "version": "eosio::abi/1.1",
     "structs": [
         {
@@ -147,6 +147,10 @@
                     "type": "uint64"
                 },
                 {
+                    "name": "category",
+                    "type": "uint16"
+                },
+                {
                     "name": "dac_scope",
                     "type": "name"
                 }
@@ -183,6 +187,10 @@
                 {
                     "name": "expiry",
                     "type": "time_point_sec"
+                },
+                {
+                    "name": "category",
+                    "type": "uint16"
                 }
             ]
         },

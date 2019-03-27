@@ -20,10 +20,12 @@ CONTRACT dacproposals : public contract {
             extended_asset pay_amount;
             uint8_t state;
             time_point_sec expiry;
+            uint16_t category;
 
             uint64_t primary_key() const { return key; }
             uint64_t proposer_key() const { return proposer.value; }
             uint64_t arbitrator_key() const { return arbitrator.value; }
+            uint64_t category_key() const { return uint64_t(category); }
 
             bool has_expired(time_point_sec time_now) const {
                 return time_now > expiry;
@@ -32,7 +34,8 @@ CONTRACT dacproposals : public contract {
 
     typedef eosio::multi_index<"proposals"_n, proposal,
             eosio::indexed_by<"proposer"_n, eosio::const_mem_fun<proposal, uint64_t, &proposal::proposer_key>>,
-    eosio::indexed_by<"arbitrator"_n, eosio::const_mem_fun<proposal, uint64_t, &proposal::arbitrator_key>>
+            eosio::indexed_by<"arbitrator"_n, eosio::const_mem_fun<proposal, uint64_t, &proposal::arbitrator_key>>,
+            eosio::indexed_by<"category"_n, eosio::const_mem_fun<proposal, uint64_t, &proposal::category_key>>
     > proposal_table;
 
 enum VoteType {
@@ -76,7 +79,7 @@ public:
          prop_votes(receiver, receiver.value),
          configs(receiver, receiver.value) {}
 
-    ACTION createprop(name proposer, string title, string summary, name arbitrator, extended_asset pay_amount, string content_hash, uint64_t id, name dac_scope);
+    ACTION createprop(name proposer, string title, string summary, name arbitrator, extended_asset pay_amount, string content_hash, uint64_t id, uint16_t category, name dac_scope);
     ACTION voteprop(name custodian, uint64_t proposal_id, uint8_t vote);
     ACTION arbapprove(name arbitrator, uint64_t proposal_id);
     ACTION startwork(uint64_t proposal_id);
