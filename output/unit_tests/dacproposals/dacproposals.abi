@@ -1,5 +1,5 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Mon Mar 11 23:07:19 2019",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Sat Mar 23 23:19:54 2019",
     "version": "eosio::abi/1.1",
     "structs": [
         {
@@ -69,7 +69,7 @@
             ]
         },
         {
-            "name": "configtype",
+            "name": "config",
             "base": "",
             "fields": [
                 {
@@ -107,15 +107,9 @@
                 {
                     "name": "escrow_expiry",
                     "type": "uint32"
-                }
-            ]
-        },
-        {
-            "name": "contr_state",
-            "base": "",
-            "fields": [
+                },
                 {
-                    "name": "last_proposal_id",
+                    "name": "approval_expiry",
                     "type": "uint32"
                 }
             ]
@@ -147,6 +141,14 @@
                 {
                     "name": "content_hash",
                     "type": "string"
+                },
+                {
+                    "name": "id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "dac_scope",
+                    "type": "name"
                 }
             ]
         },
@@ -177,6 +179,10 @@
                 {
                     "name": "state",
                     "type": "uint8"
+                },
+                {
+                    "name": "expiry",
+                    "type": "time_point_sec"
                 }
             ]
         },
@@ -222,7 +228,7 @@
             "fields": [
                 {
                     "name": "new_config",
-                    "type": "configtype"
+                    "type": "config"
                 }
             ]
         },
@@ -295,8 +301,8 @@
     ],
     "tables": [
         {
-            "name": "configtype",
-            "type": "configtype",
+            "name": "config",
+            "type": "config",
             "index_type": "i64",
             "key_names": [],
             "key_types": []
@@ -311,13 +317,6 @@
         {
             "name": "propvotes",
             "type": "proposalvote",
-            "index_type": "i64",
-            "key_names": [],
-            "key_types": []
-        },
-        {
-            "name": "state",
-            "type": "contr_state",
             "index_type": "i64",
             "key_names": [],
             "key_types": []

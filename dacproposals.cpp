@@ -9,9 +9,10 @@
 using namespace eosio;
 using namespace std;
 
-    ACTION dacproposals::createprop(name proposer, string title, string summary, name arbitrator, extended_asset pay_amount, string content_hash){
+    ACTION dacproposals::createprop(name proposer, string title, string summary, name arbitrator, extended_asset pay_amount, string content_hash, uint64_t id, name dac_scope){
         require_auth(proposer);
         assertValidMember(proposer);
+        eosio_assert(proposals.find(id) == proposals.end(), "A Proposal with the id already exists. Try again with a different id.");
 
         eosio_assert(title.length() > 3, "Title length is too short.");
         eosio_assert(summary.length() > 3, "Summary length is too short.");
@@ -21,12 +22,13 @@ using namespace std;
         eosio_assert(is_account(arbitrator), "Invalid arbitrator.");
 
         proposals.emplace(proposer, [&](proposal &p) {
-            p.key = _currentState.last_proposal_id++;
+            p.key = id;
             p.proposer = proposer;
             p.arbitrator = arbitrator;
             p.content_hash = content_hash;
             p.pay_amount = pay_amount;
             p.state = pending_approval;
+            p.expiry = time_point_sec(now()) + current_configs().approval_expiry;   
         });
     }
 
@@ -74,33 +76,42 @@ using namespace std;
 
         const proposal& prop = proposals.get(proposal_id, "Proposal not found.");
 
+        eosio_assert(prop.state == pending_approval, "Proposal is not in the pending approval state therefore cannot start work.");
+        
+        time_point_sec time_now = time_point_sec(now());
+        if (prop.has_expired(time_now)) {
+            print_f("The proposal with proposal_id: % has expired and will now be removed.", proposal_id);
+            clearprop(prop);
+            return;
+        }
+        
         require_auth(prop.proposer);
         assertValidMember(prop.proposer);
 
-        eosio_assert(prop.state == pending_approval, "Proposal is not in the pending approval state therefore cannot start work.");
+        custodians_table custodians("daccustodian"_n, "daccustodian"_n.value);
+
+        std::set<eosio::name> current_custodians;
+
+        for(custodian cust: custodians) {
+            current_custodians.insert(cust.cust_name);
+        }
 
         auto by_voters = prop_votes.get_index<"proposal"_n>();
         auto vote_idx = by_voters.find(proposal_id);
         int16_t approved_count = 0;
-        int16_t deny_count = 0;
         while(vote_idx != by_voters.end()) {
-            if (vote_idx->vote == proposal_approve) {
-                approved_count++;
-            }
-            if (vote_idx->vote == proposal_deny) {
-                deny_count++;
+            if (vote_idx->vote == proposal_approve && 
+                current_custodians.find(vote_idx->voter) != current_custodians.end()) {
+                    approved_count++;
             }
             vote_idx++;
         }
-        eosio_assert(approved_count + deny_count >= current_configs().proposal_threshold, "Insufficient votes on worker proposal");
-        double percent_approval = double(approved_count) / double(approved_count + deny_count) * 100.0;
-        eosio_assert(percent_approval >= current_configs().proposal_approval_threshold_percent, "Vote approval threshold not met.");
+        eosio_assert(approved_count >= current_configs().proposal_threshold, "Insufficient votes on worker proposal");
         proposals.modify(prop, prop.proposer, [&](proposal &p){
             p.state = work_in_progress;
         });
 
-        print("Transfer funds to escrow account");
-        time_point_sec time_now = time_point_sec(now());
+        // print("Transfer funds to escrow account");
         string memo = prop.proposer.to_string() + ":" + to_string(proposal_id) + ":" + prop.content_hash;
 
         auto inittuple = make_tuple(current_configs().treasury_account, prop.proposer, prop.arbitrator, time_now + current_configs().escrow_expiry, memo, std::optional<uint64_t>(proposal_id));
@@ -124,6 +135,7 @@ using namespace std;
 
         require_auth(prop.proposer);
         assertValidMember(prop.proposer);
+        eosio_assert(prop.state == work_in_progress, "Worker proposal can only be completed from work_in_progress state");
 
         proposals.modify(prop, prop.proposer, [&](proposal &p){
             p.state = pending_claim;
@@ -160,6 +172,8 @@ using namespace std;
 
     ACTION dacproposals::cancel(uint64_t proposal_id){
         const proposal& prop = proposals.get(proposal_id, "Proposal not found.");
+        require_auth(prop.proposer);
+        assertValidMember(prop.proposer);
         clearprop(prop);
     }
 
@@ -172,7 +186,7 @@ using namespace std;
         }
     }
 
-    ACTION dacproposals::updateconfig(configtype new_config) {
+    ACTION dacproposals::updateconfig(config new_config) {
         if (current_configs().authority_account == name{0}) {
             require_auth(_self);
         } else {
@@ -183,7 +197,6 @@ using namespace std;
     }
 
 //    Private methods
-
     void dacproposals::transferfunds(const proposal &prop) {
         eosio::action(
                 eosio::permission_level{current_configs().treasury_account, "active"_n },
@@ -195,8 +208,8 @@ using namespace std;
     }
 
     void dacproposals::clearprop(const proposal& proposal){
-        require_auth(proposal.proposer);
-        assertValidMember(proposal.proposer);
+        // require_auth(proposal.proposer);
+        // assertValidMember(proposal.proposer);
 
         // Remove all the votes associated with that proposal.
         auto by_voters = prop_votes.get_index<"proposal"_n>();
