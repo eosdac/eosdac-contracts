@@ -62,9 +62,7 @@ enum VoteType {
             name member_terms_account = "eosdactokens"_n;
             name treasury_account = "eosdacthedac"_n;
             uint16_t proposal_threshold = 4;
-            uint16_t proposal_approval_threshold_percent = 50;
             uint16_t claim_threshold = 1;
-            uint16_t claim_approval_threshold_percent = 100;
             uint32_t escrow_expiry = 30 * 24 * 60 * 60;
             uint32_t approval_expiry = 30 * 24 * 60 * 60;
     };

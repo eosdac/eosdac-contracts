@@ -9,6 +9,9 @@ createprop
 * __summary__ is a string that provides a summary for the proposal.
 * __arbitrator__ is an eosio account name for a nominated arbitrator on the proposal.
 * __pay_amount__ is an eosio asset amount representing the requested pay amount for the worker proposal.
+* __id__ is an uint64 to represent the a unique identifer for a new proposal.
+* __dac_scope__ is an eosio name the proposal to a specific dac.
+* __category__ is integer to categorise a proposal.
 * __content_hash__ is a string that provides a hash of the details of the proposal.
 
 **INTENT** The intent of createprop is to enter a new worker proposal.
@@ -108,9 +111,11 @@ claim
 **INTENT:** The intent of updateconfig is to update the contract settings within the contract.
 The fields in the config object the their default values are:
 * name service_account - The service account to manage the escrow funds for worker proposals.
+* name authority_account - The authority account to authorize actions in the all the connected contracts.
+* name treasury_account - The account that holds the DAC funds used for the source of funds for the escrow contract.
 * uint16_t proposal_threshold = 7 - The number of required votes to make a decision on approving a worker proposal submission.
-* uint16_t proposal_approval_threshold_percent = 50 - The percent threshold required to approve a proposal submission.
 * uint16_t claim_threshold = 5 - The number of required votes to make a decision on approving a claim for a worker proposal.
-* uint16_t claim_approval_threshold_percent = 50 - The percent threshold required to approve for a proposal claim.
+* uint32_t escrow_expiry = 30 days - The number of days an escrow is set to expire.
+* uint32_t approval_expiry = 30 days - The number of days before a worker proposal must be approved.
 
 **TERM:** This action lasts for the duration of the time taken to process the transaction.

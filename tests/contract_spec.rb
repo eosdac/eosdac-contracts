@@ -229,11 +229,11 @@ describe "eosdacelect" do
 
   describe "updateconfig" do
     context "without valid auth" do
-      command %(cleos push action dacproposals updateconfig '{"new_config": { "service_account": "dacescrow", "member_terms_account": "eosdactokens", "treasury_account": "eosdacthedac", "proposal_threshold": 7,"proposal_approval_threshold_percent": 50, "claim_threshold": 5, "claim_approval_threshold_percent": 50, "escrow_expiry": 2592000, "authority_account": "dacauthority", "approval_expiry": 86500}}' -p proposeracc1), allow_error: true
+      command %(cleos push action dacproposals updateconfig '{"new_config": { "service_account": "dacescrow", "member_terms_account": "eosdactokens", "treasury_account": "eosdacthedac", "proposal_threshold": 7, "claim_threshold": 5, "escrow_expiry": 2592000, "authority_account": "dacauthority", "approval_expiry": 86500}}' -p proposeracc1), allow_error: true
       its(:stderr) {is_expected.to include('missing authority of dacproposals')}
     end
     context "with valid auth" do
-      command %(cleos push action dacproposals updateconfig '{"new_config": { "service_account": "dacescrow", "member_terms_account": "eosdactokens", "treasury_account": "eosdacthedac", "proposal_threshold": 7,"proposal_approval_threshold_percent": 50, "claim_threshold": 5, "claim_approval_threshold_percent": 50, "escrow_expiry": 2592000, "authority_account": "dacauthority", "approval_expiry": 86500}}' -p dacproposals), allow_error: true
+      command %(cleos push action dacproposals updateconfig '{"new_config": { "service_account": "dacescrow", "member_terms_account": "eosdactokens", "treasury_account": "eosdacthedac", "proposal_threshold": 7, "claim_threshold": 5, "escrow_expiry": 2592000, "authority_account": "dacauthority", "approval_expiry": 86500}}' -p dacproposals), allow_error: true
       its(:stdout) {is_expected.to include('dacproposals <= dacproposals::updateconfig')}
     end
   end
@@ -249,9 +249,7 @@ describe "eosdacelect" do
               "member_terms_account": "eosdactokens",
               "treasury_account": "eosdacthedac",
               "proposal_threshold": 7,
-              "proposal_approval_threshold_percent": 50,
               "claim_threshold": 5,
-              "claim_approval_threshold_percent": 50,
               "escrow_expiry": 2592000,
               "approval_expiry": 86500
             }
@@ -434,7 +432,7 @@ describe "eosdacelect" do
       end
       context "proposal has expired" do
         before(:all) do
-          `cleos push action dacproposals updateconfig '{"new_config": { "service_account": "dacescrow", "member_terms_account": "eosdactokens", "treasury_account": "eosdacthedac", "proposal_threshold": 7,"proposal_approval_threshold_percent": 50, "claim_threshold": 5, "claim_approval_threshold_percent": 50, "escrow_expiry": 2592000, "authority_account": "dacauthority", "approval_expiry": 1}}' -p dacauthority`
+          `cleos push action dacproposals updateconfig '{"new_config": { "service_account": "dacescrow", "member_terms_account": "eosdactokens", "treasury_account": "eosdacthedac", "proposal_threshold": 7, "claim_threshold": 5, "escrow_expiry": 2592000, "authority_account": "dacauthority", "approval_expiry": 1}}' -p dacauthority`
 
           `cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "startwork_title", "summary": "startwork_summary", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "102.0000 EOS", "contract": "eosio.token"}, "content_hash": "asdfasdfasdfasdfasdfasdfasdffttt", "id": 5, "category": 4, "dac_scope": "dacproposals" }' -p proposeracc1`
         end
@@ -627,23 +625,9 @@ describe "eosdacelect" do
         end
         context "without enough votes to approve the claim" do
           command %(cleos push action dacproposals claim '{ "proposer": "proposeracc1", "proposal_id": "1"}' -p proposeracc1), allow_error: true
-          its(:stderr) {is_expected.to include('Insufficient votes on worker proposal to approve or deny claim.')}
+          its(:stderr) {is_expected.to include('Insufficient votes on worker proposal to approve claim.')}
         end
-        context "with enough votes to to complete claim with denial" do
-          context "with more denied than approved votes" do
-            before(:all) do
-              `cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 1, "vote": 4 }' -p custodian1 -p dacauthority`
-              `cleos push action dacproposals voteprop '{"custodian": "custodian2", "proposal_id": 1, "vote": 4 }' -p custodian2 -p dacauthority`
-              `cleos push action dacproposals voteprop '{"custodian": "custodian3", "proposal_id": 1, "vote": 4 }' -p custodian3 -p dacauthority`
-              `cleos push action dacproposals voteprop '{"custodian": "custodian4", "proposal_id": 1, "vote": 4 }' -p custodian4 -p dacauthority`
-              `cleos push action dacproposals voteprop '{"custodian": "custodian5", "proposal_id": 1, "vote": 4 }' -p custodian5 -p dacauthority`
-              `cleos push action dacproposals voteprop '{"custodian": "custodian11", "proposal_id": 1, "vote": 3 }' -p custodian11 -p dacauthority`
-              `cleos push action dacproposals voteprop '{"custodian": "custodian12", "proposal_id": 1, "vote": 3 }' -p custodian12 -p dacauthority`
-              `cleos push action dacproposals voteprop '{"custodian": "custodian13", "proposal_id": 1, "vote": 3 }' -p custodian13 -p dacauthority`
-            end
-            command %(cleos push action dacproposals claim '{ "proposer": "proposeracc1", "proposal_id": "1"}' -p proposeracc1), allow_error: true
-            its(:stderr) {is_expected.to include('Claim approval threshold not met.')}
-          end
+        context "with enough votes to complete claim with denial" do
           context "with enough votes to approve the claim" do
             before(:all) do
               `cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 1, "vote": 3 }' -p custodian1 -p dacauthority`
