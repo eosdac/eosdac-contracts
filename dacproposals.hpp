@@ -89,6 +89,7 @@ private:
 
     void clearprop(const proposal& proposal, name dac_scope);
     void transferfunds(const proposal &prop, name dac_scope);
+    int16_t count_votes(uint64_t proposal_id, VoteType vote_type, name dac_scope);
     void assertValidMember(name member, name dac_scope);
 
 TABLE proposalvote {

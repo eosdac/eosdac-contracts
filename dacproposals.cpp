@@ -129,39 +129,9 @@ using namespace std;
         require_auth(prop.proposer);
         assertValidMember(prop.proposer, dac_scope);
 
-        custodians_table custodians("daccustodian"_n, "daccustodian"_n.value);
-        proposal_vote_table prop_votes(_self, dac_scope.value);
+        int16_t approved_count = count_votes(proposal_id, proposal_approve, dac_scope);
 
-        std::set<eosio::name> current_custodians;
-
-        for(custodian cust: custodians) {
-            current_custodians.insert(cust.cust_name);
-        }
-
-        auto by_voters = prop_votes.get_index<"proposal"_n>();
-        std::map<eosio::name, uint16_t> delegated_votes;
-        std::set<eosio::name> approval_votes;
-
-        auto vote_idx = by_voters.find(proposal_id);
-
-        while(vote_idx != by_voters.end() && vote_idx->proposal_id == proposal_id) {
-            if (current_custodians.find(vote_idx->voter) != current_custodians.end()) {
-                if (vote_idx->delegatee != name{0} && 
-                    current_custodians.find(vote_idx->delegatee) != current_custodians.end()) {
-                        delegated_votes[vote_idx->delegatee]++;
-                } else if (vote_idx->vote == proposal_approve) {
-                        approval_votes.insert(vote_idx->voter);
-                }
-            }
-            vote_idx++;
-        }
-        
-        int16_t approved_count = 0;
-        for(auto approval : approval_votes) {
-            approved_count++;
-            approved_count += delegated_votes[approval];
-        }
-        print_f("Worker proposal % was approved to start work with: % votes\n", vote_idx->proposal_id, approved_count);
+        print_f("Worker proposal % was approved to start work with: % votes\n", proposal_id, approved_count);
         config configs = current_configs(dac_scope);
 
         eosio_assert(approved_count >= configs.proposal_threshold, "ERR::STARTWORK_INSUFFICIENT_VOTES::Insufficient votes on worker proposal.");
@@ -210,40 +180,9 @@ using namespace std;
 
         eosio_assert(prop.state == pending_finalize, "ERR::FINALIZE_WRONG_STATE::Proposal is not in the pending_finalize state therefore cannot be finalized.");
         
-        custodians_table custodians("daccustodian"_n, "daccustodian"_n.value);
-        std::set<eosio::name> current_custodians;
-        for(custodian cust: custodians) {
-            current_custodians.insert(cust.cust_name);
-        }
-        
-        proposal_vote_table prop_votes(_self, dac_scope.value);
+        int16_t approved_count = count_votes(proposal_id, finalize_approve, dac_scope);
 
-        auto by_voters = prop_votes.get_index<"proposal"_n>();
-
-        std::map<eosio::name, uint16_t> delegated_votes;
-        std::set<eosio::name> approval_votes;
-
-        auto vote_idx = by_voters.find(proposal_id);
-
-        while(vote_idx != by_voters.end() && vote_idx->proposal_id == proposal_id) {
-            if (current_custodians.find(vote_idx->voter) != current_custodians.end()) {
-                if (vote_idx->delegatee != name{0} && 
-                    current_custodians.find(vote_idx->delegatee) != current_custodians.end()) {
-                        delegated_votes[vote_idx->delegatee]++;
-                } else if (vote_idx->vote == finalize_approve  ) {
-                        approval_votes.insert(vote_idx->voter);
-                }
-            }
-            vote_idx++;
-        }
-        
-        int16_t approved_count = 0;
-        for(auto approval : approval_votes) {
-            approved_count++;
-            approved_count += delegated_votes[approval];
-        }
-
-        print_f("Worker proposal % was approved for finalizing with: % votes\n", vote_idx->proposal_id, approved_count);
+        print_f("Worker proposal % was approved for finalizing with: % votes\n", proposal_id, approved_count);
 
         eosio_assert(approved_count >= current_configs(dac_scope).finalize_threshold, "ERR::FINALIZE_INSUFFICIENT_VOTES::Insufficient votes on worker proposal to be finalized.");
 
@@ -314,6 +253,40 @@ using namespace std;
         proposals.erase(prop_to_erase);
     }
 
+    int16_t dacproposals::count_votes(uint64_t proposal_id, VoteType vote_type, name dac_scope){
+        custodians_table custodians("daccustodian"_n, "daccustodian"_n.value);
+        std::set<eosio::name> current_custodians;
+        for(custodian cust: custodians) {
+            current_custodians.insert(cust.cust_name);
+        }
+
+        proposal_vote_table prop_votes(_self, dac_scope.value);
+        auto by_voters = prop_votes.get_index<"proposal"_n>();
+        std::map<eosio::name, uint16_t> delegated_votes;
+        std::set<eosio::name> approval_votes;
+
+        auto vote_idx = by_voters.find(proposal_id);
+
+        while(vote_idx != by_voters.end() && vote_idx->proposal_id == proposal_id) {
+            if (current_custodians.find(vote_idx->voter) != current_custodians.end()) {
+                if (vote_idx->delegatee != name{0} && 
+                    current_custodians.find(vote_idx->delegatee) != current_custodians.end()) {
+                        delegated_votes[vote_idx->delegatee]++;
+                } else if (vote_idx->vote == vote_type) {
+                        approval_votes.insert(vote_idx->voter);
+                }
+            }
+            vote_idx++;
+        }
+        
+        int16_t approved_count = 0;
+        for(auto approval : approval_votes) {
+            approved_count++;
+            approved_count += delegated_votes[approval];
+        }
+        return approved_count;
+    }
+
     void dacproposals::assertValidMember(name member, name dac_scope) {
     name member_terms_account = current_configs(dac_scope).member_terms_account;
     regmembers reg_members(member_terms_account, member_terms_account.value);
@@ -323,7 +296,7 @@ using namespace std;
     eosio_assert((regmem.agreedterms != 0), "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_ANY_TERMS::Account has not agreed to any terms");
     auto latest_member_terms = (--memberterms.end());
     eosio_assert(latest_member_terms->version == regmem.agreedterms, "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_LATEST_TERMS::Agreed terms isn't the latest.");
-}
+    }
 
 EOSIO_DISPATCH(dacproposals,
                 (createprop)
