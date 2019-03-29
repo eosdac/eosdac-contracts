@@ -14,14 +14,13 @@ using namespace std;
         assertValidMember(proposer, dac_scope);
         proposal_table proposals(_self, dac_scope.value);
 
-        eosio_assert(proposals.find(id) == proposals.end(), "A Proposal with the id already exists. Try again with a different id.");
+        eosio_assert(proposals.find(id) == proposals.end(), "ERR::CREATEPROP_DUPLICATE_ID::A Proposal with the id already exists. Try again with a different id.");
 
-        eosio_assert(title.length() > 3, "Title length is too short.");
-        eosio_assert(summary.length() > 3, "Summary length is too short.");
-        // eosio_assert(content_hash.length() == 32, "Invalid content hash.");
-        eosio_assert(pay_amount.quantity.symbol.is_valid(), "Invalid pay amount symbol.");
-        eosio_assert(pay_amount.quantity.amount > 0, "Invalid pay amount. Must be greater than 0.");
-        eosio_assert(is_account(arbitrator), "Invalid arbitrator.");
+        eosio_assert(title.length() > 3, "ERR::CREATEPROP_SHORT_TITLE::Title length is too short.");
+        eosio_assert(summary.length() > 3, "ERR::CREATEPROP_SHORT_SUMMARY::Summary length is too short.");
+        eosio_assert(pay_amount.quantity.symbol.is_valid(), "ERR::CREATEPROP_INVALID_SYMBOL::Invalid pay amount symbol.");
+        eosio_assert(pay_amount.quantity.amount > 0, "ERR::CREATEPROP_INVALID_PAY_AMOUNT::Invalid pay amount. Must be greater than 0.");
+        eosio_assert(is_account(arbitrator), "ERR::CREATEPROP_INVALID_ARBITRATOR::Invalid arbitrator.");
 
         proposals.emplace(proposer, [&](proposal &p) {
             p.key = id;
@@ -42,16 +41,16 @@ using namespace std;
 
         proposal_table proposals(_self, dac_scope.value);
 
-        const proposal& prop = proposals.get(proposal_id, "Proposal not found.");
+        const proposal& prop = proposals.get(proposal_id, "ERR::VOTEPROP_PROPOSAL_NOT_FOUND::Proposal not found.﻿");
         switch (prop.state) {
             case pending_approval:
-                eosio_assert(vote == proposal_approve || vote == proposal_deny, "Invalid vote for the current proposal state.");
+                eosio_assert(vote == proposal_approve || vote == proposal_deny, "ERR::VOTEPROP_INVALID_VOTE::Invalid vote for the current proposal state.");
                 break;
             case pending_finalize:
-                eosio_assert(vote == finalize_approve || vote == finalize_deny, "Invalid vote for the current proposal state.");
+                eosio_assert(vote == finalize_approve || vote == finalize_deny, "ERR::VOTEPROP_INVALID_VOTE::Invalid vote for the current proposal state.");
                 break;
             default:
-                eosio_assert(false, "Invalid proposal state to accept votes.");
+                eosio_assert(false, "ERR::VOTEPROP_INVALID_PROPOSAL_STATE::Invalid proposal state to accept votes.");
         }
         
         proposal_vote_table prop_votes(_self, dac_scope.value);
@@ -78,11 +77,11 @@ using namespace std;
         require_auth(custodian);
         require_auth(current_configs(dac_scope).authority_account);
         assertValidMember(custodian, dac_scope);
-        eosio_assert(custodian != dalegatee_custodian, "Cannot delegate voting to yourself.");
+        eosio_assert(custodian != dalegatee_custodian, "ERR::DELEGATEVOTE_DELEGATE_SELF::Cannot delegate voting to yourself.");
 
         proposal_table proposals(_self, dac_scope.value);
 
-        const proposal& prop = proposals.get(proposal_id, "Proposal not found.");
+        const proposal& prop = proposals.get(proposal_id, "ERR::DELEGATEVOTE_PROPOSAL_NOT_FOUND::Proposal not found.");
 
         proposal_vote_table prop_votes(_self, dac_scope.value);
         auto by_prop_and_voter = prop_votes.get_index<"propandvoter"_n>();
@@ -108,7 +107,7 @@ using namespace std;
         require_auth(arbitrator);
         proposal_table proposals(_self, dac_scope.value);
 
-        const proposal& prop = proposals.get(proposal_id, "Proposal not found.");
+        const proposal& prop = proposals.get(proposal_id, "ERR::DELEGATEVOTE_PROPOSAL_NOT_FOUND::Proposal not found.");
         clearprop(prop, dac_scope);
     }
 
@@ -116,9 +115,9 @@ using namespace std;
 
         proposal_table proposals(_self, dac_scope.value);
 
-        const proposal& prop = proposals.get(proposal_id, "Proposal not found.");
+        const proposal& prop = proposals.get(proposal_id, "ERR::DELEGATEVOTE_PROPOSAL_NOT_FOUND::Proposal not found.");
 
-        eosio_assert(prop.state == pending_approval, "Proposal is not in the pending approval state therefore cannot start work.");
+        eosio_assert(prop.state == pending_approval, "ERR::STARTWORK_WRONG_STATE::Proposal not found.Proposal is not in the pending approval state therefore cannot start work.");
         
         time_point_sec time_now = time_point_sec(now());
         if (prop.has_expired(time_now)) {
@@ -165,7 +164,7 @@ using namespace std;
         print_f("Worker proposal % was approved to start work with: % votes\n", vote_idx->proposal_id, approved_count);
         config configs = current_configs(dac_scope);
 
-        eosio_assert(approved_count >= configs.proposal_threshold, "Insufficient votes on worker proposal");
+        eosio_assert(approved_count >= configs.proposal_threshold, "ERR::STARTWORK_INSUFFICIENT_VOTES::Insufficient votes on worker proposal.");
         proposals.modify(prop, prop.proposer, [&](proposal &p){
             p.state = work_in_progress;
         });
@@ -192,11 +191,11 @@ using namespace std;
 
         proposal_table proposals(_self, dac_scope.value);
 
-        const proposal& prop = proposals.get(proposal_id, "Proposal not found.");
+        const proposal& prop = proposals.get(proposal_id, "ERR::DELEGATEVOTE_PROPOSAL_NOT_FOUND::Proposal not found.");
 
         require_auth(prop.proposer);
         assertValidMember(prop.proposer, dac_scope);
-        eosio_assert(prop.state == work_in_progress, "Worker proposal can only be completed from work_in_progress state");
+        eosio_assert(prop.state == work_in_progress, "ERR::COMPLETEWORK_WRONG_STATE::Worker proposal can only be completed from work_in_progress state");
 
         proposals.modify(prop, prop.proposer, [&](proposal &p){
             p.state = pending_finalize;
@@ -207,9 +206,9 @@ using namespace std;
 
         proposal_table proposals(_self, dac_scope.value);
 
-        const proposal& prop = proposals.get(proposal_id, "Proposal not found.");
+        const proposal& prop = proposals.get(proposal_id, "ERR::DELEGATEVOTE_PROPOSAL_NOT_FOUND::Proposal not found.");
 
-        eosio_assert(prop.state == pending_finalize, "Proposal is not in the pending_finalize state therefore cannot be finalized.");
+        eosio_assert(prop.state == pending_finalize, "ERR::FINALIZE_WRONG_STATE::Proposal is not in the pending_finalize state therefore cannot be finalized.");
         
         custodians_table custodians("daccustodian"_n, "daccustodian"_n.value);
         std::set<eosio::name> current_custodians;
@@ -246,7 +245,7 @@ using namespace std;
 
         print_f("Worker proposal % was approved for finalizing with: % votes\n", vote_idx->proposal_id, approved_count);
 
-        eosio_assert(approved_count >= current_configs(dac_scope).finalize_threshold, "Insufficient votes on worker proposal to be finalized.");
+        eosio_assert(approved_count >= current_configs(dac_scope).finalize_threshold, "ERR::FINALIZE_INSUFFICIENT_VOTES::Insufficient votes on worker proposal to be finalized.");
 
         transferfunds(prop, dac_scope);
     }
@@ -255,7 +254,7 @@ using namespace std;
         
         proposal_table proposals(_self, dac_scope.value);
 
-        const proposal& prop = proposals.get(proposal_id, "Proposal not found.");
+        const proposal& prop = proposals.get(proposal_id, "ERR::DELEGATEVOTE_PROPOSAL_NOT_FOUND::Proposal not found.");
         require_auth(prop.proposer);
         assertValidMember(prop.proposer, dac_scope);
         clearprop(prop, dac_scope);
@@ -267,7 +266,7 @@ using namespace std;
 
         proposal_table proposals(_self, dac_scope.value);
 
-        const proposal& prop = proposals.get(proposal_id, "Proposal not found.");
+        const proposal& prop = proposals.get(proposal_id, "ERR::DELEGATEVOTE_PROPOSAL_NOT_FOUND::Proposal not found.");
         if (!has_auth(prop.proposer)) {
             require_auth(current_configs(dac_scope).authority_account);
         }
@@ -310,7 +309,6 @@ using namespace std;
             print(itr->voter);
             itr = by_voters.erase(itr);
         }
-        print("got here");
         auto prop_to_erase = proposals.find(proposal.key);
         
         proposals.erase(prop_to_erase);
