@@ -77,6 +77,8 @@ public:
     ACTION createprop(name proposer, string title, string summary, name arbitrator, extended_asset pay_amount, string content_hash, uint64_t id, uint16_t category, name dac_scope);
     ACTION voteprop(name custodian, uint64_t proposal_id, uint8_t vote, name dac_scope);
     ACTION delegatevote(name custodian, uint64_t proposal_id, name dalegatee_custodian, name dac_scope);
+    ACTION delegatecat(name custodian, uint64_t category, name dalegatee_custodian, name dac_scope);
+    ACTION undelegateca(name custodian, uint64_t category, name dac_scope);
     ACTION arbapprove(name arbitrator, uint64_t proposal_id, name dac_scope);
     ACTION startwork(uint64_t proposal_id, name dac_scope);
     ACTION completework(uint64_t proposal_id, name dac_scope);
@@ -112,10 +114,27 @@ TABLE proposalvote {
     indexed_by<"propandvoter"_n, eosio::const_mem_fun<proposalvote, uint128_t, &proposalvote::get_prop_and_voter>>
     > proposal_vote_table;
 
-    // concatenation of ids example
     static const uint128_t combine_ids(const uint64_t &x, const uint64_t &y) {
         return (uint128_t{x} << 64) | y;
     }
+
+    TABLE categoryvote {
+        uint64_t vote_id;
+        uint64_t category_id;
+        name voter;
+        name delegatee;
+
+        uint64_t primary_key() const { return vote_id; }
+        uint64_t category_key() const { return category_id; }
+        uint64_t voter_key() const { return voter.value; }
+        uint128_t get_category_and_voter() const { return combine_ids(category_id, voter.value); }
+    };
+
+    typedef eosio::multi_index<"catvotes"_n, categoryvote,
+        indexed_by<"voter"_n, eosio::const_mem_fun<categoryvote, uint64_t, &categoryvote::voter_key>>,
+        indexed_by<"category"_n, eosio::const_mem_fun<categoryvote, uint64_t, &categoryvote::category_key>>,
+        indexed_by<"catandvoter"_n, eosio::const_mem_fun<categoryvote, uint128_t, &categoryvote::get_category_and_voter>>
+    > category_vote_table;
 
     config current_configs(name dac_scope) {
         configs_table configs(_self, dac_scope.value);

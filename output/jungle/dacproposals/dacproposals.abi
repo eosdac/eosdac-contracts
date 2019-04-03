@@ -1,5 +1,5 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Fri Mar 29 09:02:26 2019",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Wed Apr  3 23:53:30 2019",
     "version": "eosio::abi/1.1",
     "structs": [
         {
@@ -30,6 +30,28 @@
                 },
                 {
                     "name": "dac_scope",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "categoryvote",
+            "base": "",
+            "fields": [
+                {
+                    "name": "vote_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "category_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "voter",
+                    "type": "name"
+                },
+                {
+                    "name": "delegatee",
                     "type": "name"
                 }
             ]
@@ -147,6 +169,28 @@
                 {
                     "name": "category",
                     "type": "uint16"
+                },
+                {
+                    "name": "dac_scope",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "delegatecat",
+            "base": "",
+            "fields": [
+                {
+                    "name": "custodian",
+                    "type": "name"
+                },
+                {
+                    "name": "category",
+                    "type": "uint64"
+                },
+                {
+                    "name": "dalegatee_custodian",
+                    "type": "name"
                 },
                 {
                     "name": "dac_scope",
@@ -273,6 +317,24 @@
             ]
         },
         {
+            "name": "undelegateca",
+            "base": "",
+            "fields": [
+                {
+                    "name": "custodian",
+                    "type": "name"
+                },
+                {
+                    "name": "category",
+                    "type": "uint64"
+                },
+                {
+                    "name": "dac_scope",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "updateconfig",
             "base": "",
             "fields": [
@@ -337,6 +399,11 @@
             "ricardian_contract": "## ACTION: createprop\n**PARAMETERS:**\n* __proposer__ is an eosio account name.\n* __title__ is a string that provides a title for the proposal.\n* __summary__ is a string that provides a summary for the proposal.\n* __arbitrator__ is an eosio account name for a nominated arbitrator on the proposal.\n* __pay_amount__ is an eosio asset amount representing the requested pay amount for the worker proposal.\n* __id__ is an uint64 to represent the a unique identifer for a new proposal.\n* __dac_scope__ is an eosio name the proposal to a specific dac.\n* __category__ is integer to categorise a proposal.\n* __content_hash__ is a string that provides a hash of the details of the proposal.\n\n**INTENT** The intent of createprop is to enter a new worker proposal.\n#### Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later so therefore should only store a unidentifiable hash of content rather than human readable content."
         },
         {
+            "name": "delegatecat",
+            "type": "delegatecat",
+            "ricardian_contract": ""
+        },
+        {
             "name": "delegatevote",
             "type": "delegatevote",
             "ricardian_contract": "## ACTION: delegatevote\n**PARAMETERS:**\n* __custodian__ is an eosio account name.\n* __proposal_id__ is an integer id for an existing proposal for the custodian to vote on.\n* __dalegatee_custodian__ is an eosio account name for a custodian to delegate worker proposal votes to.\n\n**INTENT:** \nThe intent of delegatevote is to delegate an active custodian's vote to another custodian because they trust their opinion over their own."
@@ -352,6 +419,11 @@
             "ricardian_contract": "## ACTION: startwork\n**PARAMETERS:**\n* __proposal_id__ is an integer id for an existing proposal created by this proposer.\n\n**INTENT:** \nThe intent of startwork is to indicate the intention for the proposer to start work on an existing proposal.\nThis action checks that there are enough approval votes from active custodians to approve the proposal and if successful transfers the required amount to an escrow account in preparation for the payment of the worker proposal at the completion of the work."
         },
         {
+            "name": "undelegateca",
+            "type": "undelegateca",
+            "ricardian_contract": ""
+        },
+        {
             "name": "updateconfig",
             "type": "updateconfig",
             "ricardian_contract": "## ACTION: updateconfig\n**PARAMETERS:**\n* __new_config__ is a config_type object to update the settings for the contract.\n\n**INTENT:** The intent of updateconfig is to update the contract settings within the contract.\nThe fields in the config object the their default values are:\n* name service_account - The service account to manage the escrow funds for worker proposals.\n* name authority_account - The authority account to authorize actions in the all the connected contracts.\n* name treasury_account - The account that holds the DAC funds used for the source of funds for the escrow contract.\n* uint16_t proposal_threshold = 7 - The number of required votes to make a decision on approving a worker proposal submission.\n* uint16_t claim_threshold = 5 - The number of required votes to make a decision on approving a claim for a worker proposal.\n* uint32_t escrow_expiry = 30 days - The number of days an escrow is set to expire.\n* uint32_t approval_expiry = 30 days - The number of days before a worker proposal must be approved.\n\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
@@ -363,6 +435,13 @@
         }
     ],
     "tables": [
+        {
+            "name": "catvotes",
+            "type": "categoryvote",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
         {
             "name": "config",
             "type": "config",

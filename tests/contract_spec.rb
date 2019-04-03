@@ -71,6 +71,10 @@ def seed_dac_account(name, issue: nil, memberreg: nil, stake: nil, requestedpay:
   end
 end
 
+def utc_today
+  Date.today().to_time.utc.to_datetime
+end
+
 def reset_chain
   `kill -INT \`pgrep nodeos\``
 
@@ -325,7 +329,7 @@ describe "eosdacelect" do
         expect(prop["pay_amount"]["contract"]).to eq "eosio.token"
         expect(prop["state"]).to eq 0
         expect(prop["category"]).to eq 2
-        expect(Date.iso8601(prop["expiry"]).day).to eq (Date.today().next_day(1).day)
+        expect(Date.iso8601(prop["expiry"]).day).to eq (utc_today.next_day(1).day)
       end
     end
   end
@@ -480,7 +484,7 @@ describe "eosdacelect" do
             expect(prop["pay_amount"]["contract"]).to eq "eosio.token"
             expect(prop["state"]).to eq 0
             expect(prop["category"]).to eq 4
-            expect(Date.iso8601(prop["expiry"]).day).to eq (Date.today().day)
+            expect(Date.iso8601(prop["expiry"]).day).to eq (utc_today.day)
           end
         end
       end
@@ -606,7 +610,7 @@ describe "eosdacelect" do
         expect(prop["pay_amount"]["quantity"]).to eq "101.0000 EOS"
         expect(prop["pay_amount"]["contract"]).to eq "eosio.token"
         expect(prop["state"]).to eq 1
-        expect(Date.iso8601(prop["expiry"]).day).to eq (Date.today().next_day(1).day)
+        expect(Date.iso8601(prop["expiry"]).day).to eq (utc_today.next_day(1).day)
       end
     end
     context "Read the escrow table after startwork" do
@@ -625,7 +629,7 @@ describe "eosdacelect" do
         expect(escrow["ext_asset"]["quantity"]).to eq "101.0000 EOS"
         expect(escrow["memo"]).to eq "proposeracc1:1:asdfasdfasdfasdfasdfasdfasdffdsa"
         expect(escrow["external_reference"]).to eq 1
-        expect(Date.iso8601(escrow["expires"]).day).to eq (Date.today().next_day(30).day)
+        expect(Date.iso8601(escrow["expires"]).day).to eq (utc_today.next_day(30).day)
       end
     end
   end
@@ -742,7 +746,7 @@ describe "eosdacelect" do
         expect(prop["pay_amount"]["quantity"]).to eq "100.0000 EOS"
         expect(prop["pay_amount"]["contract"]).to eq "eosio.token"
         expect(prop["state"]).to eq 0
-        expect(Date.iso8601(prop["expiry"]).day).to eq (Date.today().next_day(1).day)
+        expect(Date.iso8601(prop["expiry"]).day).to eq (utc_today.next_day(1).day)
       end
     end
     context "Read the escrow table after startwork" do
@@ -761,7 +765,7 @@ describe "eosdacelect" do
         expect(escrow["ext_asset"]["quantity"]).to eq "101.0000 EOS"
         expect(escrow["memo"]).to eq "proposeracc1:1:asdfasdfasdfasdfasdfasdfasdffdsa"
         expect(escrow["external_reference"]).to eq 1
-        expect(Date.iso8601(escrow["expires"]).day).to eq (Date.today().next_day(30).day)
+        expect(Date.iso8601(escrow["expires"]).day).to eq (utc_today.next_day(30).day)
       end
     end
   end
@@ -831,8 +835,159 @@ describe "eosdacelect" do
         expect(escrow["ext_asset"]["quantity"]).to eq "101.0000 EOS"
         expect(escrow["memo"]).to eq "proposeracc1:1:asdfasdfasdfasdfasdfasdfasdffdsa"
         expect(escrow["external_reference"]).to eq 1
-        expect(Date.iso8601(escrow["expires"]).day).to eq (Date.today().next_day(30).day)
+        expect(Date.iso8601(escrow["expires"]).day).to eq (utc_today.next_day(30).day)
       end
+    end
+  end
+
+  describe "delegate Votes" do
+    before(:all) do
+      seed_dac_account("proposeracc3", issue: "100.0000 EOSDAC", memberreg: "New Latest terms")
+      `cleos push action dacproposals updateconfig '{"new_config": { "service_account": "dacescrow", "member_terms_account": "eosdactokens", "treasury_account": "eosdacthedac", "proposal_threshold": 7, "finalize_threshold": 5, "escrow_expiry": 2592000, "authority_account": "dacauthority", "approval_expiry": 200}, "dac_scope": "dacproposals"}' -p dacauthority`
+    end
+    context "Created a proposal but still needing one vote for approval for proposal" do
+      before(:all) do
+        `cleos push action dacproposals createprop '{"proposer": "proposeracc3", "title": "startwork_title", "summary": "startwork_summary", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "102.0000 EOS", "contract": "eosio.token"}, "content_hash": "asdfasdfasdfasdfasdfasdfasdffttt", "id": 101, "category": 33, "dac_scope": "dacproposals" }' -p proposeracc3`
+
+        `cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 101, "vote": 1, "dac_scope": "dacproposals" }' -p custodian1 -p dacauthority`
+        `cleos push action dacproposals voteprop '{"custodian": "custodian2", "proposal_id": 101, "vote": 1, "dac_scope": "dacproposals" }' -p custodian2 -p dacauthority`
+        `cleos push action dacproposals voteprop '{"custodian": "custodian3", "proposal_id": 101, "vote": 1, "dac_scope": "dacproposals" }' -p custodian3 -p dacauthority`
+        `cleos push action dacproposals voteprop '{"custodian": "custodian4", "proposal_id": 101, "vote": 1, "dac_scope": "dacproposals" }' -p custodian4 -p dacauthority`
+        `cleos push action dacproposals voteprop '{"custodian": "custodian5", "proposal_id": 101, "vote": 1, "dac_scope": "dacproposals" }' -p custodian5 -p dacauthority`
+        `cleos push action dacproposals voteprop '{"custodian": "custodian11", "proposal_id": 101, "vote": 1, "dac_scope": "dacproposals" }' -p custodian11 -p dacauthority`
+      end
+      context "delegated vote with pre-existing vote for proposal should have no effect" do
+        before(:all) do
+          `cleos push action dacproposals delegatevote '{"custodian": "custodian11", "proposal_id": 101, "dalegatee_custodian": "custodian11", "dac_scope": "dacproposals"}' -p custodian13 -p dacauthority`
+        end
+        command %(cleos push action dacproposals startwork '{ "proposal_id": 101, "dac_scope": "dacproposals"}' -p proposeracc3), allow_error: true
+        its(:stderr) {is_expected.to include('ERR::STARTWORK_INSUFFICIENT_VOTES')}
+      end
+      context "delegated vote with non-matching proposal" do
+        before(:all) do
+          `cleos push action dacproposals delegatevote '{"custodian": "custodian13", "proposal_id": 32, "dalegatee_custodian": "custodian11", "dac_scope": "dacproposals"}' -p custodian13 -p dacauthority`
+        end
+        command %(cleos push action dacproposals startwork '{ "proposal_id": 101, "dac_scope": "dacproposals"}' -p proposeracc3), allow_error: true
+        its(:stderr) {is_expected.to include('ERR::STARTWORK_INSUFFICIENT_VOTES')}
+      end
+      context "delegated category with matching proposal" do
+        before(:all) do
+          `cleos push action dacproposals delegatevote '{"custodian": "custodian13", "proposal_id": 101, "dalegatee_custodian": "custodian11", "dac_scope": "dacproposals"}' -p custodian13 -p dacauthority`
+        end
+        command %(cleos push action dacproposals startwork '{ "proposal_id": 101, "dac_scope": "dacproposals"}' -p proposeracc3), allow_error: true
+        its(:stdout) {is_expected.to include('dacproposals <= dacproposals::startwork')}
+      end
+    end
+    context "Created a proposal but still needing one vote for approval for categories" do
+      before(:all) do
+        `cleos push action dacproposals createprop '{"proposer": "proposeracc3", "title": "startwork_title", "summary": "startwork_summary", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "102.0000 EOS", "contract": "eosio.token"}, "content_hash": "asdfasdfasdfasdfasdfasdfasdffttt", "id": 102, "category": 31, "dac_scope": "dacproposals" }' -p proposeracc3`
+
+        `cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 102, "vote": 1, "dac_scope": "dacproposals" }' -p custodian1 -p dacauthority`
+        `cleos push action dacproposals voteprop '{"custodian": "custodian2", "proposal_id": 102, "vote": 1, "dac_scope": "dacproposals" }' -p custodian2 -p dacauthority`
+        `cleos push action dacproposals voteprop '{"custodian": "custodian3", "proposal_id": 102, "vote": 1, "dac_scope": "dacproposals" }' -p custodian3 -p dacauthority`
+        `cleos push action dacproposals voteprop '{"custodian": "custodian4", "proposal_id": 102, "vote": 1, "dac_scope": "dacproposals" }' -p custodian4 -p dacauthority`
+        `cleos push action dacproposals voteprop '{"custodian": "custodian5", "proposal_id": 102, "vote": 1, "dac_scope": "dacproposals" }' -p custodian5 -p dacauthority`
+        `cleos push action dacproposals voteprop '{"custodian": "custodian11", "proposal_id": 102, "vote": 1, "dac_scope": "dacproposals" }' -p custodian11 -p dacauthority`
+      end
+      context "delegated category with already voted custodian should have no addtional effect" do
+        before(:all) do
+          `cleos push action dacproposals delegatecat '{"custodian": "custodian11", "category": 32, "dalegatee_custodian": "custodian11", "dac_scope": "dacproposals"}' -p custodian13 -p dacauthority`
+        end
+        command %(cleos push action dacproposals startwork '{ "proposal_id": 102, "dac_scope": "dacproposals"}' -p proposeracc3), allow_error: true
+        its(:stderr) {is_expected.to include('ERR::STARTWORK_INSUFFICIENT_VOTES')}
+      end
+      context "delegated category with non-matching category" do
+        before(:all) do
+          `cleos push action dacproposals delegatecat '{"custodian": "custodian13", "category": 32, "dalegatee_custodian": "custodian11", "dac_scope": "dacproposals"}' -p custodian13 -p dacauthority`
+        end
+        command %(cleos push action dacproposals startwork '{ "proposal_id": 102, "dac_scope": "dacproposals"}' -p proposeracc3), allow_error: true
+        its(:stderr) {is_expected.to include('ERR::STARTWORK_INSUFFICIENT_VOTES')}
+      end
+      context "delegated category with matching category" do
+        before(:all) do
+          `cleos push action dacproposals delegatecat '{"custodian": "custodian13", "category": 31, "dalegatee_custodian": "custodian11", "dac_scope": "dacproposals"}' -p custodian13 -p dacauthority`
+        end
+        command %(cleos push action dacproposals startwork '{ "proposal_id": 102, "dac_scope": "dacproposals"}' -p proposeracc3), allow_error: true
+        its(:stdout) {is_expected.to include('dacproposals <= dacproposals::startwork')}
+      end
+    end
+    context "Created a proposal but still needing 2 votes for approval for complex case" do
+      before(:all) do
+        `cleos push action dacproposals createprop '{"proposer": "proposeracc3", "title": "startwork_title", "summary": "startwork_summary", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "102.0000 EOS", "contract": "eosio.token"}, "content_hash": "asdfasdfasdfasdfasdfasdfasdffttt", "id": 103, "category": 32, "dac_scope": "dacproposals" }' -p proposeracc3`
+
+        `cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 103, "vote": 1, "dac_scope": "dacproposals" }' -p custodian1 -p dacauthority`
+        `cleos push action dacproposals voteprop '{"custodian": "custodian2", "proposal_id": 103, "vote": 1, "dac_scope": "dacproposals" }' -p custodian2 -p dacauthority`
+        `cleos push action dacproposals voteprop '{"custodian": "custodian3", "proposal_id": 103, "vote": 1, "dac_scope": "dacproposals" }' -p custodian3 -p dacauthority`
+        `cleos push action dacproposals voteprop '{"custodian": "custodian4", "proposal_id": 103, "vote": 1, "dac_scope": "dacproposals" }' -p custodian4 -p dacauthority`
+        `cleos push action dacproposals voteprop '{"custodian": "custodian5", "proposal_id": 103, "vote": 1, "dac_scope": "dacproposals" }' -p custodian5 -p dacauthority`
+      end
+      context "delegated vote with matching proposal and category" do
+        before(:all) do
+          `cleos push action dacproposals delegatecat '{"custodian": "custodian11", "category": 32, "dalegatee_custodian": "custodian5", "dac_scope": "dacproposals"}' -p custodian11 -p dacauthority`
+          `cleos push action dacproposals delegatevote '{"custodian": "custodian13", "proposal_id": 103, "dalegatee_custodian": "custodian5", "dac_scope": "dacproposals"}' -p custodian13 -p dacauthority`
+        end
+        command %(cleos push action dacproposals startwork '{ "proposal_id": 103, "dac_scope": "dacproposals"}' -p proposeracc3), allow_error: true
+        its(:stdout) {is_expected.to include('dacproposals <= dacproposals::startwork')}
+      end
+    end
+  end
+  context "Read the propvotes table after finalizing" do
+    command %(cleos get table dacproposals dacproposals catvotes), allow_error: true
+    it do
+      expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
+        {
+          "rows": [{
+              "vote_id": 0,
+              "category_id": 32,
+              "voter": "custodian13",
+              "delegatee": "custodian11"
+            },{
+              "vote_id": 1,
+              "category_id": 31,
+              "voter": "custodian13",
+              "delegatee": "custodian11"
+            },{
+              "vote_id": 2,
+              "category_id": 32,
+              "voter": "custodian11",
+              "delegatee": "custodian5"
+            }
+          ],
+          "more": false
+        }
+      JSON
+    end
+  end
+  context "undelegate vote" do
+    context "with wrong auth" do
+      command %(cleos push action dacproposals undelegateca '{ "custodian": "custodian13", "category": 32, "dac_scope": "dacproposals"}' -p custodian11), allow_error: true
+      its(:stderr) {is_expected.to include('missing authority of custodian13')}
+    end
+    context "with correct auth" do
+      command %(cleos push action dacproposals undelegateca '{ "custodian": "custodian13", "category": 32, "dac_scope": "dacproposals"}' -p custodian13), allow_error: true
+      its(:stdout) {is_expected.to include('dacproposals <= dacproposals::undelegateca')}
+    end
+  end
+  context "Read the propvotes table after finalizing" do
+    command %(cleos get table dacproposals dacproposals catvotes), allow_error: true
+    it do
+      expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
+        {
+          "rows": [{
+              "vote_id": 1,
+              "category_id": 31,
+              "voter": "custodian13",
+              "delegatee": "custodian11"
+            },{
+              "vote_id": 2,
+              "category_id": 32,
+              "voter": "custodian11",
+              "delegatee": "custodian5"
+            }
+          ],
+          "more": false
+        }
+      JSON
     end
   end
 end
