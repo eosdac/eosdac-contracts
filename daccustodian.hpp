@@ -65,24 +65,6 @@ struct [[eosio::table("config"), eosio::contract("daccustodian")]] contr_config 
     uint32_t lockup_release_time_delay;
 
     asset requested_pay_max;
-
-    EOSLIB_SERIALIZE(contr_config,
-                     (lockupasset)
-                             (maxvotes)
-                             (numelected)
-                             (periodlength)
-                             (authaccount)
-                             (tokenholder)
-                             (serviceprovider)
-                             (should_pay_via_service_provider)
-                             (initial_vote_quorum_percent)
-                             (vote_quorum_percent)
-                             (auth_threshold_high)
-                             (auth_threshold_mid)
-                             (auth_threshold_low)
-                             (lockup_release_time_delay)
-                             (requested_pay_max)
-    )
 };
 
 typedef singleton<"config"_n, contr_config> configscontainer;

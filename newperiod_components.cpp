@@ -140,12 +140,12 @@ void daccustodian::setCustodianAuths() {
             .accounts = accounts
     };
 
-    action(permission_level{accountToChange, "owner"_n},
+    action(permission_level{accountToChange, "active"_n},
            "eosio"_n, "updateauth"_n,
            std::make_tuple(
                    accountToChange,
                    HIGH_PERMISSION,
-                   "owner"_n,
+                   "active"_n,
                    high_contract_authority))
             .send();
 
@@ -155,7 +155,7 @@ void daccustodian::setCustodianAuths() {
             .accounts = accounts
     };
 
-    action(permission_level{accountToChange, "owner"_n},
+    action(permission_level{accountToChange, "active"_n},
             "eosio"_n, "updateauth"_n,
            std::make_tuple(
                    accountToChange,
@@ -170,7 +170,7 @@ void daccustodian::setCustodianAuths() {
             .accounts = accounts
     };
 
-    action(permission_level{accountToChange, "owner"_n},
+    action(permission_level{accountToChange, "active"_n},
             "eosio"_n, "updateauth"_n,
            std::make_tuple(
                    accountToChange,
@@ -185,7 +185,7 @@ void daccustodian::setCustodianAuths() {
             .accounts = accounts
     };
 
-    action(permission_level{accountToChange, "owner"_n},
+    action(permission_level{accountToChange, "active"_n},
             "eosio"_n, "updateauth"_n,
            std::make_tuple(
                    accountToChange,
