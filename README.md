@@ -1,11 +1,11 @@
 # `daccustodian` - Custodian Elections Contract
 
-This contract will be in charge of custodian registration and voting for candidates.  It will also contain a function could will be called periodically to update the custodian set, and allocate payments.
+This contract will be in charge of custodian registration and voting for candidates.  It will also contain a function which could be called periodically to update the custodian set, and allocate payments.
 
 When a candidate registers, they need to provide a set of configuration variables which will include things like their requested pay.  The system will select the median requested pay when choosing the actual pay.
 The median pay is to be paid to elected custodians at the end of each period. If an elected custodian resigns via the `withdrawcand` during a period a new candidate will be chosen to fill the gap on the custodian board from the votes ranking in the candidates at that moment.
 
-Eg. 12 custodians are elected and their median `requestedpay` is 100 EOSDAC If one of the custodians resigns partially through a period they will not will not be paid for that partial period. The median pay amount will be calculated based on the current elected custodians `requestedpay` value. If a candidate changes their requested pay it will not be included in the pay calculation until the next period if they are re-elected.
+Eg. 12 custodians are elected and their median `requestedpay` is 100 EOSDAC If one of the custodians resigns partially through a period they will not be paid for that partial period. The median pay amount will be calculated based on the current elected custodians `requestedpay` value. If a candidate changes their requested pay it will not be included in the pay calculation until the next period if they are re-elected.
 
 ## Tables
 
@@ -41,30 +41,30 @@ Eg. 12 custodians are elected and their median `requestedpay` is 100 EOSDAC If o
 - lockupasset (asset) -  The amount of assets that are locked up by each candidate applying for election.
 - maxvotes (int default=5) - The maximum number of votes that each member can make for a candidate.
 - numelected (int) -  Number of custodians to be elected for each election count.
-- periodlength (uint32 =  7 * 24 * 60 * 60) - Length of a period in seconds. Used for pay calculations if an eary election is called and to trigger deferred `newperiod` calls.
-- authaccount ( account= "dacauthority") - account to have active auth set with all all custodians on the newperiod.
+- periodlength (uint32 =  7 * 24 * 60 * 60) - Length of a period in seconds. Used for pay calculations if an early election is called and to trigger deferred `newperiod` calls.
+- authaccount ( account= "dacauthority") - account to have active auth set with all custodians on the newperiod.
 - tokenholder (account = "eosdacthedac") - The contract that holds the fund for the DAC. This is used as the source for custodian pay.
 - initial_vote_quorum_percent (uint32) - Amount of token value in votes required to trigger the initial set of custodians
 - vote_quorum_percent (uint32) - Amount of token value in votes required to trigger the allow a new set of custodians to be set after the initial threshold has been achieved.
-- auth_threshold_high (uint8) - required number of custodians required to approve highest level actions.
-- auth_threshold_mid (uint8) - required number of custodians required to approve highest level actions.
-- auth_threshold_low (uint8) - required number of custodians required to approve highest level actions.
+- auth_threshold_high (uint8) - Number of custodians required to approve highest level actions.
+- auth_threshold_mid (uint8) - Number of custodians required to approve highest level actions.
+- auth_threshold_low (uint8) - Number of custodians required to approve highest level actions.
 - lockup_release_time_delay (date) - The time before locked up stake can be released back to the candidate using the unstake action
--  requested_pay_max (asset) - The max amount a custodian can requested as a candidate.
+- requested_pay_max (asset) - The max amount a custodian can requested as a candidate.
 
 ## Actions
 
 ---
 ### nominatecand
 
-This action is used to nominate a candidate for custodian elections. It must be authorised by the candidate and the candidate must be an active member of the dac, having agreed to the latest constitution. The candidate must have transferred a quantity of tokens (determined by a config setting - `lockupasset`) to the contract for staking before this action is executed. This could have been from a recent transfer with the contract name in the memo or from a previous time when this account had nominated, as long as the candidate had never `unstake`d those tokens.
+This action is used to nominate a candidate for custodian elections. It must be authorised by the candidate and the candidate must be an active member of the DAC, having agreed to the latest constitution. The candidate must have transferred a number of tokens (determined by a config setting - `lockupasset`) to the contract for staking before this action is executed. This could have been from a recent transfer with the contract name in the memo or from a previous time when this account had nominated, as long as the candidate had never `unstake`d those tokens.
 
 ##### Assertions:
 
 -   The account performing the action is authorised.
 -   The candidate is not already a nominated candidate.
--   The requested pay amount is not more than the config max amount
--   The requested pay symbol type is the same from config max amount ( The contract supports only one token symbol for payment)
+-   The requested pay amount is not more than the config max amount.
+-   The requested pay symbol type is the same from config max amount ( The contract supports only one token symbol for payment).
 -   The candidate is currently a member or has agreed to the latest constitution.
 -   The candidate has transferred sufficient funds for staking if they are a new candidate.
 -   The candidate has enough staked if they are re-nominating as a candidate and the required stake has changed since they last nominated.
@@ -76,7 +76,7 @@ This action is used to nominate a candidate for custodian elections. It must be 
 
 ##### Post Condition:
 
-The candidate should be present in the candidates table and be set to active. If they are a returning candidate they should be set to active again. The `locked_tokens` value should reflect the total of the tokens they have transferred to the contract for staking. The number of active candidates in the contract will incremented.
+The candidate should be present in the candidates table and be set to active. If they are a returning candidate they should be set to active again. The `locked_tokens` value should reflect the total of the tokens they have transferred to the contract for staking. The number of active candidates in the contract will be incremented.
 
 ---
 ### withdrawcand
@@ -96,6 +96,7 @@ This action is used to withdraw a candidate from being active for custodian elec
 
 The candidate should still be present in the candidates table and be set to inactive. If the were recently an elected custodian there may be a time delay on when they can unstake their tokens from the contract. If not they will be able to unstake their tokens immediately using the unstake action.
 
+---
 ### resigncust
 
 This action is used to resign as a custodian.
@@ -111,7 +112,7 @@ This action is used to resign as a custodian.
 
 ##### Post Condition:
 
-The custodian will be removed from the active custodians and should still be present in the candidates table but will be set to inactive. Their staked tokens will be locked up for the time delay added from the moment this action was called so they will not able to unstake until that time has passed. A replacement custodian will selected from the candidates to fill the missing place (based on vote ranking) then the auths for the controlling dac auth account will be set for the custodian board.
+The custodian will be removed from the active custodians and should still be present in the candidates table but will be set to inactive. Their staked tokens will be locked up for the time delay added from the moment this action was called so they will not able to unstake until that time has passed. A replacement custodian will be selected from the candidates to fill the missing place (based on vote ranking) then the auths for the controlling DAC auth account will be set for the custodian board.
 
 ---
 
@@ -125,6 +126,11 @@ Update the bio for this candidate / custodian. This will be available on the acc
  - the account has agreed to the current terms.
  - the `cand` account is currently registered.
  - the length of the bio must be less than 256 characters.
+
+ ##### Parameters
+
+    cand - The account id for updating profile
+    bio - Bio content
 
 ---
 
@@ -207,7 +213,7 @@ This action asserts:
  - the message has the permission of the contract account.
  - the supplied asset symbol matches the current lockup symbol if it has been previously set or that there have been no 	.
 
-The paramters are:
+The parameters are:
 
 - lockupasset(uint8_t) : defines the asset and amount required for a user to register as a candidate. This is the amount that will be locked up until the user calls `withdrawcand` in order to get the asset returned to them. If there are currently already registered candidates in the contract this cannot be changed to a different asset type because of introduced complexity of handling the staked amounts.
 - maxvotes(asset) : Defines the maximum number of candidates a user can vote for at any given time.
@@ -228,16 +234,16 @@ The paramters are:
 
 This action is to be run to end and begin each period in the DAC life cycle. It performs multiple tasks for the DAC including:
 
--   Allocate custodians from the candidates tables based on those with most votes at the moment this action is run. -- This action removes and selects a full set of custodians each time it is successfully run selected from the candidates with the most votes weight. If there are not enough eligible candidates to satisfy the DAC config numbers the action adds the highest voted candidates as custodians as long their votes weight is greater than 0. At this time the held stake for the departing custodians is set to have a time delayed lockup to prevent the funds releasing too soon after each custodian has been in office.
--   Distribute pay for the existing custodians based on the configs into the pendingpay table so it can be claimed by individual candidates. -- The pay is distributed as determined by the median pay of the currently elected custodians. Therefore all elected custodians receive the same pay amount.
+-   Allocate custodians from the candidates tables based on those with most votes at the moment this action is run. -- This action removes and selects a full set of custodians each time it is successfully run selected from the candidates with the most votes weight. If there are not enough eligible candidates to satisfy the DAC config numbers the action adds the highest voted candidates as custodians as long their votes weight is greater than 0. At this time the held stake for the departing custodians is set to have a time delayed lockup to prevent the funds from releasing too soon after each custodian has been in office.
+-   Distribute pay for the existing custodians based on the configs into the pending pay table so it can be claimed by individual candidates. -- The pay is distributed as determined by the median pay of the currently elected custodians. Therefore all elected custodians receive the same pay amount.
 -   Set the DAC auths for the intended controlling accounts based on the configs thresholds with the newly elected custodians. This action asserts unless the following conditions have been met:
 -   The action cannot be called multiple times within the period since the last time it was previously run successfully. This minimum time between allowed calls is configured by the period length parameter in contract configs.
--   To run for the first time a minimum threshold of voter engragement must be satisfied. This is configured by the `initial_vote_quorum_percent` field in the contract config with the percentage calculated from the amount of registered votes cast by voters against the max supply of tokens for DAC's primary currency.
+-   To run for the first time a minimum threshold of voter engagement must be satisfied. This is configured by the `initial_vote_quorum_percent` field in the contract config with the percentage calculated from the amount of registered votes cast by voters against the max supply of tokens for DAC's primary currency.
 -   After the initial vote quorum percent has been reached subsequent calls to this action will require a minimum of `vote_quorum_percent` to vote for the votes to be considered sufficient to trigger a new period with new custodians.
 
  ##### Parameters:
 
-     message - a string that be used to log a message in the chain history logs. It serves no function in the contract logic.
+     message - a string that is used to log a message in the chain history logs. It serves no function in the contract logic.
 
 ---
 
@@ -266,7 +272,7 @@ This action is used to unstake a candidates tokens and have them transferred to 
 
 ##### Assertions:
 
--   The candidate was a nominated candidate at some point in the passed.
+-   The candidate was a nominated candidate at some point in the past.
 -   The candidate is not already a nominated candidate.
 -   The tokens held under candidate's account are not currently locked in a time delay.
 
@@ -313,21 +319,21 @@ This action is used to remove a custodian.
 
 ##### Post Condition:
 
-The custodian will be removed from the active custodians and should still be present in the candidates table but will be set to inactive. Their staked tokens will be locked up for the time delay added from the moment this action was called so they will not able to unstake until that time has passed. A replacement custodian will selected from the candidates to fill the missing place (based on vote ranking) then the auths for the controlling dac auth account will be set for the custodian board.
+The custodian will be removed from the active custodians and should still be present in the candidates table but will be set to inactive. Their staked tokens will be locked up for the time delay added from the moment this action was called so they will not able to unstake until that time has passed. A replacement custodian will be selected from the candidates to fill the missing place (based on vote ranking) then the auths for the controlling dac auth account will be set for the custodian board.
 
 ---
 
 # Compile
 
 
-The contract code has some compile time constants used for configuration. As a compile time constant the code has more flexibility for reuse on other DACs, and extra layer of safety over exposing another configuration variable which could be changed after the code has been set and the ability to unit test the code without needing to modify the source just for testing.
+The contract code has some compile time constants used for configuration. As a compile time constant the code has more flexibility for reuse on other DACs, and an extra layer of safety over exposing another configuration variable which could be changed after the code has been set and the ability to unit test the code without needing to modify the source just for testing.
 The available compile time flags are:
 
 - TOKENCONTRACT (default = "eosdactokens") - This is to set the associated token contract to inter-operate with for tracking voting weights, registered members and staking.
-- VOTING_DISABLED (default = false) - Setting this flag will disable the ability for anyone to vote for custodians by diabling the vote action.
+- VOTING_DISABLED (default = false) - Setting this flag will disable the ability for anyone to vote for custodians by disabling the vote action.
 - TRANSFER_DELAY (default = 60 * 60) - for configuring the time delay on token transfers from the contract
 
-When put all together a comnpile command with all the bells and whistles might looks like:
+When put all together a compile command with all the bells and whistles might look like:
 
 ```bash
 eosio-cpp -DTOKENCONTRACT=eosdactokens -DTRANSFER_DELAY=3600 -DVOTING_DISABLED -o daccustodian.wasm daccustodian.cpp
