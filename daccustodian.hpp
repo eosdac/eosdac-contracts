@@ -65,24 +65,6 @@ struct [[eosio::table("config"), eosio::contract("daccustodian")]] contr_config 
     uint32_t lockup_release_time_delay;
 
     asset requested_pay_max;
-
-    EOSLIB_SERIALIZE(contr_config,
-                     (lockupasset)
-                             (maxvotes)
-                             (numelected)
-                             (periodlength)
-                             (authaccount)
-                             (tokenholder)
-                             (serviceprovider)
-                             (should_pay_via_service_provider)
-                             (initial_vote_quorum_percent)
-                             (vote_quorum_percent)
-                             (auth_threshold_high)
-                             (auth_threshold_mid)
-                             (auth_threshold_low)
-                             (lockup_release_time_delay)
-                             (requested_pay_max)
-    )
 };
 
 typedef singleton<"config"_n, contr_config> configscontainer;
@@ -124,9 +106,6 @@ struct [[eosio::table("candidates"), eosio::contract("daccustodian")]] candidate
     uint64_t by_votes_rank() const { return static_cast<uint64_t>(UINT64_MAX - total_votes); }
 
     uint64_t by_requested_pay() const { return static_cast<uint64_t>(requestedpay.amount); }
-
-    EOSLIB_SERIALIZE(candidate,
-                     (candidate_name)(requestedpay)(locked_tokens)(total_votes)(is_active)(custodian_end_time_stamp))
 };
 
 typedef multi_index<"candidates"_n, candidate,
@@ -146,9 +125,6 @@ struct [[eosio::table("custodians"), eosio::contract("daccustodian")]] custodian
     uint64_t by_votes_rank() const { return static_cast<uint64_t>(UINT64_MAX - total_votes); }
 
     uint64_t by_requested_pay() const { return static_cast<uint64_t>(requestedpay.amount); }
-
-    EOSLIB_SERIALIZE(custodian,
-                     (cust_name)(requestedpay)(total_votes))
 };
 
 typedef multi_index<"custodians"_n, custodian,
@@ -164,8 +140,6 @@ struct [[eosio::table("votes"), eosio::contract("daccustodian")]] vote {
     uint64_t primary_key() const { return voter.value; }
 
     uint64_t by_proxy() const { return proxy.value; }
-
-    EOSLIB_SERIALIZE(vote, (voter)(proxy)(candidates))
 };
 
 typedef eosio::multi_index<"votes"_n, vote,
@@ -180,8 +154,6 @@ struct [[eosio::table("pendingpay"), eosio::contract("daccustodian")]] pay {
 
     uint64_t primary_key() const { return key; }
     uint64_t byreceiver() const { return receiver.value; }
-
-    EOSLIB_SERIALIZE(pay, (key)(receiver)(quantity)(memo))
 };
 
 typedef multi_index<"pendingpay"_n, pay,
@@ -194,8 +166,6 @@ struct [[eosio::table("pendingstake"), eosio::contract("daccustodian")]] tempsta
     string memo;
 
     uint64_t primary_key() const { return sender.value; }
-
-    EOSLIB_SERIALIZE(tempstake, (sender)(quantity)(memo))
 };
 
 typedef multi_index<"pendingstake"_n, tempstake> pendingstake_table_t;

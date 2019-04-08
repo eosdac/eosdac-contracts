@@ -145,7 +145,7 @@ void daccustodian::setCustodianAuths() {
            std::make_tuple(
                    accountToChange,
                    HIGH_PERMISSION,
-                   "owner"_n,
+                   "active"_n,
                    high_contract_authority))
             .send();
 
