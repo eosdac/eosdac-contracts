@@ -68,7 +68,7 @@ void dacdirectory::unregaccount( name dac_name, uint8_t type ){
     require_auth(dac_inst->owner);
 
     _dacs.modify(dac_inst, same_payer, [&](dac& a) {
-        a.accounts.erase(1);
+        a.accounts.erase(type);
     });
 }
 

@@ -1,0 +1,1 @@
+/usr/bin/clang++-4.0   -Wall -Wno-invalid-partial-specialization -O3 -DNDEBUG   CMakeFiles/eosio.msig.tmp.dir/eosio.msig.cpp.o  -o eosio.msig.tmp 
