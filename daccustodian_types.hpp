@@ -1,5 +1,5 @@
-#include <eosiolib/eosio.hpp>
-#include <eosiolib/multi_index.hpp>
+#include <eosio/eosio.hpp>
+#include <eosio/multi_index.hpp>
 
 struct [[eosio::table("custodians"), eosio::contract("daccustodian")]] custodian {
     name cust_name;

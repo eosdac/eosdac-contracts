@@ -71,6 +71,10 @@ def seed_dac_account(name, issue: nil, memberreg: nil, stake: nil, requestedpay:
   end
 end
 
+def string_date_to_UTC input
+  Date.iso8601(input).to_time.utc.to_datetime
+end
+
 def utc_today
   Date.today().to_time.utc.to_datetime
 end
@@ -329,7 +333,7 @@ describe "eosdacelect" do
         expect(prop["pay_amount"]["contract"]).to eq "eosio.token"
         expect(prop["state"]).to eq 0
         expect(prop["category"]).to eq 2
-        expect(Date.iso8601(prop["expiry"]).day).to eq (utc_today.next_day(1).day)
+        expect(string_date_to_UTC(prop["expiry"]).day).to eq (utc_today.next_day(1).day)
       end
     end
   end
@@ -347,8 +351,8 @@ describe "eosdacelect" do
       end
       context "proposal in pending_approval state" do
         context "finalize_approve vote" do
-          command %(cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 0, "vote": 1, "dac_scope": "dacproposals" }' -p dacauthority -p custodian1), allow_error: true
-          its(:stdout) {is_expected.to include('dacproposals <= dacproposals::voteprop')}
+            command %(cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 0, "vote": 1, "dac_scope": "dacproposals" }' -p dacauthority -p custodian1), allow_error: true
+            its(:stdout) {is_expected.to include('dacproposals <= dacproposals::voteprop')}
         end
         context "finalize_deny vote" do
           command %(cleos push action dacproposals voteprop '{"custodian": "custodian2", "proposal_id": 0, "vote": 2, "dac_scope": "dacproposals" }' -p dacauthority -p custodian2), allow_error: true
@@ -454,7 +458,7 @@ describe "eosdacelect" do
             `cleos push action dacproposals voteprop '{"custodian": "custodian13", "proposal_id": 1, "vote": 2, "dac_scope": "dacproposals" }' -p custodian13 -p dacauthority`
             `cleos push action dacproposals voteprop '{"custodian": "custodian13", "proposal_id": 1, "vote": 2, "dac_scope": "dacproposals" }' -p custodian13 -p dacauthority`
           end
-          command %(cleos push action dacproposals startwork '{ "proposer": "proposeracc1", "proposal_id": 1, "dac_scope": "dacproposals"}' -p proposeracc1), allow_error: true
+              command %(cleos push action dacproposals startwork '{ "proposer": "proposeracc1", "proposal_id": 1, "dac_scope": "dacproposals"}' -p proposeracc1), allow_error: true
           its(:stdout) {is_expected.to include('dacproposals::startwork')}
         end
       end
@@ -484,7 +488,7 @@ describe "eosdacelect" do
             expect(prop["pay_amount"]["contract"]).to eq "eosio.token"
             expect(prop["state"]).to eq 0
             expect(prop["category"]).to eq 4
-            expect(Date.iso8601(prop["expiry"]).day).to eq (utc_today.day)
+            expect(string_date_to_UTC(prop["expiry"]).day).to eq (utc_today.day)
           end
         end
       end
@@ -498,7 +502,7 @@ describe "eosdacelect" do
         sleep 3 # wait for expiry
       end
       command %(cleos push action dacproposals startwork '{ "proposer": "proposeracc1", "proposal_id": 5, "dac_scope": "dacproposals"}' -p proposeracc1), allow_error: true
-      its(:stdout) {is_expected.to include('The proposal with proposal_id: 5 has expired and will now be removed.')}
+      its(:stderr) {is_expected.to include('ERR::PROPOSAL_EXPIRED')}
     end
     context "Read the propvotes table after voting" do
       command %(cleos get table dacproposals dacproposals propvotes --limit 20), allow_error: true
@@ -596,6 +600,17 @@ describe "eosdacelect" do
         JSON
       end
     end
+    context "Read the proposals table before clear exp proposals" do
+      command %(cleos get table dacproposals dacproposals proposals), allow_error: true
+      it do
+        json = JSON.parse(subject.stdout)
+        expect(json["rows"].count).to eq 4
+      end
+    end
+    context "clear expired proposals" do
+      command %(cleos push action dacproposals clearexpprop '{ "proposal_id": 5, "dac_scope": "dacproposals"}' -p proposeracc1), allow_error: true
+      its(:stdout) {is_expected.to include('dacproposals::clearexpprop')}
+    end
     context "Read the proposals table after startwork" do
       command %(cleos get table dacproposals dacproposals proposals), allow_error: true
       it do
@@ -610,7 +625,7 @@ describe "eosdacelect" do
         expect(prop["pay_amount"]["quantity"]).to eq "101.0000 EOS"
         expect(prop["pay_amount"]["contract"]).to eq "eosio.token"
         expect(prop["state"]).to eq 1
-        expect(Date.iso8601(prop["expiry"]).day).to eq (utc_today.next_day(1).day)
+        expect(string_date_to_UTC(prop["expiry"]).day).to eq (utc_today.next_day(1).day)
       end
     end
     context "Read the escrow table after startwork" do
@@ -629,7 +644,7 @@ describe "eosdacelect" do
         expect(escrow["ext_asset"]["quantity"]).to eq "101.0000 EOS"
         expect(escrow["memo"]).to eq "proposeracc1:1:asdfasdfasdfasdfasdfasdfasdffdsa"
         expect(escrow["external_reference"]).to eq 1
-        expect(Date.iso8601(escrow["expires"]).day).to eq (utc_today.next_day(30).day)
+        expect(string_date_to_UTC(escrow["expires"]).day).to eq (utc_today.next_day(30).day)
       end
     end
   end
@@ -746,7 +761,7 @@ describe "eosdacelect" do
         expect(prop["pay_amount"]["quantity"]).to eq "100.0000 EOS"
         expect(prop["pay_amount"]["contract"]).to eq "eosio.token"
         expect(prop["state"]).to eq 0
-        expect(Date.iso8601(prop["expiry"]).day).to eq (utc_today.next_day(1).day)
+        expect(string_date_to_UTC(prop["expiry"]).day).to eq (utc_today.next_day(1).day)
       end
     end
     context "Read the escrow table after startwork" do
@@ -765,7 +780,7 @@ describe "eosdacelect" do
         expect(escrow["ext_asset"]["quantity"]).to eq "101.0000 EOS"
         expect(escrow["memo"]).to eq "proposeracc1:1:asdfasdfasdfasdfasdfasdfasdffdsa"
         expect(escrow["external_reference"]).to eq 1
-        expect(Date.iso8601(escrow["expires"]).day).to eq (utc_today.next_day(30).day)
+        expect(string_date_to_UTC(escrow["expires"]).day).to eq (utc_today.next_day(30).day)
       end
     end
   end
@@ -835,7 +850,7 @@ describe "eosdacelect" do
         expect(escrow["ext_asset"]["quantity"]).to eq "101.0000 EOS"
         expect(escrow["memo"]).to eq "proposeracc1:1:asdfasdfasdfasdfasdfasdfasdffdsa"
         expect(escrow["external_reference"]).to eq 1
-        expect(Date.iso8601(escrow["expires"]).day).to eq (utc_today.next_day(30).day)
+        expect(string_date_to_UTC(escrow["expires"]).day).to eq (utc_today.next_day(30).day)
       end
     end
   end
@@ -907,7 +922,7 @@ describe "eosdacelect" do
         before(:all) do
           `cleos push action dacproposals delegatecat '{"custodian": "custodian13", "category": 31, "dalegatee_custodian": "custodian11", "dac_scope": "dacproposals"}' -p custodian13 -p dacauthority`
         end
-        command %(cleos push action dacproposals startwork '{ "proposal_id": 102, "dac_scope": "dacproposals"}' -p proposeracc3), allow_error: true
+            command %(cleos push action dacproposals startwork '{ "proposal_id": 102, "dac_scope": "dacproposals"}' -p proposeracc3), allow_error: true
         its(:stdout) {is_expected.to include('dacproposals <= dacproposals::startwork')}
       end
     end

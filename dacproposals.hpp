@@ -1,9 +1,7 @@
-#include <eosiolib/multi_index.hpp>
-#include <eosiolib/singleton.hpp>
-#include <eosiolib/eosio.hpp>
-#include <eosiolib/asset.hpp>
-#include <eosiolib/singleton.hpp>
-#include <eosiolib/time.hpp>
+#include <eosio/eosio.hpp>
+#include <eosio/asset.hpp>
+#include <eosio/singleton.hpp>
+#include <eosio/time.hpp>
 
 #include "eosdactokens_types.hpp"
 #include "daccustodian_types.hpp"
@@ -12,31 +10,6 @@ using namespace eosio;
 using namespace std;
 
 CONTRACT dacproposals : public contract {
-    TABLE proposal {
-            uint64_t key;
-            name proposer;
-            name arbitrator;
-            string content_hash;
-            extended_asset pay_amount;
-            uint8_t state;
-            time_point_sec expiry;
-            uint16_t category;
-
-            uint64_t primary_key() const { return key; }
-            uint64_t proposer_key() const { return proposer.value; }
-            uint64_t arbitrator_key() const { return arbitrator.value; }
-            uint64_t category_key() const { return uint64_t(category); }
-
-            bool has_expired(time_point_sec time_now) const {
-                return time_now > expiry;
-            }
-    };
-
-    typedef eosio::multi_index<"proposals"_n, proposal,
-            eosio::indexed_by<"proposer"_n, eosio::const_mem_fun<proposal, uint64_t, &proposal::proposer_key>>,
-            eosio::indexed_by<"arbitrator"_n, eosio::const_mem_fun<proposal, uint64_t, &proposal::arbitrator_key>>,
-            eosio::indexed_by<"category"_n, eosio::const_mem_fun<proposal, uint64_t, &proposal::category_key>>
-    > proposal_table;
 
 enum VoteType {
         none = 0,
@@ -56,6 +29,35 @@ enum VoteType {
         pending_finalize
     };
 
+    public:
+
+    TABLE proposal {
+            uint64_t key;
+            name proposer;
+            name arbitrator;
+            string content_hash;
+            extended_asset pay_amount;
+            uint8_t state;
+            time_point_sec expiry;
+            uint16_t category;
+
+            uint64_t primary_key() const { return key; }
+            uint64_t proposer_key() const { return proposer.value; }
+            uint64_t arbitrator_key() const { return arbitrator.value; }
+            uint64_t category_key() const { return uint64_t(category); }
+
+            bool has_not_expired() const {
+                time_point_sec time_now = time_point_sec(current_time_point().sec_since_epoch());
+                return time_now < expiry;
+            }
+    };
+
+    typedef eosio::multi_index<"proposals"_n, proposal,
+            eosio::indexed_by<"proposer"_n, eosio::const_mem_fun<proposal, uint64_t, &proposal::proposer_key>>,
+            eosio::indexed_by<"arbitrator"_n, eosio::const_mem_fun<proposal, uint64_t, &proposal::arbitrator_key>>,
+            eosio::indexed_by<"category"_n, eosio::const_mem_fun<proposal, uint64_t, &proposal::category_key>>
+    > proposal_table;
+
     TABLE config {
             name service_account = "dacescrow"_n;
             name authority_account = name{0};
@@ -69,7 +71,6 @@ enum VoteType {
 
     typedef eosio::singleton<"config"_n, config> configs_table;
 
-public:
 
     dacproposals( name receiver, name code, datastream<const char*> ds )
          : contract(receiver, code, ds) {}
@@ -86,6 +87,7 @@ public:
     ACTION cancel(uint64_t proposal_id, name dac_scope);
     ACTION comment(name commenter, uint64_t proposal_id, string comment, string comment_category, name dac_scope);
     ACTION updateconfig(config new_config, name dac_scope);
+    ACTION clearexpprop(uint64_t proposal_id, name dac_scope);
 
 private:
 

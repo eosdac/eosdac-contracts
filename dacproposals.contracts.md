@@ -44,6 +44,45 @@ The intent of voteprop is to record a vote on an existing proposal.
 The intent of delegatevote is to delegate an active custodian's vote to another custodian because they trust their opinion over their own.
 
 <h1 class="contract">
+    delegatecat
+</h1>
+
+## ACTION: delegatecat
+**PARAMETERS:**
+* __custodian__ is an eosio account name.
+* __category__ is an integer id for an existing category for the custodian to delgate voting power for.
+* __dalegatee_custodian__ is an eosio account name for a custodian to delegate worker proposal votes to.
+* __dac_scope__ is an account name representing the DAC for this action
+
+**INTENT:** 
+The intent of delegatecat is to delegate an active custodian's vote to another custodian because they trust their opinion over their own for all proposals in a particular category. This will be overriden by a delegation for a specific proposal which would be overriden by a proposal specific vote.
+
+<h1 class="contract">
+    undelegateca
+</h1>
+
+## ACTION: undelegateca
+**PARAMETERS:**
+* __custodian__ is an eosio account name.
+* __category__ is an integer id for an existing category for the custodian to undelgate voting power for.
+* __dac_scope__ is an account name representing the DAC for this action
+
+**INTENT:** 
+The intent of undelegateca is to remove delegation an active custodian's vote to another custodian for a particular category.
+
+<h1 class="contract">
+    clearexpprop
+</h1>
+
+## ACTION: clearexpprop
+**PARAMETERS:**
+* __proposal_id__ is an integer representing the id for particular proposal.
+* __dac_scope__ is an account name representing the DAC for this action
+
+**INTENT:** 
+The intent of clearexpprop is to remove an expired proposal. This is only allowed if the proposal has expired.s
+
+<h1 class="contract">
     arbapprove
 </h1>
 

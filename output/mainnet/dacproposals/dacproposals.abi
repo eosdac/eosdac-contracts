@@ -1,6 +1,7 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Wed Apr  3 23:53:35 2019",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT ",
     "version": "eosio::abi/1.1",
+    "types": [],
     "structs": [
         {
             "name": "arbapprove",
@@ -52,6 +53,20 @@
                 },
                 {
                     "name": "delegatee",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "clearexpprop",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposal_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "dac_scope",
                     "type": "name"
                 }
             ]
@@ -371,7 +386,6 @@
             ]
         }
     ],
-    "types": [],
     "actions": [
         {
             "name": "arbapprove",
@@ -382,6 +396,11 @@
             "name": "cancel",
             "type": "cancel",
             "ricardian_contract": "## ACTION: cancel\n  **PARAMETERS:**\n  * __proposal_id__ is an integer id for an existing proposal for the proposer to cancel.\n\n  **INTENT:**\n  The intent of cancel is to cancel a proposal."
+        },
+        {
+            "name": "clearexpprop",
+            "type": "clearexpprop",
+            "ricardian_contract": "## ACTION: clearexpprop\n**PARAMETERS:**\n* __proposal_id__ is an integer representing the id for particular proposal.\n* __dac_scope__ is an account name representing the DAC for this action\n\n**INTENT:** \nThe intent of clearexpprop is to remove an expired proposal. This is only allowed if the proposal has expired.s"
         },
         {
             "name": "comment",
@@ -401,7 +420,7 @@
         {
             "name": "delegatecat",
             "type": "delegatecat",
-            "ricardian_contract": ""
+            "ricardian_contract": "## ACTION: delegatecat\n**PARAMETERS:**\n* __custodian__ is an eosio account name.\n* __category__ is an integer id for an existing category for the custodian to delgate voting power for.\n* __dalegatee_custodian__ is an eosio account name for a custodian to delegate worker proposal votes to.\n* __dac_scope__ is an account name representing the DAC for this action\n\n**INTENT:** \nThe intent of delegatecat is to delegate an active custodian's vote to another custodian because they trust their opinion over their own for all proposals in a particular category. This will be overriden by a delegation for a specific proposal which would be overriden by a proposal specific vote."
         },
         {
             "name": "delegatevote",
@@ -421,7 +440,7 @@
         {
             "name": "undelegateca",
             "type": "undelegateca",
-            "ricardian_contract": ""
+            "ricardian_contract": "## ACTION: undelegateca\n**PARAMETERS:**\n* __custodian__ is an eosio account name.\n* __category__ is an integer id for an existing category for the custodian to undelgate voting power for.\n* __dac_scope__ is an account name representing the DAC for this action\n\n**INTENT:** \nThe intent of undelegateca is to remove delegation an active custodian's vote to another custodian for a particular category."
         },
         {
             "name": "updateconfig",
@@ -474,6 +493,5 @@
             "body": "All the the action descibed in this contract are subject to the EOSDAC consitution as held at http://eosdac.io. This includes, but is not limited to membership terms and conditions, dispute resolution and severability."
         }
     ],
-    "variants": [],
-    "abi_extensions": []
+    "variants": []
 }
