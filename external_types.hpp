@@ -1,5 +1,5 @@
-#include <eosiolib/eosio.hpp>
-#include <eosiolib/asset.hpp>
+#include <eosio/eosio.hpp>
+#include <eosio/asset.hpp>
 #include "eosdactokens_types.hpp"
 
 using namespace eosio;

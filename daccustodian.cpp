@@ -1,10 +1,10 @@
-#include <eosiolib/eosio.hpp>
-#include <eosiolib/singleton.hpp>
-#include <eosiolib/asset.hpp>
-#include <eosiolib/transaction.hpp>
+#include <eosio/eosio.hpp>
+#include <eosio/singleton.hpp>
+#include <eosio/asset.hpp>
+#include <eosio/transaction.hpp>
 
-#include <eosiolib/multi_index.hpp>
-#include <eosiolib/public_key.hpp>
+#include <eosio/multi_index.hpp>
+#include <eosio/crypto.hpp>
 #include <string>
 #include "daccustodian.hpp"
 
@@ -28,7 +28,7 @@ extern "C" { \
    void apply( uint64_t receiver, uint64_t code, uint64_t action ) { \
       if( action == "onerror"_n.value) { \
          /* onerror is only valid if it is for the "eosio" code account and authorized by "eosio"'s "active permission */ \
-         eosio_assert(code == "eosio"_n.value, "onerror action's are only valid from the \"eosio\" system account"); \
+         check(code == "eosio"_n.value, "onerror action's are only valid from the \"eosio\" system account"); \
       } \
       auto self = receiver; \
       if( (code == self  && action != "transfer"_n.value) || (code == name(TOKEN_CONTRACT).value && action == "transfer"_n.value) ) { \

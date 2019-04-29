@@ -58,9 +58,9 @@ void daccustodian::distributeMeanPay() {
 }
 
 void daccustodian::assertPeriodTime() {
-    uint32_t timestamp = now();
-    uint32_t periodBlockCount = timestamp - _currentState.lastperiodtime;
-    eosio_assert(periodBlockCount > configs().periodlength,
+    time_point_sec timestamp = time_point_sec(eosio::current_time_point());
+    uint32_t periodBlockCount = (timestamp - _currentState.lastperiodtime.sec_since_epoch()).sec_since_epoch();
+    check(periodBlockCount > configs().periodlength,
                  "ERR::NEWPERIOD_EARLY::New period is being called too soon. Wait until the period has completed.");
 }
 
@@ -82,7 +82,7 @@ void daccustodian::allocateCustodians(bool early_election) {
             const auto &reg_candidate = registered_candidates.get(cust_itr->cust_name.value, "ERR::NEWPERIOD_EXPECTED_CAND_NOT_FOUND::Corrupt data: Trying to set a lockup delay on candidate leaving office.");
             registered_candidates.modify(reg_candidate, cust_itr->cust_name, [&](candidate &c) {
                 eosio::print("Lockup stake for release delay.");
-                c.custodian_end_time_stamp = time_point_sec(now() + configs().lockup_release_time_delay);
+                c.custodian_end_time_stamp = time_point_sec(current_time_point().sec_since_epoch() + configs().lockup_release_time_delay);
             });
             cust_itr = custodians.erase(cust_itr);
         }
@@ -109,7 +109,7 @@ void daccustodian::allocateCustodians(bool early_election) {
 
             byvotes.modify(cand_itr, cand_itr->candidate_name, [&](candidate &c) {
                     eosio::print("Lockup stake for release delay.");
-                    c.custodian_end_time_stamp = time_point_sec(now() + configs().lockup_release_time_delay);
+                    c.custodian_end_time_stamp = time_point_sec(current_time_point()) + configs().lockup_release_time_delay;
             });
 
             currentCustodianCount++;
@@ -216,12 +216,12 @@ void daccustodian::newperiod(string message) {
                  "% to allow new periods to trigger after initial activation.");
     eosio::print("\n\nPercent of current voter engagement: ", percent_of_current_voter_engagement, "\n\n");
 
-    eosio_assert(_currentState.met_initial_votes_threshold == true ||
+    check(_currentState.met_initial_votes_threshold == true ||
                  percent_of_current_voter_engagement > config.initial_vote_quorum_percent,
                  "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_ACTIVATE::Voter engagement is insufficient to activate the DAC.");
     _currentState.met_initial_votes_threshold = true;
 
-    eosio_assert(percent_of_current_voter_engagement > config.vote_quorum_percent,
+    check(percent_of_current_voter_engagement > config.vote_quorum_percent,
                  "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_PROCESS::Voter engagement is insufficient to process a new period");
 
     // Distribute pay to the current custodians.
@@ -233,7 +233,7 @@ void daccustodian::newperiod(string message) {
     // Set the auths on the dacauthority account
     setCustodianAuths();
 
-    _currentState.lastperiodtime = now();
+    _currentState.lastperiodtime = current_block_time();
 
 
 //        Schedule the the next election cycle at the end of the period.
