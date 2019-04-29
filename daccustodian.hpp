@@ -1,7 +1,7 @@
-#include <eosiolib/eosio.hpp>
-#include <eosiolib/multi_index.hpp>
-#include <eosiolib/singleton.hpp>
-#include <eosiolib/time.hpp>
+#include <eosio/eosio.hpp>
+#include <eosio/multi_index.hpp>
+#include <eosio/singleton.hpp>
+#include <eosio/time.hpp>
 
 #include "external_types.hpp"
 
@@ -70,7 +70,7 @@ struct [[eosio::table("config"), eosio::contract("daccustodian")]] contr_config 
 typedef singleton<"config"_n, contr_config> configscontainer;
 
 struct [[eosio::table("state"), eosio::contract("daccustodian")]] contr_state {
-    uint32_t lastperiodtime = 0;
+    time_point_sec lastperiodtime = time_point_sec(0);
     int64_t total_weight_of_votes = 0;
     int64_t total_votes_on_candidates = 0;
     uint32_t number_active_candidates = 0;

@@ -1,6 +1,7 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Sun Apr  7 22:06:36 2019",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT ",
     "version": "eosio::abi/1.1",
+    "types": [],
     "structs": [
         {
             "name": "candidate",
@@ -114,7 +115,7 @@
             "fields": [
                 {
                     "name": "lastperiodtime",
-                    "type": "uint32"
+                    "type": "time_point_sec"
                 },
                 {
                     "name": "total_weight_of_votes",
@@ -369,7 +370,6 @@
             ]
         }
     ],
-    "types": [],
     "actions": [
         {
             "name": "claimpay",
@@ -503,6 +503,5 @@
             "body": "All the the action descibed in this contract are subject to the EOSDAC consitution as held at http://eosdac.io. This includes, but is not limited to membership terms and conditions, dispute resolution and severability."
         }
     ],
-    "variants": [],
-    "abi_extensions": []
+    "variants": []
 }

@@ -1,18 +1,18 @@
 
 void daccustodian::votecust(name voter, vector<name> newvotes) {
 #ifdef VOTING_DISABLED
-    eosio_assert(false,"ERR::VOTECUST_VOTING_IS_DISABLED::Voting is currently disabled.");
+    check(false,"ERR::VOTECUST_VOTING_IS_DISABLED::Voting is currently disabled.");
 #endif
 
     require_auth(voter);
     assertValidMember(voter);
 
-    eosio_assert(newvotes.size() <= configs().maxvotes, "ERR::VOTECUST_MAX_VOTES_EXCEEDED::Max number of allowed votes was exceeded.");
+    check(newvotes.size() <= configs().maxvotes, "ERR::VOTECUST_MAX_VOTES_EXCEEDED::Max number of allowed votes was exceeded.");
     std::set<name> dupSet{};
     for (name vote: newvotes) {
-        eosio_assert(dupSet.insert(vote).second, "ERR::VOTECUST_DUPLICATE_VOTES::Added duplicate votes for the same candidate.");
+        check(dupSet.insert(vote).second, "ERR::VOTECUST_DUPLICATE_VOTES::Added duplicate votes for the same candidate.");
         auto candidate = registered_candidates.get(vote.value, "ERR::VOTECUST_CANDIDATE_NOT_FOUND::Candidate could not be found.");
-        eosio_assert(candidate.is_active, "ERR::VOTECUST_VOTING_FOR_INACTIVE_CAND::Attempting to vote for an inactive candidate.");
+        check(candidate.is_active, "ERR::VOTECUST_VOTING_FOR_INACTIVE_CAND::Attempting to vote for an inactive candidate.");
     }
 
     // Find a vote that has been cast by this voter previously.
@@ -46,11 +46,11 @@ void daccustodian::votecust(name voter, vector<name> newvotes) {
 //    assertValidMember(voter);
 //
 //    string error_msg = "Member cannot proxy vote for themselves: " + voter.to_string();
-//    eosio_assert(voter != proxy, error_msg.c_str());
+//    check(voter != proxy, error_msg.c_str());
 //    auto destproxy = votes_cast_by_members.find(proxy);
 //    if (destproxy != votes_cast_by_members.end()) {
 //        error_msg = "Proxy voters cannot vote for another proxy: " + voter.to_string();
-//        eosio_assert(destproxy->proxy == 0, error_msg.c_str());
+//        check(destproxy->proxy == 0, error_msg.c_str());
 //    }
 //
 //    // Find a vote that has been cast by this voter previously.

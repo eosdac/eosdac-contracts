@@ -1,4 +1,4 @@
-#include <eosiolib/transaction.hpp>
+#include <eosio/transaction.hpp>
 
 void daccustodian::claimpay(uint64_t payid) {
 
@@ -9,7 +9,7 @@ void daccustodian::claimpay(uint64_t payid) {
 
     transaction deferredTrans{};
 
-    string memo = payClaim.receiver.to_string() + ":" + payClaim.memo;
+    string memo = payClaim.receiver.to_string() + ":" + payClaim.memo + ":" + to_string(payid);;
 
     print("constructed memo for the service contract: " + memo);
 
@@ -31,7 +31,7 @@ void daccustodian::claimpay(uint64_t payid) {
     }
 
     deferredTrans.delay_sec = TRANSFER_DELAY;
-    deferredTrans.send(uint128_t(payid) << 64 | now(), _self);
+    deferredTrans.send(uint128_t(payid) << 64 | time_point_sec(current_time_point()).sec_since_epoch() , _self);
 
     pending_pay.erase(payClaim);
 }
