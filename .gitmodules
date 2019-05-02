@@ -1,0 +1,3 @@
+[submodule "contract-shared-dependencies"]
+	path = contract-shared-dependencies
+	url = git@github.com:eosdac/contract-shared-dependencies.git
