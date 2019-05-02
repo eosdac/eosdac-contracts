@@ -30,6 +30,10 @@
                 {
                     "name": "accounts",
                     "type": "pair_uint8_name[]"
+                },
+                {
+                    "name": "scopes",
+                    "type": "pair_uint8_name[]"
                 }
             ]
         },
@@ -76,6 +80,10 @@
                 {
                     "name": "type",
                     "type": "uint8"
+                },
+                {
+                    "name": "scope",
+                    "type": "name?"
                 }
             ]
         },
@@ -105,6 +113,10 @@
                 },
                 {
                     "name": "accounts",
+                    "type": "pair_uint8_name[]"
+                },
+                {
+                    "name": "scopes",
                     "type": "pair_uint8_name[]"
                 }
             ]

@@ -8,7 +8,7 @@ dacdirectory::dacdirectory( eosio::name self, eosio::name first_receiver, eosio:
         ,_dacs( get_self(), get_self().value )
 {}
 
-void dacdirectory::regdac( eosio::name owner, eosio::name dac_name, symbol dac_symbol, string title, map<uint8_t, string> refs,  map<uint8_t, eosio::name> accounts ) {
+void dacdirectory::regdac( eosio::name owner, eosio::name dac_name, symbol dac_symbol, string title, map<uint8_t, string> refs,  map<uint8_t, eosio::name> accounts,  map<uint8_t, eosio::name> scopes ) {
     require_auth(owner);
 
     auto existing = _dacs.find(dac_name.value);
@@ -21,6 +21,7 @@ void dacdirectory::regdac( eosio::name owner, eosio::name dac_name, symbol dac_s
             d.title = title;
             d.refs = refs;
             d.accounts = accounts;
+            d.scopes = scopes;
         });
     }
     else {
@@ -32,6 +33,7 @@ void dacdirectory::regdac( eosio::name owner, eosio::name dac_name, symbol dac_s
             d.title = title;
             d.refs = refs;
             d.accounts = accounts;
+            d.scopes = scopes;
         });
     }
 }
@@ -46,7 +48,7 @@ void dacdirectory::unregdac( name dac_name ) {
     _dacs.erase(dac);
 }
 
-void dacdirectory::regaccount( name dac_name, name account, uint8_t type ){
+void dacdirectory::regaccount( name dac_name, name account, uint8_t type, optional<eosio::name> scope){
 
     check(is_account(account), "Invalid or non-existent account supplied");
 
@@ -57,6 +59,9 @@ void dacdirectory::regaccount( name dac_name, name account, uint8_t type ){
 
     _dacs.modify(dac_inst, same_payer, [&](dac& d) {
         d.accounts[type] = account;
+        if (scope && scope.value() != name{0} ) {
+            d.scopes[type] = scope.value();
+        }
     });
 }
 
@@ -69,6 +74,7 @@ void dacdirectory::unregaccount( name dac_name, uint8_t type ){
 
     _dacs.modify(dac_inst, same_payer, [&](dac& a) {
         a.accounts.erase(type);
+        a.scopes.erase(type);
     });
 }
 

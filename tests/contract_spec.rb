@@ -94,6 +94,8 @@ def configure_dac_accounts
     # set -x
     cleos system newaccount --stake-cpu \"10.0000 EOS\" --stake-net \"10.0000 EOS\" --transfer --buy-ram-kbytes 1024 eosio dacdirectory #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
 
+    cleos system newaccount --stake-cpu \"10.0000 EOS\" --stake-net \"10.0000 EOS\" --transfer --buy-ram-kbytes 1024 eosio dacdirtester #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
+
     cleos system newaccount --stake-cpu \"10.0000 EOS\" --stake-net \"10.0000 EOS\" --transfer --buy-ram-kbytes 1024 eosio ow #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
     cleos system newaccount --stake-cpu \"10.0000 EOS\" --stake-net \"10.0000 EOS\" --transfer --buy-ram-kbytes 1024 eosio testaccount1 #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
     cleos system newaccount --stake-cpu \"10.0000 EOS\" --stake-net \"10.0000 EOS\" --transfer --buy-ram-kbytes 1024 eosio testaccount2 #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
@@ -109,6 +111,7 @@ def install_dependencies
   beforescript = <<~SHELL
     # set -x
     cleos set contract #{ACCOUNT_NAME} output/unit_tests/#{CONTRACT_NAME} -p #{ACCOUNT_NAME}
+    cleos set contract dacdirtester contract-shared-dependencies/test_helpers/dacdirtester/dacdirtester -p dacdirtester
 
   SHELL
 
@@ -142,11 +145,11 @@ describe "dacdirectory" do
 
   describe "regdac" do
     context "Without valid permission" do
-      command %(cleos push action dacdirectory regdac '{"owner": "testaccount1", "dac_name": "mydacname", "dac_symbol": "4,MYSYM", "title": "Dac Title", "refs": [[1,"some_ref"]], "accounts": [[1,"account1"]]}' -p testaccount2), allow_error: true
+      command %(cleos push action dacdirectory regdac '{"owner": "testaccount1", "dac_name": "mydacname", "dac_symbol": "4,MYSYM", "title": "Dac Title", "refs": [[1,"some_ref"]], "accounts": [[1,"account1"]], "scopes": []}' -p testaccount2), allow_error: true
       its(:stderr) {is_expected.to include('missing authority of testaccount1')}
     end
     context "With valid permission" do
-      command %(cleos push action dacdirectory regdac '{"owner": "testaccount1", "dac_name": "mydacname", "dac_symbol": "4,MYSYM", "title": "Dac Title", "refs": [[1,"some_ref"]], "accounts": [[1,"account1"]]}' -p testaccount1), allow_error: true
+      command %(cleos push action dacdirectory regdac '{"owner": "testaccount1", "dac_name": "mydacname", "dac_symbol": "4,MYSYM", "title": "Dac Title", "refs": [[1,"some_ref"]], "accounts": [[1,"account1"]], "scopes": []}' -p testaccount1), allow_error: true
       its(:stdout) {is_expected.to include('dacdirectory::regdac')}
     end
     context "Read the dacs table after regdac" do
@@ -168,7 +171,8 @@ describe "dacdirectory" do
                     "key": 1,
                     "value": "account1"
                   }
-                ]
+                ],
+                "scopes": []
               }
             ],
             "more": false
@@ -179,11 +183,11 @@ describe "dacdirectory" do
   end
   describe "regaccount" do
     context "Without valid permission" do
-      command %(cleos push action dacdirectory regaccount '{ "dac_name": "mydacname", "account": "testaccount2", "type": 3}' -p testaccount2), allow_error: true
+      command %(cleos push action dacdirectory regaccount '{ "dac_name": "mydacname", "account": "testaccount2", "type": 3, "scope": ""}' -p testaccount2), allow_error: true
       its(:stderr) {is_expected.to include('missing authority of testaccount1')}
     end
     context "With valid permission" do
-      command %(cleos push action dacdirectory regaccount '{ "dac_name": "mydacname", "account": "testaccount2", "type": 3}' -p testaccount1), allow_error: true
+      command %(cleos push action dacdirectory regaccount '{ "dac_name": "mydacname", "account": "testaccount2", "type": 1, "scope": "helloworld"}' -p testaccount1), allow_error: true
       its(:stdout) {is_expected.to include('dacdirectory::regaccount')}
     end
     context "Read the dacs table after regaccount" do
@@ -203,10 +207,12 @@ describe "dacdirectory" do
                 ],
                 "accounts": [{
                     "key": 1,
-                    "value": "account1"
-                  },{
-                    "key": 3,
                     "value": "testaccount2"
+                  }
+                ],
+                "scopes": [{
+                    "key": 1,
+                    "value": "helloworld"
                   }
                 ]
               }
@@ -224,7 +230,7 @@ describe "dacdirectory" do
       its(:stderr) {is_expected.to include('missing authority of testaccount1')}
     end
     context "With valid permission" do
-      command %(cleos push action dacdirectory unregaccount '{ "dac_name": "mydacname", "type": 1 }' -p testaccount1), allow_error: true
+      command %(cleos push action dacdirectory unregaccount '{ "dac_name": "mydacname", "type": 3 }' -p testaccount1), allow_error: true
       its(:stdout) {is_expected.to include('dacdirectory::unregaccount')}
     end
     context "Read the dacs table after unregaccount" do
@@ -243,8 +249,13 @@ describe "dacdirectory" do
                   }
                 ],
                 "accounts": [{
-                    "key": 3,
+                    "key": 1,
                     "value": "testaccount2"
+                  }
+                ],
+                "scopes": [{
+                    "key": 1,
+                    "value": "helloworld"
                   }
                 ]
               }
@@ -254,64 +265,77 @@ describe "dacdirectory" do
         JSON
       end
     end
+  end
 
-    describe "setowner" do
-      context "Without valid permission" do
-        command %(cleos push action dacdirectory setowner '{ "dac_name": "mydacname", "new_owner": "testaccount2"}' -p testaccount2), allow_error: true
-        its(:stderr) {is_expected.to include('missing authority of testaccount1')}
-      end
-      context "With valid permission" do
-        command %(cleos push action dacdirectory setowner '{ "dac_name": "mydacname", "new_owner": "testaccount2"}' -p testaccount1 -p testaccount2), allow_error: true
-        its(:stdout) {is_expected.to include('dacdirectory::setowner')}
-      end
-      context "Read the dacs table after regaccount" do
-        command %(cleos get table dacdirectory dacdirectory dacs), allow_error: true
-        it do
-          expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-            {
-              "rows": [{
-                  "owner": "testaccount2",
-                  "dac_name": "mydacname",
-                  "title": "Dac Title",
-                  "symbol": "4,MYSYM",
-                  "refs": [{
-                      "key": 1,
-                      "value": "some_ref"
-                    }
-                  ],
-                  "accounts": [
-                    {
-                      "key": 3,
-                      "value": "testaccount2"
-                    }
-                  ]
-                }
-              ],
-              "more": false
-            }
-          JSON
-        end
+  describe "setowner" do
+    context "Without valid permission" do
+      command %(cleos push action dacdirectory setowner '{ "dac_name": "mydacname", "new_owner": "testaccount2"}' -p testaccount2), allow_error: true
+      its(:stderr) {is_expected.to include('missing authority of testaccount1')}
+    end
+    context "With valid permission" do
+      command %(cleos push action dacdirectory setowner '{ "dac_name": "mydacname", "new_owner": "testaccount2"}' -p testaccount1 -p testaccount2), allow_error: true
+      its(:stdout) {is_expected.to include('dacdirectory::setowner')}
+    end
+    context "Read the dacs table after regaccount" do
+      command %(cleos get table dacdirectory dacdirectory dacs), allow_error: true
+      it do
+        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
+          {
+            "rows": [{
+                "owner": "testaccount2",
+                "dac_name": "mydacname",
+                "title": "Dac Title",
+                "symbol": "4,MYSYM",
+                "refs": [{
+                    "key": 1,
+                    "value": "some_ref"
+                  }
+                ],
+                "accounts": [
+                  {
+                    "key": 1,
+                    "value": "testaccount2"
+                  }
+                ],
+                "scopes": [{"key": 1, "value": "helloworld"}]
+              }
+            ],
+            "more": false
+          }
+        JSON
       end
     end
-    describe "unregdac" do
-      context "Without valid permission" do
-        command %(cleos push action dacdirectory unregdac '{ "dac_name": "mydacname"}' -p testaccount1), allow_error: true
-        its(:stderr) {is_expected.to include('missing authority of testaccount2')}
-      end
-      context "With valid permission" do
-        command %(cleos push action dacdirectory unregdac '{ "dac_name": "mydacname"}' -p testaccount2), allow_error: true
-        its(:stdout) {is_expected.to include('dacdirectory::unregdac')}
-      end
-      context "Read the dacs table after regaccount" do
-        command %(cleos get table dacdirectory dacdirectory dacs), allow_error: true
-        it do
-          expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-            {
-              "rows": [],
-              "more": false
-            }
-          JSON
-        end
+  end
+
+  describe "read scope from contract" do
+    context "with explicit value" do
+      command %(cleos push action dacdirtester assdacscope '{ "dac_name": "mydacname","scope_type": 1}' -p testaccount2), allow_error: true
+      its(:stdout) {is_expected.to include('found scope: helloworld')}
+    end
+    context "without explicit value" do
+      command %(cleos push action dacdirtester assdacscope '{ "dac_name": "mydacname","scope_type": 3}' -p testaccount2), allow_error: true
+      its(:stdout) {is_expected.to include('found scope: mydacname')}
+    end
+  end
+
+  describe "unregdac" do
+    context "Without valid permission" do
+      command %(cleos push action dacdirectory unregdac '{ "dac_name": "mydacname"}' -p testaccount1), allow_error: true
+      its(:stderr) {is_expected.to include('missing authority of testaccount2')}
+    end
+    context "With valid permission" do
+      command %(cleos push action dacdirectory unregdac '{ "dac_name": "mydacname"}' -p testaccount2), allow_error: true
+      its(:stdout) {is_expected.to include('dacdirectory::unregdac')}
+    end
+    context "Read the dacs table after regaccount" do
+      command %(cleos get table dacdirectory dacdirectory dacs), allow_error: true
+      it do
+        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
+          {
+            "rows": [],
+            "more": false
+          }
+        JSON
       end
     end
   end
