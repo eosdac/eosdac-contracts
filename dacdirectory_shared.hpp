@@ -25,12 +25,12 @@ struct [[eosio::table("dacs"), eosio::contract("dacdirectory")]] dac {
     name         dac_name;
     string       title;
     symbol       symbol;
-    map<uint8_t, string>  refs;
-    map<uint8_t, eosio::name>  accounts;
-    map<uint8_t, uint64_t>  scopes;
+    map<uint8_t, string> refs;
+    map<uint8_t, eosio::name> accounts;
+    map<uint8_t, eosio::name> scopes;
 
-    uint64_t scope_for_key(uint8_t key) {
-        return scopes[key] ? scopes[key] : dac_name.value;
+    const eosio::name safe_scope_for_key(uint8_t key) {
+        return (scopes.find(key) != scopes.end()) ? scopes.at(key) : dac_name; 
     }
 
     uint64_t primary_key() const { return dac_name.value; }
@@ -38,4 +38,5 @@ struct [[eosio::table("dacs"), eosio::contract("dacdirectory")]] dac {
 };
 
 typedef multi_index< "dacs"_n,  dac,
-                    indexed_by<"byowner"_n, const_mem_fun<dac, uint64_t, &dac::by_owner> > > dac_table;
+                    indexed_by<"byowner"_n, const_mem_fun<dac, uint64_t, &dac::by_owner>>
+                    > dac_table;
