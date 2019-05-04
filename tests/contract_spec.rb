@@ -126,6 +126,8 @@ end
 def configure_dac_accounts
   beforescript = <<~SHELL
     # set -x
+    cleos system newaccount --stake-cpu \"10.0000 EOS\" --stake-net \"10.0000 EOS\" --transfer --buy-ram-kbytes 1024 eosio dacdirectory #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
+    
     cleos system newaccount --stake-cpu \"10.0000 EOS\" --stake-net \"10.0000 EOS\" --transfer --buy-ram-kbytes 1024 eosio daccustodian #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
     cleos system newaccount --stake-cpu \"10.0000 EOS\" --stake-net \"10.0000 EOS\" --transfer --buy-ram-kbytes 1024 eosio eosdactokens #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
     cleos system newaccount --stake-cpu \"10.0000 EOS\" --stake-net \"10.0000 EOS\" --transfer --buy-ram-kbytes 1024 eosio dacauthority #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
@@ -173,6 +175,7 @@ def install_dependencies
   beforescript = <<~SHELL
     # set -x
 
+    cleos set contract dacdirectory contract-shared-dependencies/CompiledContracts/dacdirectory/jungle/dacdirectory -p dacdirectory 
 
     cleos set contract daccustodian #{CONTRACTS_DIR}/daccustodian -p daccustodian 
     cleos set contract eosdactokens #{CONTRACTS_DIR}/eosdactokens -p eosdactokens
@@ -192,6 +195,7 @@ def configure_contracts
   `cleos push action eosdactokens create '{ "issuer": "eosdactokens", "maximum_supply": "100000.0000 EOSDAC", "transfer_locked": false}' -p eosdactokens`
   `cleos push action eosdactokens issue '{ "to": "eosdactokens", "quantity": "78337.0000 EOSDAC", "memo": "Initial amount of tokens for you."}' -p eosdactokens`
   `cleos push action eosio.token issue '{ "to": "eosdacthedac", "quantity": "100000.0000 EOS", "memo": "Initial EOS amount."}' -p eosio.token`
+  `cleos push action dacdirectory regdac '{"owner": "dacdirectory", "dac_name": "dacproposals", "dac_symbol": "4,MYSYM", "title": "Dac Title", "refs": [[1,"some_ref"]], "accounts": [[2,"daccustodian"]], "scopes": [[2,"daccustodian"]]}' -p dacdirectory`
 
   #create users
   # Ensure terms are registered in the token contract

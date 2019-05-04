@@ -295,7 +295,11 @@ using namespace std;
     }
 
     int16_t dacproposals::count_votes(uint64_t proposal_id, VoteType vote_type, name dac_scope){
-        custodians_table custodians("daccustodian"_n, "daccustodian"_n.value);
+        auto custodian_data_src = dacdirectory::dac_for_id(dac_scope).account_and_scope(dacdirectory::CUSTODIAN);
+
+        print("account:: ", custodian_data_src.account_name, " scope:: ", custodian_data_src.dac_scope);
+
+        custodians_table custodians(custodian_data_src.account_name, custodian_data_src.dac_scope.value);
         std::set<eosio::name> current_custodians;
         // Needed for the category vote fallback to avoid duplicate votes.
         std::set<eosio::name> voted_custodians;
