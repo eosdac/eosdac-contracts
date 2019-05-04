@@ -295,7 +295,7 @@ using namespace std;
     }
 
     int16_t dacproposals::count_votes(uint64_t proposal_id, VoteType vote_type, name dac_scope){
-        auto custodian_data_src = dacdirectory::dac_for_id(dac_scope).account_and_scope(dacdirectory::CUSTODIAN);
+        auto custodian_data_src = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::CUSTODIAN);
 
         print("account:: ", custodian_data_src.account_name, " scope:: ", custodian_data_src.dac_scope);
 
