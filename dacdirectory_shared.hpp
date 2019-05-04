@@ -7,7 +7,7 @@
 using namespace eosio;
 using namespace std;
 
-namespace dacdirectory {
+namespace dacdir {
 
     enum account_type: uint8_t {
         AUTH = 0,
