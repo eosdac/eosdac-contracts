@@ -110,7 +110,7 @@ def install_dependencies
 
   beforescript = <<~SHELL
     # set -x
-    cleos set contract #{ACCOUNT_NAME} output/unit_tests/#{CONTRACT_NAME} -p #{ACCOUNT_NAME}
+    cleos set contract #{ACCOUNT_NAME} contract-shared-dependencies/CompiledContracts/dacdirectory/unit_tests/#{CONTRACT_NAME} -p #{ACCOUNT_NAME}
     cleos set contract dacdirtester contract-shared-dependencies/test_helpers/dacdirtester/dacdirtester -p dacdirtester
 
   SHELL
