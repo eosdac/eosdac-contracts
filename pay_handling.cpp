@@ -8,25 +8,32 @@ void daccustodian::claimpay(uint64_t payid) {
     require_auth(payClaim.receiver);
 
     transaction deferredTrans{};
+    
+    name payment_destination;
+    string memo;
 
-    string memo = payClaim.receiver.to_string() + ":" + payClaim.memo + ":" + to_string(payid);;
-
-    print("constructed memo for the service contract: " + memo);
-
-    name serviceAccount = configs().serviceprovider;
+    if (configs().should_pay_via_service_provider) {
+        memo = payClaim.receiver.to_string() + ":" + payClaim.memo + ":" + to_string(payid);;
+        print("constructed memo for the service contract: " + memo);
+        payment_destination = configs().serviceprovider;
+    } else {
+        memo = payClaim.memo + ":" + to_string(payid);;
+        print("constructed memo for the receiver contract: " + memo);
+        payment_destination = payClaim.receiver;
+    }
 
     if (payClaim.quantity.symbol == configs().requested_pay_max.symbol) {
 
         deferredTrans.actions.emplace_back(
                 action(permission_level{configs().tokenholder, "xfer"_n},
                        "eosio.token"_n, "transfer"_n,
-                       std::make_tuple(configs().tokenholder, serviceAccount, payClaim.quantity, memo)
+                       std::make_tuple(configs().tokenholder, payment_destination, payClaim.quantity, memo)
                 ));
     } else {
         deferredTrans.actions.emplace_back(
                 action(permission_level{configs().tokenholder, "xfer"_n},
                        name(TOKEN_CONTRACT), "transfer"_n,
-                       std::make_tuple(configs().tokenholder, serviceAccount, payClaim.quantity, memo)
+                       std::make_tuple(configs().tokenholder, payment_destination, payClaim.quantity, memo)
                 ));
     }
 
