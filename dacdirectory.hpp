@@ -24,37 +24,25 @@ public:
         OTHER = 255
     };
 
-    struct ref {
-        string  data;
-        int8_t  type;
-    };
-
-    struct act {
-        name    name;
-        uint8_t type;
-    };
-
     TABLE dac {
         name         owner;
-        name         name;
+        name         dac_name;
         string       title;
         symbol       symbol;
-        vector<ref>  refs;
-        vector<act>  accounts;
+        map<uint8_t, string>  refs;
+        map<uint8_t, eosio::name>  accounts;
 
-        uint64_t primary_key()const { return name.value; }
-        uint64_t by_owner()const { return owner.value; }
-
-        EOSLIB_SERIALIZE( dac, (owner)(name)(title)(symbol)(refs)(accounts) )
+        uint64_t primary_key() const { return dac_name.value; }
+        uint64_t by_owner() const { return owner.value; }
     };
 
     typedef multi_index< "dacs"_n,  dac,
                         indexed_by<"byowner"_n, const_mem_fun<dac, uint64_t, &dac::by_owner> > > dac_table;
 
-    ACTION regdac( name owner, name name, symbol dac_symbol, string title, vector<ref> refs,  vector<act> accounts );
+    ACTION regdac( name owner, name dac_name, symbol dac_symbol, string title, map<uint8_t, string> refs,  map<uint8_t, eosio::name> accounts );
     ACTION unregdac( name dac_name );
     ACTION regaccount( name dac_name, name account, uint8_t type );
-    ACTION unregaccount( name dac_name, name account );
+    ACTION unregaccount( name dac_name, uint8_t type );
     ACTION setowner( name dac_name, name new_owner );
 
 protected:
