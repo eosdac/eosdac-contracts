@@ -30,7 +30,7 @@ TEST_ACTIVE_PUBLIC_KEY = 'EOS7rjn3r52PYd2ppkVEKYvy6oRDP9MZsJUPB2MStrak8LS36pnTZ'
 CONTRACT_NAME = 'dacdirectory'
 ACCOUNT_NAME = 'dacdirectory'
 
-CONTRACTS_DIR = 'tests/contract-shared-dependencies'
+CONTRACTS_DIR = '../_test_helpers/system_contract_dependencies'
 
 def configure_wallet
   beforescript = <<~SHELL
@@ -110,8 +110,8 @@ def install_dependencies
 
   beforescript = <<~SHELL
     # set -x
-    cleos set contract #{ACCOUNT_NAME} contract-shared-dependencies/CompiledContracts/dacdirectory/unit_tests/#{CONTRACT_NAME} -p #{ACCOUNT_NAME}
-    cleos set contract dacdirtester contract-shared-dependencies/test_helpers/dacdirtester/dacdirtester -p dacdirtester
+    cleos set contract #{ACCOUNT_NAME} ../_compiled_contracts/dacdirectory/unit_tests/#{CONTRACT_NAME} -p #{ACCOUNT_NAME}
+    cleos set contract dacdirtester ../_test_helpers/dacdirtester/dacdirtester -p dacdirtester
 
   SHELL
 
