@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-set -x
 
-source output/jungle/compile.sh
-source output/mainnet/compile.sh
-source output/unit_tests/compile.sh
+source `dirname $BASH_SOURCE`/common.sh
+
+COMMON_PATH=../_compiled_contracts/$CONTRACT
+
+source $COMMON_PATH/jungle/compile.sh
+source $COMMON_PATH/mainnet/compile.sh
+source $COMMON_PATH/unit_tests/compile.sh

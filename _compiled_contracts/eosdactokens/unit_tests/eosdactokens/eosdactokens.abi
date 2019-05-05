@@ -1,6 +1,7 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Sat Mar 16 08:58:55 2019",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT ",
     "version": "eosio::abi/1.1",
+    "types": [],
     "structs": [
         {
             "name": "account",
@@ -303,7 +304,6 @@
             ]
         }
     ],
-    "types": [],
     "actions": [
         {
             "name": "burn",
@@ -432,6 +432,5 @@
             "body": "This contract creates the currency and also give a means to say whether an eosDAC account holder is a member. A member is classified as a token holder who has registered and agreed to the membership agreement. This contract also covers the standard token transfer and account balance functions"
         }
     ],
-    "variants": [],
-    "abi_extensions": []
+    "variants": []
 }

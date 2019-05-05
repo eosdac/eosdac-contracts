@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
 
-CONTRACT='dacproposals'
-
-eosio-cpp -o output/jungle/$CONTRACT/$CONTRACT.wasm $CONTRACT.cpp -I.
-# eosio-abigen $CONTRACT.hpp -contract $CONTRACT -output output/jungle/$CONTRACT/$CONTRACT.abi
+source `dirname $BASH_SOURCE`/../common.sh
+eosio-cpp -o `dirname $BASH_SOURCE`/$CONTRACT/$CONTRACT.wasm $CONTRACT.cpp -I.

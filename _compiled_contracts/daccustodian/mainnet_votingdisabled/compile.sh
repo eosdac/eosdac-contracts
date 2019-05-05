@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
 
-eosio-cpp -DTOKENCONTRACT='"eosdactokens"' -DTRANSFER_DELAY=3600 -DVOTING_DISABLED=1 -o output/mainnet_votingdisabled/daccustodian/daccustodian.wasm daccustodian.cpp -I.
+source `dirname $BASH_SOURCE`/../common.sh
+eosio-cpp -DTOKENCONTRACT='"eosdactokens"' -DTRANSFER_DELAY=3600 -DVOTING_DISABLED=1 -o `dirname $BASH_SOURCE`/$CONTRACT/$CONTRACT.wasm $CONTRACT.cpp -I.

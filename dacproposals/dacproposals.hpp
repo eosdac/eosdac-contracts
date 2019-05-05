@@ -3,7 +3,7 @@
 #include <eosio/singleton.hpp>
 #include <eosio/time.hpp>
 
-#include "contract-shared-dependencies/dacdirectory_shared.hpp"
+#include "../_contract-shared-headers/dacdirectory_shared.hpp"
 
 #include "eosdactokens_types.hpp"
 #include "daccustodian_types.hpp"

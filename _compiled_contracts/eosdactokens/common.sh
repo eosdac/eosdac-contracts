@@ -1,0 +1,3 @@
+# set -x
+
+CONTRACT='eosdactokens'

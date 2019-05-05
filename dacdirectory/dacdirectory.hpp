@@ -3,7 +3,7 @@
 #include <eosio/eosio.hpp>
 #include <eosio/multi_index.hpp>
 #include <eosio/symbol.hpp>
-#include "contract-shared-dependencies/dacdirectory_shared.hpp"
+#include "../_contract-shared-headers/dacdirectory_shared.hpp"
 
 using namespace eosio;
 using namespace std;

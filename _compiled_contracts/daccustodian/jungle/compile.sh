@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
 
-eosio-cpp -DTOKENCONTRACT='"kasdactokens"' -DTRANSFER_DELAY=20 -o output/jungle/daccustodian/daccustodian.wasm daccustodian.cpp -I.
+source `dirname $BASH_SOURCE`/../common.sh
+eosio-cpp -DTOKENCONTRACT='"kasdactokens"' -DTRANSFER_DELAY=20 -o `dirname $BASH_SOURCE`/$CONTRACT/$CONTRACT.wasm $CONTRACT.cpp -I.

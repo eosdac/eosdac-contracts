@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
 
-CONTRACT='dacproposals'
-
-eosio-cpp -o output/unit_tests/$CONTRACT/$CONTRACT.wasm $CONTRACT.cpp -I.
+source `dirname $BASH_SOURCE`/../common.sh
+eosio-cpp -o `dirname $BASH_SOURCE`/$CONTRACT/$CONTRACT.wasm $CONTRACT.cpp -I.
