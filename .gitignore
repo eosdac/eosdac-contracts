@@ -1,4 +1,8 @@
-contract_vars
-.idea
-.vscode
+**/.vscode
 cmake-build-debug
+
+\.idea/
+
+\.DS_Store
+cmake-build-release/CMakeFiles
+cmake-build-release
