@@ -1,0 +1,310 @@
+{
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Fri Mar  8 08:24:00 2019",
+    "version": "eosio::abi/1.1",
+    "structs": [
+        {
+            "name": "approve",
+            "base": "",
+            "fields": [
+                {
+                    "name": "key",
+                    "type": "uint64"
+                },
+                {
+                    "name": "approver",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "approveext",
+            "base": "",
+            "fields": [
+                {
+                    "name": "ext_key",
+                    "type": "uint64"
+                },
+                {
+                    "name": "approver",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "cancel",
+            "base": "",
+            "fields": [
+                {
+                    "name": "key",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "cancelext",
+            "base": "",
+            "fields": [
+                {
+                    "name": "ext_key",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "claim",
+            "base": "",
+            "fields": [
+                {
+                    "name": "key",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "claimext",
+            "base": "",
+            "fields": [
+                {
+                    "name": "ext_key",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "clean",
+            "base": "",
+            "fields": []
+        },
+        {
+            "name": "escrow_info",
+            "base": "",
+            "fields": [
+                {
+                    "name": "key",
+                    "type": "uint64"
+                },
+                {
+                    "name": "sender",
+                    "type": "name"
+                },
+                {
+                    "name": "receiver",
+                    "type": "name"
+                },
+                {
+                    "name": "arb",
+                    "type": "name"
+                },
+                {
+                    "name": "approvals",
+                    "type": "name[]"
+                },
+                {
+                    "name": "ext_asset",
+                    "type": "extended_asset"
+                },
+                {
+                    "name": "memo",
+                    "type": "string"
+                },
+                {
+                    "name": "expires",
+                    "type": "time_point_sec"
+                },
+                {
+                    "name": "external_reference",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "init",
+            "base": "",
+            "fields": [
+                {
+                    "name": "sender",
+                    "type": "name"
+                },
+                {
+                    "name": "receiver",
+                    "type": "name"
+                },
+                {
+                    "name": "arb",
+                    "type": "name"
+                },
+                {
+                    "name": "expires",
+                    "type": "time_point_sec"
+                },
+                {
+                    "name": "memo",
+                    "type": "string"
+                },
+                {
+                    "name": "ext_reference",
+                    "type": "uint64?"
+                }
+            ]
+        },
+        {
+            "name": "refund",
+            "base": "",
+            "fields": [
+                {
+                    "name": "key",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "refundext",
+            "base": "",
+            "fields": [
+                {
+                    "name": "ext_key",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "transfer",
+            "base": "",
+            "fields": [
+                {
+                    "name": "from",
+                    "type": "name"
+                },
+                {
+                    "name": "to",
+                    "type": "name"
+                },
+                {
+                    "name": "quantity",
+                    "type": "asset"
+                },
+                {
+                    "name": "memo",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "unapprove",
+            "base": "",
+            "fields": [
+                {
+                    "name": "key",
+                    "type": "uint64"
+                },
+                {
+                    "name": "unapprover",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "unapproveext",
+            "base": "",
+            "fields": [
+                {
+                    "name": "ext_key",
+                    "type": "uint64"
+                },
+                {
+                    "name": "unapprover",
+                    "type": "name"
+                }
+            ]
+        }
+    ],
+    "types": [],
+    "actions": [
+        {
+            "name": "approve",
+            "type": "approve",
+            "ricardian_contract": "## ACTION: approve\n**PARAMETERS:**\n* __key__ is a unique identifying integer for an escrow entry. \n* __approver__ is an eosio account name. \n\n**INTENT:** \nThe intent of approve is to approve the release of funds to the intended receiver. Each escrow agreement requires at least 2 approvers and can only be approved by the sender, receiver and/or nominated arbitrator.\n ####Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later."
+        },
+        {
+            "name": "approveext",
+            "type": "approveext",
+            "ricardian_contract": "## ACTION: approveext\n **PARAMETERS:**\n * __ext_key__ is a unique identifying integer for an escrow entry as supplied by an external key source.\n * __approver__ is an eosio account name.\n\n **INTENT:**\n The intent of approve is to approve the release of funds to the intended receiver. Each escrow agreement requires at least 2 approvers and can only be approved by the sender, receiver and/or nominated arbitrator.\n  ####Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later."
+        },
+        {
+            "name": "cancel",
+            "type": "cancel",
+            "ricardian_contract": "## ACTION: cancel\n\n**PARAMETERS:**\n* __key__ is a unique identifying integer for an escrow entry. \n\n**INTENT:** The intent of cancel is to cancel an escrow agreement. This action can only be performed by the sender as long as no funds have already been transferred for the escrow agreement. Otherwise they would need to wait for the expiry time and then use the refund action.\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
+        },
+        {
+            "name": "cancelext",
+            "type": "cancelext",
+            "ricardian_contract": "## ACTION: cancelext\n\n**PARAMETERS:**\n* __ext_key__ is a unique identifying integer for an escrow entry as supplied by an external key source.\n\n**INTENT:** The intent of cancel is to cancel an escrow agreement. This action can only be performed by the sender as long as no funds have already been transferred for the escrow agreement. Otherwise they would need to wait for the expiry time and then use the refund action.\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
+        },
+        {
+            "name": "claim",
+            "type": "claim",
+            "ricardian_contract": "## ACTION: claim\n\n**PARAMETERS:**\n* __key__ is a unique identifying integer for an escrow entry. \n\n**INTENT:** The intent of claim is to claim the escrowed funds for an intended receiver after an escrow agreement has met the required approvals.\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
+        },
+        {
+            "name": "claimext",
+            "type": "claimext",
+            "ricardian_contract": "## ACTION: claimext\n\n**PARAMETERS:**\n* __ext_key__ is a unique identifying integer for an escrow entry as supplied by an external key source.\n\n**INTENT:** The intent of claim is to claim the escrowed funds for an intended receiver after an escrow agreement has met the required approvals.\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
+        },
+        {
+            "name": "clean",
+            "type": "clean",
+            "ricardian_contract": "## ACTION: clean\n\n**INTENT:** The intent of clean is remove all existing escrow agreements for developer purposes. This can only be run with _self permission of the contract which would be unavailable on the main net once the contract permissions are removed for the contract account.\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
+        },
+        {
+            "name": "init",
+            "type": "init",
+            "ricardian_contract": "## ACTION: init\n**PARAMETERS:**\n* __sender__ is an eosio account name. \n* __receiver__ is an eosio account name. \n* __arb__ is an eosio account name. \n* __expires__ The date/time after which the escrow amount can be refunded by the sender. \n* __memo__ is a memo to send as the eventual transfer memo at the end of the escrow contract. \n* __ext_reference__ is a reference to to external id held my another contract or entity as opposed to the internal auto-incrementing key.\n\n**INTENT** The intent of init is to create an empty escrow payment agreement for safe and secure funds transfer protecting both sender and receiver for a determined amount of time. \n#### Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later so therefore should only store a unidentifiable hash of content rather than human readable content."
+        },
+        {
+            "name": "refund",
+            "type": "refund",
+            "ricardian_contract": "## ACTION: refund\n\n**PARAMETERS:**\n* __key__ is a unique identifying integer for an escrow entry. \n\n**INTENT:** The intent of refund is to return the escrowed funds back to the original sender. This action can only be run after the contract has met the intended expiry time.\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
+        },
+        {
+            "name": "refundext",
+            "type": "refundext",
+            "ricardian_contract": "## ACTION: refundext\n\n**PARAMETERS:**\n* __ext_key__ is a unique identifying integer for an escrow entry as supplied by an external key source.\n\n**INTENT:** The intent of refund is to return the escrowed funds back to the original sender. This action can only be run after the contract has met the intended expiry time.\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
+        },
+        {
+            "name": "transfer",
+            "type": "transfer",
+            "ricardian_contract": "## ACTION: stprofileuns\n**PARAMETERS:**\n* __from__ is an eosio account name. \n* __to__ is an eosio account name. \n* __quantity__ is an eosio asset name. \n* __memo__ is a string that provides a memo for the transfer action.\n\n**INTENT:** \nThe intent of transfer is to listen and react to the eosio.token contract's transfer action and ensure the correct parameters have been included in the transfer action.\n##Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later."
+        },
+        {
+            "name": "unapprove",
+            "type": "unapprove",
+            "ricardian_contract": "## ACTION: unapprove\n**PARAMETERS:**\n* __key__ is a unique identifying integer for an escrow entry. \n* __disapprover__ is an eosio account name. \n\n**INTENT:** \nThe intent of unapprove is to unapprove the release of funds to the intended receiver from a previous approved action. Each escrow agreement requires at least 2 approvers and can only be approved by the sender, receiver and/or nominated arbitrator.\n ####Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later."
+        },
+        {
+            "name": "unapproveext",
+            "type": "unapproveext",
+            "ricardian_contract": "## ACTION: unapproveext\n**PARAMETERS:**\n* __ext_key__ is a unique identifying integer for an escrow entry as supplied by an external key source.\n* __disapprover__ is an eosio account name.\n\n**INTENT:**\nThe intent of unapprove is to unapprove the release of funds to the intended receiver from a previous approved action. Each escrow agreement requires at least 2 approvers and can only be approved by the sender, receiver and/or nominated arbitrator.\n ####Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later."
+        }
+    ],
+    "tables": [
+        {
+            "name": "escrows",
+            "type": "escrow_info",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        }
+    ],
+    "ricardian_clauses": [
+        {
+            "id": "ENTIRE AGREEMENT",
+            "body": "This contract contains the entire agreement of the parties, for all described actions, and there are no other promises or conditions in any other agreement whether oral or written concerning the subject matter of this Contract. This contract supersedes any prior written or oral agreements between the parties."
+        },
+        {
+            "id": "BINDING CONSTITUTION",
+            "body": "All the the action descibed in this contract are subject to the EOSDAC consitution as held at http://eosdac.io. This includes, but is not limited to membership terms and conditions, dispute resolution and severability."
+        }
+    ],
+    "variants": [],
+    "abi_extensions": []
+}
