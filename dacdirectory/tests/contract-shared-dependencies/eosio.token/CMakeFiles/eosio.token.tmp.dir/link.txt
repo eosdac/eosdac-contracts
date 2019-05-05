@@ -1,0 +1,1 @@
+/usr/bin/clang++-4.0   -Wall -Wno-invalid-partial-specialization -O3 -DNDEBUG   CMakeFiles/eosio.token.tmp.dir/eosio.token.cpp.o  -o eosio.token.tmp 
