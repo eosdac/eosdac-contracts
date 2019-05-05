@@ -1,0 +1,173 @@
+{
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Tue Mar 12 16:22:39 2019",
+    "version": "eosio::abi/1.1",
+    "structs": [
+        {
+            "name": "approved",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposer",
+                    "type": "name"
+                },
+                {
+                    "name": "proposal_name",
+                    "type": "name"
+                },
+                {
+                    "name": "approver",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "cancelled",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposer",
+                    "type": "name"
+                },
+                {
+                    "name": "proposal_name",
+                    "type": "name"
+                },
+                {
+                    "name": "canceler",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "clean",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposer",
+                    "type": "name"
+                },
+                {
+                    "name": "proposal_name",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "executed",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposer",
+                    "type": "name"
+                },
+                {
+                    "name": "proposal_name",
+                    "type": "name"
+                },
+                {
+                    "name": "executer",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "proposed",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposer",
+                    "type": "name"
+                },
+                {
+                    "name": "proposal_name",
+                    "type": "name"
+                },
+                {
+                    "name": "metadata",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "storedproposal",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposalname",
+                    "type": "name"
+                },
+                {
+                    "name": "transactionid",
+                    "type": "checksum256"
+                },
+                {
+                    "name": "modifieddate",
+                    "type": "uint32"
+                }
+            ]
+        },
+        {
+            "name": "unapproved",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposer",
+                    "type": "name"
+                },
+                {
+                    "name": "proposal_name",
+                    "type": "name"
+                },
+                {
+                    "name": "unapprover",
+                    "type": "name"
+                }
+            ]
+        }
+    ],
+    "types": [],
+    "actions": [
+        {
+            "name": "approved",
+            "type": "approved",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "cancelled",
+            "type": "cancelled",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "clean",
+            "type": "clean",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "executed",
+            "type": "executed",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "proposed",
+            "type": "proposed",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "unapproved",
+            "type": "unapproved",
+            "ricardian_contract": ""
+        }
+    ],
+    "tables": [
+        {
+            "name": "proposals",
+            "type": "storedproposal",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        }
+    ],
+    "ricardian_clauses": [],
+    "variants": [],
+    "abi_extensions": []
+}
