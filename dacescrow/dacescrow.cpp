@@ -10,15 +10,10 @@ using namespace std;
 
 namespace eosdac {
 
-    time_point current_time_point() {
-        const static time_point ct{ microseconds{ static_cast<int64_t>( current_time() ) } };
-        return ct;
-    }
-
-    dacescrow::~dacescrow() {}
+    dacescrow::~dacescrow() {}  
 
 
-    ACTION dacescrow::transfer(name from,
+  ACTION dacescrow::transfer(name from,
                                name to,
                                asset quantity,
                                string memo) {
@@ -51,6 +46,7 @@ namespace eosdac {
 
     ACTION dacescrow::init(name sender, name receiver, name arb, time_point_sec expires, string memo, std::optional<uint64_t> ext_reference ) {
         require_auth(sender);
+        eosio_assert_code(false, 2);
 
         extended_asset zero_asset{{0, symbol{"EOS", 4}}, "eosio.token"_n};
 
