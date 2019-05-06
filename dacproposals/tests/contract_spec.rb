@@ -31,7 +31,7 @@ TEST_ACTIVE_PUBLIC_KEY = 'EOS7rjn3r52PYd2ppkVEKYvy6oRDP9MZsJUPB2MStrak8LS36pnTZ'
 CONTRACT_NAME = 'daccustodian'
 ACCOUNT_NAME = 'daccustodian'
 
-CONTRACTS_DIR = 'tests/contract-shared-dependencies'
+CONTRACTS_DIR = '../_test_helpers/system_contract_dependencies'
 
 def configure_wallet
   beforescript = <<~SHELL
@@ -174,14 +174,11 @@ def install_dependencies
 
   beforescript = <<~SHELL
     # set -x
-
-    cleos set contract dacdirectory contract-shared-dependencies/CompiledContracts/dacdirectory/jungle/dacdirectory -p dacdirectory 
-
-    cleos set contract daccustodian #{CONTRACTS_DIR}/daccustodian -p daccustodian 
-    cleos set contract eosdactokens #{CONTRACTS_DIR}/eosdactokens -p eosdactokens
-    cleos set contract dacproposals output/unit_tests/dacproposals -p dacproposals
-    cleos set contract dacescrow #{CONTRACTS_DIR}/dacescrow -p dacescrow
-
+    
+    cleos set contract dacdirectory ../_compiled_contracts/dacdirectory/unit_tests/dacdirectory -p dacdirectory
+    cleos set contract eosdactokens ../_compiled_contracts/eosdactokens/unit_tests/eosdactokens -p eosdactokens
+    cleos set contract dacescrow ../_compiled_contracts/dacescrow/unit_tests/dacescrow -p dacescrow
+    cleos set contract dacproposals ../_compiled_contracts/dacproposals/unit_tests/dacproposals -p dacproposals
   SHELL
 
   `#{beforescript}`
