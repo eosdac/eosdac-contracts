@@ -1,5 +1,5 @@
-#include <eosiolib/eosio.hpp>
-#include <eosiolib/transaction.hpp>
+#include <eosio/eosio.hpp>
+#include <eosio/transaction.hpp>
 
 #include <string>
 
@@ -41,24 +41,23 @@ namespace eosdac {
             }
         }
 
-        eosio_assert(found, "Could not find existing escrow to deposit to, transfer cancelled");
+        check(found, "Could not find existing escrow to deposit to, transfer cancelled");
     }
 
     ACTION dacescrow::init(name sender, name receiver, name arb, time_point_sec expires, string memo, std::optional<uint64_t> ext_reference ) {
         require_auth(sender);
-        eosio_assert_code(false, 2);
 
         extended_asset zero_asset{{0, symbol{"EOS", 4}}, "eosio.token"_n};
 
         auto by_sender = escrows.get_index<"bysender"_n>();
 
         for (auto esc_itr = by_sender.lower_bound(sender.value), end_itr = by_sender.upper_bound(sender.value); esc_itr != end_itr; ++esc_itr) {
-            eosio_assert(esc_itr->ext_asset.quantity.amount != 0, "You already have an empty escrow.  Either fill it or delete it");
+            check(esc_itr->ext_asset.quantity.amount != 0, "You already have an empty escrow.  Either fill it or delete it");
         }
 
         if (ext_reference) {
             print("Has external reference: ", ext_reference.value());
-            eosio_assert(!key_for_external_key(*ext_reference),
+            check(!key_for_external_key(*ext_reference),
                          "Already have an escrow with this external reference");
         }
         escrows.emplace(sender, [&](escrow_info &p) {
@@ -81,14 +80,14 @@ namespace eosdac {
         require_auth(approver);
 
         auto esc_itr = escrows.find(key);
-        eosio_assert(esc_itr != escrows.end(), "Could not find escrow with that index");
+        check(esc_itr != escrows.end(), "Could not find escrow with that index");
 
-        eosio_assert(esc_itr->ext_asset.quantity.amount > 0, "This has not been initialized with a transfer");
+        check(esc_itr->ext_asset.quantity.amount > 0, "This has not been initialized with a transfer");
 
-        eosio_assert(esc_itr->sender == approver || esc_itr->arb == approver, "You are not allowed to approve this escrow.");
+        check(esc_itr->sender == approver || esc_itr->arb == approver, "You are not allowed to approve this escrow.");
 
         auto approvals = esc_itr->approvals;
-        eosio_assert(std::find(approvals.begin(), approvals.end(), approver) == approvals.end(), "You have already approved this escrow");
+        check(std::find(approvals.begin(), approvals.end(), approver) == approvals.end(), "You have already approved this escrow");
 
         escrows.modify(esc_itr, approver, [&](escrow_info &e){
             e.approvals.push_back(approver);
@@ -97,7 +96,7 @@ namespace eosdac {
 
     ACTION dacescrow::approveext(uint64_t ext_key, name approver) {
         auto key = key_for_external_key(ext_key);
-        eosio_assert(key.has_value(), "No escrow exists for this external key.");
+        check(key.has_value(), "No escrow exists for this external key.");
         approve(*key, approver);
     }
 
@@ -105,33 +104,33 @@ namespace eosdac {
         require_auth(disapprover);
 
         auto esc_itr = escrows.find(key);
-        eosio_assert(esc_itr != escrows.end(), "Could not find escrow with that index");
+        check(esc_itr != escrows.end(), "Could not find escrow with that index");
 
         escrows.modify(esc_itr, name{0}, [&](escrow_info &e){
             auto existing = std::find(e.approvals.begin(), e.approvals.end(), disapprover);
-            eosio_assert(existing != e.approvals.end(), "You have NOT approved this escrow");
+            check(existing != e.approvals.end(), "You have NOT approved this escrow");
             e.approvals.erase(existing);
         });
     }
 
     ACTION dacescrow::unapproveext(uint64_t ext_key, name unapprover) {
         auto key = key_for_external_key(ext_key);
-        eosio_assert(key.has_value(), "No escrow exists for this external key.");
+        check(key.has_value(), "No escrow exists for this external key.");
         unapprove(*key, unapprover);
     }
 
     ACTION dacescrow::claim(uint64_t key) {
 
         auto esc_itr = escrows.find(key);
-        eosio_assert(esc_itr != escrows.end(), "Could not find escrow with that index");
+        check(esc_itr != escrows.end(), "Could not find escrow with that index");
 
         require_auth(esc_itr->receiver);
 
-        eosio_assert(esc_itr->ext_asset.quantity.amount > 0, "This has not been initialized with a transfer");
+        check(esc_itr->ext_asset.quantity.amount > 0, "This has not been initialized with a transfer");
 
         auto approvals = esc_itr->approvals;
 
-        eosio_assert(approvals.size() >= 1, "This escrow has not received the required approvals to claim");
+        check(approvals.size() >= 1, "This escrow has not received the required approvals to claim");
 
         //inline transfer the required funds
         eosio::action(
@@ -146,7 +145,7 @@ namespace eosdac {
 
     ACTION dacescrow::claimext(uint64_t ext_key) {
         auto key = key_for_external_key(ext_key);
-        eosio_assert(key.has_value(), "No escrow exists for this external key.");
+        check(key.has_value(), "No escrow exists for this external key.");
         print("found key to approve :", key.value());
         claim(*key);
     }
@@ -157,18 +156,18 @@ namespace eosdac {
     ACTION dacescrow::cancel(uint64_t key) {
 
         auto esc_itr = escrows.find(key);
-        eosio_assert(esc_itr != escrows.end(), "Could not find escrow with that index");
+        check(esc_itr != escrows.end(), "Could not find escrow with that index");
 
         require_auth(esc_itr->sender);
 
-        eosio_assert(0 == esc_itr->ext_asset.quantity.amount, "Amount is not zero, this escrow is locked down");
+        check(0 == esc_itr->ext_asset.quantity.amount, "Amount is not zero, this escrow is locked down");
 
         escrows.erase(esc_itr);
     }
 
     ACTION dacescrow::cancelext(uint64_t ext_key) {
         auto key = key_for_external_key(ext_key);
-        eosio_assert(key.has_value(), "No escrow exists for this external key.");
+        check(key.has_value(), "No escrow exists for this external key.");
         print("found key to approve :", key.value());
         cancel(*key);
     }
@@ -179,16 +178,16 @@ namespace eosdac {
     ACTION dacescrow::refund(uint64_t key) {
 
         auto esc_itr = escrows.find(key);
-        eosio_assert(esc_itr != escrows.end(), "Could not find escrow with that index");
+        check(esc_itr != escrows.end(), "Could not find escrow with that index");
 
         require_auth(esc_itr->sender);
 
-        eosio_assert(esc_itr->ext_asset.quantity.amount > 0, "This has not been initialized with a transfer");
+        check(esc_itr->ext_asset.quantity.amount > 0, "This has not been initialized with a transfer");
 
-        time_point_sec time_now = time_point_sec(current_time_point());
+        time_point_sec time_now = time_point_sec(eosio::current_time_point());
 
-        eosio_assert(time_now >= esc_itr->expires, "Escrow has not expired");
-        // eosio_assert(esc_itr->approvals.size() >= 2, "Escrow has not received the required number of approvals");
+        check(time_now >= esc_itr->expires, "Escrow has not expired");
+        // check(esc_itr->approvals.size() >= 2, "Escrow has not received the required number of approvals");
 
 
         eosio::action(
@@ -202,7 +201,7 @@ namespace eosdac {
 
     ACTION dacescrow::refundext(uint64_t ext_key) {
         auto key = key_for_external_key(ext_key);
-        eosio_assert(key.has_value(), "No escrow exists for this external key.");
+        check(key.has_value(), "No escrow exists for this external key.");
         print("found key to approve :", key.value());
         refund(*key);
     }
@@ -240,7 +239,7 @@ extern "C" { \
    void apply( uint64_t receiver, uint64_t code, uint64_t action ) { \
       if( action == "onerror"_n.value) { \
          /* onerror is only valid if it is for the "eosio" code account and authorized by "eosio"'s "active permission */ \
-         eosio_assert(code == "eosio"_n.value, "onerror action's are only valid from the \"eosio\" system account"); \
+         check(code == "eosio"_n.value, "onerror action's are only valid from the \"eosio\" system account"); \
       } \
       auto self = receiver; \
       if( (code == self  && action != "transfer"_n.value) || (action == "transfer"_n.value) ) { \

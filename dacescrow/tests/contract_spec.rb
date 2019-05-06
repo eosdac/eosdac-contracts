@@ -30,7 +30,7 @@ TEST_ACTIVE_PUBLIC_KEY = 'EOS7rjn3r52PYd2ppkVEKYvy6oRDP9MZsJUPB2MStrak8LS36pnTZ'
 CONTRACT_NAME = 'dacescrow'
 ACCOUNT_NAME = 'dacescrow'
 
-CONTRACTS_DIR = 'tests/contract-shared-dependencies'
+CONTRACTS_DIR = '../_test_helpers/system_contract_dependencies'
 
 def configure_wallet
   beforescript = <<~SHELL
@@ -155,10 +155,11 @@ def install_dependencies
    # set -x
 
 
-   cleos set contract daccustodian #{CONTRACTS_DIR}/daccustodian -p daccustodian 
-   cleos set contract eosdactokens #{CONTRACTS_DIR}/eosdactokens -p eosdactokens
-   cleos set contract dacproposals #{CONTRACTS_DIR}/dacproposals -p dacproposals
-   cleos set contract #{ACCOUNT_NAME} output/unit_tests/#{CONTRACT_NAME} -p #{ACCOUNT_NAME}
+   cleos set contract eosdactokens ../_compiled_contracts/eosdactokens/unit_tests/eosdactokens -p eosdactokens
+   cleos set contract daccustodian ../_compiled_contracts/daccustodian/unit_tests/daccustodian -p daccustodian
+   cleos set contract dacproposals ../_compiled_contracts/dacproposals/unit_tests/dacproposals -p dacproposals
+
+   cleos set contract #{ACCOUNT_NAME} ../_compiled_contracts/#{ACCOUNT_NAME}/unit_tests/#{ACCOUNT_NAME} -p #{ACCOUNT_NAME}
 
   SHELL
 
@@ -336,7 +337,7 @@ describe "dacescrow" do
         context "with a valid escrow for approval" do
           context "with uninvolved approver" do
             command %(cleos push action dacescrow approve '{ "key": 0, "approver": "arb2"}' -p arb2), allow_error: true
-            its(:stderr) {is_expected.to include('You are not involved in this escrow')}
+            its(:stderr) {is_expected.to include('You are not allowed to approve this escrow.')}
           end
           context "with involved approver" do
             command %(cleos push action dacescrow approve '{ "key": 0, "approver": "arb1"}' -p arb1), allow_error: true
@@ -405,7 +406,7 @@ describe "dacescrow" do
         context "with a valid escrow for unapproval" do
           context "with uninvolved approver" do
             command %(cleos push action dacescrow unapprove '{ "key": 0, "unapprover": "arb2"}' -p arb2), allow_error: true
-            its(:stderr) {is_expected.to include('You are not involved in this escrow')}
+            its(:stderr) {is_expected.to include('You have NOT approved this escrow')}
           end
           context "with involved approver" do
             before(:all) do
@@ -472,6 +473,9 @@ describe "dacescrow" do
           its(:stderr) {is_expected.to include('This has not been initialized with a transfer')}
         end
         context "without enough approvals for a claim" do
+          before(:all) do
+            `cleos push action dacescrow unapprove '{ "key": 0, "unapprover": "sender1"}' -p sender1`
+          end
           command %(cleos push action dacescrow claim '{ "key": 0 }' -p receiver1), allow_error: true
           its(:stderr) {is_expected.to include('This escrow has not received the required approvals to claim')}
         end
@@ -594,10 +598,6 @@ describe "dacescrow" do
             its(:stderr) {is_expected.to include('Escrow has not expired')}
           end
         end
-        context "before the escrow has has received enough approvals" do
-          command %(cleos push action dacescrow refund '{ "key": 1 }' -p sender2), allow_error: true
-          its(:stderr) {is_expected.to include('Escrow has not received the required number of approvals')}
-        end
         context "balance of escrow should be set before preparing the escrow with a known balance starting point" do
           command %(cleos get currency balance eosio.token dacescrow EOS), allow_error: true
           it do
@@ -691,8 +691,7 @@ describe "dacescrow" do
                   "receiver": "receiver1",
                   "arb": "arb2",
                   "approvals": [
-                    "sender4",
-                    "receiver1"
+                    "sender4"
                   ],
                   "ext_asset": {"quantity": "5.0000 EOS", "contract": "eosio.token"},
                   "memo": "distant future escrow",
@@ -835,7 +834,7 @@ describe "dacescrow" do
           context "with a valid escrow for approval" do
             context "with uninvolved approver" do
               command %(cleos push action dacescrow approveext '{ "ext_key": 23, "approver": "arb2"}' -p arb2), allow_error: true
-              its(:stderr) {is_expected.to include('You are not involved in this escrow')}
+              its(:stderr) {is_expected.to include('You are not allowed to approve this escrow.')}
             end
             context "with involved approver" do
               command %(cleos push action dacescrow approveext '{ "ext_key": 23, "approver": "arb1"}' -p arb1), allow_error: true
@@ -904,7 +903,7 @@ describe "dacescrow" do
           context "with a valid escrow for unapproval" do
             context "with uninvolved approver" do
               command %(cleos push action dacescrow unapproveext '{ "ext_key": 23, "unapprover": "arb2"}' -p arb2), allow_error: true
-              its(:stderr) {is_expected.to include('You are not involved in this escrow')}
+              its(:stderr) {is_expected.to include('You have NOT approved this escrow')}
             end
             context "with involved approver" do
               before(:all) do
@@ -969,10 +968,6 @@ describe "dacescrow" do
           context "before a corresponding transfer has been made" do
             command %(cleos push action dacescrow claimext '{ "ext_key": 666 }' -p receiver1), allow_error: true
             its(:stderr) {is_expected.to include('This has not been initialized with a transfer')}
-          end
-          context "without enough approvals for a claim" do
-            command %(cleos push action dacescrow claimext '{ "ext_key": 23 }' -p receiver1), allow_error: true
-            its(:stderr) {is_expected.to include('This escrow has not received the required approvals to claim')}
           end
           context "with enough approvals" do
             before(:all) do
@@ -1093,10 +1088,6 @@ describe "dacescrow" do
               its(:stderr) {is_expected.to include('Escrow has not expired')}
             end
           end
-          context "before the escrow has has received enough approvals" do
-            command %(cleos push action dacescrow refundext '{ "ext_key": 666 }' -p sender2), allow_error: true
-            its(:stderr) {is_expected.to include('Escrow has not received the required number of approvals')}
-          end
           context "balance of escrow should be set before preparing the escrow with a known balance starting point" do
             command %(cleos get currency balance eosio.token dacescrow EOS), allow_error: true
             it do
@@ -1190,8 +1181,7 @@ describe "dacescrow" do
                   "receiver": "receiver1",
                   "arb": "arb2",
                   "approvals": [
-                    "sender4",
-                    "receiver1"
+                    "sender4"
                   ],
                   "ext_asset": {"quantity": "5.0000 EOS", "contract": "eosio.token"},
                   "memo": "distant future escrow",

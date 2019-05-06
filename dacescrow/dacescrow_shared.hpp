@@ -1,6 +1,6 @@
-#include <eosiolib/eosio.hpp>
-#include <eosiolib/asset.hpp>
-#include <eosiolib/time.hpp>
+#include <eosio/eosio.hpp>
+#include <eosio/asset.hpp>
+#include <eosio/time.hpp>
 #include <optional>
 
 using namespace eosio;
