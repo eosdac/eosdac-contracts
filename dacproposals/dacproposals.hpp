@@ -4,9 +4,8 @@
 #include <eosio/time.hpp>
 
 #include "../_contract-shared-headers/dacdirectory_shared.hpp"
-
-#include "eosdactokens_types.hpp"
-#include "daccustodian_types.hpp"
+#include "../_contract-shared-headers/eosdactokens_types.hpp"
+#include "../_contract-shared-headers/daccustodian_types.hpp"
 
 using namespace eosio;
 using namespace std;

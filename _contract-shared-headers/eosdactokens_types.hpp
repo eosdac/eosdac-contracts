@@ -4,7 +4,6 @@
 using namespace std;
 using namespace eosio;
 
-
 // This is a reference to the member struct as used in the eosdactoken contract.
 // @abi table members
 struct member {
