@@ -1,6 +1,8 @@
 require 'rspec'
 require 'rspec_command'
 require "json"
+require 'date'
+
 
 # 1. A recent version of Ruby is required
 # 2. Ensure the required gems are installed with `gem install rspec json rspec-command`
@@ -24,7 +26,7 @@ CONTRACT_ACTIVE_PUBLIC_KEY = 'EOS54b6gLjogLNRS4Ay3JRxAke5r35FC6ZmJTTgVVeCrtbsYaN
 CONTRACT_NAME = 'dacmultisigs'
 ACCOUNT_NAME = 'dacmultisigs'
 
-CONTRACTS_DIR = 'tests/dependencies'
+CONTRACTS_DIR = '../_test_helpers/system_contract_dependencies'
 
 def configure_wallet
   beforescript = <<~SHELL
@@ -35,6 +37,14 @@ def configure_wallet
   SHELL
 
   `#{beforescript}`
+end
+
+def string_date_to_UTC input
+  Date.iso8601(input).to_time.utc.to_datetime
+end
+
+def utc_today
+  Date.today().to_time.utc.to_datetime
 end
 
 # @param [eos account name for the new account] name
@@ -83,24 +93,10 @@ def seed_system_contracts
   exit() unless $? == 0
 end
 
-def compile_contract
-  beforescript = <<~SHELL
-    set -x
-
-    source output/compile_all.sh
-
-  SHELL
-
-  `#{beforescript}`
-  exit() unless $? == 0
-end
-
 def install_contracts
 
   beforescript = <<~SHELL
     set -x
-
-    source output/compile_all.sh
 
     cleos system newaccount --stake-cpu \"10.0000 EOS\" --stake-net \"10.0000 EOS\" --transfer --buy-ram-kbytes 1024 eosio #{ACCOUNT_NAME} #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
     cleos system newaccount --stake-cpu \"10.0000 EOS\" --stake-net \"10.0000 EOS\" --transfer --buy-ram-kbytes 1024 eosio dacauthority #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
@@ -117,7 +113,8 @@ def install_contracts
 
     # cleos set action permission dacmultisigs dacmultisigs '' eosio.code -p dacmultisigs@owner
 
-    cleos set contract #{ACCOUNT_NAME} output/jungle/dacmultisigs
+    cleos set contract #{CONTRACT_NAME} ../_compiled_contracts/#{CONTRACT_NAME}/#{CONTRACT_NAME} -p #{ACCOUNT_NAME}
+
 
   SHELL
 
@@ -140,6 +137,7 @@ def configure_contracts_for_tests
   seed_account("custodian1")
   seed_account("custodian2")
   seed_account("custodian3")
+  seed_account("approver1")
 
   `cleos set account permission custodian1 active '{"threshold": 1,"keys": [{"key": "#{CONTRACT_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"dacmultisigs","permission":"eosio.code"},"weight":1}]}' owner -p custodian1@owner`
   `cleos set account permission custodian2 active '{"threshold": 1,"keys": [{"key": "#{CONTRACT_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"dacmultisigs","permission":"eosio.code"},"weight":1}]}' owner -p custodian2@owner`
@@ -152,7 +150,7 @@ end
 describe "dacmultisigs" do
   before(:all) do
     reset_chain
-    compile_contract
+    # compile_contract
     puts "Give the chain a chance to settle."
     sleep 3
     configure_wallet
@@ -165,7 +163,7 @@ describe "dacmultisigs" do
     killchain
   end
 
-  describe "stproposal" do
+  describe "proposed" do
     before(:all) do
       # first put proposal in the system msig contract.
       puts `cleos multisig propose myproposal '[{"actor": "custodian1", "permission": "active"}]' '[{"actor": "custodian1", "permission": "active"}]' eosio.token transfer '{ "from": "custodian1", "to": "tester1", "quantity": "1.0000 EOS", "memo": "random memo"}' -p custodian1`
@@ -173,29 +171,26 @@ describe "dacmultisigs" do
 
     end
     context "without invalid auth" do
-      command %(cleos push action dacmultisigs stproposal '{ "transactionid": "579159b224ebd9c0a3d36b1c53ae97a2df96025a054b29b62f1534ecfed080bf", "proposer": "custodian1", "proposalname": "myproposal", "metadata": "random meta"}' -p invaliduser1
+      command %(cleos push action dacmultisigs proposed '{ "transactionid": "579159b224ebd9c0a3d36b1c53ae97a2df96025a054b29b62f1534ecfed080bf", "proposer": "custodian1", "proposal_name": "myproposal", "metadata": "random meta"}' -p invaliduser1
 ), allow_error: true
       its(:stderr) {is_expected.to include('Error 3090004')}
     end
 
     context "with valid auth" do
-      command %(cleos push action dacmultisigs stproposal '{ "proposer": "custodian1", "proposalname": "myproposal", "transactionid": "579159b224ebd9c0a3d36b1c53ae97a2df96025a054b29b62f1534ecfed080bf", "metadata": "random meta"}' -p dacauthority), allow_error: true
-      its(:stdout) {is_expected.to include('dacmultisigs::stproposal')}
+      command %(cleos push action dacmultisigs proposed '{ "proposer": "custodian1", "proposal_name": "myproposal", "transactionid": "579159b224ebd9c0a3d36b1c53ae97a2df96025a054b29b62f1534ecfed080bf", "metadata": "random meta"}' -p dacauthority -p custodian1), allow_error: true
+      its(:stdout) {is_expected.to include('dacmultisigs::proposed')}
     end
 
     context "Read the proposals table after successful proposal" do
       command %(cleos get table dacmultisigs custodian1 proposals), allow_error: true
       it do
-        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-            {
-  "rows": [{
-      "proposalname": "myproposal",
-      "transactionid": "579159b224ebd9c0a3d36b1c53ae97a2df96025a054b29b62f1534ecfed080bf"
-    }
-  ],
-  "more": false
-}
-        JSON
+        json = JSON.parse(subject.stdout)
+        expect(json["rows"].count).to eq 1
+
+        prop = json["rows"].detect {|v| v["proposalname"] == 'myproposal'}
+
+        expect(prop["transactionid"].length).to be > 50
+        expect(string_date_to_UTC(prop["modifieddate"]).day).to eq (utc_today.day)
       end
     end
   end
@@ -212,55 +207,48 @@ describe "dacmultisigs" do
     end
   end
 
-  describe "approve" do
+  describe "approved" do
     context "with invalid auth" do
-      command %(cleos push action dacmultisigs approve '{ "proposer": "custodian1", "proposal_name": "myproposal", "level": {"actor": "custodian1", "permission": "active"}}' -p invaliduser1), allow_error: true
+      command %(cleos push action dacmultisigs approved '{ "proposer": "custodian1", "proposal_name": "myproposal", "level": {"actor": "custodian1", "permission": "active"}, "approver": "approver1"}' -p invaliduser1 -p approver1), allow_error: true
       its(:stderr) {is_expected.to include('Error 3090004')}
     end
 
-    context "with valid auth but not in the list of requested" do
-      command %(cleos push action dacmultisigs approve '{ "proposer": "custodian1", "proposal_name": "myproposal", "level": {"actor": "custodian2", "permission": "active"}}' -p custodian2), allow_error: true
-      its(:stderr) {is_expected.to include('approval is not on the list of requested approvals')}
-    end
-
-    context "with valid auth but not in the list of requested" do
-      command %(cleos push action dacmultisigs approve '{ "proposer": "custodian1", "proposal_name": "myproposal", "level": {"actor": "custodian1", "permission": "active"}}' -p custodian1), allow_error: true
-      its(:stdout) {is_expected.to include('dacmultisigs::approve')}
+    context "with valid auth" do
+      command %(cleos push action dacmultisigs approved '{ "proposer": "custodian1", "proposal_name": "myproposal", "level": {"actor": "custodian1", "permission": "active"}, "approver": "approver1"}' -p custodian1 -p approver1 -p dacauthority), allow_error: true
+      its(:stdout) {is_expected.to include('dacmultisigs::approved')}
     end
   end
 
-  describe "unapprove" do
+  describe "unapproved" do
     context "with invalid auth" do
-      command %(cleos push action dacmultisigs approve '{ "proposer": "custodian1", "proposal_name": "myproposal", "level": {"actor": "custodian1", "permission": "active"}}' -p invaliduser1), allow_error: true
+      command %(cleos push action dacmultisigs approved '{ "proposer": "custodian1", "proposal_name": "myproposal", "level": {"actor": "custodian1", "permission": "active"}, "approver": "approver1"}' -p invaliduser1 -p approver1), allow_error: true
       its(:stderr) {is_expected.to include('Error 3090004')}
-    end
-
-    context "with valid auth but not previously granted" do
-      command %(cleos push action dacmultisigs unapprove '{ "proposer": "custodian1", "proposal_name": "myproposal", "level": {"actor": "custodian2", "permission": "active"}}' -p custodian2), allow_error: true
-      its(:stderr) {is_expected.to include('no approval previously granted')}
     end
 
     context "with valid auth and previously granted permission" do
-      command %(cleos push action dacmultisigs unapprove '{ "proposer": "custodian1", "proposal_name": "myproposal", "level": {"actor": "custodian1", "permission": "active"}}' -p custodian1), allow_error: true
-      its(:stdout) {is_expected.to include('dacmultisigs::unapprove')}
+      command %(cleos push action dacmultisigs unapproved '{ "proposer": "custodian1", "proposal_name": "myproposal", "level": {"actor": "custodian1", "permission": "active"}, "unapprover": "approver1"}' -p custodian1 -p approver1 -p dacauthority), allow_error: true
+      its(:stdout) {is_expected.to include('dacmultisigs::unapproved')}
     end
   end
 
-  describe "cancel" do
+  describe "cancelled" do
     context "with invalid auth" do
-      command %(cleos push action dacmultisigs cancel '{ "proposer": "custodian1", "proposal_name": "myproposal", "canceler": "invaliduser1" }' -p invaliduser1), allow_error: true
-      its(:stderr) {is_expected.to include('Provided keys, permissions, and delays do not satisfy declared authorizations')}
+      command %(cleos push action dacmultisigs cancelled '{ "proposer": "custodian1", "proposal_name": "myproposal", "canceler": "invaliduser1" }' -p dacauthority), allow_error: true
+      its(:stderr) {is_expected.to include('missing authority of invaliduser1')}
     end
-
-    context "with non-proposer valid auth but before expiration" do
-      command %(cleos push action dacmultisigs cancel '{ "proposer": "custodian1", "proposal_name": "myproposal", "canceler": "custodian2"}}' -p custodian2), allow_error: true
-      its(:stderr) {is_expected.to include('cannot cancel until expiration')}
-    end
-
     context "with valid proposer auth" do
-      command %(cleos push action dacmultisigs cancel '{ "proposer": "custodian1", "proposal_name": "myproposal", "canceler": "custodian1"}' -p custodian1
-), allow_error: true
-      its(:stdout) {is_expected.to include('dacmultisigs::cancel')}
+      context "without removing the msig from the system contract" do
+        command %(cleos push action dacmultisigs cancelled '{ "proposer": "custodian1", "proposal_name": "myproposal", "canceler": "custodian2"}}' -p custodian2 -p dacauthority), allow_error: true
+        its(:stderr) {is_expected.to include('ERR::PROPOSAL_EXISTS')}
+      end
+      context "with removing the msig from the system contract" do
+        before(:all) do
+          # first put proposal in the system msig contract.
+          puts `cleos multisig cancel custodian1 myproposal custodian1 -p custodian1`
+        end
+        command %(cleos push action dacmultisigs cancelled '{ "proposer": "custodian1", "proposal_name": "myproposal", "canceler": "custodian1"}' -p custodian1 -p dacauthority), allow_error: true
+        its(:stdout) {is_expected.to include('dacmultisigs::cancelled')}
+      end
     end
 
     context "Read the proposals table after successful proposal" do
@@ -276,45 +264,41 @@ describe "dacmultisigs" do
     end
   end
 
-  describe "exec" do
+  describe "executed" do
     before(:all) do
       # first put proposal in the system msig contract.
       puts `cleos multisig propose myproposal2 '[{"actor": "custodian1", "permission": "active"}]' '[{"actor": "custodian1", "permission": "active"}]' eosio.token transfer '{ "from": "custodian1", "to": "tester1", "quantity": "1.0000 EOS", "memo": "random memo"}}' -p custodian1`
       puts `cleos multisig review custodian1 myproposal2`
-      puts `cleos push action dacmultisigs stproposal '{ "proposer": "custodian1", "proposalname": "myproposal2", "transactionid": "579159b224ebd9c0a3d36b1c53ae97a2df96025a054b29b62f1534ecfed080bf", "metadata": "random meta"}' -p dacauthority`
+      puts `cleos push action dacmultisigs proposed '{ "proposer": "custodian1", "proposal_name": "myproposal2", "transactionid": "579159b224ebd9c0a3d36b1c53ae97a2df96025a054b29b62f1534ecfed080bf", "metadata": "random meta"}' -p dacauthority -p custodian1`
     end
 
     context "Read the proposals table after successful proposal" do
       command %(cleos get table dacmultisigs custodian1 proposals), allow_error: true
       it do
-        expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
-            {
-  "rows": [
-{"proposalname": "myproposal2", 
-"transactionid": "579159b224ebd9c0a3d36b1c53ae97a2df96025a054b29b62f1534ecfed080bf"}
-],
-  "more": false
-}
-        JSON
+        json = JSON.parse(subject.stdout)
+        expect(json["rows"].count).to eq 1
+
+        prop = json["rows"].detect {|v| v["proposalname"] == 'myproposal2'}
+
+        expect(prop["transactionid"].length).to be > 50
+        expect(string_date_to_UTC(prop["modifieddate"]).day).to eq (utc_today.day)
       end
     end
 
     context "with invalid auth" do
-      command %(cleos push action dacmultisigs exec '{ "proposer": "custodian1", "proposal_name": "myproposal2", "executer": "invaliduser1" }' -p invaliduser1), allow_error: true
+      command %(cleos push action dacmultisigs executed  '{ "proposer": "custodian1", "proposal_name": "myproposal2", "executer": "invaliduser1" }' -p invaliduser2 -p dacauthority), allow_error: true
       its(:stderr) {is_expected.to include('Provided keys, permissions, and delays do not satisfy declared authorizations')}
-    end
-
-    context "with non-proposer valid auth but before expiration" do
-      command %(cleos push action dacmultisigs exec '{ "proposer": "custodian1", "proposal_name": "myproposal2", "executer": "custodian2"}' -p custodian2), allow_error: true
-      its(:stderr) {is_expected.to include('transaction authorization failed')}
     end
 
     context "with valid proposer auth" do
       before(:all) do
-        `cleos push action dacmultisigs approve '{ "proposer": "custodian1", "proposal_name": "myproposal2", "level": {"actor": "custodian1", "permission": "active"}}' -p custodian1`
+        puts `cleos push action dacmultisigs approved '{ "proposer": "custodian1", "proposal_name": "myproposal2", "approver": "custodian1" }' -p custodian1 -p dacauthority`
+        puts `cleos multisig approve custodian1 myproposal2 '{"actor": "custodian1", "permission": "active"}'`
+        puts `cleos multisig exec custodian1 myproposal2 custodian1 -p custodian1`
       end
-      command %(cleos push action dacmultisigs exec '{ "proposer": "custodian1", "proposal_name": "myproposal2", "executer": "custodian1"}' -p custodian1), allow_error: true
-      its(:stdout) {is_expected.to include('dacmultisigs::exec')}
+
+      command %(cleos push action dacmultisigs executed '{ "proposer": "custodian1", "proposal_name": "myproposal2", "executer": "custodian1"}' -p custodian1 -p dacauthority), allow_error: true
+      its(:stdout) {is_expected.to include('dacmultisigs::executed')}
     end
 
     context "Read the proposals table after successful proposal" do
@@ -322,13 +306,12 @@ describe "dacmultisigs" do
       it do
         expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
             {
-  "rows": [],
-  "more": false
-}
+              "rows": [],
+              "more": false
+            }
         JSON
       end
     end
   end
-
 end
 

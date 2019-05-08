@@ -103,7 +103,7 @@
                 },
                 {
                     "name": "modifieddate",
-                    "type": "uint32"
+                    "type": "time_point_sec"
                 }
             ]
         },

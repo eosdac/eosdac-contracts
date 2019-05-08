@@ -1,11 +1,8 @@
 //
 // Created by Dallas Johnson on 23/10/2018.
 //
-#include <eosiolib/action.hpp>
-#include <eosiolib/permission.hpp>
-#include <eosiolib/transaction.hpp>
-#include <eosiolib/crypto.h>
-#include <eosiolib/system.h>
+#include <eosio/action.hpp>
+#include <eosio/transaction.hpp>
 
 #include "external_types.hpp"
 #include "dacmultisigs.hpp"
@@ -20,7 +17,7 @@ void dacmultisigs::proposed( name proposer, name proposal_name, string metadata 
     auto size = transaction_size();
     char* buffer = (char*)( 512 < size ? malloc(size) : alloca(size) );
     uint32_t read = read_transaction( buffer, size );
-    eosio_assert( size == read, "ERR::READ_TRANSACTION_FAILED::read_transaction failed");
+    check( size == read, "ERR::READ_TRANSACTION_FAILED::read_transaction failed");
 
     checksum256 trx_id = sha256(buffer, read);
 
@@ -29,7 +26,8 @@ void dacmultisigs::proposed( name proposer, name proposal_name, string metadata 
     proposals.emplace(proposer, [&](storedproposal &p) {
         p.proposalname = proposal_name;
         p.transactionid = trx_id;
-        p.modifieddate = now();
+        p.modifieddate = time_point_sec(eosio::current_time_point());
+;
     });
 }
 
@@ -43,7 +41,7 @@ void dacmultisigs::approved( name proposer, name proposal_name, name approver ){
     proposals_table proposals(_self, proposer.value);
     auto& proposal = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
     proposals.modify(proposal, same_payer, [&](storedproposal &p) {
-        p.modifieddate = now();
+        p.modifieddate = time_point_sec(eosio::current_time_point());
     });
 }
 
@@ -57,7 +55,7 @@ void dacmultisigs::unapproved( name proposer, name proposal_name, name unapprove
     proposals_table proposals(_self, proposer.value);
     auto& proposal = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
     proposals.modify(proposal, same_payer, [&](storedproposal &p) {
-        p.modifieddate = now();
+        p.modifieddate = time_point_sec(eosio::current_time_point());
     });
 }
 
@@ -67,7 +65,7 @@ void dacmultisigs::cancelled( name proposer, name proposal_name, name canceler )
 
     msig_proposals_table msig_proposals("eosio.msig"_n, proposer.value);
     auto prop = msig_proposals.find(proposal_name.value);
-    eosio_assert(prop == msig_proposals.end(), "ERR::PROPOSAL_EXISTS::The proposal still exists in eosio.msig");
+    check(prop == msig_proposals.end(), "ERR::PROPOSAL_EXISTS::The proposal still exists in eosio.msig");
 
     proposals_table proposals(_self, proposer.value);
     auto& proposal_to_erase = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
@@ -80,7 +78,7 @@ void dacmultisigs::executed( name proposer, name proposal_name, name executer ) 
 
     msig_proposals_table msig_proposals("eosio.msig"_n, proposer.value);
     auto prop = msig_proposals.find(proposal_name.value);
-    eosio_assert(prop == msig_proposals.end(), "ERR::PROPOSAL_EXISTS::The proposal still exists in eosio.msig");
+    check(prop == msig_proposals.end(), "ERR::PROPOSAL_EXISTS::The proposal still exists in eosio.msig");
 
     proposals_table proposals(_self, proposer.value);
     auto& proposal_to_erase = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
@@ -90,22 +88,13 @@ void dacmultisigs::executed( name proposer, name proposal_name, name executer ) 
 void dacmultisigs::clean( name proposer, name proposal_name ) {
     require_auth( "dacauthority"_n );
 
-    uint32_t dtnow = now();
+    time_point_sec dtnow =  time_point_sec(eosio::current_time_point());
     uint32_t two_weeks = 60 * 60 * 24 * 14;
 
     proposals_table proposals(_self, proposer.value);
     auto& proposal = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
 
-    eosio_assert(dtnow > (proposal.modifieddate + two_weeks), "ERR::PROPOSAL_STILL_ACTIVE::This proposal is still active");
+    check(dtnow > (proposal.modifieddate + two_weeks), "ERR::PROPOSAL_STILL_ACTIVE::This proposal is still active");
 
     proposals.erase(proposal);
 }
-
-EOSIO_DISPATCH( dacmultisigs,
-        (proposed)
-        (cancelled)
-        (approved)
-        (unapproved)
-        (executed)
-        (clean)
-)

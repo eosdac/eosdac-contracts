@@ -1,3 +1,5 @@
+#include <eosio/multi_index.hpp>
+
 using namespace eosio;
 
 struct msig_proposal {
@@ -7,4 +9,4 @@ struct msig_proposal {
    uint64_t primary_key()const { return proposal_name.value; }
 };
 
-typedef eosio::multi_index< "proposal"_n, msig_proposal > msig_proposals_table;
+typedef multi_index< "proposal"_n, msig_proposal > msig_proposals_table;
