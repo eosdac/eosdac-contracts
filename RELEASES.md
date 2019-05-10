@@ -1,0 +1,5 @@
+Date: 2019-05-10
+Contract: daccustodian
+Hash: 4d1f18f471339b3acd50925555337272af46f674ff5c4a213141018d019e22b9
+CDT: 1.6.1
+Git Commit: 713ab34f34619e8393daf4b2108cd2fd37995c0d
