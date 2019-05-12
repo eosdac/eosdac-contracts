@@ -78,8 +78,8 @@ enum VoteType {
 
     ACTION createprop(name proposer, string title, string summary, name arbitrator, extended_asset pay_amount, string content_hash, uint64_t id, uint16_t category, name dac_scope);
     ACTION voteprop(name custodian, uint64_t proposal_id, uint8_t vote, name dac_scope);
-    ACTION delegatevote(name custodian, uint64_t proposal_id, name dalegatee_custodian, name dac_scope);
-    ACTION delegatecat(name custodian, uint64_t category, name dalegatee_custodian, name dac_scope);
+    ACTION delegatevote(name custodian, uint64_t proposal_id, name delegatee_custodian, name dac_scope);
+    ACTION delegatecat(name custodian, uint64_t category, name delegatee_custodian, name dac_scope);
     ACTION undelegateca(name custodian, uint64_t category, name dac_scope);
     ACTION arbapprove(name arbitrator, uint64_t proposal_id, name dac_scope);
     ACTION startwork(uint64_t proposal_id, name dac_scope);
@@ -94,50 +94,41 @@ private:
 
     void clearprop(const proposal& proposal, name dac_scope);
     void transferfunds(const proposal &prop, name dac_scope);
-    int16_t count_votes(uint64_t proposal_id, VoteType vote_type, name dac_scope);
+    int16_t count_votes(proposal prop, VoteType vote_type, name dac_scope);
     void assertValidMember(name member, name dac_scope);
 
 TABLE proposalvote {
         uint64_t vote_id;
-        uint64_t proposal_id;
         name voter;
-        uint8_t vote;
-        name delegatee;
-        string comment_hash;
+        optional<uint64_t> proposal_id;
+        optional<uint64_t> category_id;
+        optional<uint8_t> vote;
+        optional<name> delegatee;
+        optional<string> comment_hash;
 
         uint64_t primary_key() const { return vote_id; }
-        uint64_t proposal_key() const { return proposal_id; }
         uint64_t voter_key() const { return voter.value; }
-        uint128_t get_prop_and_voter() const { return combine_ids(proposal_id, voter.value); }
+
+        uint64_t proposal_key() const { return proposal_id.value_or(UINT64_MAX); }
+        uint64_t category_key() const { return category_id.value_or(UINT64_MAX); }
+        uint128_t get_prop_and_voter() const { return combine_ids(proposal_id.value_or(UINT64_MAX), voter.value); }
+        uint128_t get_category_and_voter() const { return combine_ids(category_id.value_or(UINT64_MAX), voter.value); }
+
+        EOSLIB_SERIALIZE(proposalvote, (vote_id)(voter)(proposal_id)(category_id)(vote)(delegatee)(comment_hash))
+
     };
 
     typedef eosio::multi_index<"propvotes"_n, proposalvote,
     indexed_by<"voter"_n, eosio::const_mem_fun<proposalvote, uint64_t, &proposalvote::voter_key>>,
     indexed_by<"proposal"_n, eosio::const_mem_fun<proposalvote, uint64_t, &proposalvote::proposal_key>>,
-    indexed_by<"propandvoter"_n, eosio::const_mem_fun<proposalvote, uint128_t, &proposalvote::get_prop_and_voter>>
+    indexed_by<"category"_n, eosio::const_mem_fun<proposalvote, uint64_t, &proposalvote::category_key>>,
+    indexed_by<"propandvoter"_n, eosio::const_mem_fun<proposalvote, uint128_t, &proposalvote::get_prop_and_voter>>,
+    indexed_by<"catandvoter"_n, eosio::const_mem_fun<proposalvote, uint128_t, &proposalvote::get_category_and_voter>>
     > proposal_vote_table;
 
     static const uint128_t combine_ids(const uint64_t &x, const uint64_t &y) {
         return (uint128_t{x} << 64) | y;
     }
-
-    TABLE categoryvote {
-        uint64_t vote_id;
-        uint64_t category_id;
-        name voter;
-        name delegatee;
-
-        uint64_t primary_key() const { return vote_id; }
-        uint64_t category_key() const { return category_id; }
-        uint64_t voter_key() const { return voter.value; }
-        uint128_t get_category_and_voter() const { return combine_ids(category_id, voter.value); }
-    };
-
-    typedef eosio::multi_index<"catvotes"_n, categoryvote,
-        indexed_by<"voter"_n, eosio::const_mem_fun<categoryvote, uint64_t, &categoryvote::voter_key>>,
-        indexed_by<"category"_n, eosio::const_mem_fun<categoryvote, uint64_t, &categoryvote::category_key>>,
-        indexed_by<"catandvoter"_n, eosio::const_mem_fun<categoryvote, uint128_t, &categoryvote::get_category_and_voter>>
-    > category_vote_table;
 
     config current_configs(name dac_scope) {
         configs_table configs(_self, dac_scope.value);

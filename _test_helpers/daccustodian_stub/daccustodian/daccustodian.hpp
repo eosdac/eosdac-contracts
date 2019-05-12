@@ -1,7 +1,7 @@
-#include <eosiolib/eosio.hpp>
-#include <eosiolib/multi_index.hpp>
-#include <eosiolib/singleton.hpp>
-#include <eosiolib/asset.hpp>
+#include <eosio/eosio.hpp>
+#include <eosio/multi_index.hpp>
+#include <eosio/singleton.hpp>
+#include <eosio/asset.hpp>
 
 using namespace eosio;
 using namespace std;
@@ -16,9 +16,6 @@ struct [[eosio::table("custodians"), eosio::contract("daccustodian")]] custodian
     uint64_t by_votes_rank() const { return static_cast<uint64_t>(UINT64_MAX - total_votes); }
 
     uint64_t by_requested_pay() const { return static_cast<uint64_t>(requestedpay.amount); }
-
-    EOSLIB_SERIALIZE(custodian,
-                     (cust_name)(requestedpay)(total_votes))
 };
 
 typedef multi_index<"custodians"_n, custodian,

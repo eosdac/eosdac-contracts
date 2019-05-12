@@ -36,28 +36,6 @@
             ]
         },
         {
-            "name": "categoryvote",
-            "base": "",
-            "fields": [
-                {
-                    "name": "vote_id",
-                    "type": "uint64"
-                },
-                {
-                    "name": "category_id",
-                    "type": "uint64"
-                },
-                {
-                    "name": "voter",
-                    "type": "name"
-                },
-                {
-                    "name": "delegatee",
-                    "type": "name"
-                }
-            ]
-        },
-        {
             "name": "clearexpprop",
             "base": "",
             "fields": [
@@ -204,7 +182,7 @@
                     "type": "uint64"
                 },
                 {
-                    "name": "dalegatee_custodian",
+                    "name": "delegatee_custodian",
                     "type": "name"
                 },
                 {
@@ -226,7 +204,7 @@
                     "type": "uint64"
                 },
                 {
-                    "name": "dalegatee_custodian",
+                    "name": "delegatee_custodian",
                     "type": "name"
                 },
                 {
@@ -296,24 +274,28 @@
                     "type": "uint64"
                 },
                 {
-                    "name": "proposal_id",
-                    "type": "uint64"
-                },
-                {
                     "name": "voter",
                     "type": "name"
                 },
                 {
+                    "name": "proposal_id",
+                    "type": "uint64?"
+                },
+                {
+                    "name": "category_id",
+                    "type": "uint64?"
+                },
+                {
                     "name": "vote",
-                    "type": "uint8"
+                    "type": "uint8?"
                 },
                 {
                     "name": "delegatee",
-                    "type": "name"
+                    "type": "name?"
                 },
                 {
                     "name": "comment_hash",
-                    "type": "string"
+                    "type": "string?"
                 }
             ]
         },
@@ -454,13 +436,6 @@
         }
     ],
     "tables": [
-        {
-            "name": "catvotes",
-            "type": "categoryvote",
-            "index_type": "i64",
-            "key_names": [],
-            "key_types": []
-        },
         {
             "name": "config",
             "type": "config",
