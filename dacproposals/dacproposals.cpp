@@ -65,21 +65,21 @@ using namespace std;
                 v.proposal_id = proposal_id;
                 v.voter = custodian;
                 v.vote = vote;
-                v.delegatee = name{0};
+                v.delegatee = nullopt;
             });
         } else {
             by_prop_and_voter.modify(vote_idx, _self, [&](proposalvote &v) {
                 v.vote = vote;
-                v.delegatee = name{0};
+                v.delegatee = nullopt;
             });
         }
     }
 
-    ACTION dacproposals::delegatevote(name custodian, uint64_t proposal_id, name dalegatee_custodian, name dac_scope) {
+    ACTION dacproposals::delegatevote(name custodian, uint64_t proposal_id, name delegatee_custodian, name dac_scope) {
         require_auth(custodian);
         require_auth(current_configs(dac_scope).authority_account);
         assertValidMember(custodian, dac_scope);
-        check(custodian != dalegatee_custodian, "ERR::DELEGATEVOTE_DELEGATE_SELF::Cannot delegate voting to yourself.");
+        check(custodian != delegatee_custodian, "ERR::DELEGATEVOTE_DELEGATE_SELF::Cannot delegate voting to yourself.");
 
         proposal_table proposals(_self, dac_scope.value);
 
@@ -95,37 +95,38 @@ using namespace std;
                 v.vote_id = prop_votes.available_primary_key();
                 v.proposal_id = proposal_id;
                 v.voter = custodian;
-                v.vote = none;
-                v.delegatee = dalegatee_custodian;
+                v.vote = nullopt;
+                v.delegatee = delegatee_custodian;
             });
         } else {
             by_prop_and_voter.modify(vote_idx, _self, [&](proposalvote &v) {
-                v.vote = none;
-                v.delegatee = dalegatee_custodian;
+                v.vote = nullopt;
+                v.delegatee = delegatee_custodian;
             });
         }
     }
 
-    ACTION dacproposals::delegatecat(name custodian, uint64_t category, name dalegatee_custodian, name dac_scope) {
+    ACTION dacproposals::delegatecat(name custodian, uint64_t category, name delegatee_custodian, name dac_scope) {
         require_auth(custodian);
         require_auth(current_configs(dac_scope).authority_account);
         assertValidMember(custodian, dac_scope);
-        check(custodian != dalegatee_custodian, "ERR::DELEGATEVOTE_DELEGATE_SELF::Cannot delegate voting to yourself.");
+        check(custodian != delegatee_custodian, "ERR::DELEGATEVOTE_DELEGATE_SELF::Cannot delegate voting to yourself.");
 
-        category_vote_table cat_votes(_self, dac_scope.value);
-        auto by_prop_and_voter = cat_votes.get_index<"catandvoter"_n>();
+        proposal_vote_table prop_votes(_self, dac_scope.value);
+
+        auto by_cat_and_voter = prop_votes.get_index<"catandvoter"_n>();
         uint128_t joint_id = dacproposals::combine_ids(category, custodian.value);
-        auto vote_idx = by_prop_and_voter.find(joint_id);
-        if (vote_idx == by_prop_and_voter.end()) {
-            cat_votes.emplace(_self, [&](categoryvote &v) {
-                v.vote_id = cat_votes.available_primary_key();
+        auto vote_idx = by_cat_and_voter.find(joint_id);
+        if (vote_idx == by_cat_and_voter.end()) {
+            prop_votes.emplace(_self, [&](proposalvote &v) {
+                v.vote_id = prop_votes.available_primary_key();
                 v.category_id = category;
                 v.voter = custodian;
-                v.delegatee = dalegatee_custodian;
+                v.delegatee = delegatee_custodian;
             });
         } else {
-            by_prop_and_voter.modify(vote_idx, _self, [&](categoryvote &v) {
-                v.delegatee = dalegatee_custodian;
+            by_cat_and_voter.modify(vote_idx, _self, [&](proposalvote &v) {
+                v.delegatee = delegatee_custodian;
             });
         }
     }
@@ -133,12 +134,13 @@ using namespace std;
     ACTION dacproposals::undelegateca(name custodian, uint64_t category, name dac_scope) {
         require_auth(custodian);
     
-        category_vote_table cat_votes(_self, dac_scope.value);
-        auto by_prop_and_voter = cat_votes.get_index<"catandvoter"_n>();
+        proposal_vote_table prop_votes(_self, dac_scope.value);
+        auto by_cat_and_voter = prop_votes.get_index<"catandvoter"_n>();
+
         uint128_t joint_id = dacproposals::combine_ids(category, custodian.value);
-        auto vote_idx = by_prop_and_voter.find(joint_id);
-        check(vote_idx != by_prop_and_voter.end(),"ERR::UNDELEGATECA_NO_EXISTING_VOTE::Cannot undelegate category vote with pre-existing vote.");
-        by_prop_and_voter.erase(vote_idx);
+        auto vote_idx = by_cat_and_voter.find(joint_id);
+        check(vote_idx != by_cat_and_voter.end(),"ERR::UNDELEGATECA_NO_EXISTING_VOTE::Cannot undelegate category vote with pre-existing vote.");
+        by_cat_and_voter.erase(vote_idx);
     }
 
     ACTION dacproposals::arbapprove(name arbitrator, uint64_t proposal_id, name dac_scope) {
@@ -160,12 +162,12 @@ using namespace std;
         require_auth(prop.proposer);
         assertValidMember(prop.proposer, dac_scope);
 
-        int16_t approved_count = count_votes(proposal_id, proposal_approve, dac_scope);
+        int16_t approved_count = count_votes(prop, proposal_approve, dac_scope);
 
         config configs = current_configs(dac_scope);
 
         check(approved_count >= configs.proposal_threshold, "ERR::STARTWORK_INSUFFICIENT_VOTES::Insufficient votes on worker proposal.");
-        print_f("Worker proposal % was approved to start work with: % votes\n", proposal_id, approved_count);
+        print_f("Worker proposal % to start work with: % votes\n", proposal_id, approved_count);
         
         proposals.modify(prop, prop.proposer, [&](proposal &p){
             p.state = work_in_progress;
@@ -213,9 +215,9 @@ using namespace std;
 
         check(prop.state == pending_finalize, "ERR::FINALIZE_WRONG_STATE::Proposal is not in the pending_finalize state therefore cannot be finalized.");
         
-        int16_t approved_count = count_votes(proposal_id, finalize_approve, dac_scope);
+        int16_t approved_count = count_votes(prop, finalize_approve, dac_scope);
 
-        print_f("Worker proposal % was approved for finalizing with: % votes\n", proposal_id, approved_count);
+        print_f("Worker proposal % for finalizing with: % votes\n", proposal_id, approved_count);
 
         check(approved_count >= current_configs(dac_scope).finalize_threshold, "ERR::FINALIZE_INSUFFICIENT_VOTES::Insufficient votes on worker proposal to be finalized.");
 
@@ -294,10 +296,10 @@ using namespace std;
         proposals.erase(prop_to_erase);
     }
 
-    int16_t dacproposals::count_votes(uint64_t proposal_id, VoteType vote_type, name dac_scope){
+    int16_t dacproposals::count_votes(proposal prop, VoteType vote_type, name dac_scope){
         auto custodian_data_src = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::CUSTODIAN);
 
-        print("account:: ", custodian_data_src.account_name, " scope:: ", custodian_data_src.dac_scope);
+        print("count votes with account:: ", custodian_data_src.account_name, " scope:: ", custodian_data_src.dac_scope);
 
         custodians_table custodians(custodian_data_src.account_name, custodian_data_src.dac_scope.value);
         std::set<eosio::name> current_custodians;
@@ -307,96 +309,92 @@ using namespace std;
             current_custodians.insert(cust.cust_name);
         }
         print_f("\ncurrent custodians: ");
-        for_each(
-            current_custodians.begin(), 
-            current_custodians.end(),
-            [](auto name) {print(name,", ");}
-        );
+        for(auto name: current_custodians) { print(name,", "); }
 
         // Find the delegated and direct votes for the current proposal 
         proposal_vote_table prop_votes(_self, dac_scope.value);
         auto by_voters = prop_votes.get_index<"proposal"_n>();
-        std::map<eosio::name, uint16_t> delegated_votes;
-        std::set<eosio::name> approval_votes;
+        std::map<eosio::name, uint16_t> delegated_proposal_votes;
+        std::set<eosio::name> approval_proposal_votes;
 
-        auto vote_idx = by_voters.find(proposal_id);
+        auto direct_vote_itr = by_voters.find(prop.key);
 
         // Iterate through all votes on proposal
-        while(vote_idx != by_voters.end() && vote_idx->proposal_id == proposal_id) {
+        while(
+            direct_vote_itr != by_voters.end() && 
+            direct_vote_itr->proposal_id == prop.key
+            ) {
             // Check if the voter is a current custodian
-            if (current_custodians.find(vote_idx->voter) != current_custodians.end()) {
-                voted_custodians.insert(vote_idx->voter);
+            if (current_custodians.find(direct_vote_itr->voter) != current_custodians.end()) {
+                voted_custodians.insert(direct_vote_itr->voter);
                 // Assign vote to either a direct approved vote or a delegated vote.
-                if (vote_idx->delegatee != name{0} && 
-                    current_custodians.find(vote_idx->delegatee) != current_custodians.end()) {
-                        delegated_votes[vote_idx->delegatee]++;
-                } else if (vote_idx->vote == vote_type) {
-                        approval_votes.insert(vote_idx->voter);
+                if (direct_vote_itr->delegatee) {
+                    delegated_proposal_votes[direct_vote_itr->delegatee.value()]++;
+                } else if (direct_vote_itr->vote && direct_vote_itr->vote.value() == vote_type) {
+                    approval_proposal_votes.insert(direct_vote_itr->voter);
                 }
+            } else {
+                //TODO: Remove vote since they are no longer a custodian.
             }
-            vote_idx++;
+            direct_vote_itr++;
         }
-        
-        print_f("\ndelegated_votes:");
-        for_each(
-            delegated_votes.begin(), 
-            delegated_votes.end(),
-            [](pair<const eosio::name, unsigned short> entry) {print("(name: ", entry.first, " category: ", entry.second,"), "); }
-        );
-        print_f("\napproval_votes: ");
 
-        for_each(
-            approval_votes.begin(), 
-            approval_votes.end(),
-            [](auto name) {print(name, ", ");}
-        );
+        print_f("\n direct approval_proposal_votes: ");
+        for(auto name: approval_proposal_votes) {print(name, ", "); }
+        
+        print_f("\ndelegated_proposal_vote weight: ");
+        for(pair<const eosio::name, unsigned short> entry : delegated_proposal_votes) {
+            print("(name: ", entry.first, " with added weight: ", entry.second,"), "); 
+        }
 
         // Find matching category votes for the current custodians
-        // First get the proposal category
-        proposal_table proposals(_self, dac_scope.value);
-        auto proposal = proposals.get(proposal_id,"ERR::COUNT_VOTES_NO_EXISTING_PROPOSAL::proposal not found for counting votes.");
 
         // Find the difference between current custodians and the ones that have already voted to avoid double votes.
         std::vector<name> nonvoting_custodians(current_custodians.size());                   
-        auto end_itr = std::set_difference(
-                                            current_custodians.begin(), current_custodians.end(), 
+        auto end_itr = std::set_difference( current_custodians.begin(), current_custodians.end(), 
                                             voted_custodians.begin(), voted_custodians.end(), 
                                             nonvoting_custodians.begin());
+
         nonvoting_custodians.resize(end_itr-nonvoting_custodians.begin());
         
-        print_f("\nnonvoting_custodians: ");
+        print_f("\ncustodians that have not yet voted: ");
         
-        for_each(
-            nonvoting_custodians.begin(), 
-            nonvoting_custodians.end(),
-            [](auto name) {print(name, ", ");}
-        );
+        for(auto name: nonvoting_custodians) { print(name, ", "); }
 
         // Collect category votes from custodians that have not yet voted into a map.
-        category_vote_table cat_votes(_self, dac_scope.value);
-        auto by_cat_and_voter = cat_votes.get_index<"catandvoter"_n>();
-        
+        auto by_category = prop_votes.get_index<"catandvoter"_n>();
+
         std::map<eosio::name, uint16_t> category_delegate_votes;
 
-        for (auto it = nonvoting_custodians.begin(); it != nonvoting_custodians.end(); ++it) {    
-            uint128_t joint_id = dacproposals::combine_ids(proposal.category, it->value);
-            auto vote_idx = by_cat_and_voter.find(joint_id);
-            if (vote_idx != by_cat_and_voter.end() && vote_idx->voter == name{it->value}) {
-                category_delegate_votes[vote_idx->delegatee]++;
+        for (auto custodian: nonvoting_custodians) {
+            uint128_t joint_id = dacproposals::combine_ids(prop.category, custodian.value);
+            auto vote_idx = by_category.find(joint_id);
+            if (
+                vote_idx != by_category.end() &&
+                vote_idx->category_id &&
+                vote_idx->delegatee && 
+                vote_idx->voter == custodian
+                ) {
+                category_delegate_votes[vote_idx->delegatee.value()]++;
             }
         }
 
-        print_f("\ncategory_delegate_votes: ");
-        for_each(
-            category_delegate_votes.begin(), 
-            category_delegate_votes.end(),
-            [](auto entry) { print("(name: ",entry.first," vote: ", entry.second, "), "); }
-        );
+        print("\nCategory votes delegated from custodians that have not yet voted for this proposal: ");
+        print("\n( based on the proposal having category: ", prop.category, " )");
+        print("\n( Total should not exceed the number of non voting custodians from the previous step. )\n");
+        for(auto entry: category_delegate_votes) { print("(name: ", entry.first, " vote: ", entry.second, "), "); }
 
         // Tally all the direct + delegated proposal + delegated category vote values
+        print("\n Tally votes:\n");
         int16_t approved_count = 0;
-        for (auto approval : approval_votes) {
-            approved_count += (1 + delegated_votes[approval] + category_delegate_votes[approval]);
+        for (auto approval : approval_proposal_votes) {
+            auto addedPropWeight = delegated_proposal_votes[approval];
+            auto addedCategoryWeight = category_delegate_votes[approval];
+            int16_t weight_to_add = (1 + addedPropWeight + addedCategoryWeight);
+            print("\n\n Approver: ", approval, "   1 " 
+                    "\n + delegated for proposal: ", addedPropWeight, 
+                    "\n + delegated for category: ", addedCategoryWeight);
+            approved_count += weight_to_add;
         }
         
         print("\napproved_count: ", approved_count, "\n");
@@ -415,17 +413,3 @@ using namespace std;
     check(latest_member_terms->version == regmem.agreedterms, "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_LATEST_TERMS::Agreed terms isn't the latest.");
     }
 
-EOSIO_DISPATCH(dacproposals,
-                (createprop)
-                (startwork)
-                (completework)
-                (voteprop)
-                (delegatevote)
-                (delegatecat)
-                (undelegateca)
-                (finalize)
-                (cancel)
-                (comment)
-                (updateconfig)
-                (clearexpprop)
-        )
