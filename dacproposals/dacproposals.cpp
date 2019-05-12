@@ -5,8 +5,6 @@
 #include <typeinfo>
 #include <algorithm>
 
-#include <string>
-
 using namespace eosio;
 using namespace std;
 
@@ -37,7 +35,10 @@ using namespace std;
 
     ACTION dacproposals::voteprop(name custodian, uint64_t proposal_id, uint8_t vote, name dac_scope) {
         require_auth(custodian);
-        require_auth(current_configs(dac_scope).authority_account);
+
+        auto auth_account = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::AUTH).account_name;
+        require_auth(auth_account);
+
         assertValidMember(custodian, dac_scope);
 
         proposal_table proposals(_self, dac_scope.value);
@@ -77,7 +78,9 @@ using namespace std;
 
     ACTION dacproposals::delegatevote(name custodian, uint64_t proposal_id, name delegatee_custodian, name dac_scope) {
         require_auth(custodian);
-        require_auth(current_configs(dac_scope).authority_account);
+        auto auth_account = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::AUTH).account_name;
+        require_auth(auth_account);
+        
         assertValidMember(custodian, dac_scope);
         check(custodian != delegatee_custodian, "ERR::DELEGATEVOTE_DELEGATE_SELF::Cannot delegate voting to yourself.");
 
@@ -108,7 +111,8 @@ using namespace std;
 
     ACTION dacproposals::delegatecat(name custodian, uint64_t category, name delegatee_custodian, name dac_scope) {
         require_auth(custodian);
-        require_auth(current_configs(dac_scope).authority_account);
+        auto auth_account = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::AUTH).account_name;
+        require_auth(auth_account);
         assertValidMember(custodian, dac_scope);
         check(custodian != delegatee_custodian, "ERR::DELEGATEVOTE_DELEGATE_SELF::Cannot delegate voting to yourself.");
 
@@ -177,18 +181,22 @@ using namespace std;
         string memo = prop.proposer.to_string() + ":" + to_string(proposal_id) + ":" + prop.content_hash;
         
         time_point_sec time_now = time_point_sec(current_time_point().sec_since_epoch());
-        auto inittuple = make_tuple(configs.treasury_account, prop.proposer, prop.arbitrator, time_now + configs.escrow_expiry, memo, std::optional<uint64_t>(proposal_id));
+        
+        auto treasury = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::TREASURY).account_name;
+        auto service = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::SERVICE).account_name;
+        
+        auto inittuple = make_tuple(treasury, prop.proposer, prop.arbitrator, time_now + configs.escrow_expiry, memo, std::optional<uint64_t>(proposal_id));
 
         eosio::action(
-                eosio::permission_level{configs.treasury_account , "active"_n },
-                configs.service_account, "init"_n,
+                eosio::permission_level{ treasury, "active"_n },
+                service, "init"_n,
                 inittuple
         ).send();
 
         eosio::action(
-                eosio::permission_level{configs.treasury_account , "xfer"_n },
+                eosio::permission_level{treasury , "xfer"_n },
                 prop.pay_amount.contract, "transfer"_n,
-                make_tuple(configs.treasury_account, configs.service_account, prop.pay_amount.quantity, "payment for wp: " + to_string(proposal_id))
+                make_tuple(treasury, service, prop.pay_amount.quantity, "payment for wp: " + to_string(proposal_id))
         ).send();
     }
 
@@ -242,17 +250,16 @@ using namespace std;
 
         const proposal& prop = proposals.get(proposal_id, "ERR::DELEGATEVOTE_PROPOSAL_NOT_FOUND::Proposal not found.");
         if (!has_auth(prop.proposer)) {
-            require_auth(current_configs(dac_scope).authority_account);
+            auto auth_account = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::AUTH).account_name;
+            require_auth(auth_account);        
         }
     }
 
     ACTION dacproposals::updateconfig(config new_config, name dac_scope) {
+        
+        auto auth_account = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::AUTH).account_name;
+        require_auth(auth_account);
 
-        if (current_configs(dac_scope).authority_account == name{0}) {
-            require_auth(_self);
-        } else {
-            require_auth(current_configs(dac_scope).authority_account);
-        }
         configs_table configs(_self, dac_scope.value);
         configs.set(new_config, _self);
     }
@@ -269,11 +276,13 @@ using namespace std;
     void dacproposals::transferfunds(const proposal &prop, name dac_scope) {
         proposal_table proposals(_self, dac_scope.value);
         config configs = current_configs(dac_scope);
+        auto treasury = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::TREASURY).account_name;
+        auto escrow = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::ESCROW).account_name;
 
         eosio::action(
-                eosio::permission_level{configs.treasury_account, "active"_n },
-                configs.service_account, "approveext"_n,
-                make_tuple( prop.key, configs.treasury_account)
+                eosio::permission_level{ treasury, "active"_n },
+                escrow, "approveext"_n,
+                make_tuple( prop.key, treasury)
             ).send();
 
         clearprop(prop, dac_scope);
@@ -403,13 +412,15 @@ using namespace std;
     }
 
     void dacproposals::assertValidMember(name member, name dac_scope) {
-    name member_terms_account = current_configs(dac_scope).member_terms_account;
-    regmembers reg_members(member_terms_account, member_terms_account.value);
-    memterms memberterms(member_terms_account, member_terms_account.value);
+    
+        auto member_terms_account = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::TOKEN);
 
-    const auto &regmem = reg_members.get(member.value, "ERR::GENERAL_REG_MEMBER_NOT_FOUND::Account is not registered with members.");
-    check((regmem.agreedterms != 0), "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_ANY_TERMS::Account has not agreed to any terms");
-    auto latest_member_terms = (--memberterms.end());
-    check(latest_member_terms->version == regmem.agreedterms, "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_LATEST_TERMS::Agreed terms isn't the latest.");
+        regmembers reg_members(member_terms_account.account_name, member_terms_account.dac_scope.value);
+        memterms memberterms(member_terms_account.account_name, member_terms_account.dac_scope.value);
+
+        const auto &regmem = reg_members.get(member.value, "ERR::GENERAL_REG_MEMBER_NOT_FOUND::Account is not registered with members.");
+        check((regmem.agreedterms != 0), "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_ANY_TERMS::Account has not agreed to any terms");
+        auto latest_member_terms = (--memberterms.end());
+        check(latest_member_terms->version == regmem.agreedterms, "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_LATEST_TERMS::Agreed terms isn't the latest.");
     }
 

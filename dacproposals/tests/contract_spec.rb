@@ -194,8 +194,8 @@ def configure_contracts
   `cleos push action eosdactokens create '{ "issuer": "eosdactokens", "maximum_supply": "100000.0000 EOSDAC", "transfer_locked": false}' -p eosdactokens`
   `cleos push action eosdactokens issue '{ "to": "eosdactokens", "quantity": "78337.0000 EOSDAC", "memo": "Initial amount of tokens for you."}' -p eosdactokens`
   `cleos push action eosio.token issue '{ "to": "eosdacthedac", "quantity": "100000.0000 EOS", "memo": "Initial EOS amount."}' -p eosio.token`
-  `cleos push action dacdirectory regdac '{"owner": "dacdirectory", "dac_name": "dacproposals", "dac_symbol": "4,MYSYM", "title": "Dac Title", "refs": [[1,"some_ref"]], "accounts": [[2,"daccustodian"]], "scopes": [[2,"daccustodian"]]}' -p dacdirectory`
-
+  `cleos push action dacdirectory regdac '{"owner": "dacdirectory", "dac_name": "dacproposals", "dac_symbol": "4,MYSYM", "title": "Dac Title", "refs": [[1,"some_ref"]], "accounts": [[2,"daccustodian"], [5,"dacescrow"], [7,"dacescrow"], [0, "dacauthority"], [4, "eosdactokens"], [1, "eosdacthedac"] ], "scopes": [[2,"daccustodian"], [4, "eosdactokens"]]}' -p dacdirectory`
+  
   #create users
   # Ensure terms are registered in the token contract
   `cleos push action eosdactokens newmemterms '{ "terms": "normallegalterms", "hash": "New Latest terms"}' -p eosdactokens`
@@ -241,10 +241,10 @@ describe "eosdacelect" do
   describe "updateconfig" do
     context "without valid auth" do
       command %(cleos push action dacproposals updateconfig '{"new_config": { "service_account": "dacescrow", "member_terms_account": "eosdactokens", "treasury_account": "eosdacthedac", "proposal_threshold": 7, "finalize_threshold": 5, "escrow_expiry": 2592000, "authority_account": "dacauthority", "approval_expiry": 86500}, "dac_scope": "dacproposals"}' -p proposeracc1), allow_error: true
-      its(:stderr) {is_expected.to include('missing authority of dacproposals')}
+      its(:stderr) {is_expected.to include('missing authority of dacauthority')}
     end
     context "with valid auth" do
-      command %(cleos push action dacproposals updateconfig '{"new_config": { "service_account": "dacescrow", "member_terms_account": "eosdactokens", "treasury_account": "eosdacthedac", "proposal_threshold": 7, "finalize_threshold": 5, "escrow_expiry": 2592000, "authority_account": "dacauthority", "approval_expiry": 86500}, "dac_scope": "dacproposals"}' -p dacproposals), allow_error: true
+        command %(cleos push action dacproposals updateconfig '{"new_config": { "service_account": "dacescrow", "member_terms_account": "eosdactokens", "treasury_account": "eosdacthedac", "proposal_threshold": 7, "finalize_threshold": 5, "escrow_expiry": 2592000, "authority_account": "dacauthority", "approval_expiry": 86500}, "dac_scope": "dacproposals"}' -p dacauthority), allow_error: true
       its(:stdout) {is_expected.to include('dacproposals <= dacproposals::updateconfig')}
     end
   end
@@ -255,10 +255,6 @@ describe "eosdacelect" do
       expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
         {
           "rows": [{
-              "service_account": "dacescrow",
-              "authority_account": "dacauthority",
-              "member_terms_account": "eosdactokens",
-              "treasury_account": "eosdacthedac",
               "proposal_threshold": 7,
               "finalize_threshold": 5,
               "escrow_expiry": 2592000,
@@ -778,7 +774,7 @@ describe "eosdacelect" do
         expect(string_date_to_UTC(prop["expiry"]).day).to eq (utc_today.next_day(1).day)
       end
     end
-    context "Read the escrow table after startwork" do
+    context "Read the escrow table after finalize" do
       command %(cleos get table dacescrow dacescrow escrows), allow_error: true
       it do
         json = JSON.parse(subject.stdout)
