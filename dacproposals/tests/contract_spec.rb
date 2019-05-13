@@ -179,6 +179,8 @@ def install_dependencies
     cleos set contract eosdactokens ../_compiled_contracts/eosdactokens/unit_tests/eosdactokens -p eosdactokens
     cleos set contract dacescrow ../_compiled_contracts/dacescrow/unit_tests/dacescrow -p dacescrow
     cleos set contract dacproposals ../_compiled_contracts/dacproposals/unit_tests/dacproposals -p dacproposals
+    
+    cleos set contract daccustodian ../_test_helpers/daccustodian_stub/daccustodian -p daccustodian
   SHELL
 
   `#{beforescript}`
@@ -286,10 +288,6 @@ describe "eosdacelect" do
         command %(cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "some_title", "summary": "", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "100.0000 EOS", "contract": "eosio.token"}, "content_hash": "jhsdfkjhsdfkjhkjsdf", "id": 0, "category": 2, "dac_scope": "dacproposals" }' -p proposeracc1), allow_error: true
         its(:stderr) {is_expected.to include('Summary length is too short')}
       end
-      xcontext "with an invalid contentHash" do
-        command %(cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "some_title", "summary": "some_summary", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "100.0000 EOS", "contract": "eosio.token"}, "content_hash": "asdfasdfasdfasdfasdfasdfasdfasd", "id": 0, "category": 2, "dac_scope": "dacproposals" }' -p proposeracc1), allow_error: true
-        its(:stderr) {is_expected.to include('Invalid content hash.')}
-      end
       context "with an invalid pay symbol" do
         command %(cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "some_title", "summary": "", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "100.0000 soe", "contract": "eosio.token"}, "content_hash": "jhsdfkjhsdfkjhkjsdf", "id": 0, "category": 2, "dac_scope": "dacproposals" }' -p proposeracc1), allow_error: true
         its(:stderr) {is_expected.to include('Invalid symbol')}
@@ -380,21 +378,21 @@ describe "eosdacelect" do
       `cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "startwork_title", "summary": "startwork_summary", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "101.0000 EOS", "contract": "eosio.token"}, "content_hash": "asdfasdfasdfasdfasdfasdfasdffdsa", "id": 1, "category": 3, "dac_scope": "dacproposals" }' -p proposeracc1`
     end
     context "without valid auth" do
-      command %(cleos push action dacproposals delegatevote '{"custodian": "custodian12", "proposal_id": 0, "dalegatee_custodian": "custodian11", "dac_scope": "dacproposals" }' -p proposeracc2 -p custodian12), allow_error: true
+      command %(cleos push action dacproposals delegatevote '{"custodian": "custodian12", "proposal_id": 0, "delegatee_custodian": "custodian11", "dac_scope": "dacproposals" }' -p proposeracc2 -p custodian12), allow_error: true
       its(:stderr) {is_expected.to include('missing authority of dacauthority')}
     end
     context "with valid auth" do
       context "with invalid proposal id" do
-        command %(cleos push action dacproposals delegatevote '{"custodian": "custodian12", "proposal_id": 6, "dalegatee_custodian": "custodian11", "dac_scope": "dacproposals" }' -p dacauthority -p custodian12), allow_error: true
+        command %(cleos push action dacproposals delegatevote '{"custodian": "custodian12", "proposal_id": 6, "delegatee_custodian": "custodian11", "dac_scope": "dacproposals" }' -p dacauthority -p custodian12), allow_error: true
         its(:stderr) {is_expected.to include('Proposal not found')}
       end
       context "delegating to self" do
-        command %(cleos push action dacproposals delegatevote '{"custodian": "custodian12", "proposal_id": 6, "dalegatee_custodian": "custodian12", "dac_scope": "dacproposals" }' -p dacauthority -p custodian12), allow_error: true
+        command %(cleos push action dacproposals delegatevote '{"custodian": "custodian12", "proposal_id": 6, "delegatee_custodian": "custodian12", "dac_scope": "dacproposals" }' -p dacauthority -p custodian12), allow_error: true
         its(:stderr) {is_expected.to include('Cannot delegate voting to yourself.')}
       end
       context "proposal in pending_approval state" do
         context "delegate vote" do
-          command %(cleos push action dacproposals delegatevote '{"custodian": "custodian12", "proposal_id": 1, "dalegatee_custodian": "custodian11", "dac_scope": "dacproposals" }' -p dacauthority -p custodian12), allow_error: true
+          command %(cleos push action dacproposals delegatevote '{"custodian": "custodian12", "proposal_id": 1, "delegatee_custodian": "custodian11", "dac_scope": "dacproposals" }' -p dacauthority -p custodian12), allow_error: true
           its(:stdout) {is_expected.to include('dacproposals <= dacproposals::delegatevote')}
         end
       end
@@ -511,90 +509,102 @@ describe "eosdacelect" do
         expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
                       {
             "rows": [{
-                "vote_id": 0,
-                "proposal_id": 0,
-                "voter": "custodian1",
-                "vote": 1,
-                "delegatee": "",
-                "comment_hash": ""
-              },{
-                "vote_id": 1,
-                "proposal_id": 0,
-                "voter": "custodian2",
-                "vote": 2,
-                "delegatee": "",
-                "comment_hash": ""
-              },{
-                "vote_id": 2,
-                "proposal_id": 0,
-                "voter": "custodian3",
-                "vote": 2,
-                "delegatee": "",
-                "comment_hash": ""
-              },{
-                "vote_id": 3, 
-                "proposal_id": 16, 
-                "voter": "custodian3", 
-                "vote": 1, 
-                "delegatee": "", 
-                "comment_hash":""
-              },{
-                "vote_id": 4,
-                "proposal_id": 1,
-                "voter": "custodian12",
-                "vote": 0,
-                "delegatee": "custodian11",
-                "comment_hash": ""
-              },{
-                "vote_id": 5,
-                "proposal_id": 1,
-                "voter": "custodian1",
-                "vote": 1,
-                "delegatee": "",
-                "comment_hash": ""
-              },{
-                "vote_id": 6,
-                "proposal_id": 1,
-                "voter": "custodian2",
-                "vote": 1,
-                "delegatee": "",
-                "comment_hash": ""
-              },{
-                "vote_id": 7,
-                "proposal_id": 1,
-                "voter": "custodian3",
-                "vote": 1,
-                "delegatee": "",
-                "comment_hash": ""
-              },{
-                "vote_id": 8,
-                "proposal_id": 1,
-                "voter": "custodian4",
-                "vote": 1,
-                "delegatee": "",
-                "comment_hash": ""
-              },{
-                "vote_id": 9,
-                "proposal_id": 1,
-                "voter": "custodian5",
-                "vote": 1,
-                "delegatee": "",
-                "comment_hash": ""
-              },{
-                "vote_id": 10,
-                "proposal_id": 1,
-                "voter": "custodian11",
-                "vote": 1,
-                "delegatee": "",
-                "comment_hash": ""
-              },{
-                "vote_id": 11,
-                "proposal_id": 1,
-                "voter": "custodian13",
-                "vote": 2,
-                "delegatee": "",
-                "comment_hash": ""
-              } 
+                      "vote_id": 0,
+                      "voter": "custodian1",
+                      "proposal_id": 0,
+                      "category_id": null,
+                      "vote": 1,
+                      "delegatee": null,
+                      "comment_hash": null
+                    },{
+                      "vote_id": 1,
+                      "voter": "custodian2",
+                      "proposal_id": 0,
+                      "category_id": null,
+                      "vote": 2,
+                      "delegatee": null,
+                      "comment_hash": null
+                    },{
+                      "vote_id": 2,
+                      "voter": "custodian3",
+                      "proposal_id": 0,
+                      "category_id": null,
+                      "vote": 2,
+                      "delegatee": null,
+                      "comment_hash": null
+                    },{
+                      "vote_id": 3,
+                      "voter": "custodian3",
+                      "proposal_id": 16,
+                      "category_id": null,
+                      "vote": 1,
+                      "delegatee": null,
+                      "comment_hash": null
+                    },{
+                      "vote_id": 4,
+                      "voter": "custodian12",
+                      "proposal_id": 1,
+                      "category_id": null,
+                      "vote": null,
+                      "delegatee": "custodian11",
+                      "comment_hash": null
+                    },{
+                      "vote_id": 5,
+                      "voter": "custodian1",
+                      "proposal_id": 1,
+                      "category_id": null,
+                      "vote": 1,
+                      "delegatee": null,
+                      "comment_hash": null
+                    },{
+                      "vote_id": 6,
+                      "voter": "custodian2",
+                      "proposal_id": 1,
+                      "category_id": null,
+                      "vote": 1,
+                      "delegatee": null,
+                      "comment_hash": null
+                    },{
+                      "vote_id": 7,
+                      "voter": "custodian3",
+                      "proposal_id": 1,
+                      "category_id": null,
+                      "vote": 1,
+                      "delegatee": null,
+                      "comment_hash": null
+                    },{
+                      "vote_id": 8,
+                      "voter": "custodian4",
+                      "proposal_id": 1,
+                      "category_id": null,
+                      "vote": 1,
+                      "delegatee": null,
+                      "comment_hash": null
+                    },{
+                      "vote_id": 9,
+                      "voter": "custodian5",
+                      "proposal_id": 1,
+                      "category_id": null,
+                      "vote": 1,
+                      "delegatee": null,
+                      "comment_hash": null
+                    },{
+                      "vote_id": 10,
+                      "voter": "custodian11",
+                      "proposal_id": 1,
+                      "category_id": null,
+                      "vote": 1,
+                      "delegatee": null,
+                      "comment_hash": null
+                    },{
+                      "vote_id": 11,
+                      "voter": "custodian13",
+                      "proposal_id": 1,
+                      "category_id": null,
+                      "vote": 2,
+                      "delegatee": null,
+                      "comment_hash": null
+                    }
             ],
             "more": false
           }
@@ -721,30 +731,33 @@ describe "eosdacelect" do
         expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
                       {
             "rows": [{
-                "vote_id": 0,
-                "proposal_id": 0,
-                "voter": "custodian1",
-                "vote": 1,
-                "delegatee": "",
-                "comment_hash": ""
-              },{
-                "vote_id": 1,
-                "proposal_id": 0,
-                "voter": "custodian2",
-                "vote": 2,
-                "delegatee": "",
-                "comment_hash": ""
-              },{
-                "vote_id": 2,
-                "proposal_id": 0,
-                "voter": "custodian3",
-                "vote": 2,
-                "delegatee": "",
-                "comment_hash": ""
+                      "vote_id": 0,
+                      "voter": "custodian1",
+                      "proposal_id": 0,
+                      "category_id": null,
+                      "vote": 1,
+                      "delegatee": null,
+                      "comment_hash": null
+                    },{
+                      "vote_id": 1,
+                      "voter": "custodian2",
+                      "proposal_id": 0,
+                      "category_id": null,
+                      "vote": 2,
+                      "delegatee": null,
+                      "comment_hash": null
+                    },{
+                      "vote_id": 2,
+                      "voter": "custodian3",
+                      "proposal_id": 0,
+                      "category_id": null,
+                      "vote": 2,
+                      "delegatee": null,
+                      "comment_hash": null
+                    }
+                  ],
+                  "more": false
               }
-            ],
-            "more": false
-          }
         JSON
       end
     end
@@ -874,21 +887,21 @@ describe "eosdacelect" do
       end
       context "delegated vote with pre-existing vote for proposal should have no effect" do
         before(:all) do
-          `cleos push action dacproposals delegatevote '{"custodian": "custodian11", "proposal_id": 101, "dalegatee_custodian": "custodian11", "dac_scope": "dacproposals"}' -p custodian13 -p dacauthority`
+          `cleos push action dacproposals delegatevote '{"custodian": "custodian11", "proposal_id": 101, "delegatee_custodian": "custodian11", "dac_scope": "dacproposals"}' -p custodian13 -p dacauthority`
         end
         command %(cleos push action dacproposals startwork '{ "proposal_id": 101, "dac_scope": "dacproposals"}' -p proposeracc3), allow_error: true
         its(:stderr) {is_expected.to include('ERR::STARTWORK_INSUFFICIENT_VOTES')}
       end
       context "delegated vote with non-matching proposal" do
         before(:all) do
-          `cleos push action dacproposals delegatevote '{"custodian": "custodian13", "proposal_id": 32, "dalegatee_custodian": "custodian11", "dac_scope": "dacproposals"}' -p custodian13 -p dacauthority`
+          `cleos push action dacproposals delegatevote '{"custodian": "custodian13", "proposal_id": 32, "delegatee_custodian": "custodian11", "dac_scope": "dacproposals"}' -p custodian13 -p dacauthority`
         end
         command %(cleos push action dacproposals startwork '{ "proposal_id": 101, "dac_scope": "dacproposals"}' -p proposeracc3), allow_error: true
         its(:stderr) {is_expected.to include('ERR::STARTWORK_INSUFFICIENT_VOTES')}
       end
       context "delegated category with matching proposal" do
         before(:all) do
-          `cleos push action dacproposals delegatevote '{"custodian": "custodian13", "proposal_id": 101, "dalegatee_custodian": "custodian11", "dac_scope": "dacproposals"}' -p custodian13 -p dacauthority`
+          `cleos push action dacproposals delegatevote '{"custodian": "custodian13", "proposal_id": 101, "delegatee_custodian": "custodian11", "dac_scope": "dacproposals"}' -p custodian13 -p dacauthority`
         end
         command %(cleos push action dacproposals startwork '{ "proposal_id": 101, "dac_scope": "dacproposals"}' -p proposeracc3), allow_error: true
         its(:stdout) {is_expected.to include('dacproposals <= dacproposals::startwork')}
@@ -907,21 +920,21 @@ describe "eosdacelect" do
       end
       context "delegated category with already voted custodian should have no addtional effect" do
         before(:all) do
-          `cleos push action dacproposals delegatecat '{"custodian": "custodian11", "category": 32, "dalegatee_custodian": "custodian11", "dac_scope": "dacproposals"}' -p custodian13 -p dacauthority`
+          `cleos push action dacproposals delegatecat '{"custodian": "custodian11", "category": 32, "delegatee_custodian": "custodian11", "dac_scope": "dacproposals"}' -p custodian13 -p dacauthority`
         end
         command %(cleos push action dacproposals startwork '{ "proposal_id": 102, "dac_scope": "dacproposals"}' -p proposeracc3), allow_error: true
         its(:stderr) {is_expected.to include('ERR::STARTWORK_INSUFFICIENT_VOTES')}
       end
       context "delegated category with non-matching category" do
         before(:all) do
-          `cleos push action dacproposals delegatecat '{"custodian": "custodian13", "category": 32, "dalegatee_custodian": "custodian11", "dac_scope": "dacproposals"}' -p custodian13 -p dacauthority`
+          `cleos push action dacproposals delegatecat '{"custodian": "custodian13", "category": 32, "delegatee_custodian": "custodian11", "dac_scope": "dacproposals"}' -p custodian13 -p dacauthority`
         end
         command %(cleos push action dacproposals startwork '{ "proposal_id": 102, "dac_scope": "dacproposals"}' -p proposeracc3), allow_error: true
         its(:stderr) {is_expected.to include('ERR::STARTWORK_INSUFFICIENT_VOTES')}
       end
       context "delegated category with matching category" do
         before(:all) do
-          `cleos push action dacproposals delegatecat '{"custodian": "custodian13", "category": 31, "dalegatee_custodian": "custodian11", "dac_scope": "dacproposals"}' -p custodian13 -p dacauthority`
+          `cleos push action dacproposals delegatecat '{"custodian": "custodian13", "category": 31, "delegatee_custodian": "custodian11", "dac_scope": "dacproposals"}' -p custodian13 -p dacauthority`
         end
             command %(cleos push action dacproposals startwork '{ "proposal_id": 102, "dac_scope": "dacproposals"}' -p proposeracc3), allow_error: true
         its(:stdout) {is_expected.to include('dacproposals <= dacproposals::startwork')}
@@ -939,8 +952,8 @@ describe "eosdacelect" do
       end
       context "delegated vote with matching proposal and category" do
         before(:all) do
-          `cleos push action dacproposals delegatecat '{"custodian": "custodian11", "category": 32, "dalegatee_custodian": "custodian5", "dac_scope": "dacproposals"}' -p custodian11 -p dacauthority`
-          `cleos push action dacproposals delegatevote '{"custodian": "custodian13", "proposal_id": 103, "dalegatee_custodian": "custodian5", "dac_scope": "dacproposals"}' -p custodian13 -p dacauthority`
+          `cleos push action dacproposals delegatecat '{"custodian": "custodian11", "category": 32, "delegatee_custodian": "custodian5", "dac_scope": "dacproposals"}' -p custodian11 -p dacauthority`
+          `cleos push action dacproposals delegatevote '{"custodian": "custodian13", "proposal_id": 103, "delegatee_custodian": "custodian5", "dac_scope": "dacproposals"}' -p custodian13 -p dacauthority`
         end
         command %(cleos push action dacproposals startwork '{ "proposal_id": 103, "dac_scope": "dacproposals"}' -p proposeracc3), allow_error: true
         its(:stdout) {is_expected.to include('dacproposals <= dacproposals::startwork')}
@@ -948,26 +961,187 @@ describe "eosdacelect" do
     end
   end
   context "Read the propvotes table after finalizing" do
-    command %(cleos get table dacproposals dacproposals catvotes), allow_error: true
+    command %(cleos get table dacproposals dacproposals propvotes --limit 40), allow_error: true
     it do
       expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
         {
           "rows": [{
-              "vote_id": 0,
-              "category_id": 32,
-              "voter": "custodian13",
-              "delegatee": "custodian11"
-            },{
-              "vote_id": 1,
-              "category_id": 31,
-              "voter": "custodian13",
-              "delegatee": "custodian11"
-            },{
-              "vote_id": 2,
-              "category_id": 32,
-              "voter": "custodian11",
-              "delegatee": "custodian5"
-            }
+                    "vote_id": 0,
+                    "voter": "custodian1",
+                    "proposal_id": 101,
+                    "category_id": null,
+                    "vote": 1,
+                    "delegatee": null,
+                    "comment_hash": null
+                  },{
+                    "vote_id": 1,
+                    "voter": "custodian2",
+                    "proposal_id": 101,
+                    "category_id": null,
+                    "vote": 1,
+                    "delegatee": null,
+                    "comment_hash": null
+                  },{
+                    "vote_id": 2,
+                    "voter": "custodian3",
+                    "proposal_id": 101,
+                    "category_id": null,
+                    "vote": 1,
+                    "delegatee": null,
+                    "comment_hash": null
+                  },{
+                    "vote_id": 3,
+                    "voter": "custodian4",
+                    "proposal_id": 101,
+                    "category_id": null,
+                    "vote": 1,
+                    "delegatee": null,
+                    "comment_hash": null
+                  },{
+                    "vote_id": 4,
+                    "voter": "custodian5",
+                    "proposal_id": 101,
+                    "category_id": null,
+                    "vote": 1,
+                    "delegatee": null,
+                    "comment_hash": null
+                  },{
+                    "vote_id": 5,
+                    "voter": "custodian11",
+                    "proposal_id": 101,
+                    "category_id": null,
+                    "vote": 1,
+                    "delegatee": null,
+                    "comment_hash": null
+                  },{
+                    "vote_id": 6,
+                    "voter": "custodian13",
+                    "proposal_id": 101,
+                    "category_id": null,
+                    "vote": null,
+                    "delegatee": "custodian11",
+                    "comment_hash": null
+                  },{
+                    "vote_id": 7,
+                    "voter": "custodian1",
+                    "proposal_id": 102,
+                    "category_id": null,
+                    "vote": 1,
+                    "delegatee": null,
+                    "comment_hash": null
+                  },{
+                    "vote_id": 8,
+                    "voter": "custodian2",
+                    "proposal_id": 102,
+                    "category_id": null,
+                    "vote": 1,
+                    "delegatee": null,
+                    "comment_hash": null
+                  },{
+                    "vote_id": 9,
+                    "voter": "custodian3",
+                    "proposal_id": 102,
+                    "category_id": null,
+                    "vote": 1,
+                    "delegatee": null,
+                    "comment_hash": null
+                  },{
+                    "vote_id": 10,
+                    "voter": "custodian4",
+                    "proposal_id": 102,
+                    "category_id": null,
+                    "vote": 1,
+                    "delegatee": null,
+                    "comment_hash": null
+                  },{
+                    "vote_id": 11,
+                    "voter": "custodian5",
+                    "proposal_id": 102,
+                    "category_id": null,
+                    "vote": 1,
+                    "delegatee": null,
+                    "comment_hash": null
+                  },{
+                    "vote_id": 12,
+                    "voter": "custodian11",
+                    "proposal_id": 102,
+                    "category_id": null,
+                    "vote": 1,
+                    "delegatee": null,
+                    "comment_hash": null
+                  },{
+                    "vote_id": 13,
+                    "voter": "custodian13",
+                    "proposal_id": null,
+                    "category_id": 32,
+                    "vote": null,
+                    "delegatee": "custodian11",
+                    "comment_hash": null
+                  },{
+                    "vote_id": 14,
+                    "voter": "custodian13",
+                    "proposal_id": null,
+                    "category_id": 31,
+                    "vote": null,
+                    "delegatee": "custodian11",
+                    "comment_hash": null
+                  },{
+                    "vote_id": 15,
+                    "voter": "custodian1",
+                    "proposal_id": 103,
+                    "category_id": null,
+                    "vote": 1,
+                    "delegatee": null,
+                    "comment_hash": null
+                  },{
+                    "vote_id": 16,
+                    "voter": "custodian2",
+                    "proposal_id": 103,
+                    "category_id": null,
+                    "vote": 1,
+                    "delegatee": null,
+                    "comment_hash": null
+                  },{
+                    "vote_id": 17,
+                    "voter": "custodian3",
+                    "proposal_id": 103,
+                    "category_id": null,
+                    "vote": 1,
+                    "delegatee": null,
+                    "comment_hash": null
+                  },{
+                    "vote_id": 18,
+                    "voter": "custodian4",
+                    "proposal_id": 103,
+                    "category_id": null,
+                    "vote": 1,
+                    "delegatee": null,
+                    "comment_hash": null
+                  },{
+                    "vote_id": 19,
+                    "voter": "custodian5",
+                    "proposal_id": 103,
+                    "category_id": null,
+                    "vote": 1,
+                    "delegatee": null,
+                    "comment_hash": null
+                  },{
+                    "vote_id": 20,
+                    "voter": "custodian11",
+                    "proposal_id": null,
+                    "category_id": 32,
+                    "vote": null,
+                    "delegatee": "custodian5",
+                    "comment_hash": null
+                  },{
+                    "vote_id": 21,
+                    "voter": "custodian13",
+                    "proposal_id": 103,
+                    "category_id": null,
+                    "vote": null,
+                    "delegatee": "custodian5",
+                    "comment_hash": null
+                  }
           ],
           "more": false
         }
@@ -985,20 +1159,178 @@ describe "eosdacelect" do
     end
   end
   context "Read the propvotes table after finalizing" do
-    command %(cleos get table dacproposals dacproposals catvotes), allow_error: true
+    command %(cleos get table dacproposals dacproposals propvotes --limit 40), allow_error: true
     it do
       expect(JSON.parse(subject.stdout)).to eq JSON.parse <<~JSON
         {
           "rows": [{
+              "vote_id": 0,
+              "voter": "custodian1",
+              "proposal_id": 101,
+              "category_id": null,
+              "vote": 1,
+              "delegatee": null,
+              "comment_hash": null
+            },{
               "vote_id": 1,
-              "category_id": 31,
-              "voter": "custodian13",
-              "delegatee": "custodian11"
+              "voter": "custodian2",
+              "proposal_id": 101,
+              "category_id": null,
+              "vote": 1,
+              "delegatee": null,
+              "comment_hash": null
             },{
               "vote_id": 2,
-              "category_id": 32,
+              "voter": "custodian3",
+              "proposal_id": 101,
+              "category_id": null,
+              "vote": 1,
+              "delegatee": null,
+              "comment_hash": null
+            },{
+              "vote_id": 3,
+              "voter": "custodian4",
+              "proposal_id": 101,
+              "category_id": null,
+              "vote": 1,
+              "delegatee": null,
+              "comment_hash": null
+            },{
+              "vote_id": 4,
+              "voter": "custodian5",
+              "proposal_id": 101,
+              "category_id": null,
+              "vote": 1,
+              "delegatee": null,
+              "comment_hash": null
+            },{
+              "vote_id": 5,
               "voter": "custodian11",
-              "delegatee": "custodian5"
+              "proposal_id": 101,
+              "category_id": null,
+              "vote": 1,
+              "delegatee": null,
+              "comment_hash": null
+            },{
+              "vote_id": 6,
+              "voter": "custodian13",
+              "proposal_id": 101,
+              "category_id": null,
+              "vote": null,
+              "delegatee": "custodian11",
+              "comment_hash": null
+            },{
+              "vote_id": 7,
+              "voter": "custodian1",
+              "proposal_id": 102,
+              "category_id": null,
+              "vote": 1,
+              "delegatee": null,
+              "comment_hash": null
+            },{
+              "vote_id": 8,
+              "voter": "custodian2",
+              "proposal_id": 102,
+              "category_id": null,
+              "vote": 1,
+              "delegatee": null,
+              "comment_hash": null
+            },{
+              "vote_id": 9,
+              "voter": "custodian3",
+              "proposal_id": 102,
+              "category_id": null,
+              "vote": 1,
+              "delegatee": null,
+              "comment_hash": null
+            },{
+              "vote_id": 10,
+              "voter": "custodian4",
+              "proposal_id": 102,
+              "category_id": null,
+              "vote": 1,
+              "delegatee": null,
+              "comment_hash": null
+            },{
+              "vote_id": 11,
+              "voter": "custodian5",
+              "proposal_id": 102,
+              "category_id": null,
+              "vote": 1,
+              "delegatee": null,
+              "comment_hash": null
+            },{
+              "vote_id": 12,
+              "voter": "custodian11",
+              "proposal_id": 102,
+              "category_id": null,
+              "vote": 1,
+              "delegatee": null,
+              "comment_hash": null
+            },{
+              "vote_id": 14,
+              "voter": "custodian13",
+              "proposal_id": null,
+              "category_id": 31,
+              "vote": null,
+              "delegatee": "custodian11",
+              "comment_hash": null
+            },{
+              "vote_id": 15,
+              "voter": "custodian1",
+              "proposal_id": 103,
+              "category_id": null,
+              "vote": 1,
+              "delegatee": null,
+              "comment_hash": null
+            },{
+              "vote_id": 16,
+              "voter": "custodian2",
+              "proposal_id": 103,
+              "category_id": null,
+              "vote": 1,
+              "delegatee": null,
+              "comment_hash": null
+            },{
+              "vote_id": 17,
+              "voter": "custodian3",
+              "proposal_id": 103,
+              "category_id": null,
+              "vote": 1,
+              "delegatee": null,
+              "comment_hash": null
+            },{
+              "vote_id": 18,
+              "voter": "custodian4",
+              "proposal_id": 103,
+              "category_id": null,
+              "vote": 1,
+              "delegatee": null,
+              "comment_hash": null
+            },{
+              "vote_id": 19,
+              "voter": "custodian5",
+              "proposal_id": 103,
+              "category_id": null,
+              "vote": 1,
+              "delegatee": null,
+              "comment_hash": null
+            },{
+              "vote_id": 20,
+              "voter": "custodian11",
+              "proposal_id": null,
+              "category_id": 32,
+              "vote": null,
+              "delegatee": "custodian5",
+              "comment_hash": null
+            },{
+              "vote_id": 21,
+              "voter": "custodian13",
+              "proposal_id": 103,
+              "category_id": null,
+              "vote": null,
+              "delegatee": "custodian5",
+              "comment_hash": null
             }
           ],
           "more": false
