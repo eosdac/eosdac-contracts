@@ -17,6 +17,8 @@ namespace dacdir {
         ACTION unregdac( name dac_name );
         ACTION regaccount( name dac_name, name account, uint8_t type, optional<eosio::name> scope );
         ACTION unregaccount( name dac_name, uint8_t type );
+        ACTION regref( name dac_name, string value, uint8_t type );
+        ACTION unregref( name dac_name, uint8_t type );
         ACTION setowner( name dac_name, name new_owner );
 
     protected:
