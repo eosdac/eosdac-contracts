@@ -2,6 +2,7 @@
 #include <eosio/action.hpp>
 #include "dacproposals.hpp"
 #include <eosio/time.hpp>
+#include <eosio/transaction.hpp>
 #include <typeinfo>
 #include <algorithm>
 
@@ -27,7 +28,7 @@ using namespace std;
             p.arbitrator = arbitrator;
             p.content_hash = content_hash;
             p.pay_amount = pay_amount;
-            p.state = pending_approval;
+            p.state = ProposalStatePending_approval;
             p.category = category;
             p.expiry = time_point_sec(current_time_point().sec_since_epoch()) + current_configs(dac_scope).approval_expiry;   
         });
@@ -45,11 +46,13 @@ using namespace std;
 
         const proposal& prop = proposals.get(proposal_id, "ERR::VOTEPROP_PROPOSAL_NOT_FOUND::Proposal not found.﻿");
         switch (prop.state) {
-            case pending_approval:
+            case ProposalStatePending_approval:
+            case ProposalStateHas_enough_approvals_votes:
                 check(prop.has_not_expired(),"ERR::PROPOSAL_EXPIRED::Proposal has expired.");
                 check(vote == proposal_approve || vote == proposal_deny, "ERR::VOTEPROP_INVALID_VOTE::Invalid vote for the current proposal state.");
                 break;
-            case pending_finalize:
+            case ProposalStatePending_finalize:
+            case ProposalStateHas_enough_finalize_votes:
                 check(vote == finalize_approve || vote == finalize_deny, "ERR::VOTEPROP_INVALID_VOTE::Invalid vote for the current proposal state.");
                 break;
             default:
@@ -161,7 +164,7 @@ using namespace std;
 
         const proposal& prop = proposals.get(proposal_id, "ERR::DELEGATEVOTE_PROPOSAL_NOT_FOUND::Proposal not found.");
 
-        check(prop.state == pending_approval, "ERR::STARTWORK_WRONG_STATE::Proposal is not in the pending approval state therefore cannot start work.");
+        check(prop.state == ProposalStatePending_approval || prop.state == ProposalStateHas_enough_approvals_votes, "ERR::STARTWORK_WRONG_STATE::Proposal is not in the pending approval state therefore cannot start work.");
         check(prop.has_not_expired(),"ERR::PROPOSAL_EXPIRED::Proposal has expired.");
         require_auth(prop.proposer);
         assertValidMember(prop.proposer, dac_scope);
@@ -174,7 +177,7 @@ using namespace std;
         print_f("Worker proposal % to start work with: % votes\n", proposal_id, approved_count);
         
         proposals.modify(prop, prop.proposer, [&](proposal &p){
-            p.state = work_in_progress;
+            p.state = ProposalStateWork_in_progress;
         });
 
         // print("Transfer funds to escrow account");
@@ -208,10 +211,10 @@ using namespace std;
 
         require_auth(prop.proposer);
         assertValidMember(prop.proposer, dac_scope);
-        check(prop.state == work_in_progress, "ERR::COMPLETEWORK_WRONG_STATE::Worker proposal can only be completed from work_in_progress state");
+        check(prop.state == ProposalStateWork_in_progress, "ERR::COMPLETEWORK_WRONG_STATE::Worker proposal can only be completed from work_in_progress state");
 
         proposals.modify(prop, prop.proposer, [&](proposal &p){
-            p.state = pending_finalize;
+            p.state = ProposalStatePending_finalize;
         });
     }
 
@@ -221,7 +224,7 @@ using namespace std;
 
         const proposal& prop = proposals.get(proposal_id, "ERR::DELEGATEVOTE_PROPOSAL_NOT_FOUND::Proposal not found.");
 
-        check(prop.state == pending_finalize, "ERR::FINALIZE_WRONG_STATE::Proposal is not in the pending_finalize state therefore cannot be finalized.");
+        check(prop.state == ProposalStatePending_finalize || prop.state == ProposalStateHas_enough_finalize_votes   , "ERR::FINALIZE_WRONG_STATE::Proposal is not in the pending_finalize state therefore cannot be finalized.");
         
         int16_t approved_count = count_votes(prop, finalize_approve, dac_scope);
 
@@ -272,7 +275,57 @@ using namespace std;
         clearprop(prop, dac_scope);
     }
 
-//    Private methods
+    ACTION dacproposals::updallprops(name dac_scope) {
+        proposal_table proposals(_self, dac_scope.value);
+        auto props_itr = proposals.begin();
+        uint32_t delay = 1;
+        for (auto props_itr: proposals) {
+            transaction deferredTrans{};
+            deferredTrans.actions.emplace_back(
+                eosio::action(
+                    eosio::permission_level{ _self, "active"_n },
+                    _self, "updpropvotes"_n,
+                    std::make_tuple(props_itr.key, dac_scope)
+                )
+            );
+            deferredTrans.delay_sec = delay++;
+            auto sender_id = uint128_t(props_itr.key) << 64 | time_point_sec(current_time_point()).sec_since_epoch();
+            deferredTrans.send(sender_id, _self);
+            print("\n adding transaction: ", sender_id, "delay: ", deferredTrans.delay_sec.value);
+        }
+    }
+
+    ACTION dacproposals::updpropvotes(uint64_t proposal_id, name dac_scope) {
+        proposal_table proposals(_self, dac_scope.value);
+
+        const proposal& prop = proposals.get(proposal_id, "ERR::DELEGATEVOTE_PROPOSAL_NOT_FOUND::Proposal not found.");
+
+        int16_t approved_count;
+        ProposalState newPropState;
+
+        switch (prop.state) {
+            case ProposalStatePending_approval:
+            case ProposalStateHas_enough_approvals_votes:
+                if (!prop.has_not_expired()) {
+                    newPropState = ProposalStateExpired;
+                } else {
+                    approved_count = count_votes(prop, proposal_approve, dac_scope);
+                    newPropState = (approved_count >= current_configs(dac_scope).proposal_threshold) ? ProposalStateHas_enough_approvals_votes : ProposalStatePending_approval;
+                }
+                break;
+            case ProposalStatePending_finalize:
+            case ProposalStateHas_enough_finalize_votes:
+                approved_count = count_votes(prop, finalize_approve, dac_scope);
+                newPropState = (approved_count >= current_configs(dac_scope).finalize_threshold) ? ProposalStateHas_enough_finalize_votes: ProposalStatePending_finalize;
+            break;
+        }
+        if (prop.state != newPropState) {
+            proposals.modify(prop, prop.proposer, [&](proposal &p) {
+                p.state = newPropState;
+            });
+        }
+    }
+
     void dacproposals::transferfunds(const proposal &prop, name dac_scope) {
         proposal_table proposals(_self, dac_scope.value);
         config configs = current_configs(dac_scope);

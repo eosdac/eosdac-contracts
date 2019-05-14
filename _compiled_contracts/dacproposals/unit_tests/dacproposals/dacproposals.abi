@@ -316,12 +316,36 @@
             ]
         },
         {
+            "name": "updallprops",
+            "base": "",
+            "fields": [
+                {
+                    "name": "dac_scope",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "updateconfig",
             "base": "",
             "fields": [
                 {
                     "name": "new_config",
                     "type": "config"
+                },
+                {
+                    "name": "dac_scope",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "updpropvotes",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposal_id",
+                    "type": "uint64"
                 },
                 {
                     "name": "dac_scope",
@@ -409,9 +433,19 @@
             "ricardian_contract": "## ACTION: undelegateca\n**PARAMETERS:**\n* __custodian__ is an eosio account name.\n* __category__ is an integer id for an existing category for the custodian to undelgate voting power for.\n* __dac_scope__ is an account name representing the DAC for this action\n\n**INTENT:** \nThe intent of undelegateca is to remove delegation an active custodian's vote to another custodian for a particular category."
         },
         {
+            "name": "updallprops",
+            "type": "updallprops",
+            "ricardian_contract": "## ACTION: updallprops\n**PARAMETERS:**\n* __dac_scope__ is an account name representing the DAC for this action\n\n**INTENT:** \nThe intent of updallprops is to iterate through all the proposals for a given scope and call the `updpropvotes` action as deferred transactions for each."
+        },
+        {
             "name": "updateconfig",
             "type": "updateconfig",
             "ricardian_contract": "## ACTION: updateconfig\n**PARAMETERS:**\n* __new_config__ is a config_type object to update the settings for the contract.\n\n**INTENT:** The intent of updateconfig is to update the contract settings within the contract.\nThe fields in the config object the their default values are:\n* name service_account - The service account to manage the escrow funds for worker proposals.\n* name authority_account - The authority account to authorize actions in the all the connected contracts.\n* name treasury_account - The account that holds the DAC funds used for the source of funds for the escrow contract.\n* uint16_t proposal_threshold = 7 - The number of required votes to make a decision on approving a worker proposal submission.\n* uint16_t claim_threshold = 5 - The number of required votes to make a decision on approving a claim for a worker proposal.\n* uint32_t escrow_expiry = 30 days - The number of days an escrow is set to expire.\n* uint32_t approval_expiry = 30 days - The number of days before a worker proposal must be approved.\n\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
+        },
+        {
+            "name": "updpropvotes",
+            "type": "updpropvotes",
+            "ricardian_contract": "## ACTION: updpropvotes\n**PARAMETERS:**\n* __proposal_id__ is an integer representing the id for particular proposal.\n* __dac_scope__ is an account name representing the DAC for this action\n\n**INTENT:** \nThe intent of updpropvotes is to update the state on the proposal to indicate if there are enough votes to approve the start of a proposal (status code 3), the finalizing vote of a proposal (status code 4) or if it has expired (status code 5)."
         },
         {
             "name": "voteprop",

@@ -25,9 +25,12 @@ enum VoteType {
     };
 
     enum ProposalState {  
-        pending_approval = 0, 
-        work_in_progress,
-        pending_finalize
+        ProposalStatePending_approval = 0, 
+        ProposalStateWork_in_progress,
+        ProposalStatePending_finalize,
+        ProposalStateHas_enough_approvals_votes,
+        ProposalStateHas_enough_finalize_votes,
+        ProposalStateExpired
     };
 
     public:
@@ -85,6 +88,9 @@ enum VoteType {
     ACTION comment(name commenter, uint64_t proposal_id, string comment, string comment_category, name dac_scope);
     ACTION updateconfig(config new_config, name dac_scope);
     ACTION clearexpprop(uint64_t proposal_id, name dac_scope);
+    ACTION updpropvotes(uint64_t proposal_id, name dac_scope);
+    ACTION updallprops(name dac_scope);
+
 
 private:
 

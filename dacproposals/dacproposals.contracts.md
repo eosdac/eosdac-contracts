@@ -83,6 +83,29 @@ The intent of undelegateca is to remove delegation an active custodian's vote to
 The intent of clearexpprop is to remove an expired proposal. This is only allowed if the proposal has expired.s
 
 <h1 class="contract">
+    updpropvotes
+</h1>
+
+## ACTION: updpropvotes
+**PARAMETERS:**
+* __proposal_id__ is an integer representing the id for particular proposal.
+* __dac_scope__ is an account name representing the DAC for this action
+
+**INTENT:** 
+The intent of updpropvotes is to update the state on the proposal to indicate if there are enough votes to approve the start of a proposal (status code 3), the finalizing vote of a proposal (status code 4) or if it has expired (status code 5).
+
+<h1 class="contract">
+    updallprops
+</h1>
+
+## ACTION: updallprops
+**PARAMETERS:**
+* __dac_scope__ is an account name representing the DAC for this action
+
+**INTENT:** 
+The intent of updallprops is to iterate through all the proposals for a given scope and call the `updpropvotes` action as deferred transactions for each.
+
+<h1 class="contract">
     arbapprove
 </h1>
 

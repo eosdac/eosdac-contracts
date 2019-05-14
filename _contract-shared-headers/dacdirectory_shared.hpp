@@ -22,6 +22,11 @@ namespace dacdir {
         OTHER = 255
     };
 
+    enum dac_state_type: uint8_t {
+        dac_state_typeINACTIVE = 0,
+        dac_state_typeACTIVE = 1
+    };
+
     struct AccountAndScope {
         eosio::name account_name;
         eosio::name dac_scope;
@@ -35,6 +40,7 @@ namespace dacdir {
         map<uint8_t, string> refs;
         map<uint8_t, eosio::name> accounts;
         map<uint8_t, eosio::name> scopes;
+        uint8_t      dac_state;
 
          eosio::name safe_scope_for_key(uint8_t key) const {
             return (scopes.find(key) != scopes.end()) ? scopes.at(key) : dac_name; 
