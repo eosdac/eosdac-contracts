@@ -115,5 +115,17 @@ namespace dacdir {
             d.owner = new_owner;
         });
     }
+
+    void dacdirectory::setstatus( name dac_name, uint8_t value ){
+        auto dac_inst = _dacs.find(dac_name.value);
+        check(dac_inst != _dacs.end(), "DAC not found in directory");
+
+        require_auth(get_self());
+
+        _dacs.modify(dac_inst, same_payer, [&](dac& d) {
+            d.dac_state = value;
+        });
+    }
+
 } // dacdir
 
