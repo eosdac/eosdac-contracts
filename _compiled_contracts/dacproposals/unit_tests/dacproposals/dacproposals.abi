@@ -94,22 +94,6 @@
             "base": "",
             "fields": [
                 {
-                    "name": "service_account",
-                    "type": "name"
-                },
-                {
-                    "name": "authority_account",
-                    "type": "name"
-                },
-                {
-                    "name": "member_terms_account",
-                    "type": "name"
-                },
-                {
-                    "name": "treasury_account",
-                    "type": "name"
-                },
-                {
                     "name": "proposal_threshold",
                     "type": "uint16"
                 },
