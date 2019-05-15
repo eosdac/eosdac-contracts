@@ -34,6 +34,10 @@
                 {
                     "name": "scopes",
                     "type": "pair_uint8_name[]"
+                },
+                {
+                    "name": "dac_state",
+                    "type": "uint8"
                 }
             ]
         },
@@ -122,6 +126,24 @@
             ]
         },
         {
+            "name": "regref",
+            "base": "",
+            "fields": [
+                {
+                    "name": "dac_name",
+                    "type": "name"
+                },
+                {
+                    "name": "value",
+                    "type": "string"
+                },
+                {
+                    "name": "type",
+                    "type": "uint8"
+                }
+            ]
+        },
+        {
             "name": "setowner",
             "base": "",
             "fields": [
@@ -158,6 +180,20 @@
                     "type": "name"
                 }
             ]
+        },
+        {
+            "name": "unregref",
+            "base": "",
+            "fields": [
+                {
+                    "name": "dac_name",
+                    "type": "name"
+                },
+                {
+                    "name": "type",
+                    "type": "uint8"
+                }
+            ]
         }
     ],
     "actions": [
@@ -170,6 +206,11 @@
             "name": "regdac",
             "type": "regdac",
             "ricardian_contract": "## ACTION: <regdac>\n**PARAMETERS:**\n* __owner__ is an eosio account name for the owner account of the DAC. \n* __dac_name__ is an eosio account name uniquely identifying the DAC. \n* __dac_symbol__ is an eosio symbol name representing the primary token used in the DAC. \n*  __title__ is a string that for the title of the DAC.\n* __refs__\n* __accounts__ a map of the key accounts used in the DAC\ns\n**INTENT** The intent of regdac register a new DAC with all the required key accounts \n#### Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later so therefore should only store a unidentifiable hash of content rather than human readable content."
+        },
+        {
+            "name": "regref",
+            "type": "regref",
+            "ricardian_contract": "## ACTION: regref\n**PARAMETERS:**\n* __dac_name__ is an eosio account name uniquely identifying the DAC. \n* __account__ a string, format depends on the type and is not validated by the contract\n* __type__ a number representing type of the association with the DAC\n\n**INTENT:** \nThe intent of regref is to register an arbitratry piece of data about a particular DAC.\n ####Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later."
         },
         {
             "name": "setowner",
@@ -185,6 +226,11 @@
             "name": "unregdac",
             "type": "unregdac",
             "ricardian_contract": "## ACTION: unregdac\n**PARAMETERS:**\n* __dac_name__ is an eosio account name uniquely identifying the DAC. \n\n**INTENT:** \nThe intent of unregdac is to unregister the DAC from the directory."
+        },
+        {
+            "name": "unregref",
+            "type": "unregref",
+            "ricardian_contract": "## ACTION: unregref\n**PARAMETERS:**\n* __dac_name__ is an eosio account name uniquely identifying the DAC. \n* __type__ a number representing type of the association with the DAC\n\n**INTENT:** The intent of unregref is remove a remove a reference from the DAC data.\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
         }
     ],
     "tables": [
