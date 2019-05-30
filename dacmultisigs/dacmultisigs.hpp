@@ -18,7 +18,7 @@ class [[eosio::contract("dacmultisigs")]] dacmultisigs : public contract {
             name proposalname;
             checksum256 transactionid;
             time_point_sec modifieddate;
-
+            
             uint64_t primary_key() const { return proposalname.value; }
         };
         

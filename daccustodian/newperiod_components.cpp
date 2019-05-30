@@ -1,6 +1,7 @@
 
-void daccustodian::distributePay() {
-    custodians_table custodians(_self, _self.value);
+void daccustodian::distributePay(name dac_scope) {
+    custodians_table custodians(_self, dac_scope.value);
+    pending_pay_table pending_pay(_self, dac_scope.value);
 
     //Find the median pay using a temporary vector to hold the requestedpay amounts.
     std::vector<asset> reqpays;
@@ -28,11 +29,13 @@ void daccustodian::distributePay() {
     print("distribute pay");
 }
 
-void daccustodian::distributeMeanPay() {
-    custodians_table custodians(_self, _self.value);
+void daccustodian::distributeMeanPay(name dac_scope) {
+    custodians_table custodians(_self, dac_scope.value);
+    pending_pay_table pending_pay(_self, dac_scope.value);
+    contr_config configs = contr_config::get_current_configs(_self, dac_scope);
 
     //Find the mean pay using a temporary vector to hold the requestedpay amounts.
-    asset total = asset{0, configs().requested_pay_max.symbol};
+    asset total = asset{0, configs.requested_pay_max.symbol};
     int64_t count = 0;
     for (auto cust: custodians) {
         total += cust.requestedpay;
@@ -57,22 +60,26 @@ void daccustodian::distributeMeanPay() {
     print("distribute mean pay");
 }
 
-void daccustodian::assertPeriodTime() {
+void daccustodian::assertPeriodTime(contr_config &configs, contr_state &currentState) {
     time_point_sec timestamp = time_point_sec(eosio::current_time_point());
-    uint32_t periodBlockCount = (timestamp - _currentState.lastperiodtime.sec_since_epoch()).sec_since_epoch();
-    check(periodBlockCount > configs().periodlength,
+    uint32_t periodBlockCount = (timestamp - currentState.lastperiodtime.sec_since_epoch()).sec_since_epoch();
+    check(periodBlockCount > configs.periodlength,
                  "ERR::NEWPERIOD_EARLY::New period is being called too soon. Wait until the period has completed.");
 }
 
-void daccustodian::allocateCustodians(bool early_election) {
+void daccustodian::allocateCustodians(bool early_election, name dac_scope) {
 
     eosio::print("Configure custodians for the next period.");
 
-    custodians_table custodians(_self, _self.value);
+    custodians_table custodians(_self, dac_scope.value);
+    candidates_table registered_candidates(_self, dac_scope.value);
+    contr_config configs = contr_config::get_current_configs(_self, dac_scope);
+    name auth_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::AUTH);
+    
     auto byvotes = registered_candidates.get_index<"byvotesrank"_n>();
     auto cand_itr = byvotes.begin();
 
-    int32_t electcount = configs().numelected;
+    int32_t electcount = configs.numelected;
     uint8_t currentCustodianCount = 0;
 
     if (!early_election) {
@@ -80,9 +87,9 @@ void daccustodian::allocateCustodians(bool early_election) {
         auto cust_itr = custodians.begin();
         while (cust_itr != custodians.end()) {
             const auto &reg_candidate = registered_candidates.get(cust_itr->cust_name.value, "ERR::NEWPERIOD_EXPECTED_CAND_NOT_FOUND::Corrupt data: Trying to set a lockup delay on candidate leaving office.");
-            registered_candidates.modify(reg_candidate, cust_itr->cust_name, [&](candidate &c) {
+            registered_candidates.modify(reg_candidate, same_payer, [&](candidate &c) {
                 eosio::print("Lockup stake for release delay.");
-                c.custodian_end_time_stamp = time_point_sec(current_time_point().sec_since_epoch() + configs().lockup_release_time_delay);
+                c.custodian_end_time_stamp = time_point_sec(current_time_point().sec_since_epoch() + configs.lockup_release_time_delay);
             });
             cust_itr = custodians.erase(cust_itr);
         }
@@ -101,15 +108,15 @@ void daccustodian::allocateCustodians(bool early_election) {
         if (!cand_itr->is_active || custodians.find(cand_itr->candidate_name.value) != custodians.end()) {
             cand_itr++;
         } else {
-            custodians.emplace(_self, [&](custodian &c) {
+            custodians.emplace(auth_account, [&](custodian &c) {
                 c.cust_name = cand_itr->candidate_name;
                 c.requestedpay = cand_itr->requestedpay;
                 c.total_votes = cand_itr->total_votes;
             });
 
-            byvotes.modify(cand_itr, cand_itr->candidate_name, [&](candidate &c) {
+            byvotes.modify(cand_itr, same_payer, [&](candidate &c) {
                     eosio::print("Lockup stake for release delay.");
-                    c.custodian_end_time_stamp = time_point_sec(current_time_point()) + configs().lockup_release_time_delay;
+                    c.custodian_end_time_stamp = time_point_sec(current_time_point()) + configs.lockup_release_time_delay;
             });
 
             currentCustodianCount++;
@@ -118,13 +125,18 @@ void daccustodian::allocateCustodians(bool early_election) {
     }
 }
 
-void daccustodian::setCustodianAuths() {
+void daccustodian::setCustodianAuths(name dac_scope) {
 
-    custodians_table custodians(_self, _self.value);
+    custodians_table custodians(_self, dac_scope.value);
+    contr_config current_config = contr_config::get_current_configs(_self, dac_scope);
 
-    name accountToChange = configs().authaccount;
+    auto dac = dacdir::dac_for_id(dac_scope);
+    
+    name accountToChange = dac.account_for_type(dacdir::AUTH);
 
     vector<eosiosystem::permission_level_weight> accounts;
+    
+    print("setting auths for custodians\n\n");
 
     for (auto it = custodians.begin(); it != custodians.end(); it++) {
         eosiosystem::permission_level_weight account{
@@ -135,10 +147,11 @@ void daccustodian::setCustodianAuths() {
     }
 
     eosiosystem::authority high_contract_authority{
-            .threshold = configs().auth_threshold_high,
+            .threshold = current_config.auth_threshold_high,
             .keys = {},
             .accounts = accounts
     };
+    print("About to set the first one in auths for custodians\n\n");
 
     action(permission_level{accountToChange, "owner"_n},
            "eosio"_n, "updateauth"_n,
@@ -148,9 +161,11 @@ void daccustodian::setCustodianAuths() {
                    "active"_n,
                    high_contract_authority))
             .send();
+    
+    print("After setting the first one in auths for custodians\n\n");
 
     eosiosystem::authority medium_contract_authority{
-            .threshold = configs().auth_threshold_mid,
+            .threshold = current_config.auth_threshold_mid,
             .keys = {},
             .accounts = accounts
     };
@@ -165,7 +180,7 @@ void daccustodian::setCustodianAuths() {
             .send();
 
     eosiosystem::authority low_contract_authority{
-            .threshold = configs().auth_threshold_low,
+            .threshold = current_config.auth_threshold_low,
             .keys = {},
             .accounts = accounts
     };
@@ -193,47 +208,55 @@ void daccustodian::setCustodianAuths() {
                    "low"_n,
                    one_contract_authority))
             .send();
+            print("Got to the end of setting permissions.");
 }
 
-void daccustodian::newperiod(string message) {
+void daccustodian::newperiod(string message, name dac_scope) {
 
-    assertPeriodTime();
+    contr_config configs = contr_config::get_current_configs(_self, dac_scope);
+    contr_state currentState = contr_state::get_current_state(_self, dac_scope);
+    assertPeriodTime(configs, currentState);
 
-    contr_config config = configs();
+    dacdir::dac found_dac = dacdir::dac_for_id(dac_scope);
+
 
     // Get the max supply of the lockup asset token (eg. EOSDAC)
-    auto tokenStats = stats(name(TOKEN_CONTRACT), config.lockupasset.symbol.code().raw()).begin();
+    auto tokenStats = stats(
+                            found_dac.account_for_type(dacdir::TOKEN), 
+                            found_dac.symbol.code().raw()
+                            ).begin();
     uint64_t max_supply = tokenStats->supply.amount;
 
     double percent_of_current_voter_engagement =
-            double(_currentState.total_weight_of_votes) / double(max_supply) * 100.0;
+            double(currentState.total_weight_of_votes) / double(max_supply) * 100.0;
 
-    eosio::print("\n\nToken max supply: ", max_supply, " total votes so far: ", _currentState.total_weight_of_votes);
-    eosio::print("\n\nNeed inital engagement of: ", config.initial_vote_quorum_percent, "% to start the DAC.");
-    eosio::print("\n\nToken supply: ", max_supply * 0.0001, " total votes so far: ", _currentState.total_weight_of_votes * 0.0001);
-    eosio::print("\n\nNeed initial engagement of: ", config.initial_vote_quorum_percent, "% to start the DAC.");
-    eosio::print("\n\nNeed ongoing engagement of: ", config.vote_quorum_percent,
+    eosio::print("\n\nToken max supply: ", max_supply, " total votes so far: ", currentState.total_weight_of_votes);
+    eosio::print("\n\nNeed inital engagement of: ", configs.initial_vote_quorum_percent, "% to start the DAC.");
+    eosio::print("\n\nToken supply: ", max_supply * 0.0001, " total votes so far: ", currentState.total_weight_of_votes * 0.0001);
+    eosio::print("\n\nNeed initial engagement of: ", configs.initial_vote_quorum_percent, "% to start the DAC.");
+    eosio::print("\n\nNeed ongoing engagement of: ", configs.vote_quorum_percent,
                  "% to allow new periods to trigger after initial activation.");
     eosio::print("\n\nPercent of current voter engagement: ", percent_of_current_voter_engagement, "\n\n");
 
-    check(_currentState.met_initial_votes_threshold == true ||
-                 percent_of_current_voter_engagement > config.initial_vote_quorum_percent,
+    check(currentState.met_initial_votes_threshold == true ||
+                 percent_of_current_voter_engagement > configs.initial_vote_quorum_percent,
                  "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_ACTIVATE::Voter engagement is insufficient to activate the DAC.");
-    _currentState.met_initial_votes_threshold = true;
+    currentState.met_initial_votes_threshold = true;
 
-    check(percent_of_current_voter_engagement > config.vote_quorum_percent,
+    check(percent_of_current_voter_engagement > configs.vote_quorum_percent,
                  "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_PROCESS::Voter engagement is insufficient to process a new period");
 
     // Distribute pay to the current custodians.
-    distributeMeanPay();
+    distributeMeanPay(dac_scope);
 
     // Set custodians for the next period.
-    allocateCustodians(false);
+    allocateCustodians(false, dac_scope);
 
     // Set the auths on the dacauthority account
-    setCustodianAuths();
+    setCustodianAuths(dac_scope);
 
-    _currentState.lastperiodtime = current_block_time();
+    currentState.lastperiodtime = current_block_time();
+    currentState.save(_self, dac_scope);
 
 
 //        Schedule the the next election cycle at the end of the period.

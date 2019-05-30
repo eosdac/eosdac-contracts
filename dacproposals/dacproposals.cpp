@@ -6,8 +6,10 @@
 #include <typeinfo>
 #include <algorithm>
 
-using namespace eosio;
-using namespace std;
+#include "../_contract-shared-headers/dacdirectory_shared.hpp"
+#include "../_contract-shared-headers/eosdactokens_shared.hpp"
+
+namespace eosdac {
 
     ACTION dacproposals::createprop(name proposer, string title, string summary, name arbitrator, extended_asset pay_amount, string content_hash, uint64_t id, uint16_t category, name dac_scope){
         require_auth(proposer);
@@ -37,7 +39,7 @@ using namespace std;
     ACTION dacproposals::voteprop(name custodian, uint64_t proposal_id, uint8_t vote, name dac_scope) {
         require_auth(custodian);
 
-        auto auth_account = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::AUTH).account_name;
+        auto auth_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::AUTH);
         require_auth(auth_account);
 
         assertValidMember(custodian, dac_scope);
@@ -61,7 +63,7 @@ using namespace std;
         
         proposal_vote_table prop_votes(_self, dac_scope.value);
         auto by_prop_and_voter = prop_votes.get_index<"propandvoter"_n>();
-        uint128_t joint_id = dacproposals::combine_ids(proposal_id, custodian.value);
+        uint128_t joint_id = combine_ids(proposal_id, custodian.value);
         auto vote_idx = by_prop_and_voter.find(joint_id);
         if (vote_idx == by_prop_and_voter.end()) {
             prop_votes.emplace(_self, [&](proposalvote &v) {
@@ -96,7 +98,7 @@ using namespace std;
 
         proposal_vote_table prop_votes(_self, dac_scope.value);
         auto by_prop_and_voter = prop_votes.get_index<"propandvoter"_n>();
-        uint128_t joint_id = dacproposals::combine_ids(proposal_id, custodian.value);
+        uint128_t joint_id = combine_ids(proposal_id, custodian.value);
         auto vote_idx = by_prop_and_voter.find(joint_id);
         if (vote_idx == by_prop_and_voter.end()) {
             prop_votes.emplace(_self, [&](proposalvote &v) {
@@ -126,7 +128,7 @@ using namespace std;
         proposal_vote_table prop_votes(_self, dac_scope.value);
 
         auto by_cat_and_voter = prop_votes.get_index<"catandvoter"_n>();
-        uint128_t joint_id = dacproposals::combine_ids(category, custodian.value);
+        uint128_t joint_id = combine_ids(category, custodian.value);
         auto vote_idx = by_cat_and_voter.find(joint_id);
         if (vote_idx == by_cat_and_voter.end()) {
             prop_votes.emplace(_self, [&](proposalvote &v) {
@@ -148,7 +150,7 @@ using namespace std;
         proposal_vote_table prop_votes(_self, dac_scope.value);
         auto by_cat_and_voter = prop_votes.get_index<"catandvoter"_n>();
 
-        uint128_t joint_id = dacproposals::combine_ids(category, custodian.value);
+        uint128_t joint_id = combine_ids(category, custodian.value);
         auto vote_idx = by_cat_and_voter.find(joint_id);
         check(vote_idx != by_cat_and_voter.end(),"ERR::UNDELEGATECA_NO_EXISTING_VOTE::Cannot undelegate category vote with pre-existing vote.");
         by_cat_and_voter.erase(vote_idx);
@@ -440,7 +442,7 @@ using namespace std;
         std::map<eosio::name, uint16_t> category_delegate_votes;
 
         for (auto custodian: nonvoting_custodians) {
-            uint128_t joint_id = dacproposals::combine_ids(prop.category, custodian.value);
+            uint128_t joint_id = combine_ids(prop.category, custodian.value);
             auto vote_idx = by_category.find(joint_id);
             if (
                 vote_idx != by_category.end() &&
@@ -475,16 +477,17 @@ using namespace std;
         return approved_count;
     }
 
-    void dacproposals::assertValidMember(name member, name dac_scope) {
+    // void dacproposals::assertValidMember(name member, name dac_scope) {
     
-        auto member_terms_account = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::TOKEN);
+    //     auto member_terms_account = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::TOKEN);
 
-        regmembers reg_members(member_terms_account.account_name, member_terms_account.dac_scope.value);
-        memterms memberterms(member_terms_account.account_name, member_terms_account.dac_scope.value);
+    //     regmembers reg_members(member_terms_account.account_name, member_terms_account.dac_scope.value);
+    //     memterms memberterms(member_terms_account.account_name, member_terms_account.dac_scope.value);
 
-        const auto &regmem = reg_members.get(member.value, "ERR::GENERAL_REG_MEMBER_NOT_FOUND::Account is not registered with members.");
-        check((regmem.agreedterms != 0), "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_ANY_TERMS::Account has not agreed to any terms");
-        auto latest_member_terms = (--memberterms.end());
-        check(latest_member_terms->version == regmem.agreedterms, "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_LATEST_TERMS::Agreed terms isn't the latest.");
-    }
+    //     const auto &regmem = reg_members.get(member.value, "ERR::GENERAL_REG_MEMBER_NOT_FOUND::Account is not registered with members.");
+    //     check((regmem.agreedterms != 0), "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_ANY_TERMS::Account has not agreed to any terms");
+    //     auto latest_member_terms = (--memberterms.end());
+    //     check(latest_member_terms->version == regmem.agreedterms, "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_LATEST_TERMS::Agreed terms isn't the latest.");
+    // }
 
+}

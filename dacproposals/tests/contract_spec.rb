@@ -3,6 +3,8 @@ require 'rspec_command'
 require "json"
 require 'date'
 
+require_relative '../../_test_helpers/CommonTestHelpers'
+
 # 1. A recent version of Ruby is required
 # 2. Ensure the required gems are installed with `gem install rspec json rspec-command`
 # 3. Run this from the command line with rspec contract_spec.rb
@@ -13,164 +15,10 @@ RSpec.configure do |config|
   config.include RSpecCommand
 end
 
-EOSIO_PUB = 'EOS8kkhi1qYPWJMpDJXabv4YnqjuzisA5ZdRpGG8vhSGmRDqi6CUn'
-EOSIO_PVT = '5KDFWhsMK3fuze6yXgFRmVDEEE5kbQJrJYCBhGKV2KWHCbjsYYy'
-
-CONTRACT_OWNER_PRIVATE_KEY = '5K86iZz9h8jwgGDttMPcHqFHHru5ueqnfDs5fVSHfm8bJt8PjK6'
-CONTRACT_OWNER_PUBLIC_KEY = 'EOS6Y1fKGLVr2zEFKKfAmRUoH1LzM7crJEBi4dL5ikYeGYqiJr6SS'
-
-CONTRACT_ACTIVE_PRIVATE_KEY = '5Jbf3f26fz4HNWXVAd3TMYHnC68uu4PtkMnbgUa5mdCWmgu47sR'
-CONTRACT_ACTIVE_PUBLIC_KEY = 'EOS7rjn3r52PYd2ppkVEKYvy6oRDP9MZsJUPB2MStrak8LS36pnTZ'
-
-TEST_OWNER_PRIVATE_KEY = '5K86iZz9h8jwgGDttMPcHqFHHru5ueqnfDs5fVSHfm8bJt8PjK6'
-TEST_OWNER_PUBLIC_KEY = 'EOS6Y1fKGLVr2zEFKKfAmRUoH1LzM7crJEBi4dL5ikYeGYqiJr6SS'
-
-TEST_ACTIVE_PRIVATE_KEY = '5Jbf3f26fz4HNWXVAd3TMYHnC68uu4PtkMnbgUa5mdCWmgu47sR'
-TEST_ACTIVE_PUBLIC_KEY = 'EOS7rjn3r52PYd2ppkVEKYvy6oRDP9MZsJUPB2MStrak8LS36pnTZ'
-
 CONTRACT_NAME = 'daccustodian'
 ACCOUNT_NAME = 'daccustodian'
 
-CONTRACTS_DIR = '../_test_helpers/system_contract_dependencies'
-
-def configure_wallet
-  beforescript = <<~SHELL
-
-    cleos wallet unlock --password `cat ~/eosio-wallet/.pass`
-    cleos wallet import --private-key #{CONTRACT_ACTIVE_PRIVATE_KEY}
-    cleos wallet import --private-key #{TEST_ACTIVE_PRIVATE_KEY}
-    cleos wallet import --private-key #{TEST_OWNER_PRIVATE_KEY}
-    cleos wallet import --private-key #{EOSIO_PVT}
-  SHELL
-
-  `#{beforescript}`
-end
-
-# @param [eos account name for the new account] name
-# @param [if not nil amount of eosdac to issue to the new account] issue
-# @param [if not nil register the account with the agreed terms as this value] memberreg
-# @param [if not nil transfer this amount to the elections contract so they can register as an election candidate] stake
-# @param [if not nil register as a candidate with this amount as the requested pay] requestedpay
-def seed_dac_account(name, issue: nil, memberreg: nil, stake: nil, requestedpay: nil)
-  `cleos system newaccount --stake-cpu "10.0000 EOS" --stake-net "10.0000 EOS" --transfer --buy-ram-kbytes 1024 eosio #{name} #{TEST_OWNER_PUBLIC_KEY} #{TEST_ACTIVE_PUBLIC_KEY}`
-
-  unless issue.nil?
-    `cleos push action eosdactokens issue '{ "to": "#{name}", "quantity": "#{issue}", "memo": "Initial amount."}' -p eosdactokens`
-  end
-
-  unless memberreg.nil?
-    `cleos push action eosdactokens memberreg '{ "sender": "#{name}", "agreedterms": "#{memberreg}"}' -p #{name}`
-  end
-
-  unless stake.nil?
-    `cleos push action eosdactokens transfer '{ "from": "#{name}", "to": "daccustodian", "quantity": "#{stake}","memo":"daccustodian"}' -p #{name}`
-  end
-
-  unless requestedpay.nil?
-    `cleos push action daccustodian nominatecand '{ "cand": "#{name}", "bio": "any bio", "requestedpay": "#{requestedpay}"}' -p #{name}`
-  end
-end
-
-def string_date_to_UTC input
-  Date.iso8601(input).to_time.utc.to_datetime
-end
-
-def utc_today
-  Date.today().to_time.utc.to_datetime
-end
-
-def reset_chain
-  `kill -INT \`pgrep nodeos\``
-
-  # Launch nodeos in a new tab so the output can be observed.
-  # ttab is a nodejs module but this could be easily achieved manually without ttab.
-  `ttab 'nodeos --delete-all-blocks --verbose-http-errors'`
-
-  # nodeos --delete-all-blocks --verbose-http-errors &>/dev/null & # Alternative without ttab installed
-
-  puts "Give the chain a chance to settle."
-  sleep 4
-
-end
-
-def seed_system_contracts
-
-  beforescript = <<~SHELL
-     set -x
-
-    cleos set contract eosio #{CONTRACTS_DIR}/eosio.bios -p eosio
-    echo `pwd`
-    cleos create account eosio eosio.msig #{EOSIO_PUB}
-    cleos get code eosio.msig
-    echo "eosio.msig"
-    cleos create account eosio eosio.token #{EOSIO_PUB}
-    cleos create account eosio eosio.ram #{EOSIO_PUB}
-    cleos create account eosio eosio.ramfee #{EOSIO_PUB}
-    cleos create account eosio eosio.names #{EOSIO_PUB}
-    cleos create account eosio eosio.stake #{EOSIO_PUB}
-    cleos create account eosio eosio.saving #{EOSIO_PUB}
-    cleos create account eosio eosio.bpay #{EOSIO_PUB}
-    cleos create account eosio eosio.vpay #{EOSIO_PUB}
-    cleos push action eosio setpriv  '["eosio.msig",1]' -p eosio
-    cleos set contract eosio.msig #{CONTRACTS_DIR}/eosio.msig -p eosio.msig
-    cleos set contract eosio.token #{CONTRACTS_DIR}/eosio.token -p eosio.token
-    cleos push action eosio.token create '["eosio","10000000000.0000 EOS"]' -p eosio.token
-    cleos push action eosio.token issue '["eosio", "1000000000.0000 EOS", "Initial EOS amount."]' -p eosio
-    cleos set contract eosio #{CONTRACTS_DIR}/eosio.system -p eosio
-  SHELL
-
-  `#{beforescript}`
-  exit() unless $? == 0
-end
-
-def configure_dac_accounts
-  beforescript = <<~SHELL
-    # set -x
-    cleos system newaccount --stake-cpu \"10.0000 EOS\" --stake-net \"10.0000 EOS\" --transfer --buy-ram-kbytes 1024 eosio dacdirectory #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
-    
-    cleos system newaccount --stake-cpu \"10.0000 EOS\" --stake-net \"10.0000 EOS\" --transfer --buy-ram-kbytes 1024 eosio daccustodian #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
-    cleos system newaccount --stake-cpu \"10.0000 EOS\" --stake-net \"10.0000 EOS\" --transfer --buy-ram-kbytes 1024 eosio eosdactokens #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
-    cleos system newaccount --stake-cpu \"10.0000 EOS\" --stake-net \"10.0000 EOS\" --transfer --buy-ram-kbytes 1024 eosio dacauthority #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
-    cleos system newaccount --stake-cpu \"10.0000 EOS\" --stake-net \"10.0000 EOS\" --transfer --buy-ram-kbytes 1024 eosio eosdacthedac #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
-    cleos system newaccount --stake-cpu \"10.0000 EOS\" --stake-net \"10.0000 EOS\" --transfer --buy-ram-kbytes 1024 eosio dacocoiogmbh #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
-    cleos system newaccount --stake-cpu \"10.0000 EOS\" --stake-net \"10.0000 EOS\" --transfer --buy-ram-kbytes 1024 eosio dacproposals #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
-    cleos system newaccount --stake-cpu \"10.0000 EOS\" --stake-net \"10.0000 EOS\" --transfer --buy-ram-kbytes 1024 eosio dacescrow #{CONTRACT_OWNER_PUBLIC_KEY} #{CONTRACT_ACTIVE_PUBLIC_KEY}
-
-    # Setup the inital permissions.
-    cleos set account permission dacauthority owner '{"threshold": 1,"keys": [{"key": "#{CONTRACT_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' '' -p dacauthority@owner
-    # cleos set account permission eosdacthedac active '{"threshold": 1,"keys": [{"key": "#{CONTRACT_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p eosdacthedac@owner
-    cleos set account permission dacproposals active '{"threshold": 1,"keys": [{"key": "#{CONTRACT_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"dacproposals","permission":"eosio.code"},"weight":1}]}' owner -p dacproposals@owner
-    cleos set account permission eosdacthedac xfer '{"threshold": 1,"keys": [{"key": "#{CONTRACT_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' active -p eosdacthedac@active
-    cleos set account permission daccustodian xfer '{"threshold": 1,"keys": [{"key": "#{CONTRACT_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' active -p daccustodian@active
-    cleos set account permission daccustodian one '{"threshold": 1,"keys": [{"key": "#{CONTRACT_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' low -p daccustodian@low
-
-    cleos push action eosio.token issue '["eosdacthedac", "100000.0000 EOS", "Initial EOS amount."]' -p eosio
-    cleos push action eosio.token issue '["dacproposals", "100000.0000 EOS", "Initial EOS amount."]' -p eosio
-
-    cleos set action permission eosdacthedac eosdactokens transfer xfer
-    cleos set action permission eosdacthedac eosio.token transfer xfer  
-    cleos set action permission daccustodian eosdactokens transfer xfer  
-
-    # Configure accounts permissions hierarchy
-    cleos set account permission dacauthority high #{CONTRACT_OWNER_PUBLIC_KEY} active -p dacauthority 
-    cleos set account permission dacauthority med #{CONTRACT_OWNER_PUBLIC_KEY} high -p dacauthority 
-    cleos set account permission dacauthority low #{CONTRACT_OWNER_PUBLIC_KEY} med -p dacauthority 
-    cleos set account permission dacauthority one #{CONTRACT_OWNER_PUBLIC_KEY} low -p dacauthority  
-
-    cleos set account permission #{ACCOUNT_NAME} active '{"threshold": 1,"keys": [{"key": "#{CONTRACT_ACTIVE_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p #{ACCOUNT_NAME}
-    cleos set account permission eosdacthedac xfer '{"threshold": 1,"keys": [],"accounts": [{"permission":{"actor":"dacproposals","permission":"eosio.code"},"weight":1}]}' active -p eosdacthedac@active
-    cleos set account permission eosdacthedac active '{"threshold": 1,"keys": [],"accounts": [{"permission":{"actor":"dacproposals","permission":"eosio.code"},"weight":1}]}' owner -p eosdacthedac@owner
-
-    # Set action permission for the voteprop
-      cleos set action permission dacauthority dacproposals voteprop one
-
-  SHELL
-
-  `#{beforescript}`
-  exit() unless $? == 0
-end
-
-def install_dependencies
+def install_dac_contracts
 
   beforescript = <<~SHELL
     # set -x
@@ -195,7 +43,8 @@ def configure_contracts
   `cleos push action eosdactokens issue '{ "to": "eosdactokens", "quantity": "78337.0000 EOSDAC", "memo": "Initial amount of tokens for you."}' -p eosdactokens`
   `cleos push action eosio.token issue '{ "to": "eosdacthedac", "quantity": "100000.0000 EOS", "memo": "Initial EOS amount."}' -p eosio.token`
   `cleos push action dacdirectory regdac '{"owner": "dacdirectory", "dac_name": "dacproposals", "dac_symbol": "4,MYSYM", "title": "Dac Title", "refs": [[1,"some_ref"]], "accounts": [[2,"daccustodian"], [5,"dacescrow"], [7,"dacescrow"], [0, "dacauthority"], [4, "eosdactokens"], [1, "eosdacthedac"] ], "scopes": [[2,"daccustodian"], [4, "eosdactokens"]]}' -p dacdirectory`
-  
+  `cleos push action dacdirectory regdac '{"owner": "dacdirectory", "dac_name": "mydacname2",   "dac_symbol": "4,EOSDAC", "title": "Dac Title", "refs": [[1,"some_ref"]], "accounts": [[1,"account1"]], "scopes": []}' -p custodian1`
+
   #create users
   # Ensure terms are registered in the token contract
   `cleos push action eosdactokens newmemterms '{ "terms": "normallegalterms", "hash": "New Latest terms"}' -p eosdactokens`
@@ -220,17 +69,13 @@ def configure_contracts
   `cleos set account permission dacauthority one '{"threshold": 1,"keys": [],"accounts": [{"permission":{"actor":"custodian1","permission":"active"},"weight":1}, {"permission":{"actor":"custodian11","permission":"active"},"weight":1}, {"permission":{"actor":"custodian12","permission":"active"},"weight":1}, {"permission":{"actor":"custodian13","permission":"active"},"weight":1}, {"permission":{"actor":"custodian2","permission":"active"},"weight":1}, {"permission":{"actor":"custodian3","permission":"active"},"weight":1}, {"permission":{"actor":"custodian4","permission":"active"},"weight":1}, {"permission":{"actor":"custodian5","permission":"active"},"weight":1}]}' low -p dacauthority@low`
 end
 
-def killchain
-  # `sleep 0.5; kill \`pgrep nodeos\``
-end
-
 describe "eosdacelect" do
   before(:all) do
     reset_chain
     configure_wallet
     seed_system_contracts
     configure_dac_accounts
-    install_dependencies
+    install_dac_contracts
     configure_contracts
   end
 
@@ -838,6 +683,7 @@ describe "eosdacelect" do
       context "with valid proposal id after successfully started work but before completing" do
         before(:all) do
           sleep 1
+          puts ":#{__LINE__}:marker"
           `cleos push action dacproposals createprop '{"proposer": "proposeracc1", "title": "startwork_title", "summary": "startwork_summary", "arbitrator": "arbitrator11", "pay_amount": {"quantity": "101.0000 EOS", "contract": "eosio.token"}, "content_hash": "asdfasdfasdfasdfasdfasdfasdfzzzz", "id": 2, "category": 2, "dac_scope": "dacproposals" }' -p proposeracc1`
 
           `cleos push action dacproposals voteprop '{"custodian": "custodian1", "proposal_id": 2, "vote": 1, "dac_scope": "dacproposals" }' -p custodian1 -p dacauthority`
@@ -887,6 +733,7 @@ describe "eosdacelect" do
         expect(escrow["memo"]).to eq "proposeracc1:1:asdfasdfasdfasdfasdfasdfasdffdsa"
         expect(escrow["external_reference"]).to eq 1
         expect(string_date_to_UTC(escrow["expires"]).day).to eq (utc_today.next_day(30).day)
+
       end
     end
   end
@@ -895,6 +742,7 @@ describe "eosdacelect" do
     before(:all) do
       seed_dac_account("proposeracc3", issue: "100.0000 EOSDAC", memberreg: "New Latest terms")
       `cleos push action dacproposals updateconfig '{"new_config": { "service_account": "dacescrow", "member_terms_account": "eosdactokens", "treasury_account": "eosdacthedac", "proposal_threshold": 7, "finalize_threshold": 5, "escrow_expiry": 2592000, "authority_account": "dacauthority", "approval_expiry": 200}, "dac_scope": "dacproposals"}' -p dacauthority`
+      puts ":#{__LINE__}:marker"
     end
     context "Created a proposal but still needing one vote for approval for proposal" do
       before(:all) do
@@ -924,6 +772,7 @@ describe "eosdacelect" do
       context "delegated category with matching proposal" do
         before(:all) do
           `cleos push action dacproposals delegatevote '{"custodian": "custodian13", "proposal_id": 101, "delegatee_custodian": "custodian11", "dac_scope": "dacproposals"}' -p custodian13 -p dacauthority`
+          puts ":#{__LINE__}:marker"
         end
         command %(cleos push action dacproposals startwork '{ "proposal_id": 101, "dac_scope": "dacproposals"}' -p proposeracc3), allow_error: true
         its(:stdout) {is_expected.to include('dacproposals <= dacproposals::startwork')}
@@ -957,8 +806,9 @@ describe "eosdacelect" do
       context "delegated category with matching category" do
         before(:all) do
           `cleos push action dacproposals delegatecat '{"custodian": "custodian13", "category": 31, "delegatee_custodian": "custodian11", "dac_scope": "dacproposals"}' -p custodian13 -p dacauthority`
+        sleep 1
         end
-            command %(cleos push action dacproposals startwork '{ "proposal_id": 102, "dac_scope": "dacproposals"}' -p proposeracc3), allow_error: true
+        command %(cleos push action dacproposals startwork '{ "proposal_id": 102, "dac_scope": "dacproposals"}' -p proposeracc3), allow_error: true
         its(:stdout) {is_expected.to include('dacproposals <= dacproposals::startwork')}
       end
     end

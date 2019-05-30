@@ -207,3 +207,30 @@ The intent of forehand is to set a candidate to a state of inactive so they will
 **INTENT:** The intent of {{ claimpay }} is to allow an account to claim pending payment amounts due to the account. The pay claim they are claiming needs to be visible in the `pendingpay` table. transfers to the claimer via an inline transfer on the eosdactoken contract and then removes the pending payment record from the `pending_pay` table. The active auth of this claimer is required to complete this action.
 
 **TERM:** This action lasts for the duration of the time taken to process the transaction.
+
+<h1 class="contract">
+transferobsv
+</h1>
+
+## ACTION: transferobsv
+**PARAMETERS:**
+* __from__ is an eosio account name for the source of the transaction. 
+* __to__ is an eosio account name for the destination of the transaction. 
+* __quantity__ is eos asset. 
+* __dac_scope__ is an eosio account name to determine which DAC the transaction is associated with. 
+
+**INTENT** The intent of transferobsv is to monitor an asset transaction to update current vote strengths. 
+#### Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later so therefore should only store a unidentifiable hash of content rather than human readable content. 
+
+<h1 class="contract">
+capturestake
+</h1>
+
+## ACTION: capturestake
+**PARAMETERS:**
+* __from__ is an eosio account name for the source of the transaction. 
+* __quantity__ is eos asset. 
+* __dac_scope__ is an eosio account name to determine which DAC the transaction is associated with. 
+
+**INTENT** The intent of capturestake is to record an amount transferred to this contract for pending stake for a registering candidate. 
+#### Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later so therefore should only store a unidentifiable hash of content rather than human readable content. 

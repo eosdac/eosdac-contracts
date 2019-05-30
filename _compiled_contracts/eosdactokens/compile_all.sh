@@ -1,9 +1,5 @@
 #!/usr/bin/env bash
 
-source `dirname $BASH_SOURCE`/common.sh
+CONTRACT='eosdactokens'
 
-COMMON_PATH=../_compiled_contracts/$CONTRACT
-
-source $COMMON_PATH/jungle/compile.sh
-source $COMMON_PATH/mainnet/compile.sh
-source $COMMON_PATH/unit_tests/compile.sh
+eosio-cpp -o `dirname $BASH_SOURCE`/$CONTRACT.wasm $CONTRACT.cpp -I.

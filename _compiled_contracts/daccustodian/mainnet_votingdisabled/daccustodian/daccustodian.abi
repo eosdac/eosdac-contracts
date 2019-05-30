@@ -34,12 +34,34 @@
             ]
         },
         {
+            "name": "capturestake",
+            "base": "",
+            "fields": [
+                {
+                    "name": "from",
+                    "type": "name"
+                },
+                {
+                    "name": "quantity",
+                    "type": "asset"
+                },
+                {
+                    "name": "dac_scope",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "claimpay",
             "base": "",
             "fields": [
                 {
                     "name": "payid",
                     "type": "uint64"
+                },
+                {
+                    "name": "dac_scope",
+                    "type": "name"
                 }
             ]
         },
@@ -62,18 +84,6 @@
                 {
                     "name": "periodlength",
                     "type": "uint32"
-                },
-                {
-                    "name": "authaccount",
-                    "type": "name"
-                },
-                {
-                    "name": "tokenholder",
-                    "type": "name"
-                },
-                {
-                    "name": "serviceprovider",
-                    "type": "name"
                 },
                 {
                     "name": "should_pay_via_service_provider",
@@ -164,6 +174,10 @@
                 {
                     "name": "lockupStake",
                     "type": "bool"
+                },
+                {
+                    "name": "dac_scope",
+                    "type": "name"
                 }
             ]
         },
@@ -173,6 +187,10 @@
             "fields": [
                 {
                     "name": "cust",
+                    "type": "name"
+                },
+                {
+                    "name": "dac_scope",
                     "type": "name"
                 }
             ]
@@ -184,6 +202,10 @@
                 {
                     "name": "message",
                     "type": "string"
+                },
+                {
+                    "name": "dac_scope",
+                    "type": "name"
                 }
             ]
         },
@@ -198,6 +220,10 @@
                 {
                     "name": "requestedpay",
                     "type": "asset"
+                },
+                {
+                    "name": "dac_scope",
+                    "type": "name"
                 }
             ]
         },
@@ -230,6 +256,10 @@
                 {
                     "name": "cust",
                     "type": "name"
+                },
+                {
+                    "name": "dac_scope",
+                    "type": "name"
                 }
             ]
         },
@@ -244,6 +274,10 @@
                 {
                     "name": "profile",
                     "type": "string"
+                },
+                {
+                    "name": "dac_scope",
+                    "type": "name"
                 }
             ]
         },
@@ -280,11 +314,37 @@
             ]
         },
         {
+            "name": "transferobsv",
+            "base": "",
+            "fields": [
+                {
+                    "name": "from",
+                    "type": "name"
+                },
+                {
+                    "name": "to",
+                    "type": "name"
+                },
+                {
+                    "name": "quantity",
+                    "type": "asset"
+                },
+                {
+                    "name": "scope",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "unstake",
             "base": "",
             "fields": [
                 {
                     "name": "cand",
+                    "type": "name"
+                },
+                {
+                    "name": "dac_scope",
                     "type": "name"
                 }
             ]
@@ -300,6 +360,10 @@
                 {
                     "name": "bio",
                     "type": "string"
+                },
+                {
+                    "name": "dac_scope",
+                    "type": "name"
                 }
             ]
         },
@@ -310,6 +374,10 @@
                 {
                     "name": "newconfig",
                     "type": "contr_config"
+                },
+                {
+                    "name": "dac_scope",
+                    "type": "name"
                 }
             ]
         },
@@ -324,6 +392,10 @@
                 {
                     "name": "requestedpay",
                     "type": "asset"
+                },
+                {
+                    "name": "dac_scope",
+                    "type": "name"
                 }
             ]
         },
@@ -356,6 +428,10 @@
                 {
                     "name": "newvotes",
                     "type": "name[]"
+                },
+                {
+                    "name": "dac_scope",
+                    "type": "name"
                 }
             ]
         },
@@ -366,11 +442,20 @@
                 {
                     "name": "cand",
                     "type": "name"
+                },
+                {
+                    "name": "dac_scope",
+                    "type": "name"
                 }
             ]
         }
     ],
     "actions": [
+        {
+            "name": "capturestake",
+            "type": "capturestake",
+            "ricardian_contract": "## ACTION: capturestake\n**PARAMETERS:**\n* __from__ is an eosio account name for the source of the transaction. \n* __quantity__ is eos asset. \n* __dac_scope__ is an eosio account name to determine which DAC the transaction is associated with. \n\n**INTENT** The intent of capturestake is to record an amount transferred to this contract for pending stake for a registering candidate. \n#### Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later so therefore should only store a unidentifiable hash of content rather than human readable content."
+        },
         {
             "name": "claimpay",
             "type": "claimpay",
@@ -410,6 +495,11 @@
             "name": "stprofileuns",
             "type": "stprofileuns",
             "ricardian_contract": "## ACTION: stprofileuns\n**PARAMETERS:**\n* __cand__ is an eosio account name. \n* __profile__ is a string that provides a hash of the details of the candidate.\n\n**INTENT:** \nThe intent of stprofileuns is to record an update the user's profile.  ##Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later."
+        },
+        {
+            "name": "transferobsv",
+            "type": "transferobsv",
+            "ricardian_contract": "## ACTION: transferobsv\n**PARAMETERS:**\n* __from__ is an eosio account name for the source of the transaction. \n* __to__ is an eosio account name for the destination of the transaction. \n* __quantity__ is eos asset. \n* __dac_scope__ is an eosio account name to determine which DAC the transaction is associated with. \n\n**INTENT** The intent of transferobsv is to monitor an asset transaction to update current vote strengths. \n#### Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later so therefore should only store a unidentifiable hash of content rather than human readable content."
         },
         {
             "name": "unstake",

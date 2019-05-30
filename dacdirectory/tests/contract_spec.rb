@@ -314,7 +314,7 @@ describe "dacdirectory" do
     end
     context "without explicit value" do
       command %(cleos push action dacdirtester assdacscope '{ "dac_name": "mydacname","scope_type": 3}' -p testaccount2), allow_error: true
-      its(:stdout) {is_expected.to include('found scope: mydacname')}
+      its(:stdout) {is_expected.to include('found scope::mydacname')}
     end
   end
 
