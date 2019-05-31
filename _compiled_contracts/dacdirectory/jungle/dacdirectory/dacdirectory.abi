@@ -158,6 +158,20 @@
             ]
         },
         {
+            "name": "setstatus",
+            "base": "",
+            "fields": [
+                {
+                    "name": "dac_name",
+                    "type": "name"
+                },
+                {
+                    "name": "value",
+                    "type": "uint8"
+                }
+            ]
+        },
+        {
             "name": "unregaccount",
             "base": "",
             "fields": [
@@ -216,6 +230,11 @@
             "name": "setowner",
             "type": "setowner",
             "ricardian_contract": "## ACTION: setowner\n**PARAMETERS:**\n* __dac_name__ is an eosio account name uniquely identifying the DAC.\n* __account__ is an eosio account name to used as the owner of the DAC\n\n**INTENT:** The intent of setowner change the owner account for a DAC.\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
+        },
+        {
+            "name": "setstatus",
+            "type": "setstatus",
+            "ricardian_contract": "## ACTION: setstatus\n**PARAMETERS:**\n* __dac_name__ is an eosio account name uniquely identifying the DAC. \n* __value__ a number representing value to set for the status value of the DAC\n\n**INTENT:** The intent of setstatus is to set the DAC status value eg. INACTIVE = 0, ACTIVE = 1.\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
         },
         {
             "name": "unregaccount",

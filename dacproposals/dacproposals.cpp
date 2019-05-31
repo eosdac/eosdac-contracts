@@ -77,6 +77,8 @@ using namespace std;
                 v.delegatee = nullopt;
             });
         }
+
+        updpropvotes(proposal_id, dac_scope);
     }
 
     ACTION dacproposals::delegatevote(name custodian, uint64_t proposal_id, name delegatee_custodian, name dac_scope) {
@@ -110,6 +112,8 @@ using namespace std;
                 v.delegatee = delegatee_custodian;
             });
         }
+
+        updpropvotes(proposal_id, dac_scope);
     }
 
     ACTION dacproposals::delegatecat(name custodian, uint64_t category, name delegatee_custodian, name dac_scope) {

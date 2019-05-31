@@ -88,3 +88,16 @@ The intent of regref is to register an arbitratry piece of data about a particul
 
 **INTENT:** The intent of setowner change the owner account for a DAC.
 **TERM:** This action lasts for the duration of the time taken to process the transaction.
+
+<h1 class="contract">
+ setstatus
+</h1>
+
+## ACTION: setstatus
+**PARAMETERS:**
+* __dac_name__ is an eosio account name uniquely identifying the DAC. 
+* __value__ a number representing value to set for the status value of the DAC
+
+**INTENT:** The intent of setstatus is to set the DAC status value eg. INACTIVE = 0, ACTIVE = 1.
+**TERM:** This action lasts for the duration of the time taken to process the transaction.
+ 

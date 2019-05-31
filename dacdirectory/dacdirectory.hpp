@@ -20,6 +20,7 @@ namespace dacdir {
         ACTION regref( name dac_name, string value, uint8_t type );
         ACTION unregref( name dac_name, uint8_t type );
         ACTION setowner( name dac_name, name new_owner );
+        ACTION setstatus( name dac_name, uint8_t value );
 
     protected:
         dac_table      _dacs;
