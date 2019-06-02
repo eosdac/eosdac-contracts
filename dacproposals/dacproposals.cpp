@@ -85,7 +85,7 @@ namespace eosdac {
 
     ACTION dacproposals::delegatevote(name custodian, uint64_t proposal_id, name delegatee_custodian, name dac_scope) {
         require_auth(custodian);
-        auto auth_account = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::AUTH).account_name;
+        auto auth_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::AUTH);
         require_auth(auth_account);
         
         assertValidMember(custodian, dac_scope);
@@ -120,7 +120,7 @@ namespace eosdac {
 
     ACTION dacproposals::delegatecat(name custodian, uint64_t category, name delegatee_custodian, name dac_scope) {
         require_auth(custodian);
-        auto auth_account = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::AUTH).account_name;
+        auto auth_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::AUTH);
         require_auth(auth_account);
         assertValidMember(custodian, dac_scope);
         check(custodian != delegatee_custodian, "ERR::DELEGATEVOTE_DELEGATE_SELF::Cannot delegate voting to yourself.");
@@ -191,8 +191,8 @@ namespace eosdac {
         
         time_point_sec time_now = time_point_sec(current_time_point().sec_since_epoch());
         
-        auto treasury = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::TREASURY).account_name;
-        auto escrow = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::ESCROW).account_name;
+        auto treasury = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::TREASURY);
+        auto escrow = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::ESCROW);
 
         check(is_account(treasury), "ERR::TREASURY_ACCOUNT_NOT_FOUND::Treasury account not found");
         check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
@@ -266,14 +266,14 @@ namespace eosdac {
 
         const proposal& prop = proposals.get(proposal_id, "ERR::DELEGATEVOTE_PROPOSAL_NOT_FOUND::Proposal not found.");
         if (!has_auth(prop.proposer)) {
-            auto auth_account = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::AUTH).account_name;
+            auto auth_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::AUTH);
             require_auth(auth_account);        
         }
     }
 
     ACTION dacproposals::updateconfig(config new_config, name dac_scope) {
         
-        auto auth_account = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::AUTH).account_name;
+        auto auth_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::AUTH);
         require_auth(auth_account);
 
         configs_table configs(_self, dac_scope.value);
@@ -342,8 +342,8 @@ namespace eosdac {
     void dacproposals::transferfunds(const proposal &prop, name dac_scope) {
         proposal_table proposals(_self, dac_scope.value);
         config configs = current_configs(dac_scope);
-        auto treasury = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::TREASURY).account_name;
-        auto escrow = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::ESCROW).account_name;
+        auto treasury = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::TREASURY);
+        auto escrow = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::ESCROW);
 
         eosio::action(
                 eosio::permission_level{ treasury, "escrow"_n },
@@ -372,11 +372,11 @@ namespace eosdac {
     }
 
     int16_t dacproposals::count_votes(proposal prop, VoteType vote_type, name dac_scope){
-        auto custodian_data_src = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::CUSTODIAN);
+        auto custodian_data_src = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::CUSTODIAN);
 
-        print("count votes with account:: ", custodian_data_src.account_name, " scope:: ", custodian_data_src.dac_scope);
+        print("count votes with account:: ", custodian_data_src, " scope:: ", dac_scope);
 
-        custodians_table custodians(custodian_data_src.account_name, custodian_data_src.dac_scope.value);
+        custodians_table custodians(custodian_data_src, dac_scope.value);
         std::set<eosio::name> current_custodians;
         // Needed for the category vote fallback to avoid duplicate votes.
         std::set<eosio::name> voted_custodians;
@@ -479,7 +479,7 @@ namespace eosdac {
 
     // void dacproposals::assertValidMember(name member, name dac_scope) {
     
-    //     auto member_terms_account = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::TOKEN);
+    //     auto member_terms_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::TOKEN);
 
     //     regmembers reg_members(member_terms_account.account_name, member_terms_account.dac_scope.value);
     //     memterms memberterms(member_terms_account.account_name, member_terms_account.dac_scope.value);

@@ -28,6 +28,10 @@
                 {
                     "name": "custodians",
                     "type": "name[]"
+                },
+                {
+                    "name": "dac_scope",
+                    "type": "name"
                 }
             ]
         }

@@ -7,9 +7,6 @@
 #include "../_contract-shared-headers/eosdactokens_shared.hpp"
 #include "../_contract-shared-headers/daccustodian_shared.hpp"
 
-// using namespace eosio;
-// using namespace std;
-
 namespace eosdac {
 
     CONTRACT dacproposals : public contract {

@@ -23,7 +23,10 @@ end
 # @param [if not nil register the account with the agreed terms as this value] memberreg
 # @param [if not nil transfer this amount to the elections contract so they can register as an election candidate] stake
 # @param [if not nil register as a candidate with this amount as the requested pay] requestedpay
-def seed_dac_account(name, issue: nil, memberreg: nil, stake: nil, requestedpay: nil, dac_scope: nil, dac_owner: "dacowner")
+def seed_dac_account(name, issue: nil, memberreg: nil, stake: nil, requestedpay: nil, dac_scope: nil, dac_owner: nil)
+  if dac_scope.nil? || dac_owner.nil? { fail() }
+
+  end
   run %(cleos system newaccount --stake-cpu "10.0000 EOS" --stake-net "10.0000 EOS" --transfer --buy-ram-kbytes 1024 eosio #{name} #{CONTRACT_PUBLIC_KEY} #{CONTRACT_PUBLIC_KEY})
 
   if !issue.nil? && !dac_owner.nil?
@@ -31,7 +34,7 @@ def seed_dac_account(name, issue: nil, memberreg: nil, stake: nil, requestedpay:
   end
 
   if !memberreg.nil? && !dac_scope.nil?
-    run %(cleos push action eosdactokens memberrege '{ "sender": "#{name}", "agreedterms": "#{memberreg}", "dac_id": "custtestdac"}' -p #{name})
+    run %(cleos push action eosdactokens memberrege '{ "sender": "#{name}", "agreedterms": "#{memberreg}", "dac_id": "#{dac_scope}"}' -p #{name})
   end
 
   unless stake.nil?
@@ -90,6 +93,7 @@ def configure_dac_accounts_and_permissions
 
     run %(cleos system newaccount --stake-cpu \"10.0000 EOS\" --stake-net \"10.0000 EOS\" --transfer --buy-ram-kbytes 1024 eosio dacdirectory #{CONTRACT_PUBLIC_KEY} #{CONTRACT_PUBLIC_KEY})
     run %(cleos system newaccount --stake-cpu \"10.0000 EOS\" --stake-net \"10.0000 EOS\" --transfer --buy-ram-kbytes 2024 eosio daccustodian #{CONTRACT_PUBLIC_KEY} #{CONTRACT_PUBLIC_KEY})
+    run %(cleos system newaccount --stake-cpu \"10.0000 EOS\" --stake-net \"10.0000 EOS\" --transfer --buy-ram-kbytes 2024 eosio daccustmock #{CONTRACT_PUBLIC_KEY} #{CONTRACT_PUBLIC_KEY}) # mock contract
     run %(cleos system newaccount --stake-cpu \"10.0000 EOS\" --stake-net \"10.0000 EOS\" --transfer --buy-ram-kbytes 1024 eosio eosdactokens #{CONTRACT_PUBLIC_KEY} #{CONTRACT_PUBLIC_KEY})
     run %(cleos system newaccount --stake-cpu \"10.0000 EOS\" --stake-net \"10.0000 EOS\" --transfer --buy-ram-kbytes 1024 eosio dacauthority #{CONTRACT_PUBLIC_KEY} #{CONTRACT_PUBLIC_KEY})
     run %(cleos system newaccount --stake-cpu \"10.0000 EOS\" --stake-net \"10.0000 EOS\" --transfer --buy-ram-kbytes 1024 eosio eosdacthedac #{CONTRACT_PUBLIC_KEY} #{CONTRACT_PUBLIC_KEY})
@@ -102,7 +106,7 @@ def configure_dac_accounts_and_permissions
     # cleos set account permission eosdacthedac active '{"threshold": 1,"keys": [{"key": "#{CONTRACT_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p eosdacthedac@owner)
     run %(cleos set account permission dacproposals active '{"threshold": 1,"keys": [{"key": "#{CONTRACT_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"dacproposals","permission":"eosio.code"},"weight":1}]}' owner -p dacproposals@owner)
     run %(cleos set account permission daccustodian xfer '{"threshold": 1,"keys": [{"key": "#{CONTRACT_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' active -p daccustodian@active)
-    run %(cleos set account permission daccustodian one '{"threshold": 1,"keys": [{"key": "#{CONTRACT_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' low -p daccustodian@low)
+    # run %(cleos set account permission daccustodian one '{"threshold": 1,"keys": [{"key": "#{CONTRACT_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' low -p daccustodian@active)
     run %(cleos push action eosio.token issue '["eosdacthedac", "100000.0000 EOS", "Initial EOS amount."]' -p eosio)
     run %(cleos push action eosio.token issue '["dacproposals", "100000.0000 EOS", "Initial EOS amount."]' -p eosio)
     run %(cleos set action permission eosdacthedac eosdactokens transfer xfer)
@@ -110,13 +114,13 @@ def configure_dac_accounts_and_permissions
     run %(cleos set action permission daccustodian eosdactokens transfer xfer)
     
     # Configure accounts permissions hierarchy
-    run %(cleos set account permission dacauthority high #{CONTRACT_PUBLIC_KEY} active -p dacauthority )
+      run %(cleos set account permission dacauthority high #{CONTRACT_PUBLIC_KEY} active -p dacauthority )
     run %(cleos set account permission dacauthority med #{CONTRACT_PUBLIC_KEY} high -p dacauthority )
     run %(cleos set account permission dacauthority low #{CONTRACT_PUBLIC_KEY} med -p dacauthority )
     run %(cleos set account permission dacauthority one #{CONTRACT_PUBLIC_KEY} low -p dacauthority  )
     run %(cleos set account permission eosdactokens active '{"threshold": 1,"keys": [{"key": "#{CONTRACT_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"eosdactokens","permission":"eosio.code"},"weight":1}]}' owner -p eosdactokens)
     run %(cleos set account permission daccustodian active '{"threshold": 1,"keys": [{"key": "#{CONTRACT_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p daccustodian)
-    run %(cleos set account permission eosdacthedac xfer '{"threshold": 1,"keys": [],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' active -p eosdacthedac@active)
+    run %(cleos set account permission eosdacthedac xfer '{"threshold": 1,"keys": [],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1},{"permission":{"actor":"dacproposals","permission":"eosio.code"},"weight":1}]}' active -p eosdacthedac@active)
     run %(cleos set account permission eosdacthedac active '{"threshold": 1,"keys": [],"accounts": [{"permission":{"actor":"dacproposals","permission":"eosio.code"},"weight":1}]}' owner -p eosdacthedac@owner)
 
     # Set action permission for the voteprop
@@ -135,8 +139,11 @@ def install_dac_contracts
     run %(cleos set contract dacdirectory ../_compiled_contracts/dacdirectory/unit_tests/dacdirectory -p dacdirectory)
     run %(cleos set contract eosdactokens ../_compiled_contracts/eosdactokens -p eosdactokens)
     run %(cleos set contract dacescrow    ../_compiled_contracts/dacescrow/unit_tests/dacescrow -p dacescrow)
-    run %(cleos set contract dacproposals ../_compiled_contracts/dacproposals/unit_tests/dacproposals -p dacproposals)
+    run %(cleos set contract dacproposals ../_compiled_contracts/dacproposals -p dacproposals)
     run %(cleos set contract daccustodian ../_compiled_contracts/daccustodian/unit_tests/daccustodian -p daccustodian)
+
+    # Mock contracts to help testing
+    run %(cleos set contract daccustmock ../_test_helpers/daccustodian_stub/daccustodian -p daccustmock)
 end
 
 def wrap_command cli_command
