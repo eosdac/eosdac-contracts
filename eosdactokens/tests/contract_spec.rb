@@ -2,22 +2,22 @@ require_relative '../../_test_helpers/CommonTestHelpers'
 
 def configure_contracts_for_tests
 
-  puts `cleos system newaccount --stake-cpu "10.0000 EOS" --stake-net "10.0000 EOS" --transfer --buy-ram-kbytes 1024 eosio testuser1 #{CONTRACT_PUBLIC_KEY} #{CONTRACT_PUBLIC_KEY}`
-  puts `cleos system newaccount --stake-cpu "10.0000 EOS" --stake-net "10.0000 EOS" --transfer --buy-ram-kbytes 1024 eosio testuser2 #{CONTRACT_PUBLIC_KEY} #{CONTRACT_PUBLIC_KEY}`
-  puts `cleos system newaccount --stake-cpu "10.0000 EOS" --stake-net "10.0000 EOS" --transfer --buy-ram-kbytes 1024 eosio testuser3 #{CONTRACT_PUBLIC_KEY} #{CONTRACT_PUBLIC_KEY}`
-  puts `cleos system newaccount --stake-cpu "10.0000 EOS" --stake-net "10.0000 EOS" --transfer --buy-ram-kbytes 1024 eosio otherdacacc #{CONTRACT_PUBLIC_KEY} #{CONTRACT_PUBLIC_KEY}`
+  run %(cleos system newaccount --stake-cpu "10.0000 EOS" --stake-net "10.0000 EOS" --transfer --buy-ram-kbytes 1024 eosio testuser1 #{CONTRACT_PUBLIC_KEY} #{CONTRACT_PUBLIC_KEY})
+  run %(cleos system newaccount --stake-cpu "10.0000 EOS" --stake-net "10.0000 EOS" --transfer --buy-ram-kbytes 1024 eosio testuser2 #{CONTRACT_PUBLIC_KEY} #{CONTRACT_PUBLIC_KEY})
+  run %(cleos system newaccount --stake-cpu "10.0000 EOS" --stake-net "10.0000 EOS" --transfer --buy-ram-kbytes 1024 eosio testuser3 #{CONTRACT_PUBLIC_KEY} #{CONTRACT_PUBLIC_KEY})
+  run %(cleos system newaccount --stake-cpu "10.0000 EOS" --stake-net "10.0000 EOS" --transfer --buy-ram-kbytes 1024 eosio otherdacacc #{CONTRACT_PUBLIC_KEY} #{CONTRACT_PUBLIC_KEY})
 
-  puts `cleos push action dacdirectory regdac '{"owner": "dacdirectory", "dac_name": "dacpropabp", "dac_symbol": "4,ABP", "title": "Dac Title", "refs": [[1,"some_ref"]], "accounts": [[2,"daccustodian"], [5,"dacescrow"], [7,"dacescrow"], [0, "dacauthority"], [4, "eosdactokens"], [1, "eosdacthedac"] ], "scopes": [] }' -p dacdirectory`
-  puts `cleos push action dacdirectory regdac '{"owner": "dacdirectory", "dac_name": "eosdac", "dac_symbol": "4,EOSDAC", "title": "EOSDAC BP", "refs": [[1,"some_ref"]], "accounts": [[2,"daccustodian"], [5,"dacescrow"], [7,"dacescrow"], [0, "dacauthority"], [4, "eosdactokens"], [1, "eosdacthedac"] ], "scopes": [] }' -p dacdirectory`
-  puts `cleos push action dacdirectory regdac '{"owner": "dacdirectory", "dac_name": "dacpropaby", "dac_symbol": "4,ABY", "title": "Dac Title",     "refs": [[1,"some_ref"]], "accounts": [[2,"daccustodian"], [5,"dacescrow"], [7,"dacescrow"], [0, "dacauthority"], [4, "eosdactokens"], [1, "eosdacthedac"] ], "scopes": [] }' -p dacdirectory`
-  puts `cleos push action dacdirectory regdac '{"owner": "otherdacacc",  "dac_name": "otherdac", "dac_symbol": "4,ABZ", "title": "Other Dac Title", "refs": [[1,"some_ref"]], "accounts": [[2,"daccustodian"], [5,"dacescrow"], [7,"dacescrow"], [0, "otherdacacc"],  [4, "eosdactokens"], [1, "eosdacthedac"] ], "scopes": [] }' -p otherdacacc`
+  run %(cleos push action dacdirectory regdac '{"owner": "dacdirectory", "dac_name": "dacpropabp", "dac_symbol": "4,ABP", "title": "Dac Title", "refs": [[1,"some_ref"]], "accounts": [[2,"daccustodian"], [5,"dacescrow"], [7,"dacescrow"], [0, "dacauthority"], [4, "eosdactokens"], [1, "eosdacthedac"] ], "scopes": [] }' -p dacdirectory)
+  run %(cleos push action dacdirectory regdac '{"owner": "dacdirectory", "dac_name": "eosdac", "dac_symbol": "4,EOSDAC", "title": "EOSDAC BP", "refs": [[1,"some_ref"]], "accounts": [[2,"daccustodian"], [5,"dacescrow"], [7,"dacescrow"], [0, "dacauthority"], [4, "eosdactokens"], [1, "eosdacthedac"] ], "scopes": [] }' -p dacdirectory)
+  run %(cleos push action dacdirectory regdac '{"owner": "dacdirectory", "dac_name": "dacpropaby", "dac_symbol": "4,ABY", "title": "Dac Title",     "refs": [[1,"some_ref"]], "accounts": [[2,"daccustodian"], [5,"dacescrow"], [7,"dacescrow"], [0, "dacauthority"], [4, "eosdactokens"], [1, "eosdacthedac"] ], "scopes": [] }' -p dacdirectory)
+  run %(cleos push action dacdirectory regdac '{"owner": "otherdacacc",  "dac_name": "otherdac", "dac_symbol": "4,ABZ", "title": "Other Dac Title", "refs": [[1,"some_ref"]], "accounts": [[2,"daccustodian"], [5,"dacescrow"], [7,"dacescrow"], [0, "otherdacacc"],  [4, "eosdactokens"], [1, "eosdacthedac"] ], "scopes": [] }' -p otherdacacc)
 
-  puts `cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 ABP", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "authaccount": "dacauthority", "tokenholder": "eosdacthedac",  "serviceprovider": "dacocoiogmbh", "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_scope": "dacpropabp"}' -p dacauthority`
-  puts `cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 ABP", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "authaccount": "dacauthority", "tokenholder": "eosdacthedac",  "serviceprovider": "dacocoiogmbh", "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_scope": "eosdac"}' -p dacauthority`
-  puts `cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 ABY", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "authaccount": "dacauthority", "tokenholder": "eosdacthedac",  "serviceprovider": "dacocoiogmbh", "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_scope": "dacpropaby"}' -p dacauthority`
-  puts `cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 ABY", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "authaccount": "dacauthority", "tokenholder": "eosdacthedac",  "serviceprovider": "dacocoiogmbh", "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_scope": "otherdac"}' -p otherdacacc`
+  run %(cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 ABP", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "authaccount": "dacauthority", "tokenholder": "eosdacthedac",  "serviceprovider": "dacocoiogmbh", "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_scope": "dacpropabp"}' -p dacauthority)
+  run %(cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 ABP", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "authaccount": "dacauthority", "tokenholder": "eosdacthedac",  "serviceprovider": "dacocoiogmbh", "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_scope": "eosdac"}' -p dacauthority)
+  run %(cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 ABY", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "authaccount": "dacauthority", "tokenholder": "eosdacthedac",  "serviceprovider": "dacocoiogmbh", "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_scope": "dacpropaby"}' -p dacauthority)
+  run %(cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 ABY", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "authaccount": "dacauthority", "tokenholder": "eosdacthedac",  "serviceprovider": "dacocoiogmbh", "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_scope": "otherdac"}' -p otherdacacc)
 
-  puts `cleos set account permission daccustodian active '{"threshold": 1,"keys": [{"key": "#{CONTRACT_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"eosdactokens","permission":"eosio.code"},"weight":1}]}' owner -p daccustodian@owner`
+  run %(cleos set account permission daccustodian active '{"threshold": 1,"keys": [{"key": "#{CONTRACT_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"eosdactokens","permission":"eosio.code"},"weight":1}]}' owner -p daccustodian@owner)
 
 end
 
@@ -91,7 +91,7 @@ describe "eosdactokens" do
     end
 
     context "Transfer from locked token with non-issuer auth should fail after failed unlock attempt" do
-      it do 
+      it do
         result = wrap_command %(cleos push action eosdactokens transfer '{ "from": "eosio", "to": "eosdactokens", "quantity": "400.0000 ABP", "memo": "my second transfer"}' -p eosio)
         expect(result.stderr).to include('Error 3090004')
       end
@@ -115,13 +115,13 @@ describe "eosdactokens" do
       it do
         result = wrap_command %(cleos get currency stats eosdactokens ABP)
         expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
-            {
-              "ABP": {
-                "supply": "1000.0000 ABP",
-                "max_supply": "10000.0000 ABP",
-                "issuer": "eosdactokens"
-              }
+          {
+            "ABP": {
+              "supply": "1000.0000 ABP",
+              "max_supply": "10000.0000 ABP",
+              "issuer": "eosdactokens"
             }
+          }
         JSON
       end
     end
@@ -163,13 +163,13 @@ describe "eosdactokens" do
     it do
       result = wrap_command %(cleos get currency stats eosdactokens ABY)
       expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
-      {
-        "ABY": {
-          "supply": "3000.0000 ABY",
-          "max_supply": "10000.0000 ABY",
-          "issuer": "eosdactokens"
+        {
+          "ABY": {
+            "supply": "3000.0000 ABY",
+            "max_supply": "10000.0000 ABY",
+            "issuer": "eosdactokens"
+          }
         }
-      }
       JSON
     end
   end
@@ -195,11 +195,11 @@ describe "eosdactokens" do
       expect(result.stderr).to include('Error 3050003')
     end
 
-  it "Read back the result balance" do
-    result = wrap_command %(cleos get currency balance eosdactokens eosdactokens)
-    expect(result.stdout).to include('500.0000 ABY')
+    it "Read back the result balance" do
+      result = wrap_command %(cleos get currency balance eosdactokens eosdactokens)
+      expect(result.stdout).to include('500.0000 ABY')
+    end
   end
-end
 
   describe "Unlock tokens" do
     it "without auth should fail" do
@@ -209,7 +209,7 @@ end
 
     context "with auth should succeed" do
       before do
-        puts `cleos push action eosdactokens create '{ "issuer": "eosdactokens", "maximum_supply": "10000.0000 ABX", "transfer_locked": true}' -p eosdactokens`
+        run %(cleos push action eosdactokens create '{ "issuer": "eosdactokens", "maximum_supply": "10000.0000 ABX", "transfer_locked": true}' -p eosdactokens)
       end
       it do
         result = wrap_command %(cleos push action eosdactokens unlock '{"unlock": "9500.0000 ABX"}' -p eosdactokens)
@@ -219,40 +219,50 @@ end
   end
 
   context "Burn tokens" do
-    before do
-      puts `cleos push action eosdactokens create '{ "issuer": "eosdactokens", "maximum_supply": "10000.0000 ABZ", "transfer_locked": true}' -p eosdactokens`
+    before(:all) do
+      run %(cleos push action eosdactokens create '{ "issuer": "eosdactokens", "maximum_supply": "10000.0000 ABZ", "transfer_locked": true}' -p eosdactokens)
     end
-    it "before unlocking token should fail" do
-      result = wrap_command %(cleos push action eosdactokens burn '{"from": "eosdactokens", "quantity": "9500.0000 ABZ"}' -p eosdactokens)
-      expect(result.stderr).to include('Error 3050003')
+    context "before unlocking token should fail" do
+      it do
+        result = wrap_command %(cleos push action eosdactokens burn '{"from": "eosdactokens", "quantity": "9500.0000 ABZ"}' -p eosdactokens)
+        expect(result.stderr).to include('Error 3050003')
+      end
     end
 
     context "After unlocking token" do
       before(:all) do
-        puts `cleos push action eosdactokens unlock '{"unlock": "9500.0000 ABP"}' -p eosdactokens`
+        run %(cleos push action eosdactokens unlock '{"unlock": "9500.0000 ABP"}' -p eosdactokens)
       end
 
-      before do
-        puts `cleos push action eosdactokens transfer '{"from": "eosdactokens", "to": "testuser1", "quantity": "900.0000 ABP", "memo": "anything"}' -p eosdactokens`
-      end
-      it "more than available supply should fail" do
-        result = wrap_command %(cleos push action eosdactokens burn '{"from": "testuser1", "quantity": "9600.0000 ABP"}' -p testuser1)
-        expect(result.stderr).to include('Error 3050003')
-      end
-
-      it "without auth should fail" do
-        result = wrap_command %(cleos push action eosdactokens burn '{ "from": "eosdactokens","quantity": "500.0000 ABP"}')
-        expect(result.stderr).to include('Transaction should have at least one required authority')
+      context "more than available supply should fail" do
+        before do
+          run %(cleos push action eosdactokens transfer '{"from": "eosdactokens", "to": "testuser1", "quantity": "900.0000 ABP", "memo": "anything"}' -p eosdactokens)
+        end
+        it do
+          result = wrap_command %(cleos push action eosdactokens burn '{"from": "testuser1", "quantity": "9600.0000 ABP"}' -p testuser1)
+          expect(result.stderr).to include('Error 3050003')
+        end
       end
 
-      it "with wrong auth should fail" do
-        result = wrap_command %(cleos push action eosdactokens burn '{"from": "eosdactokens", "quantity": "500.0000 ABP"}' -p eosio)
-        expect(result.stderr).to include('Error 3090004')
+      context "without auth should fail" do
+        it do
+          result = wrap_command %(cleos push action eosdactokens burn '{ "from": "eosdactokens","quantity": "500.0000 ABP"}')
+          expect(result.stderr).to include('Transaction should have at least one required authority')
+        end
       end
 
-      it "with legal amount of tokens should succeed" do
-        result = wrap_command %(cleos push action eosdactokens burn '{"from": "testuser1", "quantity": "90.0000 ABP"}' -p testuser1)
-        expect(result.stdout).to include('eosdactokens::burn')
+      context "with wrong auth should fail" do
+        it do
+          result = wrap_command %(cleos push action eosdactokens burn '{"from": "eosdactokens", "quantity": "500.0000 ABP"}' -p eosio)
+          expect(result.stderr).to include('Error 3090004')
+        end
+      end
+
+      context "with legal amount of tokens should succeed" do
+        it do
+          result = wrap_command %(cleos push action eosdactokens burn '{"from": "testuser1", "quantity": "90.0000 ABP"}' -p testuser1)
+          expect(result.stdout).to include('eosdactokens::burn')
+        end
       end
     end
   end
@@ -438,12 +448,12 @@ end
       it do
         result = wrap_command %(cleos get table eosdactokens eosdac members)
         expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
-        {
-          "rows": [
-            {"sender":"testuser2", "agreedtermsversion":1}
-          ],
-          "more": false
-        }
+          {
+            "rows": [
+              {"sender":"testuser2", "agreedtermsversion":1}
+            ],
+            "more": false
+          }
         JSON
       end
     end
@@ -451,12 +461,12 @@ end
       it do
         result = wrap_command %(cleos get table eosdactokens otherdac members)
         expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
-        {
-          "rows": [
-            {"sender":"testuser1", "agreedtermsversion":1}
-          ],
-          "more": false
-        }
+          {
+            "rows": [
+              {"sender":"testuser1", "agreedtermsversion":1}
+            ],
+            "more": false
+          }
         JSON
       end
     end
@@ -464,7 +474,7 @@ end
 
   context "Update existing member reg" do
     before(:all) do
-      puts `cleos push action eosdactokens newmemtermse '{ "terms": "normallegalterms2", "hash": "dfghdfghdfghdfghdfg", "dac_id": "eosdac"}' -p eosdactokens`
+      run %(cleos push action eosdactokens newmemtermse '{ "terms": "normallegalterms2", "hash": "dfghdfghdfghdfghdfg", "dac_id": "otherdac"}' -p eosdactokens -p otherdacacc)
     end
 
     it "without auth should fail" do
@@ -483,12 +493,12 @@ end
     end
     context "for other dac" do
       it "with invalid managing_account should fail" do
-        result = wrap_command %(cleos push action eosdactokens memberrege '{ "sender": "testuser3", "agreedterms": "dfghdfghdfghdfghdfg", "dac_id": "eosdac"}' -p dacauthority)
+        result = wrap_command %(cleos push action eosdactokens memberrege '{ "sender": "testuser3", "agreedterms": "dfghdfghdfghdfghdfg", "dac_id": "otherdac"}' -p dacauthority)
         expect(result.stderr).to include('Error 3090004')
       end
 
       it "with valid managing account should succeed" do
-        result = wrap_command %(cleos push action eosdactokens memberrege '{ "sender": "testuser1", "agreedterms": "asdfasdfasdfasdfffffasd", "dac_id": "otherdac"}' -p testuser1)
+        result = wrap_command %(cleos push action eosdactokens memberrege '{ "sender": "testuser1", "agreedterms": "dfghdfghdfghdfghdfg", "dac_id": "otherdac"}' -p testuser1)
         expect(result.stdout).to include('eosdactokens::memberrege')
       end
     end
@@ -498,13 +508,13 @@ end
     it do
       result = wrap_command %(cleos get table eosdactokens eosdac members)
       expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
-      {
-        "rows": [
-          {"sender":"testuser2", "agreedtermsversion":1},
-          {"sender":"testuser3", "agreedtermsversion":1}
-        ],
-        "more": false
-      }
+        {
+          "rows": [
+            {"sender":"testuser2", "agreedtermsversion":1},
+            {"sender":"testuser3", "agreedtermsversion":1}
+          ],
+          "more": false
+        }
       JSON
     end
   end
@@ -512,12 +522,12 @@ end
     it do
       result = wrap_command %(cleos get table eosdactokens otherdac members)
       expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
-      {
-        "rows": [
-          {"sender":"testuser1", "agreedtermsversion":1}  
-        ],
-        "more": false
-      }
+        {
+          "rows": [
+            {"sender":"testuser1", "agreedtermsversion":2}  
+          ],
+          "more": false
+        }
       JSON
     end
   end
@@ -539,7 +549,7 @@ end
     end
     context "for other dac" do
       it "with invalid managing account" do
-          result = wrap_command %(cleos push action eosdactokens memberunrege '{ "sender": "testuser1", "dac_id": "invaliddac"}' -p testuser1)
+        result = wrap_command %(cleos push action eosdactokens memberunrege '{ "sender": "testuser1", "dac_id": "invaliddac"}' -p testuser1)
         expect(result.stderr).to include('dac with dac_name not found')
       end
       it "with correct auth" do
