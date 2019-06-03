@@ -156,7 +156,7 @@ def mylog(str = "marker")
 end
 
 def install_dac_contracts
-    run %(cleos set contract dacdirectory ../_compiled_contracts/dacdirectory/unit_tests/dacdirectory -p dacdirectory)
+    run %(cleos set contract dacdirectory ../_compiled_contracts/dacdirectory -p dacdirectory)
     run %(cleos set contract eosdactokens ../_compiled_contracts/eosdactokens -p eosdactokens)
     run %(cleos set contract dacescrow    ../_compiled_contracts/dacescrow/unit_tests/dacescrow -p dacescrow)
     run %(cleos set contract dacproposals ../_compiled_contracts/dacproposals -p dacproposals)

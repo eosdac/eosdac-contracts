@@ -1,13 +1,12 @@
 #include <eosio/eosio.hpp>
+#include <eosio/symbol.hpp>
 
-using namespace eosio;
-
-class dacdirtester : public contract {
+class dacdirtester : public eosio::contract {
 
 public:
-    dacdirtester( name s, name code, datastream<const char*> ds )
+    dacdirtester( eosio::name s, eosio::name code, eosio::datastream<const char*> ds )
         :contract(s,code,ds){}
 
-    ACTION assdacscope(name dac_name, uint8_t scope_type);
-
+    ACTION assertdacid(eosio::name dac_name, uint8_t id);
+    ACTION assertdacsym(eosio::symbol sym, uint8_t id);
 };

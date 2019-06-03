@@ -4,7 +4,7 @@
     "types": [],
     "structs": [
         {
-            "name": "assdacscope",
+            "name": "assertdacid",
             "base": "",
             "fields": [
                 {
@@ -12,7 +12,21 @@
                     "type": "name"
                 },
                 {
-                    "name": "scope_type",
+                    "name": "id",
+                    "type": "uint8"
+                }
+            ]
+        },
+        {
+            "name": "assertdacsym",
+            "base": "",
+            "fields": [
+                {
+                    "name": "sym",
+                    "type": "symbol"
+                },
+                {
+                    "name": "id",
                     "type": "uint8"
                 }
             ]
@@ -20,8 +34,13 @@
     ],
     "actions": [
         {
-            "name": "assdacscope",
-            "type": "assdacscope",
+            "name": "assertdacid",
+            "type": "assertdacid",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "assertdacsym",
+            "type": "assertdacsym",
             "ricardian_contract": ""
         }
     ],

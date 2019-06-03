@@ -14,9 +14,9 @@ namespace eosdac {
         public:
             dacdirectory( name self, name first_receiver, datastream<const char*> ds );
 
-            ACTION regdac( name owner, name dac_name, symbol dac_symbol, string title, map<uint8_t, string> refs,  map<uint8_t, eosio::name> accounts, map<uint8_t, eosio::name> scopes );
+            ACTION regdac( name owner, name dac_name, symbol dac_symbol, string title, map<uint8_t, string> refs,  map<uint8_t, eosio::name> accounts );
             ACTION unregdac( name dac_name );
-            ACTION regaccount( name dac_name, name account, uint8_t type, optional<eosio::name> scope );
+            ACTION regaccount( name dac_name, name account, uint8_t type );
             ACTION unregaccount( name dac_name, uint8_t type );
             ACTION regref( name dac_name, string value, uint8_t type );
             ACTION unregref( name dac_name, uint8_t type );
