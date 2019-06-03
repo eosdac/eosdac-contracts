@@ -1,10 +1,4 @@
-require 'rspec_command'
-require "json"
 require_relative '../../_test_helpers/CommonTestHelpers'
-
-RSpec.configure do |config|
-  config.include RSpecCommand
-end
 
 # Configure the initial state for the contracts for elements that are assumed to work from other contracts already.
 def configure_contracts_for_tests
@@ -15,29 +9,30 @@ def configure_contracts_for_tests
   run %(cleos push action dacdirectory regdac '{"owner": "dacowner",  "dac_name": "custtestdac", "dac_symbol": "4,EOSDAC", "title": "Custodian Test DAC", "refs": [[1,"some_ref"]], "accounts": [[2,"daccustodian"], [5,"dacocoiogmbh"], [7,"dacescrow"], [0, "dacowner"],  [4, "eosdactokens"], [1, "eosdacthedac"]], "scopes": [] }' -p dacowner)
   run %(cleos push action dacdirectory regdac '{"owner": "otherowner",  "dac_name": "otherdac", "dac_symbol": "4,OTRDAC", "title": "Other Test DAC", "refs": [[1,"some_ref"]], "accounts": [[2,"daccustodian"], [5,"dacocoiogmbh"], [7,"dacescrow"], [0, "dacowner"],  [4, "eosdactokens"], [1, "eosdacthedac"]], "scopes": [] }' -p otherowner)
 
-  run %(cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "authaccount": "dacauthority", "tokenholder": "eosdacthedac",  "serviceprovider": "dacocoiogmbh", "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_scope": "custtestdac"}' -p dacowner)
-  run %(cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "authaccount": "dacauthority", "tokenholder": "eosdacthedac",  "serviceprovider": "dacocoiogmbh", "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_scope": "otherdac"}' -p otherowner)
+  run %(cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_scope": "custtestdac"}' -p dacowner)
+  run %(cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_scope": "otherdac"}' -p otherowner -p dacowner)
 
-  run %(cleos push action eosdactokens create '{ "issuer": "dacowner", "maximum_supply": "100000.0000 EOSDAC", "transfer_locked": false}' -p dacowner)
+  run %(cleos push action eosdactokens create '{ "issuer": "dacowner",   "maximum_supply": "100000.0000 EOSDAC", "transfer_locked": false}' -p dacowner)
   run %(cleos push action eosdactokens create '{ "issuer": "otherowner", "maximum_supply": "100000.0000 OTRDAC", "transfer_locked": false}' -p otherowner)
+
   run %(cleos push action eosdactokens issue '{ "to": "eosdactokens", "quantity": "77337.0000 EOSDAC", "memo": "Initial amount of tokens for you."}' -p dacowner)
   run %(cleos push action eosdactokens issue '{ "to": "eosdactokens", "quantity": "77337.0000 OTRDAC", "memo": "Initial amount of tokens for you."}' -p otherowner)
-  run %(cleos push action eosio.token issue '{ "to": "eosdacthedac", "quantity": "100000.0000 EOS", "memo": "Initial EOS amount."}' -p eosio.token)
+  run %(cleos push action eosio.token  issue '{ "to": "eosdacthedac", "quantity": "100000.0000 EOS", "memo": "Initial EOS amount."}' -p eosio)
   run %(cleos push action eosdactokens issue '{ "to": "eosdacthedac", "quantity": "1000.0000 EOSDAC", "memo": "Initial amount of tokens for you."}' -p dacowner)
   run %(cleos push action eosdactokens issue '{ "to": "eosdacthedac", "quantity": "1000.0000 OTRDAC", "memo": "Initial amount of tokens for you."}' -p otherowner)
 
 
   run %(cleos push action eosdactokens newmemtermse '{ "terms": "normallegalterms", "hash": "New Latest terms", "dac_id": "custtestdac"}' -p dacowner)
-  run %(cleos push action eosdactokens newmemtermse '{ "terms": "normallegalterms", "hash": "New Latest terms", "dac_id": "otherdac"}' -p otherowner)
+  run %(cleos push action eosdactokens newmemtermse '{ "terms": "normallegalterms", "hash": "New Latest terms", "dac_id": "otherdac"}' -p otherowner -p dacowner)
 
   #create users 
-  seed_dac_account("testreguser1", issue: "100.0000 EOSDAC", memberreg: "New Latest terms", dac_scope: "custtestdac")
-  seed_dac_account("testreguser1", issue: "100.0000 OTRDAC", memberreg: "New Latest terms", dac_scope: "otherdac") # run again for the same user in a different dac should just do the DAC stuff.
+  seed_dac_account("testreguser1", issue: "100.0000 EOSDAC", memberreg: "New Latest terms", dac_scope: "custtestdac", dac_owner: "dacowner")
+  seed_dac_account("testreguser1", issue: "100.0000 OTRDAC", memberreg: "New Latest terms", dac_scope: "otherdac", dac_owner: "otherowner") # run again for the same user in a different dac should just do the DAC stuff.
   seed_dac_account("testreguser2", issue: "100.0000 EOSDAC")
-  seed_dac_account("testreguser3", issue: "100.0000 EOSDAC", memberreg: "", dac_scope: "custtestdac")
-  seed_dac_account("testreguser4", issue: "100.0000 EOSDAC", memberreg: "old terms", dac_scope: "custtestdac")
-  seed_dac_account("testreguser5", issue: "100.0000 EOSDAC", memberreg: "New Latest terms", dac_scope: "custtestdac")
-  seed_dac_account("testregusera", issue: "100.0000 EOSDAC", memberreg: "New Latest terms", dac_scope: "custtestdac")
+  seed_dac_account("testreguser3", issue: "100.0000 EOSDAC", dac_scope: "custtestdac", dac_owner: "dacowner")
+  seed_dac_account("testreguser4", issue: "100.0000 EOSDAC", memberreg: "old terms", dac_scope: "custtestdac", dac_owner: "dacowner")
+  seed_dac_account("testreguser5", issue: "100.0000 EOSDAC", memberreg: "New Latest terms", dac_scope: "custtestdac", dac_owner: "dacowner")
+  seed_dac_account("testregusera", issue: "100.0000 EOSDAC", memberreg: "New Latest terms", dac_scope: "custtestdac", dac_owner: "dacowner")
 
   # This is required to allow the newperiod to run and set the account permissions from within the action.
   run %(cleos set account permission dacowner owner '{"threshold": 1,"keys": [{"key": "#{CONTRACT_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' '' -p dacowner@owner)
@@ -73,7 +68,7 @@ describe "eosdacelect" do
 
     context "with invalid auth" do
       it do
-        result = wrap_command %(cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "13.0000 EOSDAC", "maxvotes": 4, "periodlength": 604800 , "numelected": 12, "authaccount": "dacauthority", "tokenholder": "eosdacthedac", "serviceprovider": "dacocoiogmbh", "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_scope": "custtestdac"}' -p testreguser1)
+        result = wrap_command %(cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "13.0000 EOSDAC", "maxvotes": 4, "periodlength": 604800 , "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_scope": "custtestdac"}' -p testreguser1)
         expect(result.stderr).to include('Error 3090004')
       end
     end
@@ -188,15 +183,15 @@ describe "eosdacelect" do
 
   context "To ensure behaviours change after updateconfig" do
     it "updateconfigs with valid auth" do
-      result = wrap_command %(cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "23.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "authaccount": "dacauthority", "tokenholder": "eosdacthedac", "serviceprovider": "dacocoiogmbh", "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_scope": "custtestdac"}' -p dacowner)
+      result = wrap_command %(cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "23.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_scope": "custtestdac"}' -p dacowner)
       expect(result.stdout).to include('daccustodian::updateconfig')
     end
   end
 
   context "withdrawcand" do
     before(:all) do
-      seed_dac_account("unreguser1", issue: "100.0000 EOSDAC", memberreg: "New Latest terms")
-      seed_dac_account("unreguser2", issue: "100.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "11.5000 EOS", dac_scope: "custtestdac")
+      seed_dac_account("unreguser1", issue: "100.0000 EOSDAC", memberreg: "New Latest terms", dac_scope: "custtestdac", dac_owner: "dacowner")
+      seed_dac_account("unreguser2", issue: "100.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "11.5000 EOS", dac_scope: "custtestdac", dac_owner: "dacowner")
     end
 
     it "with invalid auth" do
@@ -219,8 +214,8 @@ describe "eosdacelect" do
 
   describe "update bio" do
     before(:all) do
-      seed_dac_account("updatebio1", issue: "100.0000 EOSDAC", memberreg: "New Latest terms")
-      seed_dac_account("updatebio2", issue: "100.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "11.5000 EOS", dac_scope: "custtestdac")
+      seed_dac_account("updatebio1", issue: "100.0000 EOSDAC", memberreg: "New Latest terms", dac_scope: "custtestdac", dac_owner: "dacowner")
+      seed_dac_account("updatebio2", issue: "100.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "11.5000 EOS", dac_scope: "custtestdac", dac_owner: "dacowner")
     end
 
     context "with invalid auth" do
@@ -247,7 +242,7 @@ describe "eosdacelect" do
 
   describe "updatereqpay" do
     before(:all) do
-      seed_dac_account("updatepay1", issue: "100.0000 EOSDAC", memberreg: "New Latest terms", dac_owner: "dacowner")
+      seed_dac_account("updatepay1", issue: "100.0000 EOSDAC", memberreg: "New Latest terms", dac_scope: "custtestdac", dac_owner: "dacowner")
       seed_dac_account("updatepay2", issue: "100.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "21.5000 EOS", dac_scope: "custtestdac", dac_owner: "dacowner")
     end
 
@@ -1038,7 +1033,7 @@ describe "eosdacelect" do
 
     context "with insufficient votes to trigger the dac should fail" do
       before(:all) do
-        `cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 5, "numelected": 12, "authaccount": "dacauthority", "tokenholder": "eosdacthedac", "serviceprovider": "dacocoiogmbh", "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 3, "auth_threshold_mid": 2, "auth_threshold_low": 1, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_scope": "custtestdac"}' -p dacowner`
+        `cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 5, "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 3, "auth_threshold_mid": 2, "auth_threshold_low": 1, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_scope": "custtestdac"}' -p dacowner`
       end
       it do
         result = wrap_command %(cleos push action daccustodian newperiod '{ "message": "log message", "earlyelect": false, "dac_scope": "custtestdac"}' -p daccustodian)
@@ -1049,7 +1044,7 @@ describe "eosdacelect" do
     describe "allocateCust" do
       before(:all) do
         # add cands
-        `cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 1 , "numelected": 12, "authaccount": "dacauthority", "tokenholder": "eosdacthedac", "serviceprovider": "dacocoiogmbh", "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 4, "auth_threshold_mid": 4, "auth_threshold_low": 2, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_scope": "custtestdac"}' -p dacowner`
+        `cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 1 , "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 4, "auth_threshold_mid": 4, "auth_threshold_low": 2, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_scope": "custtestdac"}' -p dacowner`
       end
 
       context "given there are not enough candidates to fill the custodians" do
@@ -1161,7 +1156,7 @@ describe "eosdacelect" do
 
     describe "called after period time has passed" do
       before(:all) do
-        `cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 1, "numelected": 12, "authaccount": "dacauthority", "tokenholder": "eosdacthedac", "serviceprovider": "dacocoiogmbh", "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 3, "auth_threshold_mid": 2, "auth_threshold_low": 1, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_scope": "custtestdac"}' -p dacowner`
+        `cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 1, "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 3, "auth_threshold_mid": 2, "auth_threshold_low": 1, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_scope": "custtestdac"}' -p dacowner`
         sleep 2
       end
       it do
@@ -1174,7 +1169,7 @@ describe "eosdacelect" do
       before(:all) do
         # Remove the whale vote to drop backs
         `cleos push action daccustodian votecust '{ "voter": "whale1", "newvotes": [], "dac_scope": "custtestdac"}' -p whale1`
-        `cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 1, "numelected": 12, "authaccount": "dacauthority", "tokenholder": "eosdacthedac", "serviceprovider": "dacocoiogmbh", "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 4, "auth_threshold_high": 3, "auth_threshold_mid": 2, "auth_threshold_low": 1, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_scope": "custtestdac"}' -p dacowner`
+        `cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 1, "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 4, "auth_threshold_high": 3, "auth_threshold_mid": 2, "auth_threshold_low": 1, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_scope": "custtestdac"}' -p dacowner`
         sleep 2
       end
       it do
@@ -1185,7 +1180,7 @@ describe "eosdacelect" do
 
     context "called after voter engagement has risen to above the continuing threshold" do
       before(:all) do
-        `cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 1, "numelected": 12, "authaccount": "dacauthority", "tokenholder": "eosdacthedac", "serviceprovider": "dacocoiogmbh", "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 4, "auth_threshold_high": 3, "auth_threshold_mid": 2, "auth_threshold_low": 1, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_scope": "custtestdac"}' -p dacowner`
+        `cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 1, "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 4, "auth_threshold_high": 3, "auth_threshold_mid": 2, "auth_threshold_low": 1, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_scope": "custtestdac"}' -p dacowner`
         `cleos push action eosdactokens transfer '{ "from": "whale1", "to": "voter1", "quantity": "1300.0000 EOSDAC","memo":"random transfer"}' -p whale1`
 
         sleep 2

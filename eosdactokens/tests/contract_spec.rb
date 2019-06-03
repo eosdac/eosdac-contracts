@@ -1,10 +1,4 @@
-require 'rspec_command'
-require "json"
 require_relative '../../_test_helpers/CommonTestHelpers'
-
-RSpec.configure do |config|
-  config.include RSpecCommand
-end
 
 def configure_contracts_for_tests
 

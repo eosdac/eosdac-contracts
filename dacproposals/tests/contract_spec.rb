@@ -1,19 +1,4 @@
-require 'rspec'
-require 'rspec_command'
-require "json"
-require 'date'
-
 require_relative '../../_test_helpers/CommonTestHelpers'
-
-# 1. A recent version of Ruby is required
-# 2. Ensure the required gems are installed with `gem install rspec json rspec-command`
-# 3. Run this from the command line with rspec contract_spec.rb
-
-# Optionally output the test results with -f [p|d|h] for required views of the test results.
-
-RSpec.configure do |config|
-  config.include RSpecCommand
-end
 
 # Configure the initial state for the contracts for elements that are assumed to work from other   contracts already.
 def configure_contracts
@@ -764,7 +749,7 @@ describe "eosdacelect" do
           run %(cleos push action dacproposals voteprop '{"custodian": "custodian2", "proposal_id": 2, "vote": 1, "dac_scope": "dacproposals" }' -p custodian2 -p dacauthority)
           run %(cleos push action dacproposals voteprop '{"custodian": "custodian3", "proposal_id": 2, "vote": 1, "dac_scope": "dacproposals" }' -p custodian3 -p dacauthority)
           run %(cleos push action dacproposals voteprop '{"custodian": "custodian4", "proposal_id": 2, "vote": 2, "dac_scope": "dacproposals" }' -p custodian4 -p dacauthority)
-          run %(cleos push action dacproposals voteprop '{"custodian": "custodian5", "proposal_id": 2, "vote": 2, "dac_scope": "dacproposals" }' -p custodian5 -p dacauthority)
+          run %(cleos push action dacproposals voteprop '{"custodian": "custodian5", "proposal_id": 2, "vote": 1, "dac_scope": "dacproposals" }' -p custodian5 -p dacauthority)
           run %(cleos push action dacproposals voteprop '{"custodian": "custodian11", "proposal_id": 2, "vote": 1, "dac_scope": "dacproposals" }' -p custodian11 -p dacauthority)
           run %(cleos push action dacproposals voteprop '{"custodian": "custodian12", "proposal_id": 2, "vote": 1, "dac_scope": "dacproposals" }' -p custodian12 -p dacauthority)
           run %(cleos push action dacproposals voteprop '{"custodian": "custodian13", "proposal_id": 2, "vote": 1, "dac_scope": "dacproposals" }' -p custodian13 -p dacauthority)
@@ -793,7 +778,7 @@ describe "eosdacelect" do
       it do
         result = wrap_command %(cleos get table dacescrow dacescrow escrows)
         json = JSON.parse(result.stdout)
-        expect(json["rows"].count).to eq 1
+        expect(json["rows"].count).to eq 2
 
         escrow = json["rows"].detect {|v| v["receiver"] == 'proposeracc1'}
 
@@ -868,7 +853,7 @@ describe "eosdacelect" do
       end
       context "delegated category with already voted custodian should have no additional effect" do
         before(:all) do
-          run %(cleos push action dacproposals delegatecat '{"custodian": "custodian11", "category": 31, "delegatee_custodian": "custodian5", "dac_scope": "dacproposals"}' -p custodian13 -p dacauthority)
+          run %(cleos push action dacproposals delegatecat '{"custodian": "custodian11", "category": 31, "delegatee_custodian": "custodian5", "dac_scope": "dacproposals"}' -p custodian11 -p dacauthority)
         end
         it do
           result = wrap_command %(cleos push action dacproposals startwork '{ "proposal_id": 102, "dac_scope": "dacproposals"}' -p proposeracc3)
@@ -920,9 +905,9 @@ describe "eosdacelect" do
     it do
       result = wrap_command %(cleos get table dacproposals dacproposals propvotes --limit 40)
       expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
-                {
+                        {
           "rows": [{
-              "vote_id": 0, 
+              "vote_id": 0,
               "voter": "custodian1",
               "proposal_id": 101,
               "category_id": null,
@@ -1043,6 +1028,14 @@ describe "eosdacelect" do
               "comment_hash": null
             },{
               "vote_id": 15,
+              "voter": "custodian11",
+              "proposal_id": null,
+              "category_id": 31,
+              "vote": null,
+              "delegatee": "custodian5",
+              "comment_hash": null
+            },{
+              "vote_id": 16,
               "voter": "custodian13",
               "proposal_id": null,
               "category_id": 39,
@@ -1050,7 +1043,7 @@ describe "eosdacelect" do
               "delegatee": "custodian11",
               "comment_hash": null
             },{
-              "vote_id": 16,
+              "vote_id": 17,
               "voter": "custodian13",
               "proposal_id": null,
               "category_id": 31,
@@ -1058,7 +1051,7 @@ describe "eosdacelect" do
               "delegatee": "custodian11",
               "comment_hash": null
             },{
-              "vote_id": 17,
+              "vote_id": 18,
               "voter": "custodian1",
               "proposal_id": 103,
               "category_id": null,
@@ -1066,7 +1059,7 @@ describe "eosdacelect" do
               "delegatee": null,
               "comment_hash": null
             },{
-              "vote_id": 18,
+              "vote_id": 19,
               "voter": "custodian2",
               "proposal_id": 103,
               "category_id": null,
@@ -1074,7 +1067,7 @@ describe "eosdacelect" do
               "delegatee": null,
               "comment_hash": null
             },{
-              "vote_id": 19,
+              "vote_id": 20,
               "voter": "custodian3",
               "proposal_id": 103,
               "category_id": null,
@@ -1082,7 +1075,7 @@ describe "eosdacelect" do
               "delegatee": null,
               "comment_hash": null
             },{
-              "vote_id": 20,
+              "vote_id": 21,
               "voter": "custodian4",
               "proposal_id": 103,
               "category_id": null,
@@ -1090,7 +1083,7 @@ describe "eosdacelect" do
               "delegatee": null,
               "comment_hash": null
             },{
-              "vote_id": 21,
+              "vote_id": 22,
               "voter": "custodian5",
               "proposal_id": 103,
               "category_id": null,
@@ -1098,7 +1091,7 @@ describe "eosdacelect" do
               "delegatee": null,
               "comment_hash": null
             },{
-              "vote_id": 22,
+              "vote_id": 23,
               "voter": "custodian11",
               "proposal_id": null,
               "category_id": 32,
@@ -1106,7 +1099,7 @@ describe "eosdacelect" do
               "delegatee": "custodian5",
               "comment_hash": null
             },{
-              "vote_id": 23,
+              "vote_id": 24,
               "voter": "custodian13",
               "proposal_id": 103,
               "category_id": null,
@@ -1138,7 +1131,7 @@ describe "eosdacelect" do
     it do
       result = wrap_command %(cleos get table dacproposals dacproposals propvotes --limit 40)
       expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
-                {
+                        {
           "rows": [{
               "vote_id": 0,
               "voter": "custodian1",
@@ -1253,6 +1246,14 @@ describe "eosdacelect" do
               "comment_hash": null
             },{
               "vote_id": 15,
+              "voter": "custodian11",
+              "proposal_id": null,
+              "category_id": 31,
+              "vote": null,
+              "delegatee": "custodian5",
+              "comment_hash": null
+            },{
+              "vote_id": 16,
               "voter": "custodian13",
               "proposal_id": null,
               "category_id": 39,
@@ -1260,7 +1261,7 @@ describe "eosdacelect" do
               "delegatee": "custodian11",
               "comment_hash": null
             },{
-              "vote_id": 16,
+              "vote_id": 17,
               "voter": "custodian13",
               "proposal_id": null,
               "category_id": 31,
@@ -1268,7 +1269,7 @@ describe "eosdacelect" do
               "delegatee": "custodian11",
               "comment_hash": null
             },{
-              "vote_id": 17,
+              "vote_id": 18,
               "voter": "custodian1",
               "proposal_id": 103,
               "category_id": null,
@@ -1276,7 +1277,7 @@ describe "eosdacelect" do
               "delegatee": null,
               "comment_hash": null
             },{
-              "vote_id": 18,
+              "vote_id": 19,
               "voter": "custodian2",
               "proposal_id": 103,
               "category_id": null,
@@ -1284,7 +1285,7 @@ describe "eosdacelect" do
               "delegatee": null,
               "comment_hash": null
             },{
-              "vote_id": 19,
+              "vote_id": 20,
               "voter": "custodian3",
               "proposal_id": 103,
               "category_id": null,
@@ -1292,7 +1293,7 @@ describe "eosdacelect" do
               "delegatee": null,
               "comment_hash": null
             },{
-              "vote_id": 20,
+              "vote_id": 21,
               "voter": "custodian4",
               "proposal_id": 103,
               "category_id": null,
@@ -1300,7 +1301,7 @@ describe "eosdacelect" do
               "delegatee": null,
               "comment_hash": null
             },{
-              "vote_id": 21,
+              "vote_id": 22,
               "voter": "custodian5",
               "proposal_id": 103,
               "category_id": null,
@@ -1308,7 +1309,7 @@ describe "eosdacelect" do
               "delegatee": null,
               "comment_hash": null
             },{
-              "vote_id": 22,
+              "vote_id": 23,
               "voter": "custodian11",
               "proposal_id": null,
               "category_id": 32,
@@ -1316,7 +1317,7 @@ describe "eosdacelect" do
               "delegatee": "custodian5",
               "comment_hash": null
             },{
-              "vote_id": 23,
+              "vote_id": 24,
               "voter": "custodian13",
               "proposal_id": 103,
               "category_id": null,
