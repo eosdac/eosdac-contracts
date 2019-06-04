@@ -117,6 +117,7 @@ def configure_dac_accounts_and_permissions
     run %(cleos system newaccount --stake-cpu "10.0000 EOS" --stake-net "10.0000 EOS" --transfer --buy-ram-kbytes 1024 eosio dacocoiogmbh #{CONTRACT_PUBLIC_KEY} #{CONTRACT_PUBLIC_KEY})
     run %(cleos system newaccount --stake-cpu "10.0000 EOS" --stake-net "10.0000 EOS" --transfer --buy-ram-kbytes 1024 eosio dacproposals #{CONTRACT_PUBLIC_KEY} #{CONTRACT_PUBLIC_KEY})
     run %(cleos system newaccount --stake-cpu "10.0000 EOS" --stake-net "10.0000 EOS" --transfer --buy-ram-kbytes 1024 eosio dacescrow    #{CONTRACT_PUBLIC_KEY} #{CONTRACT_PUBLIC_KEY})
+    run %(cleos system newaccount --stake-cpu "10.0000 EOS" --stake-net "10.0000 EOS" --transfer --buy-ram-kbytes 2024 eosio dacmultisigs #{CONTRACT_PUBLIC_KEY} #{CONTRACT_PUBLIC_KEY})
 
     run %(cleos system newaccount --stake-cpu "10.0000 EOS" --stake-net "10.0000 EOS" --transfer --buy-ram-kbytes 1024 eosio dacdirtester #{CONTRACT_PUBLIC_KEY} #{CONTRACT_PUBLIC_KEY})
 
@@ -161,6 +162,7 @@ def install_dac_contracts
     run %(cleos set contract dacescrow    ../_compiled_contracts/dacescrow/unit_tests/dacescrow -p dacescrow)
     run %(cleos set contract dacproposals ../_compiled_contracts/dacproposals -p dacproposals)
     run %(cleos set contract daccustodian ../_compiled_contracts/daccustodian/unit_tests/daccustodian -p daccustodian)
+    run %(cleos set contract dacmultisigs ../_compiled_contracts/dacmultisigs/dacmultisigs -p dacmultisigs)
 
     # Mock contracts to help testing
     run %(cleos set contract daccustmock  ../_test_helpers/daccustodian_stub/daccustodian -p daccustmock)
