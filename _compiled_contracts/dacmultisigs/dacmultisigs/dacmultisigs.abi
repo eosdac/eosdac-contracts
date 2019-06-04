@@ -18,6 +18,10 @@
                 {
                     "name": "approver",
                     "type": "name"
+                },
+                {
+                    "name": "dac_scope",
+                    "type": "name"
                 }
             ]
         },
@@ -36,6 +40,10 @@
                 {
                     "name": "canceler",
                     "type": "name"
+                },
+                {
+                    "name": "dac_scope",
+                    "type": "name"
                 }
             ]
         },
@@ -49,6 +57,10 @@
                 },
                 {
                     "name": "proposal_name",
+                    "type": "name"
+                },
+                {
+                    "name": "dac_scope",
                     "type": "name"
                 }
             ]
@@ -68,6 +80,10 @@
                 {
                     "name": "executer",
                     "type": "name"
+                },
+                {
+                    "name": "dac_scope",
+                    "type": "name"
                 }
             ]
         },
@@ -86,6 +102,10 @@
                 {
                     "name": "metadata",
                     "type": "string"
+                },
+                {
+                    "name": "dac_scope",
+                    "type": "name"
                 }
             ]
         },
@@ -95,6 +115,10 @@
             "fields": [
                 {
                     "name": "proposalname",
+                    "type": "name"
+                },
+                {
+                    "name": "proposer",
                     "type": "name"
                 },
                 {
@@ -121,6 +145,10 @@
                 },
                 {
                     "name": "unapprover",
+                    "type": "name"
+                },
+                {
+                    "name": "dac_scope",
                     "type": "name"
                 }
             ]
