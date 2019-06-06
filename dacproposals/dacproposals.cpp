@@ -344,7 +344,7 @@ using namespace std;
         auto escrow = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::ESCROW).account_name;
 
         eosio::action(
-                eosio::permission_level{ treasury, "active"_n },
+                eosio::permission_level{ treasury, "escrow"_n },
                 escrow, "approveext"_n,
                 make_tuple( prop.key, treasury)
             ).send();
