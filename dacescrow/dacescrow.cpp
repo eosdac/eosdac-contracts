@@ -47,6 +47,9 @@ namespace eosdac {
     ACTION dacescrow::init(name sender, name receiver, name arb, time_point_sec expires, string memo, std::optional<uint64_t> ext_reference ) {
         require_auth(sender);
 
+        check(receiver != arb, "Receiver cannot be the same as arbitrator");
+        check(sender != arb, "Sender cannot be the same as arbitrator");
+
         extended_asset zero_asset{{0, symbol{"EOS", 4}}, "eosio.token"_n};
 
         auto by_sender = escrows.get_index<"bysender"_n>();
