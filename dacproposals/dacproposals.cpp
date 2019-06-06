@@ -190,21 +190,28 @@ using namespace std;
         time_point_sec time_now = time_point_sec(current_time_point().sec_since_epoch());
         
         auto treasury = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::TREASURY).account_name;
-        auto service = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::SERVICE).account_name;
+        auto escrow = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::ESCROW).account_name;
+
+        check(is_account(treasury), "ERR::TREASURY_ACCOUNT_NOT_FOUND::Treasury account not found");
+        check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
         
         auto inittuple = make_tuple(treasury, prop.proposer, prop.arbitrator, time_now + configs.escrow_expiry, memo, std::optional<uint64_t>(proposal_id));
 
         eosio::action(
-                eosio::permission_level{ treasury, "active"_n },
-                service, "init"_n,
+                eosio::permission_level{ treasury, "escrow"_n },
+                escrow, "init"_n,
                 inittuple
         ).send();
 
-        eosio::action(
+        transaction deferredTrans{};
+        deferredTrans.actions.emplace_back(eosio::action(
                 eosio::permission_level{treasury , "xfer"_n },
                 prop.pay_amount.contract, "transfer"_n,
-                make_tuple(treasury, service, prop.pay_amount.quantity, "payment for wp: " + to_string(proposal_id))
-        ).send();
+                make_tuple(treasury, escrow, prop.pay_amount.quantity, "payment for wp: " + to_string(proposal_id))
+        ));
+        // TODO : change this based on a config setting
+        deferredTrans.delay_sec = 2;
+        deferredTrans.send(uint128_t(proposal_id) << 64 | time_point_sec(current_time_point()).sec_since_epoch() , _self);
     }
 
     ACTION dacproposals::completework(uint64_t proposal_id, name dac_scope){
