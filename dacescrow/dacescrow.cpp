@@ -136,7 +136,7 @@ namespace eosdac {
         eosio::action(
                 eosio::permission_level{_self , "active"_n },
                 esc_itr->ext_asset.contract, "transfer"_n,
-                make_tuple( _self, esc_itr->sender, esc_itr->ext_asset.quantity, esc_itr->memo)
+                make_tuple( _self, esc_itr->receiver, esc_itr->ext_asset.quantity, esc_itr->memo)
         ).send();
 
 
