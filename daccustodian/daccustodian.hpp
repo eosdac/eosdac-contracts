@@ -31,14 +31,6 @@ namespace eosdac {
     //    Length of a period in seconds.
     //     - used for pay calculations if an eary election is called and to trigger deferred `newperiod` calls.
         uint32_t periodlength = 7 * 24 * 60 * 60;
-        // account to have active auth set with all all custodians on the newperiod.
-        // name authaccount = name{0};
-
-        // The contract that holds the fund for the DAC. This is used as the source for custodian pay.
-        // name tokenholder = "eosdacthedac"_n;
-
-        // The contract that will act as the service provider account for the dac. This is used as the source for custodian pay.
-        // name serviceprovider;
 
         // The contract will direct all payments via the service provider.
         bool should_pay_via_service_provider;

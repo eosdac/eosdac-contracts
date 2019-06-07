@@ -6,7 +6,7 @@ def configure_contracts
 
   run %(cleos push action eosdactokens create '{ "issuer": "dacdirectory", "maximum_supply": "100000.0000 EOSDAC", "transfer_locked": false}' -p dacdirectory)
 
-  run %(cleos push action dacdirectory regdac '{"owner": "dacdirectory", "dac_name": "dacproposals", "dac_symbol": "4,MYSYM", "title": "Dac Title", "refs": [], "accounts": [[2,"daccustmock"], [5,"dacescrow"], [7,"dacescrow"], [0, "dacauthority"], [4, "eosdactokens"], [1, "eosdacthedac"] ], "scopes": []}' -p dacdirectory)
+  run %(cleos push action dacdirectory regdac '{"owner": "dacdirectory", "dac_name": "dacproposals", "dac_symbol": "4,MYSYM", "title": "Dac Title", "refs": [], "accounts": [[2,"daccustmock"], [5,""], [7,"dacescrow"], [0, "dacauthority"], [4, "eosdactokens"], [1, "eosdacthedac"] ], "scopes": []}' -p dacdirectory)
   run %(cleos push action dacdirectory regdac '{"owner": "dacdirectory", "dac_name": "mydacname2",   "dac_symbol": "4,EOSDAC", "title": "Dac Title", "refs": [], "accounts": [[1,"account1"]], "scopes": []}' -p dacdirectory)
 
   run %(cleos push action eosdactokens issue '{ "to": "eosdactokens", "quantity": "78337.0000 EOSDAC", "memo": "Initial amount of tokens for you."}' -p dacdirectory)

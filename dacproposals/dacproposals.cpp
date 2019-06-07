@@ -16,6 +16,8 @@ namespace eosdac {
         assertValidMember(proposer, dac_scope);
         proposal_table proposals(_self, dac_scope.value);
 
+        check(proposer != arbitrator, "You cannot nominate yourself as the arbitrator for a proposal.");
+
         check(proposals.find(id) == proposals.end(), "ERR::CREATEPROP_DUPLICATE_ID::A Proposal with the id already exists. Try again with a different id.");
 
         check(title.length() > 3, "ERR::CREATEPROP_SHORT_TITLE::Title length is too short.");
@@ -362,7 +364,7 @@ namespace eosdac {
         proposal_vote_table prop_votes(_self, dac_scope.value);
         auto by_voters = prop_votes.get_index<"proposal"_n>();
         auto itr = by_voters.find(proposal.key);
-        while(itr != by_voters.end()) {
+        while(itr != by_voters.end() && itr->proposal_id == proposal.key ) {
             print(itr->voter);
             itr = by_voters.erase(itr);
         }
