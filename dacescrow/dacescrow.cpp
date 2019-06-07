@@ -49,6 +49,7 @@ namespace eosdac {
 
         check(receiver != arb, "Receiver cannot be the same as arbitrator");
         check(sender != arb, "Sender cannot be the same as arbitrator");
+        check(expires > time_point_sec(eosio::current_time_point()), "Expiry date is in the past");
 
         extended_asset zero_asset{{0, symbol{"EOS", 4}}, "eosio.token"_n};
 
