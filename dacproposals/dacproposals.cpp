@@ -360,7 +360,7 @@ using namespace std;
         proposal_vote_table prop_votes(_self, dac_scope.value);
         auto by_voters = prop_votes.get_index<"proposal"_n>();
         auto itr = by_voters.find(proposal.key);
-        while(itr != by_voters.end()) {
+        while(itr != by_voters.end() && itr->proposal_id == proposal.key) {
             print(itr->voter);
             itr = by_voters.erase(itr);
         }
