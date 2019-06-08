@@ -22,6 +22,9 @@ using namespace std;
         check(pay_amount.quantity.amount > 0, "ERR::CREATEPROP_INVALID_PAY_AMOUNT::Invalid pay amount. Must be greater than 0.");
         check(is_account(arbitrator), "ERR::CREATEPROP_INVALID_ARBITRATOR::Invalid arbitrator.");
 
+        auto treasury = dacdir::dac_for_id(dac_scope).account_and_scope(dacdir::TREASURY).account_name;
+        check(arbitrator != proposer && arbitrator != treasury, "Arbitrator must be a third party");
+
         proposals.emplace(proposer, [&](proposal &p) {
             p.key = id;
             p.proposer = proposer;
