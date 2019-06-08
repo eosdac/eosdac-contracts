@@ -195,7 +195,7 @@ using namespace std;
         check(is_account(treasury), "ERR::TREASURY_ACCOUNT_NOT_FOUND::Treasury account not found");
         check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
         
-        auto inittuple = make_tuple(treasury, prop.proposer, prop.arbitrator, time_now + configs.escrow_expiry, memo, std::optional<uint64_t>(proposal_id));
+        auto inittuple = make_tuple(treasury, prop.proposer, prop.arbitrator, time_now + configs.escrow_expiry, memo, proposal_id, 0);
 
         eosio::action(
                 eosio::permission_level{ treasury, "escrow"_n },
