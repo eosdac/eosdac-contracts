@@ -18,7 +18,7 @@ init
     transfer
 </h1>
 
-## ACTION: stprofileuns
+## ACTION: transfer
 **PARAMETERS:**
 * __from__ is an eosio account name. 
 * __to__ is an eosio account name. 
@@ -39,71 +39,21 @@ approve
 * __approver__ is an eosio account name. 
 
 **INTENT:** 
-The intent of approve is to approve the release of funds to the intended receiver. Each escrow agreement requires at least 2 approvers and can only be approved by the sender, receiver and/or nominated arbitrator.
+The intent of approve is to approve the release of funds to the intended receiver.  Only the arbitrator or the sender can call this action, the receiver is assumed to always approve of the release of funds.
  ####Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later.
 
- <h1 class="contract">
- approveext
- </h1>
-
- ## ACTION: approveext
- **PARAMETERS:**
- * __ext_key__ is a unique identifying integer for an escrow entry as supplied by an external key source.
- * __approver__ is an eosio account name.
-
- **INTENT:**
- The intent of approve is to approve the release of funds to the intended receiver. Each escrow agreement requires at least 2 approvers and can only be approved by the sender, receiver and/or nominated arbitrator.
-  ####Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later.
- 
 <h1 class="contract">
- unapprove
+ disapprove
 </h1>
 
-## ACTION: unapprove
+## ACTION: disapprove
 **PARAMETERS:**
 * __key__ is a unique identifying integer for an escrow entry. 
 * __disapprover__ is an eosio account name. 
 
 **INTENT:** 
-The intent of unapprove is to unapprove the release of funds to the intended receiver from a previous approved action. Each escrow agreement requires at least 2 approvers and can only be approved by the sender, receiver and/or nominated arbitrator.
+The intent of disapprove is to disapprove the release of funds to the intended receiver. Only the appointed arbitrator can call this action and the result will be that the funds contained in the escrow will be returned to the sender, less any arbitration fee.
  ####Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later. 
-
-<h1 class="contract">
- unapproveext
-</h1>
-
-## ACTION: unapproveext
-**PARAMETERS:**
-* __ext_key__ is a unique identifying integer for an escrow entry as supplied by an external key source.
-* __disapprover__ is an eosio account name.
-
-**INTENT:**
-The intent of unapprove is to unapprove the release of funds to the intended receiver from a previous approved action. Each escrow agreement requires at least 2 approvers and can only be approved by the sender, receiver and/or nominated arbitrator.
- ####Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later.
-
-<h1 class="contract">
-  claim
-</h1>
-
-## ACTION: claim
-
-**PARAMETERS:**
-* __key__ is a unique identifying integer for an escrow entry. 
-
-**INTENT:** The intent of claim is to claim the escrowed funds for an intended receiver after an escrow agreement has met the required approvals.
-**TERM:** This action lasts for the duration of the time taken to process the transaction.
-
-<h1 class="contract">
-  claimext
-</h1>
-
-## ACTION: claimext
-
-**PARAMETERS:**
-* __ext_key__ is a unique identifying integer for an escrow entry as supplied by an external key source.
-
-**INTENT:** The intent of claim is to claim the escrowed funds for an intended receiver after an escrow agreement has met the required approvals.
-**TERM:** This action lasts for the duration of the time taken to process the transaction.
 
 <h1 class="contract">
   refund
@@ -114,19 +64,7 @@ The intent of unapprove is to unapprove the release of funds to the intended rec
 **PARAMETERS:**
 * __key__ is a unique identifying integer for an escrow entry. 
 
-**INTENT:** The intent of refund is to return the escrowed funds back to the original sender. This action can only be run after the contract has met the intended expiry time.
-**TERM:** This action lasts for the duration of the time taken to process the transaction.
-
-<h1 class="contract">
-  refundext
-</h1>
-
-## ACTION: refundext
-
-**PARAMETERS:**
-* __ext_key__ is a unique identifying integer for an escrow entry as supplied by an external key source.
-
-**INTENT:** The intent of refund is to return the escrowed funds back to the original sender. This action can only be run after the contract has met the intended expiry time.
+**INTENT:** The intent of refund is to return the escrowed funds back to the original sender. This action can only be run after the contract has passed the intended expiry time.
 **TERM:** This action lasts for the duration of the time taken to process the transaction.
 
 
@@ -138,18 +76,6 @@ The intent of unapprove is to unapprove the release of funds to the intended rec
 
 **PARAMETERS:**
 * __key__ is a unique identifying integer for an escrow entry. 
-
-**INTENT:** The intent of cancel is to cancel an escrow agreement. This action can only be performed by the sender as long as no funds have already been transferred for the escrow agreement. Otherwise they would need to wait for the expiry time and then use the refund action.
-**TERM:** This action lasts for the duration of the time taken to process the transaction.
-
-<h1 class="contract">
-  cancelext
-</h1>
-
-## ACTION: cancelext
-
-**PARAMETERS:**
-* __ext_key__ is a unique identifying integer for an escrow entry as supplied by an external key source.
 
 **INTENT:** The intent of cancel is to cancel an escrow agreement. This action can only be performed by the sender as long as no funds have already been transferred for the escrow agreement. Otherwise they would need to wait for the expiry time and then use the refund action.
 **TERM:** This action lasts for the duration of the time taken to process the transaction.

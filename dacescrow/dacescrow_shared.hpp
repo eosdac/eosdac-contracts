@@ -11,11 +11,11 @@ struct [[eosio::table("escrows"), eosio::contract("dacescrow")]] escrow_info {
     name            sender;
     name            receiver;
     name            arb;
-    vector<name>    approvals;
     extended_asset  ext_asset;
     string          memo;
     time_point_sec  expires;
     uint64_t        external_reference;
+    uint16_t        arb_payment;
 
     uint64_t        primary_key() const { return key; }
     uint64_t        by_external_ref() const { return external_reference; }
@@ -25,5 +25,5 @@ struct [[eosio::table("escrows"), eosio::contract("dacescrow")]] escrow_info {
 
 typedef multi_index<"escrows"_n, escrow_info,
         indexed_by<"bysender"_n, const_mem_fun<escrow_info, uint64_t, &escrow_info::by_sender> >,
-indexed_by<"byextref"_n, const_mem_fun<escrow_info, uint64_t, &escrow_info::by_external_ref> >
+        indexed_by<"byextref"_n, const_mem_fun<escrow_info, uint64_t, &escrow_info::by_external_ref> >
 > escrows_table;
