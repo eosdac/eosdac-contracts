@@ -66,19 +66,17 @@ namespace eosdac {
             check(esc_itr->ext_asset.quantity.amount > 0, "You already have an empty escrow.  Either fill it or delete it");
         }
 
-        print("Check reference: ", ext_reference);
-        check(!key_for_external_key(ext_reference),
+        check(escrows.find(ext_reference) == escrows.end(),
                          "Already have an escrow with this external reference");
 
         escrows.emplace(sender, [&](escrow_info &p) {
-            p.key = escrows.available_primary_key();
+            p.key = ext_reference;
             p.sender = sender;
             p.receiver = receiver;
             p.arb = arb;
             p.ext_asset = zero_asset;
             p.expires = expires;
             p.memo = memo;
-            p.external_reference = ext_reference;
             p.arb_payment = arb_payment_int;
         });
     }
@@ -86,9 +84,7 @@ namespace eosdac {
     ACTION dacescrow::approve(uint64_t key, name approver) {
         require_auth(approver);
 
-        auto index = key_for_external_key(key);
-        check(index.has_value(), "Escrow index not found by key");
-        auto esc_itr = escrows.find(index.value());
+        auto esc_itr = escrows.find(key);
         check(esc_itr != escrows.end(), "Could not find escrow with that index");
 
         check(esc_itr->ext_asset.quantity.amount > 0, "This has not been initialized with a transfer");
@@ -107,9 +103,7 @@ namespace eosdac {
     ACTION dacescrow::disapprove(uint64_t key, name disapprover) {
         require_auth(disapprover);
 
-        auto index = key_for_external_key(key);
-        check(index.has_value(), "Escrow index not found by key");
-        auto esc_itr = escrows.find(index.value());
+        auto esc_itr = escrows.find(key);
         check(esc_itr != escrows.end(), "Could not find escrow with that index");
 
         check(esc_itr->ext_asset.quantity.amount > 0, "This has not been initialized with a transfer");
@@ -131,9 +125,7 @@ namespace eosdac {
      */
     ACTION dacescrow::cancel(uint64_t key) {
 
-        auto index = key_for_external_key(key);
-        check(index.has_value(), "Escrow index not found by key");
-        auto esc_itr = escrows.find(index.value());
+        auto esc_itr = escrows.find(key);
         check(esc_itr != escrows.end(), "Could not find escrow with that index");
 
         require_auth(esc_itr->sender);
@@ -147,9 +139,7 @@ namespace eosdac {
      * Allows the sender to withdraw the funds if the escrow has expired
      */
     ACTION dacescrow::refund(uint64_t key) {
-        auto index = key_for_external_key(key);
-        check(index.has_value(), "Escrow index not found by key");
-        auto esc_itr = escrows.find(index.value());
+        auto esc_itr = escrows.find(key);
         check(esc_itr != escrows.end(), "Could not find escrow with that index");
 
         require_auth(esc_itr->sender);
@@ -178,23 +168,6 @@ namespace eosdac {
         }
     }
 
-    // private helper
-
-    std::optional<uint64_t> dacescrow::key_for_external_key(uint64_t ext_key) {
-
-        if (!ext_key) {
-            return std::nullopt;
-        }
-
-        auto by_external_ref = escrows.get_index<"byextref"_n>();
-
-        for (auto esc_itr = by_external_ref.lower_bound(ext_key), end_itr = by_external_ref.upper_bound(ext_key); esc_itr != end_itr; ++esc_itr) {
-            print("found a match key");
-            return esc_itr->key;
-        }
-        print("no match key");
-        return std::nullopt;
-    }
 }
 
 #define EOSIO_ABI_EX(TYPE, MEMBERS) \

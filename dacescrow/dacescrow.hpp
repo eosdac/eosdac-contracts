@@ -42,7 +42,5 @@ namespace eosdac {
 
         ACTION clean();
 
-    private:
-        std::optional<uint64_t> key_for_external_key(uint64_t ext_key);
     };
 };
