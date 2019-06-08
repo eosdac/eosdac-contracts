@@ -7,18 +7,27 @@ void daccustodian::transfer(name from,
     if (to == _self) {
         name dacId = name(memo.c_str());
         if (is_account(dacId)) {
-            pendingstake_table_t pendingstake(_self, dacId.value);
-            auto source = pendingstake.find(from.value);
-            if (source != pendingstake.end()) {
-                pendingstake.modify(source, _self, [&](tempstake &s) {
-                    s.quantity += quantity;
+            candidates_table candidates(_self, dacId.value);
+            auto cand = candidates.find(from.value);
+            if (cand != candidates.end()){
+                candidates.modify(cand, _self, [&](candidate &c) {
+                    c.locked_tokens += quantity;
                 });
-            } else {
-                pendingstake.emplace(_self, [&](tempstake &s) {
-                    s.sender = from;
-                    s.quantity = quantity;
-                    s.memo = memo;
-                });
+            }
+            else {
+                pendingstake_table_t pendingstake(_self, dacId.value);
+                auto source = pendingstake.find(from.value);
+                if (source != pendingstake.end()) {
+                    pendingstake.modify(source, _self, [&](tempstake &s) {
+                        s.quantity += quantity;
+                    });
+                } else {
+                    pendingstake.emplace(_self, [&](tempstake &s) {
+                        s.sender = from;
+                        s.quantity = quantity;
+                        s.memo = memo;
+                    });
+                }
             }
         }
     }
