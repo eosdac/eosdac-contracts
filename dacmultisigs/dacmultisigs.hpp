@@ -7,6 +7,24 @@
 
 #include <eosio/crypto.hpp>
 
+#define _STRINGIZE(x) #x
+#define STRINGIZE(x) _STRINGIZE(x)
+
+#ifdef MSIGCONTRACT
+#define MSIG_CONTRACT STRINGIZE(MSIGCONTRACT)
+#endif
+#ifndef MSIG_CONTRACT
+#define MSIG_CONTRACT "eosio.msig"
+#endif
+
+#ifdef AUTHACCOUNT
+#define AUTH_ACCOUNT STRINGIZE(AUTHACCOUNT)
+#endif
+#ifndef AUTH_ACCOUNT
+#define AUTH_ACCOUNT "dacauthority"
+#endif
+
+
 using namespace eosio;
 using namespace std;
 

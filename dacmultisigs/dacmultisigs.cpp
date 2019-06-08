@@ -8,10 +8,10 @@
 #include "dacmultisigs.hpp"
 
 void dacmultisigs::proposed( name proposer, name proposal_name, string metadata ) {
-    require_auth( "dacauthority"_n );
+    require_auth( name(AUTH_ACCOUNT) );
     require_auth( proposer );
 
-    msig_proposals_table msig_proposals("eosio.msig"_n, proposer.value);
+    msig_proposals_table msig_proposals(name(MSIG_CONTRACT), proposer.value);
     msig_proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND_MSIG::Proposal not found in eosio.msig");
 
     auto size = transaction_size();
@@ -33,9 +33,9 @@ void dacmultisigs::proposed( name proposer, name proposal_name, string metadata 
 
 void dacmultisigs::approved( name proposer, name proposal_name, name approver ){
     require_auth(approver);
-    require_auth( "dacauthority"_n );
+    require_auth( name(AUTH_ACCOUNT) );
 
-    msig_proposals_table msig_proposals("eosio.msig"_n, proposer.value);
+    msig_proposals_table msig_proposals(name(MSIG_CONTRACT), proposer.value);
     msig_proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND_MSIG::Proposal not found in eosio.msig");
 
     proposals_table proposals(_self, proposer.value);
@@ -47,9 +47,9 @@ void dacmultisigs::approved( name proposer, name proposal_name, name approver ){
 
 void dacmultisigs::unapproved( name proposer, name proposal_name, name unapprover ){
     require_auth(unapprover);
-    require_auth( "dacauthority"_n );
+    require_auth( name(AUTH_ACCOUNT) );
 
-    msig_proposals_table msig_proposals("eosio.msig"_n, proposer.value);
+    msig_proposals_table msig_proposals(name(MSIG_CONTRACT), proposer.value);
     msig_proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND_MSIG::Proposal not found in eosio.msig");
 
     proposals_table proposals(_self, proposer.value);
@@ -61,9 +61,9 @@ void dacmultisigs::unapproved( name proposer, name proposal_name, name unapprove
 
 void dacmultisigs::cancelled( name proposer, name proposal_name, name canceler ){
     require_auth(canceler);
-    require_auth( "dacauthority"_n );
+    require_auth( name(AUTH_ACCOUNT) );
 
-    msig_proposals_table msig_proposals("eosio.msig"_n, proposer.value);
+    msig_proposals_table msig_proposals(name(MSIG_CONTRACT), proposer.value);
     auto prop = msig_proposals.find(proposal_name.value);
     check(prop == msig_proposals.end(), "ERR::PROPOSAL_EXISTS::The proposal still exists in eosio.msig");
 
@@ -74,9 +74,9 @@ void dacmultisigs::cancelled( name proposer, name proposal_name, name canceler )
 
 void dacmultisigs::executed( name proposer, name proposal_name, name executer ) {
     require_auth(executer);
-    require_auth( "dacauthority"_n );
+    require_auth( name(AUTH_ACCOUNT) );
 
-    msig_proposals_table msig_proposals("eosio.msig"_n, proposer.value);
+    msig_proposals_table msig_proposals(name(MSIG_CONTRACT), proposer.value);
     auto prop = msig_proposals.find(proposal_name.value);
     check(prop == msig_proposals.end(), "ERR::PROPOSAL_EXISTS::The proposal still exists in eosio.msig");
 
@@ -86,7 +86,7 @@ void dacmultisigs::executed( name proposer, name proposal_name, name executer ) 
 }
 
 void dacmultisigs::clean( name proposer, name proposal_name ) {
-    require_auth( "dacauthority"_n );
+    require_auth( name(AUTH_ACCOUNT) );
 
     time_point_sec dtnow =  time_point_sec(eosio::current_time_point());
     uint32_t two_weeks = 60 * 60 * 24 * 14;
