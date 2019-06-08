@@ -345,7 +345,7 @@ using namespace std;
 
         eosio::action(
                 eosio::permission_level{ treasury, "escrow"_n },
-                escrow, "approveext"_n,
+                escrow, "approve"_n,
                 make_tuple( prop.key, treasury)
             ).send();
 
