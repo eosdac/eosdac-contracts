@@ -7,6 +7,10 @@
 #include "../_contract-shared-headers/eosdactokens_types.hpp"
 #include "../_contract-shared-headers/daccustodian_types.hpp"
 
+#ifndef TRANSFER_DELAY
+#define TRANSFER_DELAY 60*60
+#endif
+
 using namespace eosio;
 using namespace std;
 

@@ -209,8 +209,7 @@ using namespace std;
                 prop.pay_amount.contract, "transfer"_n,
                 make_tuple(treasury, escrow, prop.pay_amount.quantity, "payment for wp: " + to_string(proposal_id))
         ));
-        // TODO : change this based on a config setting
-        deferredTrans.delay_sec = 2;
+        deferredTrans.delay_sec = TRANSFER_DELAY;
         deferredTrans.send(uint128_t(proposal_id) << 64 | time_point_sec(current_time_point()).sec_since_epoch() , _self);
     }
 
