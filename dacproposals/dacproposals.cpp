@@ -159,6 +159,9 @@ using namespace std;
         proposal_table proposals(_self, dac_scope.value);
 
         const proposal& prop = proposals.get(proposal_id, "ERR::DELEGATEVOTE_PROPOSAL_NOT_FOUND::Proposal not found.");
+
+        check(prop->arbitrator == arbitrator, "ERR::NOT_ARBITRATOR::You are not the arbitrator for this proposal");
+
         clearprop(prop, dac_scope);
     }
 
