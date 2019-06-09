@@ -90,6 +90,35 @@ void daccustodian::firecust(name cust) {
     removeCustodian(cust);
 }
 
+
+void daccustodian::setperm(name cand, name permission) {
+    require_auth(cand);
+    assertValidMember(cand);
+
+    bool perm_exists = permissionExists(cand, permission);
+
+    check(perm_exists, "ERR::PERMISSION_NOT_EXIST::Permission does not exist");
+
+    registered_candidates.get(cand.value, "ERR::UNSTAKE_CAND_NOT_REGISTERED::Candidate is not already registered.");
+
+    auto existing = cand_perms.find(cand.value);
+
+    if (existing == cand_perms.end()){
+        cand_perms.emplace(cand, [&](candperm &c) {
+            c.cand = cand;
+            c.permission = permission;
+        });
+    }
+    else if (permission == "active"_n){
+        cand_perms.erase(existing);
+    }
+    else {
+        cand_perms.modify(existing, same_payer, [&](candperm &c) {
+            c.permission = permission;
+        });
+    }
+}
+
 // private methods for the above actions
 
 void daccustodian::removeCustodian(name cust) {
