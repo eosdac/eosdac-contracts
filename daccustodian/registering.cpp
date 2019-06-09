@@ -145,6 +145,12 @@ void daccustodian::removeCandidate(name cand, bool lockupStake) {
 
     const auto &reg_candidate = registered_candidates.get(cand.value, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
 
+    // remove entry for candperms
+    auto perm = cand_perms.find(cand.value);
+    if (perm != cand_perms.end()){
+        cand_perms.erase(perm);
+    }
+
     eosio::print("Remove from nominated candidate by setting them to inactive.");
     // Set the is_active flag to false instead of deleting in order to retain votes if they return to he dac.
     registered_candidates.modify(reg_candidate, cand, [&](candidate &c) {
