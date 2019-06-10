@@ -34,6 +34,20 @@
             ]
         },
         {
+            "name": "candperm",
+            "base": "",
+            "fields": [
+                {
+                    "name": "cand",
+                    "type": "name"
+                },
+                {
+                    "name": "permission",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "capturestake",
             "base": "",
             "fields": [
@@ -264,6 +278,24 @@
             ]
         },
         {
+            "name": "setperm",
+            "base": "",
+            "fields": [
+                {
+                    "name": "cand",
+                    "type": "name"
+                },
+                {
+                    "name": "permission",
+                    "type": "name"
+                },
+                {
+                    "name": "dac_scope",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "stprofile",
             "base": "",
             "fields": [
@@ -454,12 +486,12 @@
         {
             "name": "capturestake",
             "type": "capturestake",
-            "ricardian_contract": "## ACTION: capturestake\n**PARAMETERS:**\n* __from__ is an eosio account name for the source of the transaction. \n* __quantity__ is eos asset. \n* __dac_scope__ is an eosio account name to determine which DAC the transaction is associated with. \n\n**INTENT** The intent of capturestake is to record an amount transferred to this contract for pending stake for a registering candidate. \n#### Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later so therefore should only store a unidentifiable hash of content rather than human readable content."
+            "ricardian_contract": "## ACTION: capturestake\n**PARAMETERS:**\n* __from__ is an eosio account name for the source of the transaction. \n* __quantity__ is eos asset. \n* __dac_scope__ is an eosio account name to determine which DAC the transaction is associated with. \n\n**INTENT** The intent of capturestake is to record an amount transferred to this contract for pending stake for a registering candidate. \n#### Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later so therefore should only store a unidentifiable hash of content rather than human readable content. \n======="
         },
         {
             "name": "claimpay",
             "type": "claimpay",
-            "ricardian_contract": "## ACTION: claimpay\n**PARAMETERS:**\n* __claimer__ account claiming the pay. This account must match the destination account for which the claim is for.\n\n**INTENT:** The intent of {{ claimpay }} is to allow an account to claim pending payment amounts due to the account. The pay claim they are claiming needs to be visible in the `pendingpay` table. transfers to the claimer via an inline transfer on the eosdactoken contract and then removes the pending payment record from the `pending_pay` table. The active auth of this claimer is required to complete this action.\n\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
+            "ricardian_contract": "## ACTION: claimpay\n**PARAMETERS:**\n* __claimer__ account claiming the pay. This account must match the destination account for which the claim is for.\n\n**INTENT:** The intent of {{ claimpay }} is to allow an account to claim pending payment amounts due to the account. The pay claim they are claiming needs to be visible in the `pendingpay` table. transfers to the claimer via an inline transfer on the eosdactoken contract and then removes the pending payment record from the `pending_pay` table. The active auth of this claimer is required to complete this action.\n\n**TERM:** This action lasts for the duration of the time taken to process the transaction.\n\n<<<<<<< HEAD"
         },
         {
             "name": "firecand",
@@ -485,6 +517,11 @@
             "name": "resigncust",
             "type": "resigncust",
             "ricardian_contract": "## ACTION: resigncust\n**PARAMETERS:**\n* __cust__ is an eosio account name.\n\n**INTENT:** The intent of resigncust is to remove an elected custodian. This action must be run by the resigning custodian and the outcome should remove the elected custodian and lock up their tokens until the delay period has passed so the tokens can be claimed with the unstake action.\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
+        },
+        {
+            "name": "setperm",
+            "type": "setperm",
+            "ricardian_contract": "## ACTION: setperm\n**PARAMETERS:**\n* __cand__ The account registering a new permission, must be registered as a candidate.\n* __permission__ The permission name that will be used in the multisig.\n\n**INTENT:** The intent of {{ setperm }} is to allow an account to set a permission name which will be used in the DAC multisig in place of the active permission.  This allows an account to set up a permission specifically for administering the DAC.  Setting the entry to active will delete the entry in the database and free RAM.\n\n**TERM:** This action lasts until the user sets the permission back to active.\n>>>>>>> master"
         },
         {
             "name": "stprofile",
@@ -536,6 +573,13 @@
         {
             "name": "candidates",
             "type": "candidate",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "candperms",
+            "type": "candperm",
             "index_type": "i64",
             "key_names": [],
             "key_types": []
