@@ -217,7 +217,7 @@ transferobsv
 * __from__ is an eosio account name for the source of the transaction. 
 * __to__ is an eosio account name for the destination of the transaction. 
 * __quantity__ is eos asset. 
-* __dac_scope__ is an eosio account name to determine which DAC the transaction is associated with. 
+* __dac_id__ is an eosio account name to determine which DAC the transaction is associated with. 
 
 **INTENT** The intent of transferobsv is to monitor an asset transaction to update current vote strengths. 
 #### Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later so therefore should only store a unidentifiable hash of content rather than human readable content. 
@@ -230,7 +230,7 @@ capturestake
 **PARAMETERS:**
 * __from__ is an eosio account name for the source of the transaction. 
 * __quantity__ is eos asset. 
-* __dac_scope__ is an eosio account name to determine which DAC the transaction is associated with. 
+* __dac_id__ is an eosio account name to determine which DAC the transaction is associated with. 
 
 **INTENT** The intent of capturestake is to record an amount transferred to this contract for pending stake for a registering candidate. 
 #### Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later so therefore should only store a unidentifiable hash of content rather than human readable content. 

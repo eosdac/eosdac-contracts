@@ -47,15 +47,15 @@ class [[eosio::contract("dacmultisigs")]] dacmultisigs : public contract {
 
         using contract::contract;
 
-        ACTION proposed(name proposer, name proposal_name, string metadata, name dac_scope);
+        ACTION proposed(name proposer, name proposal_name, string metadata, name dac_id);
 
-        ACTION approved( name proposer, name proposal_name, name approver, name dac_scope );
+        ACTION approved( name proposer, name proposal_name, name approver, name dac_id );
 
-        ACTION unapproved( name proposer, name proposal_name, name unapprover, name dac_scope );
+        ACTION unapproved( name proposer, name proposal_name, name unapprover, name dac_id );
 
-        ACTION cancelled( name proposer, name proposal_name, name canceler, name dac_scope );
+        ACTION cancelled( name proposer, name proposal_name, name canceler, name dac_id );
 
-        ACTION executed( name proposer, name proposal_name, name executer, name dac_scope );
+        ACTION executed( name proposer, name proposal_name, name executer, name dac_id );
 
-        ACTION clean( name proposer, name proposal_name, name dac_scope );
+        ACTION clean( name proposer, name proposal_name, name dac_id );
 };

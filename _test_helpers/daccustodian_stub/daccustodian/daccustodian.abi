@@ -30,7 +30,7 @@
                     "type": "name[]"
                 },
                 {
-                    "name": "dac_scope",
+                    "name": "dac_id",
                     "type": "name"
                 }
             ]

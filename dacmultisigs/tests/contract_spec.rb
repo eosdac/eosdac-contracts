@@ -9,14 +9,14 @@ def configure_contracts_for_tests
   # run %(cleos push action dacdirectory regdac '{"owner": "otherowner",  "dac_name": "otherdac", "dac_symbol": "4,OTRDAC", "title": "Other Test DAC", "refs": [[1,"some_ref"]], "accounts": [[2,"daccustodian"], [5,"dacocoiogmbh"], [7,"dacescrow"], [0, "dacowner"],  [4, "eosdactokens"], [1, "eosdacthedac"]], "scopes": [] }' -p otherowner)
 
   #create users
-  seed_dac_account("invaliduser1", dac_scope: "dacmultisigs", dac_owner: "dacmsigowner")
+  seed_dac_account("invaliduser1", dac_id: "dacmultisigs", dac_owner: "dacmsigowner")
 
-  seed_dac_account("tester1", dac_scope: "dacmultisigs", dac_owner: "dacmsigowner")
+  seed_dac_account("tester1", dac_id: "dacmultisigs", dac_owner: "dacmsigowner")
 
-  seed_dac_account("custodian1", dac_scope: "dacmultisigs", dac_owner: "dacmsigowner")
-  seed_dac_account("custodian2", dac_scope: "dacmultisigs", dac_owner: "dacmsigowner")
-  seed_dac_account("custodian3", dac_scope: "dacmultisigs", dac_owner: "dacmsigowner")
-  seed_dac_account("approver1",  dac_scope: "dacmultisigs", dac_owner: "dacmsigowner")
+  seed_dac_account("custodian1", dac_id: "dacmultisigs", dac_owner: "dacmsigowner")
+  seed_dac_account("custodian2", dac_id: "dacmultisigs", dac_owner: "dacmsigowner")
+  seed_dac_account("custodian3", dac_id: "dacmultisigs", dac_owner: "dacmsigowner")
+  seed_dac_account("approver1",  dac_id: "dacmultisigs", dac_owner: "dacmsigowner")
 
   run %(cleos set account permission custodian1 active '{"threshold": 1,"keys": [{"key": "#{CONTRACT_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"dacmultisigs","permission":"eosio.code"},"weight":1}]}' owner -p custodian1@owner)
   run %(cleos set account permission custodian2 active '{"threshold": 1,"keys": [{"key": "#{CONTRACT_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"dacmultisigs","permission":"eosio.code"},"weight":1}]}' owner -p custodian2@owner)
@@ -50,14 +50,14 @@ describe "dacmultisigs" do
     end
     context "without invalid auth" do
       it do
-        result = wrap_command %(cleos push action dacmultisigs proposed '{ "transactionid": "579159b224ebd9c0a3d36b1c53ae97a2df96025a054b29b62f1534ecfed080bf", "proposer": "custodian1", "proposal_name": "myproposal", "metadata": "random meta", "dac_scope": "multisigdac"}' -p invaliduser1)
+        result = wrap_command %(cleos push action dacmultisigs proposed '{ "transactionid": "579159b224ebd9c0a3d36b1c53ae97a2df96025a054b29b62f1534ecfed080bf", "proposer": "custodian1", "proposal_name": "myproposal", "metadata": "random meta", "dac_id": "multisigdac"}' -p invaliduser1)
         expect(result.stderr).to include('Error 3090004')
       end
     end
 
     context "with valid auth" do
       it do
-        result = wrap_command %(cleos push action dacmultisigs proposed '{ "proposer": "custodian1", "proposal_name": "myproposal", "transactionid": "579159b224ebd9c0a3d36b1c53ae97a2df96025a054b29b62f1534ecfed080bf", "metadata": "random meta", "dac_scope": "multisigdac"}' -p dacowner -p custodian1)
+        result = wrap_command %(cleos push action dacmultisigs proposed '{ "proposer": "custodian1", "proposal_name": "myproposal", "transactionid": "579159b224ebd9c0a3d36b1c53ae97a2df96025a054b29b62f1534ecfed080bf", "metadata": "random meta", "dac_id": "multisigdac"}' -p dacowner -p custodian1)
         expect(result.stdout).to include('dacmultisigs::proposed')
       end
     end
@@ -79,14 +79,14 @@ describe "dacmultisigs" do
   describe "approved" do
     context "with invalid auth" do
       it do
-        result = wrap_command %(cleos push action dacmultisigs approved '{ "proposer": "custodian1", "proposal_name": "myproposal", "level": {"actor": "custodian1", "permission": "active"}, "approver": "approver1", "dac_scope": "multisigdac"}' -p invaliduser1 -p approver1)
+        result = wrap_command %(cleos push action dacmultisigs approved '{ "proposer": "custodian1", "proposal_name": "myproposal", "level": {"actor": "custodian1", "permission": "active"}, "approver": "approver1", "dac_id": "multisigdac"}' -p invaliduser1 -p approver1)
         expect(result.stderr).to include('Error 3090004')
       end
     end
 
     context "with valid auth" do
       it do
-        result = wrap_command %(cleos push action dacmultisigs approved '{ "proposer": "custodian1", "proposal_name": "myproposal", "level": {"actor": "custodian1", "permission": "active"}, "approver": "approver1", "dac_scope": "multisigdac"}' -p custodian1 -p approver1 -p dacowner)
+        result = wrap_command %(cleos push action dacmultisigs approved '{ "proposer": "custodian1", "proposal_name": "myproposal", "level": {"actor": "custodian1", "permission": "active"}, "approver": "approver1", "dac_id": "multisigdac"}' -p custodian1 -p approver1 -p dacowner)
         expect(result.stdout).to include('dacmultisigs::approved')
       end
     end
@@ -95,14 +95,14 @@ describe "dacmultisigs" do
   describe "unapproved" do
     context "with invalid auth" do
       it do
-        result = wrap_command %(cleos push action dacmultisigs approved '{ "proposer": "custodian1", "proposal_name": "myproposal", "level": {"actor": "custodian1", "permission": "active"}, "approver": "approver1", "dac_scope": "multisigdac"}' -p invaliduser1 -p approver1)
+        result = wrap_command %(cleos push action dacmultisigs approved '{ "proposer": "custodian1", "proposal_name": "myproposal", "level": {"actor": "custodian1", "permission": "active"}, "approver": "approver1", "dac_id": "multisigdac"}' -p invaliduser1 -p approver1)
         expect(result.stderr).to include('Error 3090004')
       end
     end
 
     context "with valid auth and previously granted permission" do
       it do
-        result = wrap_command %(cleos push action dacmultisigs unapproved '{ "proposer": "custodian1", "proposal_name": "myproposal", "level": {"actor": "custodian1", "permission": "active"}, "unapprover": "approver1", "dac_scope": "multisigdac"}' -p custodian1 -p approver1 -p dacowner)
+        result = wrap_command %(cleos push action dacmultisigs unapproved '{ "proposer": "custodian1", "proposal_name": "myproposal", "level": {"actor": "custodian1", "permission": "active"}, "unapprover": "approver1", "dac_id": "multisigdac"}' -p custodian1 -p approver1 -p dacowner)
         expect(result.stdout).to include('dacmultisigs::unapproved')
       end
     end
@@ -111,14 +111,14 @@ describe "dacmultisigs" do
   describe "cancelled" do
     context "with invalid auth" do
       it do
-        result = wrap_command %(cleos push action dacmultisigs cancelled '{ "proposer": "custodian1", "proposal_name": "myproposal", "canceler": "invaliduser1", "dac_scope": "multisigdac" }' -p dacowner)
+        result = wrap_command %(cleos push action dacmultisigs cancelled '{ "proposer": "custodian1", "proposal_name": "myproposal", "canceler": "invaliduser1", "dac_id": "multisigdac" }' -p dacowner)
         expect(result.stderr).to include('missing authority of invaliduser1')
       end
     end
     context "with valid proposer auth" do
       context "without removing the msig from the system contract" do
         it do
-          result = wrap_command %(cleos push action dacmultisigs cancelled '{ "proposer": "custodian1", "proposal_name": "myproposal", "canceler": "custodian2", "dac_scope": "multisigdac"}' -p custodian2 -p dacowner)
+          result = wrap_command %(cleos push action dacmultisigs cancelled '{ "proposer": "custodian1", "proposal_name": "myproposal", "canceler": "custodian2", "dac_id": "multisigdac"}' -p custodian2 -p dacowner)
           expect(result.stderr).to include('ERR::PROPOSAL_EXISTS')
         end
       end
@@ -128,7 +128,7 @@ describe "dacmultisigs" do
           run %(cleos multisig cancel custodian1 myproposal custodian1 -p custodian1)
         end
         it do
-          result = wrap_command %(cleos push action dacmultisigs cancelled '{ "proposer": "custodian1", "proposal_name": "myproposal", "canceler": "custodian1", "dac_scope": "multisigdac"}' -p custodian1 -p dacowner)
+          result = wrap_command %(cleos push action dacmultisigs cancelled '{ "proposer": "custodian1", "proposal_name": "myproposal", "canceler": "custodian1", "dac_id": "multisigdac"}' -p custodian1 -p dacowner)
           expect(result.stdout).to include('dacmultisigs::cancelled')
         end
       end
@@ -152,7 +152,7 @@ describe "dacmultisigs" do
       # first put proposal in the system msig contract.
       run %(cleos multisig propose myproposal2 '[{"actor": "custodian1", "permission": "active"}]' '[{"actor": "custodian1", "permission": "active"}]' eosio.token transfer '{ "from": "custodian1", "to": "tester1", "quantity": "1.0000 EOS", "memo": "random memo"}}' -p custodian1)
       run %(cleos multisig review custodian1 myproposal2)
-      run %(cleos push action dacmultisigs proposed '{ "proposer": "custodian1", "proposal_name": "myproposal2", "transactionid": "579159b224ebd9c0a3d36b1c53ae97a2df96025a054b29b62f1534ecfed080bf", "metadata": "random meta", "dac_scope": "multisigdac"}' -p dacowner -p custodian1)
+      run %(cleos push action dacmultisigs proposed '{ "proposer": "custodian1", "proposal_name": "myproposal2", "transactionid": "579159b224ebd9c0a3d36b1c53ae97a2df96025a054b29b62f1534ecfed080bf", "metadata": "random meta", "dac_id": "multisigdac"}' -p dacowner -p custodian1)
     end
 
     context "Read the proposals table after successful proposal" do
@@ -170,19 +170,19 @@ describe "dacmultisigs" do
 
     context "with invalid auth" do
       it do
-        result = wrap_command %(cleos push action dacmultisigs executed  '{ "proposer": "custodian1", "proposal_name": "myproposal2", "executer": "invaliduser1" , "dac_scope": "multisigdac"}' -p invaliduser2 -p dacowner)
+        result = wrap_command %(cleos push action dacmultisigs executed  '{ "proposer": "custodian1", "proposal_name": "myproposal2", "executer": "invaliduser1" , "dac_id": "multisigdac"}' -p invaliduser2 -p dacowner)
         expect(result.stderr).to include('Provided keys, permissions, and delays do not satisfy declared authorizations')
       end
     end
 
     context "with valid proposer auth" do
       before(:all) do
-        run %(cleos push action dacmultisigs approved '{ "proposer": "custodian1", "proposal_name": "myproposal2", "approver": "custodian1" , "dac_scope": "multisigdac"}' -p custodian1 -p dacowner)
+        run %(cleos push action dacmultisigs approved '{ "proposer": "custodian1", "proposal_name": "myproposal2", "approver": "custodian1" , "dac_id": "multisigdac"}' -p custodian1 -p dacowner)
         run %(cleos multisig approve custodian1 myproposal2 '{"actor": "custodian1", "permission": "active"}')
         run %(cleos multisig exec custodian1 myproposal2 custodian1 -p custodian1)
       end
       it do
-        result = wrap_command %(cleos push action dacmultisigs executed '{ "proposer": "custodian1", "proposal_name": "myproposal2", "executer": "custodian1", "dac_scope": "multisigdac"}' -p custodian1 -p dacowner)
+        result = wrap_command %(cleos push action dacmultisigs executed '{ "proposer": "custodian1", "proposal_name": "myproposal2", "executer": "custodian1", "dac_id": "multisigdac"}' -p custodian1 -p dacowner)
         expect(result.stdout).to include('dacmultisigs::executed')
       end
     end

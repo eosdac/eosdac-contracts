@@ -134,32 +134,32 @@ namespace eosdac {
         daccustodian( name s, name code, datastream<const char*> ds )
             :contract(s,code,ds) {}
 
-        ACTION updateconfig(contr_config newconfig, name dac_scope);
+        ACTION updateconfig(contr_config newconfig, name dac_id);
         ACTION capturestake(name from,
                             asset quantity,
-                            name dac_scope);
+                            name dac_id);
         ACTION transferobsv(name from,
                             name to,
                             asset quantity,
                             name scope);
-        ACTION nominatecand(name cand, eosio::asset requestedpay, name dac_scope);
-        ACTION withdrawcand(name cand, name dac_scope);
-        ACTION firecand(name cand, bool lockupStake, name dac_scope);
-        ACTION resigncust(name cust, name dac_scope);
-        ACTION firecust(name cust, name dac_scope);
-        ACTION updatebio(name cand, std::string bio, name dac_scope);
+        ACTION nominatecand(name cand, eosio::asset requestedpay, name dac_id);
+        ACTION withdrawcand(name cand, name dac_id);
+        ACTION firecand(name cand, bool lockupStake, name dac_id);
+        ACTION resigncust(name cust, name dac_id);
+        ACTION firecust(name cust, name dac_id);
+        ACTION updatebio(name cand, std::string bio, name dac_id);
 
         [[eosio::action]]
-        inline void stprofile(name cand, std::string profile, name dac_scope) { require_auth(cand); };
+        inline void stprofile(name cand, std::string profile, name dac_id) { require_auth(cand); };
 
         [[eosio::action]]
         inline void stprofileuns(name cand, std::string profile) { require_auth(cand); };
-        ACTION updatereqpay(name cand, eosio::asset requestedpay, name dac_scope);
-        ACTION votecust(name voter, std::vector<name> newvotes, name dac_scope);
+        ACTION updatereqpay(name cand, eosio::asset requestedpay, name dac_id);
+        ACTION votecust(name voter, std::vector<name> newvotes, name dac_id);
     //    void voteproxy(name voter, name proxy);
-        ACTION newperiod(std::string message, name dac_scope);
-        ACTION claimpay(uint64_t payid, name dac_scope);
-        ACTION unstake(name cand, name dac_scope);
+        ACTION newperiod(std::string message, name dac_id);
+        ACTION claimpay(uint64_t payid, name dac_id);
+        ACTION unstake(name cand, name dac_id);
         /**
      * This action is used to register a custom permission that will be used in the multisig instead of active.
      *
@@ -174,7 +174,7 @@ namespace eosdac {
      * ### Post Condition:
      * The candidate will have a record entered into the database indicating the custom permission to use.
      */
-        ACTION setperm(name cand, name permission, name dac_scope);
+        ACTION setperm(name cand, name permission, name dac_id);
 
         
     // ACTION migrate();

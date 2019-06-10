@@ -29,6 +29,6 @@ public:
     daccustodian( name s, name code, datastream<const char*> ds )
         :contract(s,code,ds){}
 
-    ACTION updatecust(std::vector<name> custodians, name dac_scope);
+    ACTION updatecust(std::vector<name> custodians, name dac_id);
 
 };

@@ -40,8 +40,8 @@ end
 # @param [if not nil register the account with the agreed terms as this value] memberreg
 # @param [if not nil transfer this amount to the elections contract so they can register as an election candidate] stake
 # @param [if not nil register as a candidate with this amount as the requested pay] requestedpay
-def seed_dac_account(name, issue: nil, memberreg: nil, stake: nil, requestedpay: nil, dac_scope: nil, dac_owner: nil)
-  if dac_scope.nil? || dac_owner.nil? { fail() }
+def seed_dac_account(name, issue: nil, memberreg: nil, stake: nil, requestedpay: nil, dac_id: nil, dac_owner: nil)
+  if dac_id.nil? || dac_owner.nil? { fail() }
 
   end
   run? %(cleos system newaccount --stake-cpu "10.0000 EOS" --stake-net "10.0000 EOS" --transfer --buy-ram-kbytes 1024 eosio #{name} #{CONTRACT_PUBLIC_KEY} #{CONTRACT_PUBLIC_KEY})
@@ -50,16 +50,16 @@ def seed_dac_account(name, issue: nil, memberreg: nil, stake: nil, requestedpay:
     run %(cleos push action eosdactokens issue '{ "to": "#{name}", "quantity": "#{issue}", "memo": "Initial amount."}' -p #{dac_owner})
   end
 
-  if !memberreg.nil? && !dac_scope.nil?
-    run? %(cleos push action eosdactokens memberrege '{ "sender": "#{name}", "agreedterms": "#{memberreg}", "dac_id": "#{dac_scope}"}' -p #{name})
+  if !memberreg.nil? && !dac_id.nil?
+    run? %(cleos push action eosdactokens memberrege '{ "sender": "#{name}", "agreedterms": "#{memberreg}", "dac_id": "#{dac_id}"}' -p #{name})
   end
 
   unless stake.nil?
     run %(cleos push action eosdactokens transfer '{ "from": "#{name}", "to": "daccustodian", "quantity": "#{stake}","memo":"daccustodian"}' -p #{name})
   end
 
-  if !requestedpay.nil? && !dac_scope.nil?
-    run %(cleos push action daccustodian nominatecand '{ "cand": "#{name}", "bio": "any bio", "requestedpay": "#{requestedpay}", "dac_scope": "#{dac_scope}"}' -p #{name})
+  if !requestedpay.nil? && !dac_id.nil?
+    run %(cleos push action daccustodian nominatecand '{ "cand": "#{name}", "bio": "any bio", "requestedpay": "#{requestedpay}", "dac_id": "#{dac_id}"}' -p #{name})
   end
 end
 
