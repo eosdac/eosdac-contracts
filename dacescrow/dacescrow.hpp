@@ -28,35 +28,19 @@ namespace eosdac {
          * Escrow contract
          */
 
-        ACTION init(name sender, name receiver, name arb, time_point_sec expires, string memo, std::optional<uint64_t> ext_reference);
+        ACTION init(name sender, name receiver, name arb, time_point_sec expires, string memo, uint64_t ext_reference, std::optional<uint16_t> arb_payment);
 
         ACTION transfer(name from, name to, asset quantity, string memo);
 
         ACTION approve(uint64_t key, name approver);
 
-        ACTION unapprove(uint64_t key, name unapprover);
-
-        ACTION claim(uint64_t key);
+        ACTION disapprove(uint64_t key, name disapprover);
 
         ACTION refund(uint64_t key);
 
         ACTION cancel(uint64_t key);
 
-        // Actions using the external reference key
-
-        ACTION approveext(uint64_t ext_key, name approver);
-
-        ACTION unapproveext(uint64_t ext_key, name unapprover);
-
-        ACTION claimext(uint64_t ext_key);
-
-        ACTION refundext(uint64_t ext_key);
-
-        ACTION cancelext(uint64_t ext_key);
-
         ACTION clean();
 
-    private:
-        std::optional<uint64_t> key_for_external_key(std::optional<uint64_t> ext_key);
     };
 };

@@ -15,7 +15,7 @@ void dacmultisigs::proposed( name proposer, name proposal_name, string metadata,
     require_auth(auth_account);
     require_auth( proposer );
 
-    msig_proposals_table msig_proposals("eosio.msig"_n, proposer.value);
+    msig_proposals_table msig_proposals(name(MSIG_CONTRACT), proposer.value);
     msig_proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND_MSIG::Proposal not found in eosio.msig");
 
     auto size = transaction_size();
@@ -41,7 +41,7 @@ void dacmultisigs::approved( name proposer, name proposal_name, name approver, n
     require_auth(auth_account);
     require_auth( approver );
 
-    msig_proposals_table msig_proposals("eosio.msig"_n, proposer.value);
+    msig_proposals_table msig_proposals(name(MSIG_CONTRACT), proposer.value);
     msig_proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND_MSIG::Proposal not found in eosio.msig");
 
     proposals_table proposals(_self, dac_scope.value);
@@ -56,7 +56,7 @@ void dacmultisigs::unapproved( name proposer, name proposal_name, name unapprove
     require_auth(auth_account);
     require_auth( unapprover );
 
-    msig_proposals_table msig_proposals("eosio.msig"_n, proposer.value);
+    msig_proposals_table msig_proposals(name(MSIG_CONTRACT), proposer.value);
     msig_proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND_MSIG::Proposal not found in eosio.msig");
 
     proposals_table proposals(_self, dac_scope.value);
@@ -71,7 +71,7 @@ void dacmultisigs::cancelled( name proposer, name proposal_name, name canceler, 
         require_auth(auth_account);
         require_auth( canceler );
 
-    msig_proposals_table msig_proposals("eosio.msig"_n, proposer.value);
+    msig_proposals_table msig_proposals(name(MSIG_CONTRACT), proposer.value);
     auto prop = msig_proposals.find(proposal_name.value);
     check(prop == msig_proposals.end(), "ERR::PROPOSAL_EXISTS::The proposal still exists in eosio.msig");
 
@@ -85,7 +85,7 @@ void dacmultisigs::executed( name proposer, name proposal_name, name executer, n
         require_auth(auth_account);
         require_auth( executer );
 
-    msig_proposals_table msig_proposals("eosio.msig"_n, proposer.value);
+    msig_proposals_table msig_proposals(name(MSIG_CONTRACT), proposer.value);
     auto prop = msig_proposals.find(proposal_name.value);
     check(prop == msig_proposals.end(), "ERR::PROPOSAL_EXISTS::The proposal still exists in eosio.msig");
 

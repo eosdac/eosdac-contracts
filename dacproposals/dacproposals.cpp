@@ -26,6 +26,9 @@ namespace eosdac {
         check(pay_amount.quantity.amount > 0, "ERR::CREATEPROP_INVALID_PAY_AMOUNT::Invalid pay amount. Must be greater than 0.");
         check(is_account(arbitrator), "ERR::CREATEPROP_INVALID_ARBITRATOR::Invalid arbitrator.");
 
+        auto treasury = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::TREASURY);
+        check(arbitrator != proposer && arbitrator != treasury, "Arbitrator must be a third party");
+
         proposals.emplace(proposer, [&](proposal &p) {
             p.key = id;
             p.proposer = proposer;
@@ -163,6 +166,9 @@ namespace eosdac {
         proposal_table proposals(_self, dac_scope.value);
 
         const proposal& prop = proposals.get(proposal_id, "ERR::DELEGATEVOTE_PROPOSAL_NOT_FOUND::Proposal not found.");
+
+        check(prop.arbitrator == arbitrator, "ERR::NOT_ARBITRATOR::You are not the arbitrator for this proposal");
+
         clearprop(prop, dac_scope);
     }
 
@@ -199,7 +205,7 @@ namespace eosdac {
         check(is_account(treasury), "ERR::TREASURY_ACCOUNT_NOT_FOUND::Treasury account not found");
         check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
         
-        auto inittuple = make_tuple(treasury, prop.proposer, prop.arbitrator, time_now + configs.escrow_expiry, memo, std::optional<uint64_t>(proposal_id));
+        auto inittuple = make_tuple(treasury, prop.proposer, prop.arbitrator, time_now + configs.escrow_expiry, memo, proposal_id, 0);
 
         eosio::action(
                 eosio::permission_level{ treasury, "escrow"_n },
@@ -213,8 +219,7 @@ namespace eosdac {
                 prop.pay_amount.contract, "transfer"_n,
                 make_tuple(treasury, escrow, prop.pay_amount.quantity, "payment for wp: " + to_string(proposal_id))
         ));
-        // TODO : change this based on a config setting
-        deferredTrans.delay_sec = 2;
+        deferredTrans.delay_sec = TRANSFER_DELAY;
         deferredTrans.send(uint128_t(proposal_id) << 64 | time_point_sec(current_time_point()).sec_since_epoch() , _self);
     }
 
@@ -349,7 +354,7 @@ namespace eosdac {
 
         eosio::action(
                 eosio::permission_level{ treasury, "escrow"_n },
-                escrow, "approveext"_n,
+                escrow, "approve"_n,
                 make_tuple( prop.key, treasury)
             ).send();
 
@@ -364,7 +369,7 @@ namespace eosdac {
         proposal_vote_table prop_votes(_self, dac_scope.value);
         auto by_voters = prop_votes.get_index<"proposal"_n>();
         auto itr = by_voters.find(proposal.key);
-        while(itr != by_voters.end() && itr->proposal_id == proposal.key ) {
+        while(itr != by_voters.end() && itr->proposal_id == proposal.key) {
             print(itr->voter);
             itr = by_voters.erase(itr);
         }

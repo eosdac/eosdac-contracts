@@ -9,21 +9,21 @@ void daccustodian::transfer(name from,
     if (to == _self) {
         name dacId = name(memo.c_str());
         if (is_account(dacId)) {
-            pendingstake_table_t pendingstake(_self, dacId.value);
-            auto source = pendingstake.find(from.value);
-            if (source != pendingstake.end()) {
-                pendingstake.modify(source, _self, [&](tempstake &s) {
-                    s.quantity += quantity;
-                });
-            } else {
-                pendingstake.emplace(_self, [&](tempstake &s) {
-                    s.sender = from;
-                    s.quantity = quantity;
-                    s.memo = memo;
-                });
+                pendingstake_table_t pendingstake(_self, dacId.value);
+                auto source = pendingstake.find(from.value);
+                if (source != pendingstake.end()) {
+                    pendingstake.modify(source, _self, [&](tempstake &s) {
+                        s.quantity += quantity;
+                    });
+                } else {
+                    pendingstake.emplace(_self, [&](tempstake &s) {
+                        s.sender = from;
+                        s.quantity = quantity;
+                        s.memo = memo;
+                    });
+                }
             }
         }
-    }
 
     // eosio::print("\n > transfer from : ", from, " to: ", to, " quantity: ", quantity);
 
@@ -55,19 +55,27 @@ void daccustodian::capturestake(name from,
     print("token contract: ", token_contract);
     require_auth(token_contract);
 
-    pendingstake_table_t pendingstake(_self, dac_scope.value);
-    auto source = pendingstake.find(from.value);
-    if (source != pendingstake.end()) {
-        pendingstake.modify(source, _self, [&](tempstake &s) {
-            s.quantity += quantity;
+    candidates_table candidates(_self, dac_scope.value);
+    auto cand = candidates.find(from.value);
+    if (cand != candidates.end()){
+        candidates.modify(cand, _self, [&](candidate &c) {
+            c.locked_tokens += quantity;
         });
-        print("Modified exisiting stake record: ", from);
     } else {
-        pendingstake.emplace(_self, [&](tempstake &s) {
-            s.sender = from;
-            s.quantity = quantity;
-        });
-        print("Created stake record: ", from);
+        pendingstake_table_t pendingstake(_self, dac_scope.value);
+        auto source = pendingstake.find(from.value);
+        if (source != pendingstake.end()) {
+            pendingstake.modify(source, _self, [&](tempstake &s) {
+                s.quantity += quantity;
+            });
+            print("Modified exisiting stake record: ", from);
+        } else {
+            pendingstake.emplace(_self, [&](tempstake &s) {
+                s.sender = from;
+                s.quantity = quantity;
+            });
+            print("Created stake record: ", from);
+        }
     }
 }
 

@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-source ../_compiled_contracts/dacmultisigs/compile.sh
+source ../_compiled_contracts/dacmultisigs/compile_all.sh
