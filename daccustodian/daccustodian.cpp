@@ -47,6 +47,7 @@ EOSIO_ABI_EX(daccustodian,
              (votecust)/*(voteproxy)*/
              (newperiod)
              (claimpay)
+             (setperm)
              (transfer)
              (stprofile)(stprofileuns)
 #ifdef MIGRATE

@@ -2,6 +2,7 @@
 #include <eosio/multi_index.hpp>
 #include <eosio/singleton.hpp>
 #include <eosio/time.hpp>
+#include <eosio/permission.hpp>
 
 #include "external_types.hpp"
 #include "../_contract-shared-headers/eosdactokens_types.hpp"
@@ -155,6 +156,15 @@ struct [[eosio::table("pendingstake"), eosio::contract("daccustodian")]] tempsta
 
 typedef multi_index<"pendingstake"_n, tempstake> pendingstake_table_t;
 
+struct [[eosio::table("candperms"), eosio::contract("daccustodian")]] candperm {
+    name cand;
+    name permission;
+
+    uint64_t primary_key() const { return cand.value; }
+};
+
+typedef multi_index<"candperms"_n, candperm> candperms_table;
+
 
 class daccustodian : public contract {
 
@@ -164,6 +174,7 @@ private: // Variables used throughout the other actions.
     candidates_table registered_candidates;
     votes_table votes_cast_by_members;
     pending_pay_table pending_pay;
+    candperms_table cand_perms;
 
     contr_state _currentState;
 
@@ -174,6 +185,7 @@ public:
             registered_candidates(_self, _self.value),
             votes_cast_by_members(_self, _self.value),
             pending_pay(_self, _self.value),
+            cand_perms(_self, _self.value),
             config_singleton(_self, _self.value),
             contract_state(_self, _self.value) {
 
@@ -381,6 +393,22 @@ Nothing from this action is stored on the blockchain. It is only intended to ens
  */
     ACTION unstake(name cand);
 
+/**
+ * This action is used to register a custom permission that will be used in the multisig instead of active.
+ *
+ * ### Assertions:
+ * - The account supplied to cand exists and is a registered candidate
+ * - The permission supplied exists as a permission on the account
+ *
+ * @param cand - The account id for the candidate setting a custom permission.
+ * @param permission - The permission name to use.
+ *
+ *
+ * ### Post Condition:
+ * The candidate will have a record entered into the database indicating the custom permission to use.
+ */
+    ACTION setperm(name cand, name permission);
+
 
 private: // Private helper methods used by other actions.
 
@@ -408,6 +436,14 @@ private: // Private helper methods used by other actions.
 
     void allocateCustodians(bool early_election);
 
+    bool permissionExists(name account, name permission);
+
+    bool
+    _check_transaction_authorization( const char* trx_data,     uint32_t trx_size,
+                                     const char* pubkeys_data, uint32_t pubkeys_size,
+                                     const char* perms_data,   uint32_t perms_size );
+
+    permission_level getCandidatePermission(name account);
 
 //#define MIGRATE
 

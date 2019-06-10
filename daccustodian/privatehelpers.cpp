@@ -67,3 +67,60 @@ void daccustodian::modifyVoteWeights(name voter, vector<name> oldVotes, vector<n
     updateVoteWeights(oldVotes, -vote_weight);
     updateVoteWeights(newVotes, vote_weight);
 }
+
+permission_level daccustodian::getCandidatePermission(name account){
+    auto perm = cand_perms.find(account.value);
+    if (perm == cand_perms.end()){
+        return permission_level{account, "active"_n};
+    }
+    else {
+        return permission_level{account, perm->permission};
+    }
+}
+
+/*
+ * TODO : replace with the native function once cdt 1.6.2 is released
+ */
+bool
+daccustodian::_check_transaction_authorization( const char* trx_data,     uint32_t trx_size,
+                                 const char* pubkeys_data, uint32_t pubkeys_size,
+                                 const char* perms_data,   uint32_t perms_size ) {
+    auto res = internal_use_do_not_use::check_transaction_authorization( trx_data, trx_size, pubkeys_data, pubkeys_size, perms_data, perms_size );
+
+    return (res > 0);
+}
+
+/*
+ * Check if a permission exists, the transaction attempts to create or modify a permission with the name of the
+ * permission we are checking, *but parent of owner*.  If the permission exists (under active) then updateauth will
+ * assert with an error about not being able to change the parent of the existing permission, permission checks will pass.
+ *
+ * If the permission does NOT exist then updateauth will require auth of the parent permission (owner), but we only test
+ * against active.  Auth checks will fail and the function will return false.
+ *
+ * This can be removed if https://github.com/EOSIO/eos/issues/6657 is fixed
+ */
+bool daccustodian::permissionExists(name account, name permission){
+    transaction trx;
+    eosiosystem::authority authority{
+            .threshold = {},
+            .keys = {},
+            .accounts = {}
+    };
+    trx.actions.push_back(
+            action(permission_level{account, "active"_n},
+                    "eosio"_n, "updateauth"_n,
+                   std::make_tuple(account, permission, "owner"_n, authority))
+    );
+
+    auto packed_trx = pack(trx);
+
+    auto check_perms = std::vector<permission_level>();
+    check_perms.push_back(permission_level{account, "active"_n});
+
+    auto packed_perms = pack(check_perms);
+
+    bool res = _check_transaction_authorization(packed_trx.data(), packed_trx.size(), (const char*)0, 0, packed_perms.data(), packed_perms.size());
+
+    return res;
+}

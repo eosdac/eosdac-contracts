@@ -207,3 +207,17 @@ The intent of forehand is to set a candidate to a state of inactive so they will
 **INTENT:** The intent of {{ claimpay }} is to allow an account to claim pending payment amounts due to the account. The pay claim they are claiming needs to be visible in the `pendingpay` table. transfers to the claimer via an inline transfer on the eosdactoken contract and then removes the pending payment record from the `pending_pay` table. The active auth of this claimer is required to complete this action.
 
 **TERM:** This action lasts for the duration of the time taken to process the transaction.
+
+
+<h1 class="contract">
+  setperm
+</h1>
+
+## ACTION: setperm
+**PARAMETERS:**
+* __cand__ The account registering a new permission, must be registered as a candidate.
+* __permission__ The permission name that will be used in the multisig.
+
+**INTENT:** The intent of {{ setperm }} is to allow an account to set a permission name which will be used in the DAC multisig in place of the active permission.  This allows an account to set up a permission specifically for administering the DAC.  Setting the entry to active will delete the entry in the database and free RAM.
+
+**TERM:** This action lasts until the user sets the permission back to active.
