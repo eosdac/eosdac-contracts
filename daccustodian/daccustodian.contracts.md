@@ -234,3 +234,16 @@ capturestake
 
 **INTENT** The intent of capturestake is to record an amount transferred to this contract for pending stake for a registering candidate. 
 #### Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later so therefore should only store a unidentifiable hash of content rather than human readable content. 
+
+<h1 class="contract">
+  setperm
+</h1>
+
+## ACTION: setperm
+**PARAMETERS:**
+* __cand__ The account registering a new permission, must be registered as a candidate.
+* __permission__ The permission name that will be used in the multisig.
+
+**INTENT:** The intent of {{ setperm }} is to allow an account to set a permission name which will be used in the DAC multisig in place of the active permission.  This allows an account to set up a permission specifically for administering the DAC.  Setting the entry to active will delete the entry in the database and free RAM.
+
+**TERM:** This action lasts until the user sets the permission back to active.

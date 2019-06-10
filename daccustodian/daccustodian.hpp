@@ -2,6 +2,7 @@
 #include <eosio/multi_index.hpp>
 #include <eosio/singleton.hpp>
 #include <eosio/time.hpp>
+#include <eosio/permission.hpp>
 
 #include "external_types.hpp"
 #include "../_contract-shared-headers/eosdactokens_shared.hpp"
@@ -70,14 +71,6 @@ namespace eosdac {
         uint32_t number_active_candidates = 0;
         bool met_initial_votes_threshold = false;
 
-        // EOSLIB_SERIALIZE(contr_state, 
-        //         (lastperiodtime)
-        //         (total_weight_of_votes)
-        //         (total_votes_on_candidates)
-        //         (number_active_candidates)
-        //         (met_initial_votes_threshold)
-        // )
-
         static contr_state get_current_state(eosio::name account, eosio::name scope) {
             return statecontainer(account, scope.value).get_or_default(contr_state());
         }
@@ -125,6 +118,15 @@ namespace eosdac {
 
     typedef multi_index<"pendingstake"_n, tempstake> pendingstake_table_t;
 
+    struct [[eosio::table("candperms"), eosio::contract("daccustodian")]] candperm {
+        name cand;
+        name permission;
+
+    uint64_t primary_key() const { return cand.value; }
+    };
+
+    typedef multi_index<"candperms"_n, candperm> candperms_table;
+
     class daccustodian : public contract {
 
     public:
@@ -158,8 +160,24 @@ namespace eosdac {
         ACTION newperiod(std::string message, name dac_scope);
         ACTION claimpay(uint64_t payid, name dac_scope);
         ACTION unstake(name cand, name dac_scope);
+        /**
+     * This action is used to register a custom permission that will be used in the multisig instead of active.
+     *
+     * ### Assertions:
+     * - The account supplied to cand exists and is a registered candidate
+     * - The permission supplied exists as a permission on the account
+     *
+     * @param cand - The account id for the candidate setting a custom permission.
+     * @param permission - The permission name to use.
+     *
+     *
+     * ### Post Condition:
+     * The candidate will have a record entered into the database indicating the custom permission to use.
+     */
+        ACTION setperm(name cand, name permission, name dac_scope);
+
         
-        // ACTION migrate();
+    // ACTION migrate();
         
     private: // Private helper methods used by other actions.
 
@@ -173,5 +191,11 @@ namespace eosdac {
         void removeCustodian(name cust, name internal_dac_scope);
         void removeCandidate(name cust, bool lockupStake, name internal_dac_scope);
         void allocateCustodians(bool early_election, name internal_dac_scope);
+        bool permissionExists(name account, name permission);
+        bool _check_transaction_authorization(const char* trx_data,     uint32_t trx_size,
+                                                const char* pubkeys_data, uint32_t pubkeys_size,
+                                                const char* perms_data,   uint32_t perms_size);
+                                                
+        permission_level getCandidatePermission(name account, name internal_dac_scope);
     };
-}
+};

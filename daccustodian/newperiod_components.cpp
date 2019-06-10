@@ -140,7 +140,7 @@ void daccustodian::setCustodianAuths(name dac_scope) {
 
     for (auto it = custodians.begin(); it != custodians.end(); it++) {
         eosiosystem::permission_level_weight account{
-                .permission = eosio::permission_level(it->cust_name, "active"_n),
+                .permission = getCandidatePermission(it->cust_name, dac_scope), //eosio::permission_level(it->cust_name, "active"_n),
                 .weight = (uint16_t) 1,
         };
         accounts.push_back(account);

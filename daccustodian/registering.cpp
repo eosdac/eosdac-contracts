@@ -102,6 +102,37 @@ void daccustodian::firecust(name cust, name dac_scope) {
     removeCustodian(cust, dac_scope);
 }
 
+
+void daccustodian::setperm(name cand, name permission, name dac_scope) {
+    require_auth(cand);
+    assertValidMember(cand, dac_scope);
+
+    bool perm_exists = permissionExists(cand, permission);
+
+    check(perm_exists, "ERR::PERMISSION_NOT_EXIST::Permission does not exist");
+    candidates_table registered_candidates(_self, dac_scope.value);
+
+    registered_candidates.get(cand.value, "ERR::UNSTAKE_CAND_NOT_REGISTERED::Candidate is not already registered.");
+
+    candperms_table cand_perms(_self, dac_scope.value);
+    auto existing = cand_perms.find(cand.value);
+
+    if (existing == cand_perms.end()){
+        cand_perms.emplace(cand, [&](candperm &c) {
+            c.cand = cand;
+            c.permission = permission;
+        });
+    }
+    else if (permission == "active"_n){
+        cand_perms.erase(existing);
+    }
+    else {
+        cand_perms.modify(existing, same_payer, [&](candperm &c) {
+            c.permission = permission;
+        });
+    }
+}
+
 // private methods for the above actions
 
 void daccustodian::removeCustodian(name cust, name dac_scope) {
@@ -131,8 +162,15 @@ void daccustodian::removeCandidate(name cand, bool lockupStake, name dac_scope) 
     currentState.save(_self, dac_scope);
 
     candidates_table registered_candidates(_self, dac_scope.value);
+    candperms_table cand_perms(_self, dac_scope.value);
 
     const auto &reg_candidate = registered_candidates.get(cand.value, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
+
+    // remove entry for candperms
+    auto perm = cand_perms.find(cand.value);
+    if (perm != cand_perms.end()){
+        cand_perms.erase(perm);
+    }
 
     eosio::print("Remove from nominated candidate by setting them to inactive.");
     // Set the is_active flag to false instead of deleting in order to retain votes if they return to he dac.
