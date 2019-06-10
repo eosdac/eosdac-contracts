@@ -67,7 +67,12 @@ permission_level daccustodian::getCandidatePermission(name account, name dac_id)
         return permission_level{account, "active"_n};
     }
     else {
-        return permission_level{account, perm->permission};
+        if (permissionExists(account, perm->permission)){
+            return permission_level{account, perm->permission};
+        }
+        else {
+            return permission_level{account, "active"_n};
+        }
     }
 }
 
