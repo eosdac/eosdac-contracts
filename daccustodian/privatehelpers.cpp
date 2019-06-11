@@ -1,10 +1,10 @@
 
-void daccustodian::updateVoteWeight(name custodian, int64_t weight, name dac_scope) {
+void daccustodian::updateVoteWeight(name custodian, int64_t weight, name dac_id) {
     if (weight == 0) {
         print("\n Vote has no weight - No need to continue.");
         return;
     }
-    candidates_table registered_candidates(_self, dac_scope.value);
+    candidates_table registered_candidates(_self, dac_id.value);
 
     auto candItr = registered_candidates.find(custodian.value);
     if (candItr == registered_candidates.end()) {
@@ -18,21 +18,21 @@ void daccustodian::updateVoteWeight(name custodian, int64_t weight, name dac_sco
     });
 }
 
-void daccustodian::updateVoteWeights(const vector<name> &votes, int64_t vote_weight, name dac_scope, contr_state &currentState) {
+void daccustodian::updateVoteWeights(const vector<name> &votes, int64_t vote_weight, name dac_id, contr_state &currentState) {
 
     for (const auto &cust : votes) {
-        updateVoteWeight(cust, vote_weight, dac_scope);
+        updateVoteWeight(cust, vote_weight, dac_id);
     }
 
     currentState.total_votes_on_candidates += votes.size() * vote_weight;
 }
 
-void daccustodian::modifyVoteWeights(name voter, vector<name> oldVotes, vector<name> newVotes, name dac_scope) {
+void daccustodian::modifyVoteWeights(name voter, vector<name> oldVotes, vector<name> newVotes, name dac_id) {
     // This could be optimised with set diffing to avoid remove then add for unchanged votes. - later
     eosio::print("Modify vote weights: ", voter, "\n");
 
-    dacdir::dac found_dac = dacdir::dac_for_id(dac_scope);
-    contr_config configs = contr_config::get_current_configs(_self, dac_scope);
+    dacdir::dac found_dac = dacdir::dac_for_id(dac_id);
+    contr_config configs = contr_config::get_current_configs(_self, dac_id);
 
     uint64_t asset_name = configs.lockupasset.symbol.code().raw();
 
@@ -44,7 +44,7 @@ void daccustodian::modifyVoteWeights(name voter, vector<name> oldVotes, vector<n
         return;
     }
     int64_t vote_weight = ac->balance.amount;
-    contr_state currentState = contr_state::get_current_state(_self, dac_scope);
+    contr_state currentState = contr_state::get_current_state(_self, dac_id);
 
     // New voter -> Add the tokens to the total weight.
     if (oldVotes.size() == 0)
@@ -54,14 +54,14 @@ void daccustodian::modifyVoteWeights(name voter, vector<name> oldVotes, vector<n
     if (newVotes.size() == 0)
         currentState.total_weight_of_votes -= vote_weight;
 
-    updateVoteWeights(oldVotes, -vote_weight, dac_scope, currentState);
-    updateVoteWeights(newVotes, vote_weight, dac_scope, currentState);
-    currentState.save(_self, dac_scope);
+    updateVoteWeights(oldVotes, -vote_weight, dac_id, currentState);
+    updateVoteWeights(newVotes, vote_weight, dac_id, currentState);
+    currentState.save(_self, dac_id);
 }
 
-permission_level daccustodian::getCandidatePermission(name account, name dac_scope){
+permission_level daccustodian::getCandidatePermission(name account, name dac_id){
     
-    candperms_table cand_perms(_self, dac_scope.value);
+    candperms_table cand_perms(_self, dac_id.value);
     auto perm = cand_perms.find(account.value);
     if (perm == cand_perms.end()){
         return permission_level{account, "active"_n};

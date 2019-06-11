@@ -4,9 +4,9 @@ void daccustodian::updateconfig(contr_config new_config) {
     updateconfige(new_config, get_self());
 }
 
-void daccustodian::updateconfige(contr_config new_config, name dac_scope) {
+void daccustodian::updateconfige(contr_config new_config, name dac_id) {
 
-    dacdir::dac dacForScope = dacdir::dac_for_id(dac_scope);
+    dacdir::dac dacForScope = dacdir::dac_for_id(dac_id);
     auto auth_account = dacForScope.account_for_type(dacdir::AUTH);
     require_auth(auth_account);
 
@@ -17,10 +17,10 @@ void daccustodian::updateconfige(contr_config new_config, name dac_scope) {
     check(new_config.auth_threshold_low <= new_config.auth_threshold_mid,
                  "ERR::UPDATECONFIG_INVALID_AUTH_MID_TO_LOW_AUTH::The low auth threshold cannot be greater than the mid auth threshold.");
 
-    configscontainer config_singleton(_self, dac_scope.value);
+    configscontainer config_singleton(_self, dac_id.value);
     config_singleton.set(new_config, auth_account);
 
-    contr_state currentState = contr_state::get_current_state(_self, dac_scope);
-    currentState.save(_self, dac_scope, auth_account);
-    print("Succesfully updated the daccustodian config for: ", dac_scope);
+    contr_state currentState = contr_state::get_current_state(_self, dac_id);
+    currentState.save(_self, dac_id, auth_account);
+    print("Succesfully updated the daccustodian config for: ", dac_id);
 }

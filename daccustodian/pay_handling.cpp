@@ -4,14 +4,14 @@ void daccustodian::claimpay(uint64_t payid) {
     claimpaye(payid, get_self());
 }
 
-void daccustodian::claimpaye(uint64_t payid, name dac_scope) {
-    pending_pay_table pending_pay(_self, dac_scope.value);
+void daccustodian::claimpaye(uint64_t payid, name dac_id) {
+    pending_pay_table pending_pay(_self, dac_id.value);
     
-    dacdir::dac found_dac = dacdir::dac_for_id(dac_scope);
+    dacdir::dac found_dac = dacdir::dac_for_id(dac_id);
 
-    contr_config configs = contr_config::get_current_configs(_self, dac_scope);
+    contr_config configs = contr_config::get_current_configs(_self, dac_id);
     const pay &payClaim = pending_pay.get(payid, "ERR::CLAIMPAY_INVALID_CLAIM_ID::Invalid pay claim id.");
-    assertValidMember(payClaim.receiver, dac_scope);
+    assertValidMember(payClaim.receiver, dac_id);
 
     require_auth(payClaim.receiver);
 
@@ -20,7 +20,7 @@ void daccustodian::claimpaye(uint64_t payid, name dac_scope) {
     name payment_destination;
     string memo;
 
-    auto dac = dacdir::dac_for_id(dac_scope);
+    auto dac = dacdir::dac_for_id(dac_id);
     name service_account = dac.account_for_type(dacdir::SERVICE);
     name token_holder = dac.account_for_type(dacdir::TREASURY);
 

@@ -3,16 +3,16 @@ void daccustodian::votecust(name voter, vector<name> newvotes) {
     votecuste(voter, newvotes, get_self());
 }
 
-void daccustodian::votecuste(name voter, vector<name> newvotes, name dac_scope) {
+void daccustodian::votecuste(name voter, vector<name> newvotes, name dac_id) {
 #ifdef VOTING_DISABLED
     check(false,"ERR::VOTECUST_VOTING_IS_DISABLED::Voting is currently disabled.");
 #endif
-    votes_table votes_cast_by_members(_self, dac_scope.value);
-    candidates_table registered_candidates(_self, dac_scope.value);
-    contr_config configs = contr_config::get_current_configs(_self, dac_scope);
+    votes_table votes_cast_by_members(_self, dac_id.value);
+    candidates_table registered_candidates(_self, dac_id.value);
+    contr_config configs = contr_config::get_current_configs(_self, dac_id);
 
     require_auth(voter);
-    assertValidMember(voter, dac_scope);
+    assertValidMember(voter, dac_id);
 
     check(newvotes.size() <= configs.maxvotes, "ERR::VOTECUST_MAX_VOTES_EXCEEDED::Max number of allowed votes was exceeded.");
     std::set<name> dupSet{};
@@ -25,7 +25,7 @@ void daccustodian::votecuste(name voter, vector<name> newvotes, name dac_scope) 
     // Find a vote that has been cast by this voter previously.
     auto existingVote = votes_cast_by_members.find(voter.value);
     if (existingVote != votes_cast_by_members.end()) {
-        modifyVoteWeights(voter, existingVote->candidates, newvotes, dac_scope);
+        modifyVoteWeights(voter, existingVote->candidates, newvotes, dac_id);
 
         if (newvotes.size() == 0) {
             // Remove the vote if the array of candidates is empty
@@ -38,7 +38,7 @@ void daccustodian::votecuste(name voter, vector<name> newvotes, name dac_scope) 
             });
         }
     } else {
-        modifyVoteWeights(voter, {}, newvotes, dac_scope);
+        modifyVoteWeights(voter, {}, newvotes, dac_id);
 
         votes_cast_by_members.emplace(voter, [&](vote &v) {
             v.voter = voter;

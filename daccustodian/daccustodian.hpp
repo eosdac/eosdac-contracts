@@ -193,21 +193,21 @@ namespace eosdac {
         
     private: // Private helper methods used by other actions.
 
-        void updateVoteWeight(name custodian, int64_t weight, name internal_dac_scope);
-        void updateVoteWeights(const vector<name> &votes, int64_t vote_weight, name internal_dac_scope, contr_state &currentState);
-        void modifyVoteWeights(name voter, vector<name> oldVotes, vector<name> newVotes, name internal_dac_scope);
+        void updateVoteWeight(name custodian, int64_t weight, name internal_dac_id);
+        void updateVoteWeights(const vector<name> &votes, int64_t vote_weight, name internal_dac_id, contr_state &currentState);
+        void modifyVoteWeights(name voter, vector<name> oldVotes, vector<name> newVotes, name internal_dac_id);
         void assertPeriodTime(contr_config &configs, contr_state &currentState);
-        void distributePay(name internal_dac_scope);
-        void distributeMeanPay(name internal_dac_scope);
-        void setCustodianAuths(name internal_dac_scope);
-        void removeCustodian(name cust, name internal_dac_scope);
-        void removeCandidate(name cust, bool lockupStake, name internal_dac_scope);
-        void allocateCustodians(bool early_election, name internal_dac_scope);
+        void distributePay(name internal_dac_id);
+        void distributeMeanPay(name internal_dac_id);
+        void setCustodianAuths(name internal_dac_id);
+        void removeCustodian(name cust, name internal_dac_id);
+        void removeCandidate(name cust, bool lockupStake, name internal_dac_id);
+        void allocateCustodians(bool early_election, name internal_dac_id);
         bool permissionExists(name account, name permission);
         bool _check_transaction_authorization(const char* trx_data,     uint32_t trx_size,
                                                 const char* pubkeys_data, uint32_t pubkeys_size,
                                                 const char* perms_data,   uint32_t perms_size);
                                                 
-        permission_level getCandidatePermission(name account, name internal_dac_scope);
+        permission_level getCandidatePermission(name account, name internal_dac_id);
     };
 };

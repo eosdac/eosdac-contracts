@@ -5,11 +5,11 @@ void daccustodian::nominatecand(name cand, asset requestedpay) {
     nominatecane(cand, requestedpay, get_self());
 }
 
-void daccustodian::nominatecane(name cand, asset requestedpay, name dac_scope) {
+void daccustodian::nominatecane(name cand, asset requestedpay, name dac_id) {
     require_auth(cand);
-    assertValidMember(cand, dac_scope);
-    contr_state currentState = contr_state::get_current_state(_self, dac_scope);
-    contr_config configs = contr_config::get_current_configs(_self, dac_scope);
+    assertValidMember(cand, dac_id);
+    contr_state currentState = contr_state::get_current_state(_self, dac_id);
+    contr_config configs = contr_config::get_current_configs(_self, dac_id);
 
     check(requestedpay.amount >= 0, "ERR::UPDATEREQPAY_UNDER_ZERO::Requested pay amount must not be negative.");
     // This implicitly asserts that the symbol of requestedpay matches the configs.max pay.
@@ -17,12 +17,12 @@ void daccustodian::nominatecane(name cand, asset requestedpay, name dac_scope) {
                  "ERR::NOMINATECAND_PAY_LIMIT_EXCEEDED::Requested pay limit for a candidate was exceeded.");
 
     currentState.number_active_candidates++;
-    currentState.save(_self, dac_scope);
+    currentState.save(_self, dac_id);
 
-    pendingstake_table_t pendingstake(_self, dac_scope.value);
+    pendingstake_table_t pendingstake(_self, dac_id.value);
     auto pending = pendingstake.find(cand.value);
 
-    candidates_table registered_candidates(_self, dac_scope.value);
+    candidates_table registered_candidates(_self, dac_id.value);
 
     auto reg_candidate = registered_candidates.find(cand.value);
     if (reg_candidate != registered_candidates.end()) {
@@ -57,30 +57,30 @@ void daccustodian::withdrawcand(name cand) {
     withdrawcane(cand, get_self());
 }
 
-void daccustodian::withdrawcane(name cand, name dac_scope) {
+void daccustodian::withdrawcane(name cand, name dac_id) {
     require_auth(cand);
-    removeCandidate(cand, false, dac_scope);
+    removeCandidate(cand, false, dac_id);
 }
 
 void daccustodian::firecand(name cand, bool lockupStake) {
     firecande(cand, lockupStake, get_self());
 }
 
-void daccustodian::firecande(name cand, bool lockupStake, name dac_scope) {
-    auto dac = dacdir::dac_for_id(dac_scope);
+void daccustodian::firecande(name cand, bool lockupStake, name dac_id) {
+    auto dac = dacdir::dac_for_id(dac_id);
     require_auth(dac.account_for_type(dacdir::AUTH));
-    removeCandidate(cand, lockupStake, dac_scope);
+    removeCandidate(cand, lockupStake, dac_id);
 }
 
 void daccustodian::unstake(name cand) {
     unstakee(cand, get_self());
 }
 
-void daccustodian::unstakee(name cand, name dac_scope) {
+void daccustodian::unstakee(name cand, name dac_id) {
     
-    dacdir::dac found_dac = dacdir::dac_for_id(dac_scope);
+    dacdir::dac found_dac = dacdir::dac_for_id(dac_id);
     name token_account = found_dac.account_for_type(dacdir::TOKEN);
-    candidates_table registered_candidates(_self, dac_scope.value);
+    candidates_table registered_candidates(_self, dac_id.value);
     const auto &reg_candidate = registered_candidates.get(cand.value, "ERR::UNSTAKE_CAND_NOT_REGISTERED::Candidate is not already registered.");
     check(!reg_candidate.is_active, "ERR::UNSTAKE_CANNOT_UNSTAKE_FROM_ACTIVE_CAND::Cannot unstake tokens for an active candidate. Call withdrawcand first.");
 
@@ -103,7 +103,7 @@ void daccustodian::unstakee(name cand, name dac_scope) {
         deferredTrans.delay_sec = TRANSFER_DELAY;
         deferredTrans.send(cand.value, _self);
 
-        c.locked_tokens = asset(0, contr_config::get_current_configs(_self, dac_scope).lockupasset.symbol);
+        c.locked_tokens = asset(0, contr_config::get_current_configs(_self, dac_id).lockupasset.symbol);
     });
 }
 
@@ -111,34 +111,34 @@ void daccustodian::resigncust(name cust) {
     resigncuste(cust, get_self());
 }
 
-void daccustodian::resigncuste(name cust, name dac_scope) {
+void daccustodian::resigncuste(name cust, name dac_id) {
     require_auth(cust);
-    removeCustodian(cust, dac_scope);
+    removeCustodian(cust, dac_id);
 }
 
 void daccustodian::firecust(name cust) {
     firecuste(cust, get_self());
 }
 
-void daccustodian::firecuste(name cust, name dac_scope) {
-    auto dac = dacdir::dac_for_id(dac_scope);
+void daccustodian::firecuste(name cust, name dac_id) {
+    auto dac = dacdir::dac_for_id(dac_id);
     require_auth(dac.account_for_type(dacdir::AUTH));
-    removeCustodian(cust, dac_scope);
+    removeCustodian(cust, dac_id);
 }
 
 
-void daccustodian::setperm(name cand, name permission, name dac_scope) {
+void daccustodian::setperm(name cand, name permission, name dac_id) {
     require_auth(cand);
-    assertValidMember(cand, dac_scope);
+    assertValidMember(cand, dac_id);
 
     bool perm_exists = permissionExists(cand, permission);
 
     check(perm_exists, "ERR::PERMISSION_NOT_EXIST::Permission does not exist");
-    candidates_table registered_candidates(_self, dac_scope.value);
+    candidates_table registered_candidates(_self, dac_id.value);
 
     registered_candidates.get(cand.value, "ERR::UNSTAKE_CAND_NOT_REGISTERED::Candidate is not already registered.");
 
-    candperms_table cand_perms(_self, dac_scope.value);
+    candperms_table cand_perms(_self, dac_id.value);
     auto existing = cand_perms.find(cand.value);
 
     if (existing == cand_perms.end()){
@@ -159,9 +159,9 @@ void daccustodian::setperm(name cand, name permission, name dac_scope) {
 
 // private methods for the above actions
 
-void daccustodian::removeCustodian(name cust, name dac_scope) {
+void daccustodian::removeCustodian(name cust, name dac_id) {
 
-    custodians_table custodians(_self, dac_scope.value);
+    custodians_table custodians(_self, dac_id.value);
     auto elected = custodians.find(cust.value);
     check(elected != custodians.end(), "ERR::REMOVECUSTODIAN_NOT_CURRENT_CUSTODIAN::The entered account name is not for a current custodian.");
 
@@ -169,24 +169,24 @@ void daccustodian::removeCustodian(name cust, name dac_scope) {
     custodians.erase(elected);
 
     // Remove the candidate from being eligible for the next election period.
-    removeCandidate(cust, true, dac_scope);
+    removeCandidate(cust, true, dac_id);
 
     // Allocate the next set of candidates to only fill the gap for the missing slot.
-    allocateCustodians(true, dac_scope);
+    allocateCustodians(true, dac_id);
 
     // Update the auths to give control to the new set of custodians.
-    setCustodianAuths(dac_scope);
+    setCustodianAuths(dac_id);
 }
 
-void daccustodian::removeCandidate(name cand, bool lockupStake, name dac_scope) {
-    contr_state currentState = contr_state::get_current_state(_self, dac_scope);
-    contr_config configs = contr_config::get_current_configs(_self, dac_scope);
+void daccustodian::removeCandidate(name cand, bool lockupStake, name dac_id) {
+    contr_state currentState = contr_state::get_current_state(_self, dac_id);
+    contr_config configs = contr_config::get_current_configs(_self, dac_id);
 
     currentState.number_active_candidates--;
-    currentState.save(_self, dac_scope);
+    currentState.save(_self, dac_id);
 
-    candidates_table registered_candidates(_self, dac_scope.value);
-    candperms_table cand_perms(_self, dac_scope.value);
+    candidates_table registered_candidates(_self, dac_id.value);
+    candperms_table cand_perms(_self, dac_id.value);
 
     const auto &reg_candidate = registered_candidates.get(cand.value, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
 

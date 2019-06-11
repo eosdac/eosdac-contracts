@@ -14,8 +14,8 @@ void dacmultisigs::proposed( name proposer, name proposal_name, string metadata 
     proposede(proposer, proposal_name, metadata, get_self());
 }
 
-void dacmultisigs::proposede( name proposer, name proposal_name, string metadata, name dac_scope ) {
-    auto auth_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::AUTH);
+void dacmultisigs::proposede( name proposer, name proposal_name, string metadata, name dac_id ) {
+    auto auth_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::AUTH);
     require_auth(auth_account);
     require_auth( proposer );
 
@@ -29,7 +29,7 @@ void dacmultisigs::proposede( name proposer, name proposal_name, string metadata
 
     checksum256 trx_id = sha256(buffer, read);
 
-    proposals_table proposals(_self, dac_scope.value);
+    proposals_table proposals(_self, dac_id.value);
 
     proposals.emplace(proposer, [&](storedproposal &p) {
         p.proposalname = proposal_name;
@@ -44,15 +44,15 @@ void dacmultisigs::approved( name proposer, name proposal_name, name approver ){
     approvede(proposer, proposal_name, approver, get_self());
 }
 
-void dacmultisigs::approvede( name proposer, name proposal_name, name approver, name dac_scope ){
-    auto auth_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::AUTH);
+void dacmultisigs::approvede( name proposer, name proposal_name, name approver, name dac_id ){
+    auto auth_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::AUTH);
     require_auth(auth_account);
     require_auth( approver );
 
     msig_proposals_table msig_proposals(name(MSIG_CONTRACT), proposer.value);
     msig_proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND_MSIG::Proposal not found in eosio.msig");
 
-    proposals_table proposals(_self, dac_scope.value);
+    proposals_table proposals(_self, dac_id.value);
     auto& proposal = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
     proposals.modify(proposal, same_payer, [&](storedproposal &p) {
         p.modifieddate = time_point_sec(eosio::current_time_point());
@@ -63,15 +63,15 @@ void dacmultisigs::unapproved( name proposer, name proposal_name, name unapprove
     unapprovede(proposer, proposal_name, unapprover, get_self());
 }
 
-void dacmultisigs::unapprovede( name proposer, name proposal_name, name unapprover, name dac_scope ){
-    auto auth_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::AUTH);
+void dacmultisigs::unapprovede( name proposer, name proposal_name, name unapprover, name dac_id ){
+    auto auth_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::AUTH);
     require_auth(auth_account);
     require_auth( unapprover );
 
     msig_proposals_table msig_proposals(name(MSIG_CONTRACT), proposer.value);
     msig_proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND_MSIG::Proposal not found in eosio.msig");
 
-    proposals_table proposals(_self, dac_scope.value);
+    proposals_table proposals(_self, dac_id.value);
     auto& proposal = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
     proposals.modify(proposal, same_payer, [&](storedproposal &p) {
         p.modifieddate = time_point_sec(eosio::current_time_point());
@@ -82,8 +82,8 @@ void dacmultisigs::cancelled( name proposer, name proposal_name, name canceler )
     cancellede(proposer, proposal_name, canceler, get_self());
 }
 
-void dacmultisigs::cancellede( name proposer, name proposal_name, name canceler, name dac_scope ){
-        auto auth_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::AUTH);
+void dacmultisigs::cancellede( name proposer, name proposal_name, name canceler, name dac_id ){
+        auto auth_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::AUTH);
         require_auth(auth_account);
         require_auth( canceler );
 
@@ -91,7 +91,7 @@ void dacmultisigs::cancellede( name proposer, name proposal_name, name canceler,
     auto prop = msig_proposals.find(proposal_name.value);
     check(prop == msig_proposals.end(), "ERR::PROPOSAL_EXISTS::The proposal still exists in eosio.msig");
 
-    proposals_table proposals(_self, dac_scope.value);
+    proposals_table proposals(_self, dac_id.value);
     auto& proposal_to_erase = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
     proposals.erase(proposal_to_erase);
 }
@@ -100,8 +100,8 @@ void dacmultisigs::executed( name proposer, name proposal_name, name executer ) 
     executede(proposer, proposal_name, executer, get_self());
 }
 
-void dacmultisigs::executede( name proposer, name proposal_name, name executer, name dac_scope ) {
-        auto auth_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::AUTH);
+void dacmultisigs::executede( name proposer, name proposal_name, name executer, name dac_id ) {
+        auto auth_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::AUTH);
         require_auth(auth_account);
         require_auth( executer );
 
@@ -109,7 +109,7 @@ void dacmultisigs::executede( name proposer, name proposal_name, name executer, 
     auto prop = msig_proposals.find(proposal_name.value);
     check(prop == msig_proposals.end(), "ERR::PROPOSAL_EXISTS::The proposal still exists in eosio.msig");
 
-    proposals_table proposals(_self, dac_scope.value);
+    proposals_table proposals(_self, dac_id.value);
     auto& proposal_to_erase = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
     proposals.erase(proposal_to_erase);
 }
@@ -118,14 +118,14 @@ void dacmultisigs::clean( name proposer, name proposal_name ) {
     cleane(proposer, proposal_name, get_self());
 }
 
-void dacmultisigs::cleane( name proposer, name proposal_name, name dac_scope ) {
-    auto auth_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::AUTH);
+void dacmultisigs::cleane( name proposer, name proposal_name, name dac_id ) {
+    auto auth_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::AUTH);
     require_auth(auth_account);
 
     time_point_sec dtnow =  time_point_sec(eosio::current_time_point());
     uint32_t two_weeks = 60 * 60 * 24 * 14;
 
-    proposals_table proposals(_self, dac_scope.value);
+    proposals_table proposals(_self, dac_id.value);
     auto& proposal = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
 
     check(dtnow > (proposal.modifieddate + two_weeks), "ERR::PROPOSAL_STILL_ACTIVE::This proposal is still active");

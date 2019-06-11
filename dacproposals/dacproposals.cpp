@@ -11,10 +11,10 @@
 
 namespace eosdac {
 
-    ACTION dacproposals::createprop(name proposer, string title, string summary, name arbitrator, extended_asset pay_amount, string content_hash, uint64_t id, uint16_t category, name dac_scope){
+    ACTION dacproposals::createprop(name proposer, string title, string summary, name arbitrator, extended_asset pay_amount, string content_hash, uint64_t id, uint16_t category, name dac_id){
         require_auth(proposer);
-        assertValidMember(proposer, dac_scope);
-        proposal_table proposals(_self, dac_scope.value);
+        assertValidMember(proposer, dac_id);
+        proposal_table proposals(_self, dac_id.value);
 
         check(proposer != arbitrator, "You cannot nominate yourself as the arbitrator for a proposal.");
 
@@ -26,7 +26,7 @@ namespace eosdac {
         check(pay_amount.quantity.amount > 0, "ERR::CREATEPROP_INVALID_PAY_AMOUNT::Invalid pay amount. Must be greater than 0.");
         check(is_account(arbitrator), "ERR::CREATEPROP_INVALID_ARBITRATOR::Invalid arbitrator.");
 
-        auto treasury = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::TREASURY);
+        auto treasury = dacdir::dac_for_id(dac_id).account_for_type(dacdir::TREASURY);
         check(arbitrator != proposer && arbitrator != treasury, "Arbitrator must be a third party");
 
         proposals.emplace(proposer, [&](proposal &p) {
@@ -37,19 +37,19 @@ namespace eosdac {
             p.pay_amount = pay_amount;
             p.state = ProposalStatePending_approval;
             p.category = category;
-            p.expiry = time_point_sec(current_time_point().sec_since_epoch()) + current_configs(dac_scope).approval_expiry;   
+            p.expiry = time_point_sec(current_time_point().sec_since_epoch()) + current_configs(dac_id).approval_expiry;   
         });
     }
 
-    ACTION dacproposals::voteprop(name custodian, uint64_t proposal_id, uint8_t vote, name dac_scope) {
+    ACTION dacproposals::voteprop(name custodian, uint64_t proposal_id, uint8_t vote, name dac_id) {
         require_auth(custodian);
 
-        auto auth_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::AUTH);
+        auto auth_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::AUTH);
         require_auth(auth_account);
 
-        assertValidMember(custodian, dac_scope);
+        assertValidMember(custodian, dac_id);
 
-        proposal_table proposals(_self, dac_scope.value);
+        proposal_table proposals(_self, dac_id.value);
 
         const proposal& prop = proposals.get(proposal_id, "ERR::VOTEPROP_PROPOSAL_NOT_FOUND::Proposal not found.﻿");
         switch (prop.state) {
@@ -66,7 +66,7 @@ namespace eosdac {
                 check(false, "ERR::VOTEPROP_INVALID_PROPOSAL_STATE::Invalid proposal state to accept votes.");
         }
         
-        proposal_vote_table prop_votes(_self, dac_scope.value);
+        proposal_vote_table prop_votes(_self, dac_id.value);
         auto by_prop_and_voter = prop_votes.get_index<"propandvoter"_n>();
         uint128_t joint_id = combine_ids(proposal_id, custodian.value);
         auto vote_idx = by_prop_and_voter.find(joint_id);
@@ -85,23 +85,23 @@ namespace eosdac {
             });
         }
 
-        updpropvotes(proposal_id, dac_scope);
+        updpropvotes(proposal_id, dac_id);
     }
 
-    ACTION dacproposals::delegatevote(name custodian, uint64_t proposal_id, name delegatee_custodian, name dac_scope) {
+    ACTION dacproposals::delegatevote(name custodian, uint64_t proposal_id, name delegatee_custodian, name dac_id) {
         require_auth(custodian);
-        auto auth_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::AUTH);
+        auto auth_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::AUTH);
         require_auth(auth_account);
         
-        assertValidMember(custodian, dac_scope);
+        assertValidMember(custodian, dac_id);
         check(custodian != delegatee_custodian, "ERR::DELEGATEVOTE_DELEGATE_SELF::Cannot delegate voting to yourself.");
 
-        proposal_table proposals(_self, dac_scope.value);
+        proposal_table proposals(_self, dac_id.value);
 
         const proposal& prop = proposals.get(proposal_id, "ERR::DELEGATEVOTE_PROPOSAL_NOT_FOUND::Proposal not found.");
         check(prop.has_not_expired(),"ERR::PROPOSAL_EXPIRED::Proposal has expired.");
 
-        proposal_vote_table prop_votes(_self, dac_scope.value);
+        proposal_vote_table prop_votes(_self, dac_id.value);
         auto by_prop_and_voter = prop_votes.get_index<"propandvoter"_n>();
         uint128_t joint_id = combine_ids(proposal_id, custodian.value);
         auto vote_idx = by_prop_and_voter.find(joint_id);
@@ -120,17 +120,17 @@ namespace eosdac {
             });
         }
 
-        updpropvotes(proposal_id, dac_scope);
+        updpropvotes(proposal_id, dac_id);
     }
 
-    ACTION dacproposals::delegatecat(name custodian, uint64_t category, name delegatee_custodian, name dac_scope) {
+    ACTION dacproposals::delegatecat(name custodian, uint64_t category, name delegatee_custodian, name dac_id) {
         require_auth(custodian);
-        auto auth_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::AUTH);
+        auto auth_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::AUTH);
         require_auth(auth_account);
-        assertValidMember(custodian, dac_scope);
+        assertValidMember(custodian, dac_id);
         check(custodian != delegatee_custodian, "ERR::DELEGATEVOTE_DELEGATE_SELF::Cannot delegate voting to yourself.");
 
-        proposal_vote_table prop_votes(_self, dac_scope.value);
+        proposal_vote_table prop_votes(_self, dac_id.value);
 
         auto by_cat_and_voter = prop_votes.get_index<"catandvoter"_n>();
         uint128_t joint_id = combine_ids(category, custodian.value);
@@ -149,10 +149,10 @@ namespace eosdac {
         }
     }
 
-    ACTION dacproposals::undelegateca(name custodian, uint64_t category, name dac_scope) {
+    ACTION dacproposals::undelegateca(name custodian, uint64_t category, name dac_id) {
         require_auth(custodian);
     
-        proposal_vote_table prop_votes(_self, dac_scope.value);
+        proposal_vote_table prop_votes(_self, dac_id.value);
         auto by_cat_and_voter = prop_votes.get_index<"catandvoter"_n>();
 
         uint128_t joint_id = combine_ids(category, custodian.value);
@@ -161,31 +161,31 @@ namespace eosdac {
         by_cat_and_voter.erase(vote_idx);
     }
 
-    ACTION dacproposals::arbapprove(name arbitrator, uint64_t proposal_id, name dac_scope) {
+    ACTION dacproposals::arbapprove(name arbitrator, uint64_t proposal_id, name dac_id) {
         require_auth(arbitrator);
-        proposal_table proposals(_self, dac_scope.value);
+        proposal_table proposals(_self, dac_id.value);
 
         const proposal& prop = proposals.get(proposal_id, "ERR::DELEGATEVOTE_PROPOSAL_NOT_FOUND::Proposal not found.");
 
         check(prop.arbitrator == arbitrator, "ERR::NOT_ARBITRATOR::You are not the arbitrator for this proposal");
 
-        clearprop(prop, dac_scope);
+        clearprop(prop, dac_id);
     }
 
-    ACTION dacproposals::startwork(uint64_t proposal_id, name dac_scope){
+    ACTION dacproposals::startwork(uint64_t proposal_id, name dac_id){
 
-        proposal_table proposals(_self, dac_scope.value);
+        proposal_table proposals(_self, dac_id.value);
 
         const proposal& prop = proposals.get(proposal_id, "ERR::DELEGATEVOTE_PROPOSAL_NOT_FOUND::Proposal not found.");
 
         check(prop.state == ProposalStatePending_approval || prop.state == ProposalStateHas_enough_approvals_votes, "ERR::STARTWORK_WRONG_STATE::Proposal is not in the pending approval state therefore cannot start work.");
         check(prop.has_not_expired(),"ERR::PROPOSAL_EXPIRED::Proposal has expired.");
         require_auth(prop.proposer);
-        assertValidMember(prop.proposer, dac_scope);
+        assertValidMember(prop.proposer, dac_id);
 
-        int16_t approved_count = count_votes(prop, proposal_approve, dac_scope);
+        int16_t approved_count = count_votes(prop, proposal_approve, dac_id);
 
-        config configs = current_configs(dac_scope);
+        config configs = current_configs(dac_id);
 
         check(approved_count >= configs.proposal_threshold, "ERR::STARTWORK_INSUFFICIENT_VOTES::Insufficient votes on worker proposal.");
         print_f("Worker proposal % to start work with: % votes\n", proposal_id, approved_count);
@@ -199,8 +199,8 @@ namespace eosdac {
         
         time_point_sec time_now = time_point_sec(current_time_point().sec_since_epoch());
         
-        auto treasury = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::TREASURY);
-        auto escrow = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::ESCROW);
+        auto treasury = dacdir::dac_for_id(dac_id).account_for_type(dacdir::TREASURY);
+        auto escrow = dacdir::dac_for_id(dac_id).account_for_type(dacdir::ESCROW);
 
         check(is_account(treasury), "ERR::TREASURY_ACCOUNT_NOT_FOUND::Treasury account not found");
         check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
@@ -223,14 +223,14 @@ namespace eosdac {
         deferredTrans.send(uint128_t(proposal_id) << 64 | time_point_sec(current_time_point()).sec_since_epoch() , _self);
     }
 
-    ACTION dacproposals::completework(uint64_t proposal_id, name dac_scope){
+    ACTION dacproposals::completework(uint64_t proposal_id, name dac_id){
 
-        proposal_table proposals(_self, dac_scope.value);
+        proposal_table proposals(_self, dac_id.value);
 
         const proposal& prop = proposals.get(proposal_id, "ERR::DELEGATEVOTE_PROPOSAL_NOT_FOUND::Proposal not found.");
 
         require_auth(prop.proposer);
-        assertValidMember(prop.proposer, dac_scope);
+        assertValidMember(prop.proposer, dac_id);
         check(prop.state == ProposalStateWork_in_progress, "ERR::COMPLETEWORK_WRONG_STATE::Worker proposal can only be completed from work_in_progress state");
 
         proposals.modify(prop, prop.proposer, [&](proposal &p){
@@ -238,65 +238,65 @@ namespace eosdac {
         });
     }
 
-    ACTION dacproposals::finalize(uint64_t proposal_id, name dac_scope) {
+    ACTION dacproposals::finalize(uint64_t proposal_id, name dac_id) {
 
-        proposal_table proposals(_self, dac_scope.value);
+        proposal_table proposals(_self, dac_id.value);
 
         const proposal& prop = proposals.get(proposal_id, "ERR::DELEGATEVOTE_PROPOSAL_NOT_FOUND::Proposal not found.");
 
         check(prop.state == ProposalStatePending_finalize || prop.state == ProposalStateHas_enough_finalize_votes   , "ERR::FINALIZE_WRONG_STATE::Proposal is not in the pending_finalize state therefore cannot be finalized.");
         
-        int16_t approved_count = count_votes(prop, finalize_approve, dac_scope);
+        int16_t approved_count = count_votes(prop, finalize_approve, dac_id);
 
         print_f("Worker proposal % for finalizing with: % votes\n", proposal_id, approved_count);
 
-        check(approved_count >= current_configs(dac_scope).finalize_threshold, "ERR::FINALIZE_INSUFFICIENT_VOTES::Insufficient votes on worker proposal to be finalized.");
+        check(approved_count >= current_configs(dac_id).finalize_threshold, "ERR::FINALIZE_INSUFFICIENT_VOTES::Insufficient votes on worker proposal to be finalized.");
 
-        transferfunds(prop, dac_scope);
+        transferfunds(prop, dac_id);
     }
 
-    ACTION dacproposals::cancel(uint64_t proposal_id, name dac_scope) {
+    ACTION dacproposals::cancel(uint64_t proposal_id, name dac_id) {
         
-        proposal_table proposals(_self, dac_scope.value);
+        proposal_table proposals(_self, dac_id.value);
 
         const proposal& prop = proposals.get(proposal_id, "ERR::DELEGATEVOTE_PROPOSAL_NOT_FOUND::Proposal not found.");
         require_auth(prop.proposer);
-        assertValidMember(prop.proposer, dac_scope);
-        clearprop(prop, dac_scope);
+        assertValidMember(prop.proposer, dac_id);
+        clearprop(prop, dac_id);
     }
 
-    ACTION dacproposals::comment(name commenter, uint64_t proposal_id, string comment, string comment_category, name dac_scope) {
+    ACTION dacproposals::comment(name commenter, uint64_t proposal_id, string comment, string comment_category, name dac_id) {
         require_auth(commenter);
-        assertValidMember(commenter, dac_scope);
+        assertValidMember(commenter, dac_id);
 
-        proposal_table proposals(_self, dac_scope.value);
+        proposal_table proposals(_self, dac_id.value);
 
         const proposal& prop = proposals.get(proposal_id, "ERR::DELEGATEVOTE_PROPOSAL_NOT_FOUND::Proposal not found.");
         if (!has_auth(prop.proposer)) {
-            auto auth_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::AUTH);
+            auto auth_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::AUTH);
             require_auth(auth_account);        
         }
     }
 
-    ACTION dacproposals::updateconfig(config new_config, name dac_scope) {
+    ACTION dacproposals::updateconfig(config new_config, name dac_id) {
         
-        auto auth_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::AUTH);
+        auto auth_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::AUTH);
         require_auth(auth_account);
 
-        configs_table configs(_self, dac_scope.value);
+        configs_table configs(_self, dac_id.value);
         configs.set(new_config, _self);
     }
 
-    ACTION dacproposals::clearexpprop(uint64_t proposal_id, name dac_scope) {
-        proposal_table proposals(_self, dac_scope.value);
+    ACTION dacproposals::clearexpprop(uint64_t proposal_id, name dac_id) {
+        proposal_table proposals(_self, dac_id.value);
 
         const proposal& prop = proposals.get(proposal_id, "ERR::DELEGATEVOTE_PROPOSAL_NOT_FOUND::Proposal not found.");
         check(!prop.has_not_expired(),"ERR::PROPOSAL_NOT_EXPIRED::The proposal has not expired so cannot be cleared yet.");
-        clearprop(prop, dac_scope);
+        clearprop(prop, dac_id);
     }
 
-    ACTION dacproposals::updallprops(name dac_scope) {
-        proposal_table proposals(_self, dac_scope.value);
+    ACTION dacproposals::updallprops(name dac_id) {
+        proposal_table proposals(_self, dac_id.value);
         auto props_itr = proposals.begin();
         uint32_t delay = 1;
         for (auto props_itr: proposals) {
@@ -305,7 +305,7 @@ namespace eosdac {
                 eosio::action(
                     eosio::permission_level{ _self, "active"_n },
                     _self, "updpropvotes"_n,
-                    std::make_tuple(props_itr.key, dac_scope)
+                    std::make_tuple(props_itr.key, dac_id)
                 )
             );
             deferredTrans.delay_sec = delay++;
@@ -315,8 +315,8 @@ namespace eosdac {
         }
     }
 
-    ACTION dacproposals::updpropvotes(uint64_t proposal_id, name dac_scope) {
-        proposal_table proposals(_self, dac_scope.value);
+    ACTION dacproposals::updpropvotes(uint64_t proposal_id, name dac_id) {
+        proposal_table proposals(_self, dac_id.value);
 
         const proposal& prop = proposals.get(proposal_id, "ERR::DELEGATEVOTE_PROPOSAL_NOT_FOUND::Proposal not found.");
 
@@ -329,14 +329,14 @@ namespace eosdac {
                 if (!prop.has_not_expired()) {
                     newPropState = ProposalStateExpired;
                 } else {
-                    approved_count = count_votes(prop, proposal_approve, dac_scope);
-                    newPropState = (approved_count >= current_configs(dac_scope).proposal_threshold) ? ProposalStateHas_enough_approvals_votes : ProposalStatePending_approval;
+                    approved_count = count_votes(prop, proposal_approve, dac_id);
+                    newPropState = (approved_count >= current_configs(dac_id).proposal_threshold) ? ProposalStateHas_enough_approvals_votes : ProposalStatePending_approval;
                 }
                 break;
             case ProposalStatePending_finalize:
             case ProposalStateHas_enough_finalize_votes:
-                approved_count = count_votes(prop, finalize_approve, dac_scope);
-                newPropState = (approved_count >= current_configs(dac_scope).finalize_threshold) ? ProposalStateHas_enough_finalize_votes: ProposalStatePending_finalize;
+                approved_count = count_votes(prop, finalize_approve, dac_id);
+                newPropState = (approved_count >= current_configs(dac_id).finalize_threshold) ? ProposalStateHas_enough_finalize_votes: ProposalStatePending_finalize;
             break;
         }
         if (prop.state != newPropState) {
@@ -346,11 +346,11 @@ namespace eosdac {
         }
     }
 
-    void dacproposals::transferfunds(const proposal &prop, name dac_scope) {
-        proposal_table proposals(_self, dac_scope.value);
-        config configs = current_configs(dac_scope);
-        auto treasury = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::TREASURY);
-        auto escrow = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::ESCROW);
+    void dacproposals::transferfunds(const proposal &prop, name dac_id) {
+        proposal_table proposals(_self, dac_id.value);
+        config configs = current_configs(dac_id);
+        auto treasury = dacdir::dac_for_id(dac_id).account_for_type(dacdir::TREASURY);
+        auto escrow = dacdir::dac_for_id(dac_id).account_for_type(dacdir::ESCROW);
 
         eosio::action(
                 eosio::permission_level{ treasury, "escrow"_n },
@@ -358,15 +358,15 @@ namespace eosdac {
                 make_tuple( prop.key, treasury)
             ).send();
 
-        clearprop(prop, dac_scope);
+        clearprop(prop, dac_id);
     }
 
-    void dacproposals::clearprop(const proposal& proposal, name dac_scope){
+    void dacproposals::clearprop(const proposal& proposal, name dac_id){
 
-        proposal_table proposals(_self, dac_scope.value);
+        proposal_table proposals(_self, dac_id.value);
 
         // Remove all the votes associated with that proposal.
-        proposal_vote_table prop_votes(_self, dac_scope.value);
+        proposal_vote_table prop_votes(_self, dac_id.value);
         auto by_voters = prop_votes.get_index<"proposal"_n>();
         auto itr = by_voters.find(proposal.key);
         while(itr != by_voters.end() && itr->proposal_id == proposal.key) {
@@ -378,12 +378,12 @@ namespace eosdac {
         proposals.erase(prop_to_erase);
     }
 
-    int16_t dacproposals::count_votes(proposal prop, VoteType vote_type, name dac_scope){
-        auto custodian_data_src = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::CUSTODIAN);
+    int16_t dacproposals::count_votes(proposal prop, VoteType vote_type, name dac_id){
+        auto custodian_data_src = dacdir::dac_for_id(dac_id).account_for_type(dacdir::CUSTODIAN);
 
-        print("count votes with account:: ", custodian_data_src, " scope:: ", dac_scope);
+        print("count votes with account:: ", custodian_data_src, " scope:: ", dac_id);
 
-        custodians_table custodians(custodian_data_src, dac_scope.value);
+        custodians_table custodians(custodian_data_src, dac_id.value);
         std::set<eosio::name> current_custodians;
         // Needed for the category vote fallback to avoid duplicate votes.
         std::set<eosio::name> voted_custodians;
@@ -394,7 +394,7 @@ namespace eosdac {
         for(auto name: current_custodians) { print(name,", "); }
 
         // Find the delegated and direct votes for the current proposal 
-        proposal_vote_table prop_votes(_self, dac_scope.value);
+        proposal_vote_table prop_votes(_self, dac_id.value);
         auto by_voters = prop_votes.get_index<"proposal"_n>();
         std::map<eosio::name, uint16_t> delegated_proposal_votes;
         std::set<eosio::name> approval_proposal_votes;
@@ -484,12 +484,12 @@ namespace eosdac {
         return approved_count;
     }
 
-    // void dacproposals::assertValidMember(name member, name dac_scope) {
+    // void dacproposals::assertValidMember(name member, name dac_id) {
     
-    //     auto member_terms_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::TOKEN);
+    //     auto member_terms_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::TOKEN);
 
-    //     regmembers reg_members(member_terms_account.account_name, member_terms_account.dac_scope.value);
-    //     memterms memberterms(member_terms_account.account_name, member_terms_account.dac_scope.value);
+    //     regmembers reg_members(member_terms_account.account_name, member_terms_account.dac_id.value);
+    //     memterms memberterms(member_terms_account.account_name, member_terms_account.dac_id.value);
 
     //     const auto &regmem = reg_members.get(member.value, "ERR::GENERAL_REG_MEMBER_NOT_FOUND::Account is not registered with members.");
     //     check((regmem.agreedterms != 0), "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_ANY_TERMS::Account has not agreed to any terms");

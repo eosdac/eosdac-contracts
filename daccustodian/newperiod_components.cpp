@@ -1,7 +1,7 @@
 
-void daccustodian::distributePay(name dac_scope) {
-    custodians_table custodians(_self, dac_scope.value);
-    pending_pay_table pending_pay(_self, dac_scope.value);
+void daccustodian::distributePay(name dac_id) {
+    custodians_table custodians(_self, dac_id.value);
+    pending_pay_table pending_pay(_self, dac_id.value);
 
     //Find the median pay using a temporary vector to hold the requestedpay amounts.
     std::vector<asset> reqpays;
@@ -29,10 +29,10 @@ void daccustodian::distributePay(name dac_scope) {
     print("distribute pay");
 }
 
-void daccustodian::distributeMeanPay(name dac_scope) {
-    custodians_table custodians(_self, dac_scope.value);
-    pending_pay_table pending_pay(_self, dac_scope.value);
-    contr_config configs = contr_config::get_current_configs(_self, dac_scope);
+void daccustodian::distributeMeanPay(name dac_id) {
+    custodians_table custodians(_self, dac_id.value);
+    pending_pay_table pending_pay(_self, dac_id.value);
+    contr_config configs = contr_config::get_current_configs(_self, dac_id);
 
     //Find the mean pay using a temporary vector to hold the requestedpay amounts.
     asset total = asset{0, configs.requested_pay_max.symbol};
@@ -67,14 +67,14 @@ void daccustodian::assertPeriodTime(contr_config &configs, contr_state &currentS
                  "ERR::NEWPERIOD_EARLY::New period is being called too soon. Wait until the period has completed.");
 }
 
-void daccustodian::allocateCustodians(bool early_election, name dac_scope) {
+void daccustodian::allocateCustodians(bool early_election, name dac_id) {
 
     eosio::print("Configure custodians for the next period.");
 
-    custodians_table custodians(_self, dac_scope.value);
-    candidates_table registered_candidates(_self, dac_scope.value);
-    contr_config configs = contr_config::get_current_configs(_self, dac_scope);
-    name auth_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::AUTH);
+    custodians_table custodians(_self, dac_id.value);
+    candidates_table registered_candidates(_self, dac_id.value);
+    contr_config configs = contr_config::get_current_configs(_self, dac_id);
+    name auth_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::AUTH);
     
     auto byvotes = registered_candidates.get_index<"byvotesrank"_n>();
     auto cand_itr = byvotes.begin();
@@ -125,12 +125,12 @@ void daccustodian::allocateCustodians(bool early_election, name dac_scope) {
     }
 }
 
-void daccustodian::setCustodianAuths(name dac_scope) {
+void daccustodian::setCustodianAuths(name dac_id) {
 
-    custodians_table custodians(_self, dac_scope.value);
-    contr_config current_config = contr_config::get_current_configs(_self, dac_scope);
+    custodians_table custodians(_self, dac_id.value);
+    contr_config current_config = contr_config::get_current_configs(_self, dac_id);
 
-    auto dac = dacdir::dac_for_id(dac_scope);
+    auto dac = dacdir::dac_for_id(dac_id);
     
     name accountToChange = dac.account_for_type(dacdir::AUTH);
 
@@ -140,7 +140,7 @@ void daccustodian::setCustodianAuths(name dac_scope) {
 
     for (auto it = custodians.begin(); it != custodians.end(); it++) {
         eosiosystem::permission_level_weight account{
-                .permission = getCandidatePermission(it->cust_name, dac_scope), //eosio::permission_level(it->cust_name, "active"_n),
+                .permission = getCandidatePermission(it->cust_name, dac_id), //eosio::permission_level(it->cust_name, "active"_n),
                 .weight = (uint16_t) 1,
         };
         accounts.push_back(account);
@@ -215,13 +215,13 @@ void daccustodian::newperiod(string message) {
     newperiode(message, get_self());
 }
 
-void daccustodian::newperiode(string message, name dac_scope) {
+void daccustodian::newperiode(string message, name dac_id) {
 
-    contr_config configs = contr_config::get_current_configs(_self, dac_scope);
-    contr_state currentState = contr_state::get_current_state(_self, dac_scope);
+    contr_config configs = contr_config::get_current_configs(_self, dac_id);
+    contr_state currentState = contr_state::get_current_state(_self, dac_id);
     assertPeriodTime(configs, currentState);
 
-    dacdir::dac found_dac = dacdir::dac_for_id(dac_scope);
+    dacdir::dac found_dac = dacdir::dac_for_id(dac_id);
 
 
     // Get the max supply of the lockup asset token (eg. EOSDAC)
@@ -251,16 +251,16 @@ void daccustodian::newperiode(string message, name dac_scope) {
                  "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_PROCESS::Voter engagement is insufficient to process a new period");
 
     // Distribute pay to the current custodians.
-    distributeMeanPay(dac_scope);
+    distributeMeanPay(dac_id);
 
     // Set custodians for the next period.
-    allocateCustodians(false, dac_scope);
+    allocateCustodians(false, dac_id);
 
     // Set the auths on the dacauthority account
-    setCustodianAuths(dac_scope);
+    setCustodianAuths(dac_id);
 
     currentState.lastperiodtime = current_block_time();
-    currentState.save(_self, dac_scope);
+    currentState.save(_self, dac_id);
 
 
 //        Schedule the the next election cycle at the end of the period.
