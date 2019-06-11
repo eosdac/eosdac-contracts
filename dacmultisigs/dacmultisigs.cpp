@@ -10,7 +10,11 @@
 
 using namespace eosdac;
 
-void dacmultisigs::proposed( name proposer, name proposal_name, string metadata, name dac_scope ) {
+void dacmultisigs::proposed( name proposer, name proposal_name, string metadata ) {
+    proposede(proposer, proposal_name, metadata, get_self());
+}
+
+void dacmultisigs::proposede( name proposer, name proposal_name, string metadata, name dac_scope ) {
     auto auth_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::AUTH);
     require_auth(auth_account);
     require_auth( proposer );
@@ -36,7 +40,11 @@ void dacmultisigs::proposed( name proposer, name proposal_name, string metadata,
     });
 }
 
-void dacmultisigs::approved( name proposer, name proposal_name, name approver, name dac_scope ){
+void dacmultisigs::approved( name proposer, name proposal_name, name approver ){
+    approvede(proposer, proposal_name, approver, get_self());
+}
+
+void dacmultisigs::approvede( name proposer, name proposal_name, name approver, name dac_scope ){
     auto auth_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::AUTH);
     require_auth(auth_account);
     require_auth( approver );
@@ -51,7 +59,11 @@ void dacmultisigs::approved( name proposer, name proposal_name, name approver, n
     });
 }
 
-void dacmultisigs::unapproved( name proposer, name proposal_name, name unapprover, name dac_scope ){
+void dacmultisigs::unapproved( name proposer, name proposal_name, name unapprover ){
+    unapprovede(proposer, proposal_name, unapprover, get_self());
+}
+
+void dacmultisigs::unapprovede( name proposer, name proposal_name, name unapprover, name dac_scope ){
     auto auth_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::AUTH);
     require_auth(auth_account);
     require_auth( unapprover );
@@ -66,7 +78,11 @@ void dacmultisigs::unapproved( name proposer, name proposal_name, name unapprove
     });
 }
 
-void dacmultisigs::cancelled( name proposer, name proposal_name, name canceler, name dac_scope ){
+void dacmultisigs::cancelled( name proposer, name proposal_name, name canceler ){
+    cancellede(proposer, proposal_name, canceler, get_self());
+}
+
+void dacmultisigs::cancellede( name proposer, name proposal_name, name canceler, name dac_scope ){
         auto auth_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::AUTH);
         require_auth(auth_account);
         require_auth( canceler );
@@ -80,7 +96,11 @@ void dacmultisigs::cancelled( name proposer, name proposal_name, name canceler, 
     proposals.erase(proposal_to_erase);
 }
 
-void dacmultisigs::executed( name proposer, name proposal_name, name executer, name dac_scope ) {
+void dacmultisigs::executed( name proposer, name proposal_name, name executer ) {
+    executede(proposer, proposal_name, executer, get_self());
+}
+
+void dacmultisigs::executede( name proposer, name proposal_name, name executer, name dac_scope ) {
         auto auth_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::AUTH);
         require_auth(auth_account);
         require_auth( executer );
@@ -94,7 +114,11 @@ void dacmultisigs::executed( name proposer, name proposal_name, name executer, n
     proposals.erase(proposal_to_erase);
 }
 
-void dacmultisigs::clean( name proposer, name proposal_name, name dac_scope ) {
+void dacmultisigs::clean( name proposer, name proposal_name ) {
+    cleane(proposer, proposal_name, get_self());
+}
+
+void dacmultisigs::cleane( name proposer, name proposal_name, name dac_scope ) {
     auto auth_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::AUTH);
     require_auth(auth_account);
 

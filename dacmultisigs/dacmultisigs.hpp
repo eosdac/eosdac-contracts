@@ -17,22 +17,13 @@
 #define MSIG_CONTRACT "eosio.msig"
 #endif
 
-#ifdef AUTHACCOUNT
-#define AUTH_ACCOUNT STRINGIZE(AUTHACCOUNT)
-#endif
-#ifndef AUTH_ACCOUNT
-#define AUTH_ACCOUNT "dacauthority"
-#endif
-
-
 using namespace eosio;
 using namespace std;
 
-class [[eosio::contract("dacmultisigs")]] dacmultisigs : public contract {
-
+CONTRACT dacmultisigs: public contract {
     private:
 
-        struct [[eosio::table]] storedproposal {
+        TABLE storedproposal {
             name proposalname;
             name proposer;
             checksum256 transactionid;
@@ -47,15 +38,21 @@ class [[eosio::contract("dacmultisigs")]] dacmultisigs : public contract {
 
         using contract::contract;
 
-        ACTION proposed(name proposer, name proposal_name, string metadata, name dac_id);
+        ACTION proposed(name proposer, name proposal_name, string metadata);
+        ACTION proposede(name proposer, name proposal_name, string metadata, name dac_id);
+        
+        ACTION approved( name proposer, name proposal_name, name approver );
+        ACTION approvede( name proposer, name proposal_name, name approver, name dac_id );
 
-        ACTION approved( name proposer, name proposal_name, name approver, name dac_id );
+        ACTION unapproved( name proposer, name proposal_name, name unapprover );
+        ACTION unapprovede( name proposer, name proposal_name, name unapprover, name dac_id );
 
-        ACTION unapproved( name proposer, name proposal_name, name unapprover, name dac_id );
+        ACTION cancelled( name proposer, name proposal_name, name canceler );
+        ACTION cancellede( name proposer, name proposal_name, name canceler, name dac_id );
 
-        ACTION cancelled( name proposer, name proposal_name, name canceler, name dac_id );
+        ACTION executed( name proposer, name proposal_name, name executer );
+        ACTION executede( name proposer, name proposal_name, name executer, name dac_id );
 
-        ACTION executed( name proposer, name proposal_name, name executer, name dac_id );
-
-        ACTION clean( name proposer, name proposal_name, name dac_id );
+        ACTION clean( name proposer, name proposal_name );
+        ACTION cleane( name proposer, name proposal_name, name dac_id );
 };
