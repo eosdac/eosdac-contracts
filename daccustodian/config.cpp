@@ -1,6 +1,10 @@
 #include "../_contract-shared-headers/dacdirectory_shared.hpp"
 
-void daccustodian::updateconfig(contr_config new_config, name dac_scope) {
+void daccustodian::updateconfig(contr_config new_config) {
+    updateconfige(new_config, get_self());
+}
+
+void daccustodian::updateconfige(contr_config new_config, name dac_scope) {
 
     dacdir::dac dacForScope = dacdir::dac_for_id(dac_scope);
     auto auth_account = dacForScope.account_for_type(dacdir::AUTH);

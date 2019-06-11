@@ -1,6 +1,10 @@
 #include <eosio/transaction.hpp>
 
-void daccustodian::claimpay(uint64_t payid, name dac_scope) {
+void daccustodian::claimpay(uint64_t payid) {
+    claimpaye(payid, get_self());
+}
+
+void daccustodian::claimpaye(uint64_t payid, name dac_scope) {
     pending_pay_table pending_pay(_self, dac_scope.value);
     
     dacdir::dac found_dac = dacdir::dac_for_id(dac_scope);

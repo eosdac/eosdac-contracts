@@ -1,5 +1,9 @@
 
-void daccustodian::votecust(name voter, vector<name> newvotes, name dac_scope) {
+void daccustodian::votecust(name voter, vector<name> newvotes) {
+    votecuste(voter, newvotes, get_self());
+}
+
+void daccustodian::votecuste(name voter, vector<name> newvotes, name dac_scope) {
 #ifdef VOTING_DISABLED
     check(false,"ERR::VOTECUST_VOTING_IS_DISABLED::Voting is currently disabled.");
 #endif

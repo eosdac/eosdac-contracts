@@ -134,32 +134,44 @@ namespace eosdac {
         daccustodian( name s, name code, datastream<const char*> ds )
             :contract(s,code,ds) {}
 
-        ACTION updateconfig(contr_config newconfig, name dac_id);
+        ACTION updateconfig(contr_config newconfig);
+        ACTION updateconfige(contr_config newconfig, name dac_id);
         ACTION capturestake(name from,
                             asset quantity,
                             name dac_id);
         ACTION transferobsv(name from,
                             name to,
                             asset quantity,
-                            name scope);
-        ACTION nominatecand(name cand, eosio::asset requestedpay, name dac_id);
-        ACTION withdrawcand(name cand, name dac_id);
-        ACTION firecand(name cand, bool lockupStake, name dac_id);
-        ACTION resigncust(name cust, name dac_id);
-        ACTION firecust(name cust, name dac_id);
-        ACTION updatebio(name cand, std::string bio, name dac_id);
+                            name dac_id);
+        ACTION nominatecand(name cand, eosio::asset requestedpay);
+        ACTION nominatecane(name cand, eosio::asset requestedpay, name dac_id);
+        ACTION withdrawcand(name cand);
+        ACTION withdrawcane(name cand, name dac_id);
+        ACTION firecand(name cand, bool lockupStake);
+        ACTION firecande(name cand, bool lockupStake, name dac_id);
+        ACTION resigncust(name cust);
+        ACTION resigncuste(name cust, name dac_id);
+        ACTION firecust(name cust);
+        ACTION firecuste(name cust, name dac_id);
+        ACTION updatebio(name cand, std::string bio);
+        ACTION updatebioe(name cand, std::string bio, name dac_id);
 
         [[eosio::action]]
         inline void stprofile(name cand, std::string profile, name dac_id) { require_auth(cand); };
 
         [[eosio::action]]
         inline void stprofileuns(name cand, std::string profile) { require_auth(cand); };
-        ACTION updatereqpay(name cand, eosio::asset requestedpay, name dac_id);
-        ACTION votecust(name voter, std::vector<name> newvotes, name dac_id);
+        ACTION updatereqpay(name cand, eosio::asset requestedpay);
+        ACTION updatereqpae(name cand, eosio::asset requestedpay, name dac_id);
+        ACTION votecust(name voter, std::vector<name> newvotes);
+        ACTION votecuste(name voter, std::vector<name> newvotes, name dac_id);
     //    void voteproxy(name voter, name proxy);
-        ACTION newperiod(std::string message, name dac_id);
-        ACTION claimpay(uint64_t payid, name dac_id);
-        ACTION unstake(name cand, name dac_id);
+        ACTION newperiod(std::string message);
+        ACTION newperiode(std::string message, name dac_id);
+        ACTION claimpay(uint64_t payid);
+        ACTION claimpaye(uint64_t payid, name dac_id);
+        ACTION unstake(name cand);
+        ACTION unstakee(name cand, name dac_id);
         /**
      * This action is used to register a custom permission that will be used in the multisig instead of active.
      *

@@ -1,7 +1,11 @@
 #include <eosio/system.hpp>
 #include "../_contract-shared-headers/dacdirectory_shared.hpp"
 
-void daccustodian::nominatecand(name cand, asset requestedpay, name dac_scope) {
+void daccustodian::nominatecand(name cand, asset requestedpay) {
+    nominatecane(cand, requestedpay, get_self());
+}
+
+void daccustodian::nominatecane(name cand, asset requestedpay, name dac_scope) {
     require_auth(cand);
     assertValidMember(cand, dac_scope);
     contr_state currentState = contr_state::get_current_state(_self, dac_scope);
@@ -49,18 +53,30 @@ void daccustodian::nominatecand(name cand, asset requestedpay, name dac_scope) {
     }
 }
 
-void daccustodian::withdrawcand(name cand, name dac_scope) {
+void daccustodian::withdrawcand(name cand) {
+    withdrawcane(cand, get_self());
+}
+
+void daccustodian::withdrawcane(name cand, name dac_scope) {
     require_auth(cand);
     removeCandidate(cand, false, dac_scope);
 }
 
-void daccustodian::firecand(name cand, bool lockupStake, name dac_scope) {
+void daccustodian::firecand(name cand, bool lockupStake) {
+    firecande(cand, lockupStake, get_self());
+}
+
+void daccustodian::firecande(name cand, bool lockupStake, name dac_scope) {
     auto dac = dacdir::dac_for_id(dac_scope);
     require_auth(dac.account_for_type(dacdir::AUTH));
     removeCandidate(cand, lockupStake, dac_scope);
 }
 
-void daccustodian::unstake(name cand, name dac_scope) {
+void daccustodian::unstake(name cand) {
+    unstakee(cand, get_self());
+}
+
+void daccustodian::unstakee(name cand, name dac_scope) {
     
     dacdir::dac found_dac = dacdir::dac_for_id(dac_scope);
     name token_account = found_dac.account_for_type(dacdir::TOKEN);
@@ -91,12 +107,20 @@ void daccustodian::unstake(name cand, name dac_scope) {
     });
 }
 
-void daccustodian::resigncust(name cust, name dac_scope) {
+void daccustodian::resigncust(name cust) {
+    resigncuste(cust, get_self());
+}
+
+void daccustodian::resigncuste(name cust, name dac_scope) {
     require_auth(cust);
     removeCustodian(cust, dac_scope);
 }
 
-void daccustodian::firecust(name cust, name dac_scope) {
+void daccustodian::firecust(name cust) {
+    firecuste(cust, get_self());
+}
+
+void daccustodian::firecuste(name cust, name dac_scope) {
     auto dac = dacdir::dac_for_id(dac_scope);
     require_auth(dac.account_for_type(dacdir::AUTH));
     removeCustodian(cust, dac_scope);

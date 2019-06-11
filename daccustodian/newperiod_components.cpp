@@ -211,7 +211,11 @@ void daccustodian::setCustodianAuths(name dac_scope) {
             print("Got to the end of setting permissions.");
 }
 
-void daccustodian::newperiod(string message, name dac_scope) {
+void daccustodian::newperiod(string message) {
+    newperiode(message, get_self());
+}
+
+void daccustodian::newperiode(string message, name dac_scope) {
 
     contr_config configs = contr_config::get_current_configs(_self, dac_scope);
     contr_state currentState = contr_state::get_current_state(_self, dac_scope);
