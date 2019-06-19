@@ -1,6 +1,9 @@
 #include "eosdactokens.hpp"
 #include "../_contract-shared-headers/daccustodian_shared.hpp"
 #include "../_contract-shared-headers/dacdirectory_shared.hpp"
+#include "../_contract-shared-headers/migration_helpers.hpp"
+#include <eosio/eosio.hpp>
+
 
 #include <algorithm>
 
@@ -232,6 +235,24 @@ namespace eosdac {
                 mem.agreedtermsversion = latest_member_terms->version;
             });
         }
+
+        //Temp block for migrations to new scope
+         if (dac_id == get_self()) {
+            regmembers registeredgmembers = regmembers(_self, NEW_SCOPE.value);
+
+            auto existingMember = registeredgmembers.find(sender.value);
+            if (existingMember != registeredgmembers.end()) {
+                registeredgmembers.modify(existingMember, sender, [&](member &mem) {
+                    mem.agreedtermsversion = latest_member_terms->version;
+                });
+            } else {
+                registeredgmembers.emplace(sender, [&](member &mem) {
+                    mem.sender = sender;
+                    mem.agreedtermsversion = latest_member_terms->version;
+                });
+            }
+        }
+        //End temp block
     }
 
     void eosdactokens::updateterms(uint64_t termsid, string terms) {
@@ -280,6 +301,16 @@ namespace eosdac {
         auto regMember = registeredgmembers.find(sender.value);
         check(regMember != registeredgmembers.end(), "ERR::MEMBERUNREG_MEMBER_NOT_REGISTERED::Member is not registered.");
         registeredgmembers.erase(regMember);
+
+        //Temp block for migrations to new scope
+         if (dac_id == get_self()) {
+            regmembers registeredgmembers = regmembers(_self, NEW_SCOPE.value);
+            auto regMember = registeredgmembers.find(sender.value);
+            if (regMember != registeredgmembers.end()) {
+                registeredgmembers.erase(regMember);
+            }
+        }
+        //end Temp block
     }
 
     void eosdactokens::close(name owner, const symbol& symbol) {
@@ -290,4 +321,12 @@ namespace eosdac {
         check( it->balance.amount == 0, "ERR::CLOSE_NON_ZERO_BALANCE::Cannot close because the balance is not zero." );
         acnts.erase( it );
     }
+
+    ACTION eosdactokens::migrate(uint16_t batch_size) {
+        migrate_table<regmembers>(get_self(), batch_size, get_self(), NEW_SCOPE, [](member& dest, member& src){
+            dest.sender = src.sender;
+            dest.agreedtermsversion = src.agreedtermsversion;
+        });
+    }
+
 }
