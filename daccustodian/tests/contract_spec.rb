@@ -9,8 +9,8 @@ def configure_contracts_for_tests
   run %(cleos push action dacdirectory regdac '{"owner": "dacowner",  "dac_name": "custtestdac", "dac_symbol": "4,EOSDAC", "title": "Custodian Test DAC", "refs": [[1,"some_ref"]], "accounts": [[2,"daccustodian"], [5,"dacocoiogmbh"], [7,"dacescrow"], [0, "dacowner"],  [4, "eosdactokens"], [1, "eosdacthedac"]], "scopes": [] }' -p dacowner)
   run %(cleos push action dacdirectory regdac '{"owner": "otherowner",  "dac_name": "otherdac", "dac_symbol": "4,OTRDAC", "title": "Other Test DAC", "refs": [[1,"some_ref"]], "accounts": [[2,"daccustodian"], [5,"dacocoiogmbh"], [7,"dacescrow"], [0, "dacowner"],  [4, "eosdactokens"], [1, "eosdacthedac"]], "scopes": [] }' -p otherowner)
 
-  run %(cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_id": "custtestdac"}' -p dacowner)
-  run %(cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_id": "otherdac"}' -p otherowner -p dacowner)
+  run %(cleos push action daccustodian updateconfige '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_id": "custtestdac"}' -p dacowner)
+  run %(cleos push action daccustodian updateconfige '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_id": "otherdac"}' -p otherowner -p dacowner)
 
   run %(cleos push action eosdactokens create '{ "issuer": "dacowner",   "maximum_supply": "100000.0000 EOSDAC", "transfer_locked": false}' -p dacowner)
   run %(cleos push action eosdactokens create '{ "issuer": "otherowner", "maximum_supply": "100000.0000 OTRDAC", "transfer_locked": false}' -p otherowner)
@@ -34,7 +34,7 @@ def configure_contracts_for_tests
   seed_dac_account("testreguser5", issue: "100.0000 EOSDAC", memberreg: "New Latest terms", dac_id: "custtestdac", dac_owner: "dacowner")
   seed_dac_account("testregusera", issue: "100.0000 EOSDAC", memberreg: "New Latest terms", dac_id: "custtestdac", dac_owner: "dacowner")
 
-  # This is required to allow the newperiod to run and set the account permissions from within the action.
+  # This is required to allow the newperiode to run and set the account permissions from within the action.
   run %(cleos set account permission dacowner owner '{"threshold": 1,"keys": [{"key": "#{CONTRACT_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' '' -p dacowner@owner)
   # Configure accounts permissions hierarchy
   run %(cleos set account permission dacowner high #{CONTRACT_PUBLIC_KEY} active -p dacowner)
@@ -58,30 +58,30 @@ describe "eosdacelect" do
     killchain
   end
 
-  describe "updateconfig" do
+  describe "updateconfige" do
     context "before being called with token contract will prevent other actions from working" do
       it "with valid and registered member" do
-        result = wrap_command %(cleos push action daccustodian nominatecand '{ "cand": "testreguser1", "requestedpay": "11.5000 EOS", "dac_id": "custtestdac"}' -p testreguser1)
+        result = wrap_command %(cleos push action daccustodian nominatecane '{ "cand": "testreguser1", "requestedpay": "11.5000 EOS", "dac_id": "custtestdac"}' -p testreguser1)
         expect(result.stderr).to include('Error 3050003')
       end
     end
 
     context "with invalid auth" do
       it do
-        result = wrap_command %(cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "13.0000 EOSDAC", "maxvotes": 4, "periodlength": 604800 , "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_id": "custtestdac"}' -p testreguser1)
+        result = wrap_command %(cleos push action daccustodian updateconfige '{"newconfig": { "lockupasset": "13.0000 EOSDAC", "maxvotes": 4, "periodlength": 604800 , "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_id": "custtestdac"}' -p testreguser1)
         expect(result.stderr).to include('Error 3090004')
       end
     end
 
     context "with valid auth" do
       it do
-        result = wrap_command %(cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_id": "custtestdac"}' -p dacowner)
-        expect(result.stdout).to include('daccustodian::updateconfig')
+        result = wrap_command %(cleos push action daccustodian updateconfige '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_id": "custtestdac"}' -p dacowner)
+        expect(result.stdout).to include('daccustodian::updateconfige')
       end
     end
   end
 
-  describe "nominatecand" do
+  describe "nominatecane" do
 
     context "with valid and registered member after transferring insufficient staked tokens" do
       before(:all) do
@@ -90,14 +90,14 @@ describe "eosdacelect" do
         `cleos push action eosdactokens transfer '{ "from": "testreguser1", "to": "daccustodian", "quantity": "4.0000 OTRDAC","memo":"noncaccount"}' -p testreguser1 -f`
       end
       it do
-        result = wrap_command %(cleos push action daccustodian nominatecand '{ "cand": "testreguser1", "bio": "any bio", "requestedpay": "11.5000 EOS", "dac_id": "custtestdac"}' -p testreguser1)
+        result = wrap_command %(cleos push action daccustodian nominatecane '{ "cand": "testreguser1", "bio": "any bio", "requestedpay": "11.5000 EOS", "dac_id": "custtestdac"}' -p testreguser1)
         expect(result.stderr).to include('A registering candidate must transfer sufficient tokens to the contract for staking')
       end
     end
 
     context "with negative requestpay amount" do
       it do
-        result = wrap_command %(cleos push action daccustodian nominatecand '{ "cand": "testreguser1", "bio": "any bio", "requestedpay": "-11.5000 EOS", "dac_id": "custtestdac"}' -p testreguser1)
+        result = wrap_command %(cleos push action daccustodian nominatecane '{ "cand": "testreguser1", "bio": "any bio", "requestedpay": "-11.5000 EOS", "dac_id": "custtestdac"}' -p testreguser1)
         expect(result.stderr).to include("ERR::UPDATEREQPAY_UNDER_ZERO")
       end
     end
@@ -107,35 +107,35 @@ describe "eosdacelect" do
         `cleos push action eosdactokens transfer '{ "from": "testreguser1", "to": "daccustodian", "quantity": "5.0000 EOSDAC","memo":"daccustodian"}' -p testreguser1 -f`
       end
       it do
-        result = wrap_command %(cleos push action daccustodian nominatecand '{ "cand": "testreguser1", "bio": "any bio", "requestedpay": "11.5000 EOS", "dac_id": "custtestdac"}' -p testreguser1)
-        expect(result.stdout).to include('daccustodian::nominatecand')
+        result = wrap_command %(cleos push action daccustodian nominatecane '{ "cand": "testreguser1", "bio": "any bio", "requestedpay": "11.5000 EOS", "dac_id": "custtestdac"}' -p testreguser1)
+        expect(result.stdout).to include('daccustodian::nominatecane')
       end
     end
 
     context "with unregistered user" do
       it do
-        result = wrap_command %(cleos push action daccustodian nominatecand '{ "cand": "testreguser2", "bio": "any bio", "requestedpay": "10.0000 EOS", "dac_id": "custtestdac"}' -p testreguser2)
+        result = wrap_command %(cleos push action daccustodian nominatecane '{ "cand": "testreguser2", "bio": "any bio", "requestedpay": "10.0000 EOS", "dac_id": "custtestdac"}' -p testreguser2)
         expect(result.stderr).to include("Account is not registered with members")
       end
     end
 
     context "with user with empty agree terms" do
       it do
-        result = wrap_command %(cleos push action daccustodian nominatecand '{ "cand": "testreguser3", "bio": "any bio", "requestedpay": "10.0000 EOS", "dac_id": "custtestdac"}' -p testreguser3)
+        result = wrap_command %(cleos push action daccustodian nominatecane '{ "cand": "testreguser3", "bio": "any bio", "requestedpay": "10.0000 EOS", "dac_id": "custtestdac"}' -p testreguser3)
         expect(result.stderr).to include('Error 3050003')
       end
     end
 
     context "with user with old agreed terms" do
       it do
-        result = wrap_command %(cleos push action daccustodian nominatecand '{ "cand": "testreguser4", "bio": "any bio", "requestedpay": "10.0000 EOS", "dac_id": "custtestdac"}' -p testreguser4)
+        result = wrap_command %(cleos push action daccustodian nominatecane '{ "cand": "testreguser4", "bio": "any bio", "requestedpay": "10.0000 EOS", "dac_id": "custtestdac"}' -p testreguser4)
         expect(result.stderr).to include('Error 3050003')
       end
     end
 
     context "without first staking" do
       it do
-        result = wrap_command %(cleos push action daccustodian nominatecand '{ "cand": "testreguser5", "bio": "any bio", "requestedpay": "10.0000 EOS", "dac_id": "custtestdac"}' -p testreguser5)
+        result = wrap_command %(cleos push action daccustodian nominatecane '{ "cand": "testreguser5", "bio": "any bio", "requestedpay": "10.0000 EOS", "dac_id": "custtestdac"}' -p testreguser5)
         expect(result.stderr).to include("A registering candidate must transfer sufficient tokens to the contract for staking")
       end
     end
@@ -143,12 +143,12 @@ describe "eosdacelect" do
 
     context "with user is already registered" do
       it do
-        result = wrap_command %(cleos push action daccustodian nominatecand '{ "cand": "testreguser1", "bio": "any bio", "requestedpay": "10.0000 EOS", "dac_id": "custtestdac"}' -p testreguser1)
+        result = wrap_command %(cleos push action daccustodian nominatecane '{ "cand": "testreguser1", "bio": "any bio", "requestedpay": "10.0000 EOS", "dac_id": "custtestdac"}' -p testreguser1)
         expect(result.stderr).to include('Error 3050003')
       end
     end
 
-    context "Read the candidates table after nominatecand" do
+    context "Read the candidates table after nominatecane" do
       it do
         result = wrap_command %(cleos get table daccustodian custtestdac candidates)
         expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
@@ -168,7 +168,7 @@ describe "eosdacelect" do
       end
     end
 
-    context "Read the pendingstake table after nominatecand and it should be empty" do
+    context "Read the pendingstake table after nominatecane and it should be empty" do
       it do
         result = wrap_command %(cleos get table daccustodian custtestdac pendingstake)
         expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
@@ -181,33 +181,33 @@ describe "eosdacelect" do
     end
   end
 
-  context "To ensure behaviours change after updateconfig" do
+  context "To ensure behaviours change after updateconfige" do
     it "updateconfigs with valid auth" do
-      result = wrap_command %(cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "23.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_id": "custtestdac"}' -p dacowner)
-      expect(result.stdout).to include('daccustodian::updateconfig')
+      result = wrap_command %(cleos push action daccustodian updateconfige '{"newconfig": { "lockupasset": "23.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_id": "custtestdac"}' -p dacowner)
+      expect(result.stdout).to include('daccustodian::updateconfige')
     end
   end
 
-  context "withdrawcand" do
+  context "withdrawcane" do
     before(:all) do
       seed_dac_account("unreguser1", issue: "100.0000 EOSDAC", memberreg: "New Latest terms", dac_id: "custtestdac", dac_owner: "dacowner")
       seed_dac_account("unreguser2", issue: "100.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "11.5000 EOS", dac_id: "custtestdac", dac_owner: "dacowner")
     end
 
     it "with invalid auth" do
-      result = wrap_command %(cleos push action daccustodian withdrawcand '{ "cand": "unreguser3", "dac_id": "custtestdac"}' -p testreguser3)
+      result = wrap_command %(cleos push action daccustodian withdrawcane '{ "cand": "unreguser3", "dac_id": "custtestdac"}' -p testreguser3)
       expect(result.stderr).to include('Error 3090004')
     end
 
     it "with valid auth but not registered" do
-      result = wrap_command %(cleos push action daccustodian withdrawcand '{ "cand": "unreguser1", "dac_id": "custtestdac"}' -p unreguser1)
+      result = wrap_command %(cleos push action daccustodian withdrawcane '{ "cand": "unreguser1", "dac_id": "custtestdac"}' -p unreguser1)
       expect(result.stderr).to include('Error 3050003')
     end
 
     context "with valid auth" do
       it do
-        result = wrap_command %(cleos push action daccustodian withdrawcand '{ "cand": "unreguser2", "dac_id": "custtestdac"}' -p unreguser2)
-        expect(result.stdout).to include('daccustodian::withdrawcand')
+        result = wrap_command %(cleos push action daccustodian withdrawcane '{ "cand": "unreguser2", "dac_id": "custtestdac"}' -p unreguser2)
+        expect(result.stdout).to include('daccustodian::withdrawcane')
       end
     end
   end
@@ -220,27 +220,27 @@ describe "eosdacelect" do
 
     context "with invalid auth" do
       it do
-        result = wrap_command %(cleos push action daccustodian updatebio '{ "cand": "updatebio1", "bio": "new bio", "dac_id": "custtestdac"}' -p testreguser3)
+        result = wrap_command %(cleos push action daccustodian updatebioe '{ "cand": "updatebio1", "bio": "new bio", "dac_id": "custtestdac"}' -p testreguser3)
         expect(result.stderr).to include('Error 3090004')
       end
     end
 
     context "with valid auth but not registered" do
       it do
-        result = wrap_command %(cleos push action daccustodian updatebio '{ "cand": "updatebio1", "bio": "new bio", "dac_id": "custtestdac"}' -p updatebio1)
+        result = wrap_command %(cleos push action daccustodian updatebioe '{ "cand": "updatebio1", "bio": "new bio", "dac_id": "custtestdac"}' -p updatebio1)
         expect(result.stderr).to include('Error 3050003')
       end
     end
 
     context "with valid auth" do
       it do
-        result = wrap_command %(cleos push action daccustodian updatebio '{ "cand": "updatebio2", "bio": "new bio", "dac_id": "custtestdac"}' -p updatebio2)
-        expect(result.stdout).to include('daccustodian::updatebio')
+        result = wrap_command %(cleos push action daccustodian updatebioe '{ "cand": "updatebio2", "bio": "new bio", "dac_id": "custtestdac"}' -p updatebio2)
+        expect(result.stdout).to include('daccustodian::updatebioe')
       end
     end
   end
 
-  describe "updatereqpay" do
+  describe "updatereqpae" do
     before(:all) do
       seed_dac_account("updatepay1", issue: "100.0000 EOSDAC", memberreg: "New Latest terms", dac_id: "custtestdac", dac_owner: "dacowner")
       seed_dac_account("updatepay2", issue: "100.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "21.5000 EOS", dac_id: "custtestdac", dac_owner: "dacowner")
@@ -248,38 +248,38 @@ describe "eosdacelect" do
 
     context "with valid auth but not registered" do
       it do
-        result = wrap_command %(cleos push action daccustodian updatereqpay '{ "cand": "updatepay1", "requestedpay": "31.5000 EOS", "dac_id": "custtestdac"}' -p updatepay1)
+        result = wrap_command %(cleos push action daccustodian updatereqpae '{ "cand": "updatepay1", "requestedpay": "31.5000 EOS", "dac_id": "custtestdac"}' -p updatepay1)
         expect(result.stderr).to include('Error 3050003')
       end
     end
 
     context "with invalid auth" do
       it do
-        result = wrap_command %(cleos push action daccustodian updatereqpay '{ "cand": "updatepay2", "requestedpay": "11.5000 EOS", "dac_id": "custtestdac"}' -p testreguser3)
+        result = wrap_command %(cleos push action daccustodian updatereqpae '{ "cand": "updatepay2", "requestedpay": "11.5000 EOS", "dac_id": "custtestdac"}' -p testreguser3)
         expect(result.stderr).to include('Error 3090004')
       end
     end
 
     context "with negative requestpay amount" do
       it do
-        result = wrap_command %(cleos push action daccustodian updatereqpay '{ "cand": "updatepay2", "requestedpay": "-450.5000 EOS", "dac_id": "custtestdac"}' -p updatepay2)
+        result = wrap_command %(cleos push action daccustodian updatereqpae '{ "cand": "updatepay2", "requestedpay": "-450.5000 EOS", "dac_id": "custtestdac"}' -p updatepay2)
         expect(result.stderr).to include("ERR::UPDATEREQPAY_UNDER_ZERO")
       end
     end
 
     context "with valid auth" do
       it "exceeding the req pay limit" do
-        result = wrap_command %(cleos push action daccustodian updatereqpay '{ "cand": "updatepay2", "requestedpay": "450.5000 EOS", "dac_id": "custtestdac"}' -p updatepay2)
+        result = wrap_command %(cleos push action daccustodian updatereqpae '{ "cand": "updatepay2", "requestedpay": "450.5000 EOS", "dac_id": "custtestdac"}' -p updatepay2)
         expect(result.stderr).to include('ERR::UPDATEREQPAY_EXCESS_MAX_PAY')
       end
       it "equal to the max req pay limit" do
-        result = wrap_command %(cleos push action daccustodian updatereqpay '{ "cand": "updatepay2", "requestedpay": "450.0000 EOS", "dac_id": "custtestdac"}' -p updatepay2)
-        expect(result.stdout).to include('daccustodian::updatereqpay')
+        result = wrap_command %(cleos push action daccustodian updatereqpae '{ "cand": "updatepay2", "requestedpay": "450.0000 EOS", "dac_id": "custtestdac"}' -p updatepay2)
+        expect(result.stdout).to include('daccustodian::updatereqpae')
       end
 
       it "with normal valid value" do
-        result = wrap_command %(cleos push action daccustodian updatereqpay '{ "cand": "updatepay2", "requestedpay": "41.5000 EOS", "dac_id": "custtestdac"}' -p updatepay2)
-        expect(result.stdout).to include('daccustodian::updatereqpay')
+        result = wrap_command %(cleos push action daccustodian updatereqpae '{ "cand": "updatepay2", "requestedpay": "41.5000 EOS", "dac_id": "custtestdac"}' -p updatepay2)
+        expect(result.stdout).to include('daccustodian::updatereqpae')
       end
 
       context "Read the candidates table after change reqpay" do
@@ -296,7 +296,7 @@ describe "eosdacelect" do
     end
   end
 
-  describe "votedcust" do
+  describe "votecuste" do
     before(:all) do
 
       #create users
@@ -315,56 +315,56 @@ describe "eosdacelect" do
 
     context "with invalid auth" do
       it do
-      result = wrap_command %(cleos push action daccustodian votecust '{ "voter": "voter1", "newvotes": ["votedcust1","votedcust2","votedcust3","votedcust4","votedcust5"], "dac_id": "custtestdac"}' -p testreguser3)
+      result = wrap_command %(cleos push action daccustodian votecuste '{ "voter": "voter1", "newvotes": ["votedcust1","votedcust2","votedcust3","votedcust4","votedcust5"], "dac_id": "custtestdac"}' -p testreguser3)
       expect(result.stderr).to include('Error 3090004')
       end
     end
 
     context "not registered" do
       it do
-        result = wrap_command %(cleos push action daccustodian votecust '{ "voter": "unregvoter", "newvotes": ["votedcust1","votedcust2","votedcust3","votedcust4","votedcust5"], "dac_id": "custtestdac"}' -p unregvoter)
+        result = wrap_command %(cleos push action daccustodian votecuste '{ "voter": "unregvoter", "newvotes": ["votedcust1","votedcust2","votedcust3","votedcust4","votedcust5"], "dac_id": "custtestdac"}' -p unregvoter)
         expect(result.stderr).to include('Error 3050003')
       end
     end
 
     context "exceeded allowed number of votes" do
       it do
-        result = wrap_command %(cleos push action daccustodian votecust '{ "voter": "voter1", "newvotes": ["voter1","votedcust2","votedcust3","votedcust4","votedcust5", "votedcust11"], "dac_id": "custtestdac"}' -p voter1)
+        result = wrap_command %(cleos push action daccustodian votecuste '{ "voter": "voter1", "newvotes": ["voter1","votedcust2","votedcust3","votedcust4","votedcust5", "votedcust11"], "dac_id": "custtestdac"}' -p voter1)
         expect(result.stderr).to include('Error 3050003')
       end
     end
 
     context "Voted for the same candidate multiple times" do
       it do
-        result = wrap_command %(cleos push action daccustodian votecust '{ "voter": "voter1", "newvotes": ["votedcust2","votedcust3","votedcust2","votedcust5", "votedcust11"], "dac_id": "custtestdac"}' -p voter1)
+        result = wrap_command %(cleos push action daccustodian votecuste '{ "voter": "voter1", "newvotes": ["votedcust2","votedcust3","votedcust2","votedcust5", "votedcust11"], "dac_id": "custtestdac"}' -p voter1)
         expect(result.stderr).to include('Added duplicate votes for the same candidate')
       end
     end
 
     context "Voted for an inactive candidate" do
       it do
-        result = wrap_command %(cleos push action daccustodian votecust '{ "voter": "voter1", "newvotes": ["votedcust1","unreguser2","votedcust2","votedcust5", "votedcust11"], "dac_id": "custtestdac"}' -p voter1)
+        result = wrap_command %(cleos push action daccustodian votecuste '{ "voter": "voter1", "newvotes": ["votedcust1","unreguser2","votedcust2","votedcust5", "votedcust11"], "dac_id": "custtestdac"}' -p voter1)
         expect(result.stderr).to include('Attempting to vote for an inactive candidate.')
       end
     end
 
     context "Voted for an candidate not in the list of candidates" do
       it do
-        result = wrap_command %(cleos push action daccustodian votecust '{ "voter": "voter1", "newvotes": ["votedcust1","testreguser5","votedcust2","votedcust5", "votedcust11"], "dac_id": "custtestdac"}' -p voter1)
+        result = wrap_command %(cleos push action daccustodian votecuste '{ "voter": "voter1", "newvotes": ["votedcust1","testreguser5","votedcust2","votedcust5", "votedcust11"], "dac_id": "custtestdac"}' -p voter1)
         expect(result.stderr).to include('ERR::VOTECUST_CANDIDATE_NOT_FOUND::')
       end
     end
 
     context "with valid auth create new vote" do
       it do
-        result = wrap_command %(cleos push action daccustodian votecust '{ "voter": "voter1", "newvotes": ["votedcust1","votedcust2","votedcust3"], "dac_id": "custtestdac"}' -p voter1)
-        expect(result.stdout).to include('daccustodian::votecust')
+        result = wrap_command %(cleos push action daccustodian votecuste '{ "voter": "voter1", "newvotes": ["votedcust1","votedcust2","votedcust3"], "dac_id": "custtestdac"}' -p voter1)
+        expect(result.stdout).to include('daccustodian::votecuste')
       end
     end
 
     context "Read the votes table after _create_ vote" do
       before(:all) do
-        `cleos push action daccustodian votecust '{ "voter": "voter2", "newvotes": ["votedcust1","votedcust2","votedcust3"], "dac_id": "custtestdac"}' -p voter2`
+        `cleos push action daccustodian votecuste '{ "voter": "voter2", "newvotes": ["votedcust1","votedcust2","votedcust3"], "dac_id": "custtestdac"}' -p voter2`
       end
       it do
         result = wrap_command %(cleos get table daccustodian custtestdac votes)
@@ -396,7 +396,7 @@ describe "eosdacelect" do
 
     context "Read the state table after placed votes" do
       before(:all) do
-        # `cleos push action daccustodian votecust '{ "voter": "voter2", "newvotes": ["votedcust1","votedcust2","votedcust3"], "dac_id": "custtestdac"}' -p voter2`
+        # `cleos push action daccustodian votecuste '{ "voter": "voter2", "newvotes": ["votedcust1","votedcust2","votedcust3"], "dac_id": "custtestdac"}' -p voter2`
       end
       it do
         result = wrap_command %(cleos get table daccustodian custtestdac state)
@@ -419,8 +419,8 @@ describe "eosdacelect" do
 
     context "with valid auth to clear a vote" do
       it do
-        result = wrap_command %(cleos push action daccustodian votecust '{ "voter": "voter2", "newvotes": [], "dac_id": "custtestdac"}' -p voter2)
-        expect(result.stdout).to include('daccustodian::votecust')
+        result = wrap_command %(cleos push action daccustodian votecuste '{ "voter": "voter2", "newvotes": [], "dac_id": "custtestdac"}' -p voter2)
+        expect(result.stdout).to include('daccustodian::votecuste')
       end
     end
 
@@ -488,8 +488,8 @@ describe "eosdacelect" do
 
     context "with valid auth change existing vote" do
       it do
-      result = wrap_command %(cleos push action daccustodian votecust '{ "voter": "voter1", "newvotes": ["votedcust1","votedcust2","votedcust4"], "dac_id": "custtestdac"}' -p voter1)
-      expect(result.stdout).to include('daccustodian::votecust')
+      result = wrap_command %(cleos push action daccustodian votecuste '{ "voter": "voter1", "newvotes": ["votedcust1","votedcust2","votedcust4"], "dac_id": "custtestdac"}' -p voter1)
+      expect(result.stdout).to include('daccustodian::votecuste')
       end
     end
 
@@ -557,7 +557,7 @@ describe "eosdacelect" do
 
     context "After token transfer vote weight should move to different candidates" do
       before(:all) do
-        `cleos push action daccustodian votecust '{ "voter": "voter2", "newvotes": ["votedcust3"], "dac_id": "custtestdac"}' -p voter2`
+        `cleos push action daccustodian votecuste '{ "voter": "voter2", "newvotes": ["votedcust3"], "dac_id": "custtestdac"}' -p voter2`
       end
       it do
         result = wrap_command %(cleos push action eosdactokens transfer '{ "from": "voter1", "to": "voter2", "quantity": "1300.0000 EOSDAC","memo":"random transfer"}' -p voter1)
@@ -646,14 +646,14 @@ describe "eosdacelect" do
   #     # pre-transfer for staking before registering from within the contract.
   #     `cleos push action eosdactokens transfer '{ "from": "votedproxy1", "to": "daccustodian", "quantity": "23.0000 EOSDAC","memo":"daccustodian"}' -p votedproxy1`
   #
-  #     `cleos push action daccustodian nominatecand '{ "cand": "votedproxy1", "bio": "any bio", "requestedpay": "10.0000 EOS"}' -p votedproxy1`
-  #     # `cleos push action daccustodian nominatecand '{ "cand": "unregvoter" "requestedpay": "21.5000 EOS"}' -p unregvoter`
+  #     `cleos push action daccustodian nominatecane '{ "cand": "votedproxy1", "bio": "any bio", "requestedpay": "10.0000 EOS"}' -p votedproxy1`
+  #     # `cleos push action daccustodian nominatecane '{ "cand": "unregvoter" "requestedpay": "21.5000 EOS"}' -p unregvoter`
   #   end
   #
   #   context "with invalid auth" do
   #     it do
   #       result = wrap_command %(cleos push action daccustodian voteproxy '{ "voter": "voter1", "proxy": "votedproxy1"}' -p testreguser3)
-  #       # expect(result.stdout).to include('daccustodian::nominatecand')
+  #       # expect(result.stdout).to include('daccustodian::nominatecane')
   #       expect(result.stderr).to include('Error 3090004')
   #     end
   #   end
@@ -899,7 +899,7 @@ describe "eosdacelect" do
   #
   #   context "with valid auth change to existing vote of proxy" do
   #     before(:all) do
-  #       `cleos push action daccustodian votecust '{ "voter": "votedproxy3", "newvotes": ["votedcust1","votedcust2","votedcust3"]}' -p votedproxy3`
+  #       `cleos push action daccustodian votecuste '{ "voter": "votedproxy3", "newvotes": ["votedcust1","votedcust2","votedcust3"]}' -p votedproxy3`
   #     end
   #
   #     context "the votes table" do
@@ -1025,7 +1025,7 @@ describe "eosdacelect" do
 
 # Excluded ^^^^^^^^^^^^^^^^^^^^^^
 
-  describe "newperiod" do
+  describe "newperiode" do
     before(:all) do
       seed_dac_account("voter3", issue: "110.0000 EOSDAC", memberreg: "New Latest terms", dac_id: "custtestdac", dac_owner: "dacowner")
       seed_dac_account("whale1", issue: "15000.0000 EOSDAC", memberreg: "New Latest terms", dac_id: "custtestdac", dac_owner: "dacowner")
@@ -1033,10 +1033,10 @@ describe "eosdacelect" do
 
     context "with insufficient votes to trigger the dac should fail" do
       before(:all) do
-        `cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 5, "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 3, "auth_threshold_mid": 2, "auth_threshold_low": 1, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_id": "custtestdac"}' -p dacowner`
+        `cleos push action daccustodian updateconfige '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 5, "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 3, "auth_threshold_mid": 2, "auth_threshold_low": 1, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_id": "custtestdac"}' -p dacowner`
       end
       it do
-        result = wrap_command %(cleos push action daccustodian newperiod '{ "message": "log message", "earlyelect": false, "dac_id": "custtestdac"}' -p daccustodian)
+        result = wrap_command %(cleos push action daccustodian newperiode '{ "message": "log message", "earlyelect": false, "dac_id": "custtestdac"}' -p daccustodian)
         expect(result.stderr).to include('Voter engagement is insufficient to activate the DAC.')
       end
     end
@@ -1044,12 +1044,12 @@ describe "eosdacelect" do
     describe "allocateCust" do
       before(:all) do
         # add cands
-        `cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 1 , "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 4, "auth_threshold_mid": 4, "auth_threshold_low": 2, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_id": "custtestdac"}' -p dacowner`
+        `cleos push action daccustodian updateconfige '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 1 , "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 4, "auth_threshold_mid": 4, "auth_threshold_low": 2, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_id": "custtestdac"}' -p dacowner`
       end
 
       context "given there are not enough candidates to fill the custodians" do
         it do
-          result = wrap_command %(cleos push action daccustodian newperiod '{ "message": "log message", "earlyelect": false, "dac_id": "custtestdac"}' -p daccustodian)
+          result = wrap_command %(cleos push action daccustodian newperiode '{ "message": "log message", "earlyelect": false, "dac_id": "custtestdac"}' -p daccustodian)
           expect(result.stderr).to include('Voter engagement is insufficient to activate the DAC.')
         end
       end
@@ -1073,29 +1073,29 @@ describe "eosdacelect" do
           seed_dac_account("allocate52", issue: "101.0000 EOSDAC", memberreg: "New Latest terms", stake: "23.0000 EOSDAC", requestedpay: "25.0000 EOS", dac_id: "custtestdac", dac_owner: "dacowner")
         end
         it do
-          result = wrap_command %(cleos push action daccustodian newperiod '{ "message": "log message", "earlyelect": false, "dac_id": "custtestdac"}' -p daccustodian)
+          result = wrap_command %(cleos push action daccustodian newperiode '{ "message": "log message", "earlyelect": false, "dac_id": "custtestdac"}' -p daccustodian)
           expect(result.stderr).to include('Voter engagement is insufficient to activate the DAC.')
         end
       end
 
       context "given there are enough votes with total_votes over 0" do
         before(:all) do
-          `cleos push action daccustodian votecust '{ "voter": "voter1", "newvotes": ["allocate1","allocate2","allocate3","allocate4","allocate5"], "dac_id": "custtestdac"}' -p voter1`
-          `cleos push action daccustodian votecust '{ "voter": "voter2", "newvotes": ["allocate11","allocate21","allocate31","allocate41","allocate51"], "dac_id": "custtestdac"}' -p voter2`
-          `cleos push action daccustodian votecust '{ "voter": "voter3", "newvotes": ["allocate12","allocate22","allocate32","allocate4","allocate5"], "dac_id": "custtestdac"}' -p voter3`
+          `cleos push action daccustodian votecuste '{ "voter": "voter1", "newvotes": ["allocate1","allocate2","allocate3","allocate4","allocate5"], "dac_id": "custtestdac"}' -p voter1`
+          `cleos push action daccustodian votecuste '{ "voter": "voter2", "newvotes": ["allocate11","allocate21","allocate31","allocate41","allocate51"], "dac_id": "custtestdac"}' -p voter2`
+          `cleos push action daccustodian votecuste '{ "voter": "voter3", "newvotes": ["allocate12","allocate22","allocate32","allocate4","allocate5"], "dac_id": "custtestdac"}' -p voter3`
         end
         context "But not enough engagement to active the DAC" do
           it do
-            result = wrap_command %(cleos push action daccustodian newperiod '{ "message": "log message", "earlyelect": false, "dac_id": "custtestdac"}' -p daccustodian)
+            result = wrap_command %(cleos push action daccustodian newperiode '{ "message": "log message", "earlyelect": false, "dac_id": "custtestdac"}' -p daccustodian)
             expect(result.stderr).to include('Voter engagement is insufficient to activate the DAC.')
           end
         end
 
         context "And enough voter weight to activate the DAC" do
-          before(:all) {`cleos push action daccustodian votecust '{ "voter": "whale1", "newvotes": ["allocate12","allocate22","allocate32","allocate4","allocate5"], "dac_id": "custtestdac"}' -p whale1`}
+          before(:all) {`cleos push action daccustodian votecuste '{ "voter": "whale1", "newvotes": ["allocate12","allocate22","allocate32","allocate4","allocate5"], "dac_id": "custtestdac"}' -p whale1`}
           it do
-            result = wrap_command %(cleos push action daccustodian newperiod '{ "message": "log message", "dac_id": "custtestdac"}' -p dacowner)
-            expect(result.stdout).to include('daccustodian::newperiod')
+            result = wrap_command %(cleos push action daccustodian newperiode '{ "message": "log message", "dac_id": "custtestdac"}' -p dacowner)
+            expect(result.stdout).to include('daccustodian::newperiode')
           end
         end
       end
@@ -1144,50 +1144,50 @@ describe "eosdacelect" do
       end
     end
 
-    describe "called too early in the period should fail after recent newperiod call" do
+    describe "called too early in the period should fail after recent newperiode call" do
       before(:all) do
-        `cleos push action daccustodian votecust '{ "voter": "whale1", "newvotes": ["allocate1","allocate2","allocate3","allocate4","allocate5"], "dac_id": "custtestdac"}' -p whale1`
+        `cleos push action daccustodian votecuste '{ "voter": "whale1", "newvotes": ["allocate1","allocate2","allocate3","allocate4","allocate5"], "dac_id": "custtestdac"}' -p whale1`
       end
       it do
-        result = wrap_command %(cleos push action daccustodian newperiod '{ "message": "called too early", "earlyelect": false, "dac_id": "custtestdac"}' -p dacowner)
+        result = wrap_command %(cleos push action daccustodian newperiode '{ "message": "called too early", "earlyelect": false, "dac_id": "custtestdac"}' -p dacowner)
         expect(result.stderr).to include('New period is being called too soon. Wait until the period has complete')
       end
     end
 
     describe "called after period time has passed" do
       before(:all) do
-        `cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 1, "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 3, "auth_threshold_mid": 2, "auth_threshold_low": 1, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_id": "custtestdac"}' -p dacowner`
+        `cleos push action daccustodian updateconfige '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 1, "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 3, "auth_threshold_mid": 2, "auth_threshold_low": 1, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_id": "custtestdac"}' -p dacowner`
         sleep 2
       end
       it do
-        result = wrap_command %(cleos push action daccustodian newperiod '{ "message": "Good new period call after config change", "earlyelect": false, "dac_id": "custtestdac"}' -p dacowner)
-        expect(result.stdout).to include('daccustodian::newperiod')
+        result = wrap_command %(cleos push action daccustodian newperiode '{ "message": "Good new period call after config change", "earlyelect": false, "dac_id": "custtestdac"}' -p dacowner)
+        expect(result.stdout).to include('daccustodian::newperiode')
       end
     end
 
     context "called after voter engagement has dropped to too low" do
       before(:all) do
         # Remove the whale vote to drop backs
-        `cleos push action daccustodian votecust '{ "voter": "whale1", "newvotes": [], "dac_id": "custtestdac"}' -p whale1`
-        `cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 1, "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 4, "auth_threshold_high": 3, "auth_threshold_mid": 2, "auth_threshold_low": 1, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_id": "custtestdac"}' -p dacowner`
+        `cleos push action daccustodian votecuste '{ "voter": "whale1", "newvotes": [], "dac_id": "custtestdac"}' -p whale1`
+        `cleos push action daccustodian updateconfige '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 1, "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 4, "auth_threshold_high": 3, "auth_threshold_mid": 2, "auth_threshold_low": 1, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_id": "custtestdac"}' -p dacowner`
         sleep 2
       end
       it do
-        result = wrap_command %(cleos push action daccustodian newperiod '{ "message": "Good new period call after config change", "earlyelect": false, "dac_id": "custtestdac"}' -p dacowner)
+        result = wrap_command %(cleos push action daccustodian newperiode '{ "message": "Good new period call after config change", "earlyelect": false, "dac_id": "custtestdac"}' -p dacowner)
         expect(result.stderr).to include('Voter engagement is insufficient to process a new period')
       end
     end
 
     context "called after voter engagement has risen to above the continuing threshold" do
       before(:all) do
-        `cleos push action daccustodian updateconfig '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 1, "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 4, "auth_threshold_high": 3, "auth_threshold_mid": 2, "auth_threshold_low": 1, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_id": "custtestdac"}' -p dacowner`
+        `cleos push action daccustodian updateconfige '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 1, "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 4, "auth_threshold_high": 3, "auth_threshold_mid": 2, "auth_threshold_low": 1, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_id": "custtestdac"}' -p dacowner`
         `cleos push action eosdactokens transfer '{ "from": "whale1", "to": "voter1", "quantity": "1300.0000 EOSDAC","memo":"random transfer"}' -p whale1`
 
         sleep 2
       end
       it do
-        result = wrap_command %(cleos push action daccustodian newperiod '{ "message": "Good new period call after config change", "earlyelect": false, "dac_id": "custtestdac"}' -p dacowner)
-        expect(result.stdout).to include('daccustodian::newperiod')
+        result = wrap_command %(cleos push action daccustodian newperiode '{ "message": "Good new period call after config change", "earlyelect": false, "dac_id": "custtestdac"}' -p dacowner)
+        expect(result.stdout).to include('daccustodian::newperiode')
       end
     end
 
@@ -1199,11 +1199,11 @@ describe "eosdacelect" do
         expect(json["rows"].count).to eq 24
 
         custodian = json["rows"].detect {|v| v["receiver"] == 'allocate5'}
-        expect(custodian["quantity"]).to eq '16.7500 EOS'
+        expect(custodian["quantity"]).to eq '17.0000 EOS'
         expect(custodian["memo"]).to eq 'Custodian pay. Thank you.'
 
         custodian = json["rows"].detect {|v| v["receiver"] == 'allocate3'}
-        expect(custodian["quantity"]).to eq '16.7500 EOS'
+        expect(custodian["quantity"]).to eq '17.0000 EOS'
       end
     end
 
@@ -1269,17 +1269,17 @@ describe "eosdacelect" do
     end
   end
 
-  describe "claimpay" do
+  describe "claimpaye" do
     context "with invalid payId should fail" do
       it do
-        result = wrap_command %(cleos push action daccustodian claimpay '{ "payid": 100, "dac_id": "custtestdac"}' -p votedcust4)
+        result = wrap_command %(cleos push action daccustodian claimpaye '{ "payid": 100, "dac_id": "custtestdac"}' -p votedcust4)
         expect(result.stderr).to include('Invalid pay claim id')
       end
     end
 
     context "claiming for a different acount should fail" do
       it do
-        result = wrap_command %(cleos push action daccustodian claimpay '{ "payid": 10, "dac_id": "custtestdac"}' -p votedcust4)
+        result = wrap_command %(cleos push action daccustodian claimpaye '{ "payid": 10, "dac_id": "custtestdac"}' -p votedcust4)
         expect(result.stderr).to include('missing authority of allocate41')
       end
     end
@@ -1293,8 +1293,8 @@ describe "eosdacelect" do
 
     context "claiming for the correct account with matching auth should succeed" do
       it do
-        result = wrap_command %(cleos push action daccustodian claimpay '{ "payid": 1 , "dac_id": "custtestdac"}' -p allocate11)
-        expect(result.stdout).to include('daccustodian::claimpay')
+        result = wrap_command %(cleos push action daccustodian claimpaye '{ "payid": 1 , "dac_id": "custtestdac"}' -p allocate11)
+        expect(result.stdout).to include('daccustodian::claimpaye')
         # exit
       end
     end
@@ -1310,23 +1310,23 @@ describe "eosdacelect" do
       before(:each) {sleep 12}
       it do
         result = wrap_command %(cleos get currency balance eosio.token dacocoiogmbh EOS)
-        expect(result.stdout).to include('16.7500 EOS') # eventually this would pass but now it's time delayed I cannot assert
+        expect(result.stdout).to include('17.0000 EOS') # eventually this would pass but now it's time delayed I cannot assert
       end
     end
   end
 
-  describe "withdrawcand" do
+  describe "withdrawcane" do
     context "when the auth is wrong" do
       it do
-        result = wrap_command %(cleos push action daccustodian withdrawcand '{ "cand": "allocate41", "dac_id": "custtestdac"}' -p allocate4)
+        result = wrap_command %(cleos push action daccustodian withdrawcane '{ "cand": "allocate41", "dac_id": "custtestdac"}' -p allocate4)
         expect(result.stderr).to include('missing authority of allocate41')
       end
     end
 
     context "when the auth is correct" do
       it do
-        result = wrap_command %(cleos push action daccustodian withdrawcand '{ "cand": "allocate41", "dac_id": "custtestdac"}' -p allocate41)
-        expect(result.stdout).to include('daccustodian::withdrawcand')
+        result = wrap_command %(cleos push action daccustodian withdrawcane '{ "cand": "allocate41", "dac_id": "custtestdac"}' -p allocate41)
+        expect(result.stdout).to include('daccustodian::withdrawcane')
       end
     end
 
@@ -1355,8 +1355,8 @@ describe "eosdacelect" do
         `cleos push action eosdactokens transfer '{ "from": "allocate41", "to": "daccustodian", "quantity": "10.0000 EOSDAC","memo":"daccustodian"}' -p allocate41 -f`
       end
       it do
-        result = wrap_command %(cleos push action daccustodian nominatecand '{ "cand": "allocate41" "requestedpay": "11.5000 EOS", "dac_id": "custtestdac"}' -p allocate41)
-        expect(result.stdout).to include('daccustodian::nominatecand')
+        result = wrap_command %(cleos push action daccustodian nominatecane '{ "cand": "allocate41" "requestedpay": "11.5000 EOS", "dac_id": "custtestdac"}' -p allocate41)
+        expect(result.stdout).to include('daccustodian::nominatecane')
       end
     end
 
@@ -1376,25 +1376,25 @@ describe "eosdacelect" do
     end
   end
 
-  describe "resign cust" do
+  describe "resigncuste" do
     context "with invalid auth" do
       it do
-        result = wrap_command %(cleos push action daccustodian resigncust '{ "cust": "allocate31", "dac_id": "custtestdac"}' -p allocate3)
+        result = wrap_command %(cleos push action daccustodian resigncuste '{ "cust": "allocate31", "dac_id": "custtestdac"}' -p allocate3)
         expect(result.stderr).to include('missing authority of allocate31')
       end
     end
 
     context "with a candidate who is not an elected custodian" do
       it do
-        result = wrap_command %(cleos push action daccustodian resigncust '{ "cust": "votedcust3", "dac_id": "custtestdac"}' -p votedcust3)
+        result = wrap_command %(cleos push action daccustodian resigncuste '{ "cust": "votedcust3", "dac_id": "custtestdac"}' -p votedcust3)
         expect(result.stderr).to include('The entered account name is not for a current custodian.')
       end
     end
 
     context "when the auth is correct" do
       it do
-        result = wrap_command %(cleos push action daccustodian resigncust '{ "cust": "allocate31", "dac_id": "custtestdac"}' -p allocate31 -p dacowner) # Need Michael's help here for the permission.
-        expect(result.stdout).to include('daccustodian::resigncust')
+        result = wrap_command %(cleos push action daccustodian resigncuste '{ "cust": "allocate31", "dac_id": "custtestdac"}' -p allocate31 -p dacowner) # Need Michael's help here for the permission.
+        expect(result.stdout).to include('daccustodian::resigncuste')
       end
     end
 
@@ -1448,26 +1448,26 @@ describe "eosdacelect" do
     end
   end
 
-  describe "unstake" do
+  describe "unstakee" do
     context "for an elected custodian" do
       it do
-        result = wrap_command %(cleos push action daccustodian unstake '{ "cand": "allocate41", "dac_id": "custtestdac"}' -p allocate41)
-        expect(result.stderr).to include('Cannot unstake tokens for an active candidate. Call withdrawcand first.')
+        result = wrap_command %(cleos push action daccustodian unstakee '{ "cand": "allocate41", "dac_id": "custtestdac"}' -p allocate41)
+        expect(result.stderr).to include('ERR::UNSTAKE_CANNOT_UNSTAKE_FROM_ACTIVE_CAND')
       end
     end
 
     context "for a unelected custodian" do
       context "who has not withdrawn as a candidate" do
         it do
-          result = wrap_command %(cleos push action daccustodian unstake '{ "cand": "votedcust2", "dac_id": "custtestdac"}' -p votedcust2)
-          expect(result.stderr).to include('Cannot unstake tokens for an active candidate. Call withdrawcand first.')
+          result = wrap_command %(cleos push action daccustodian unstakee '{ "cand": "votedcust2", "dac_id": "custtestdac"}' -p votedcust2)
+          expect(result.stderr).to include('ERR::UNSTAKE_CANNOT_UNSTAKE_FROM_ACTIVE_CAND')
         end
       end
 
       context "who has withdrawn as a candidate" do
         it do
-          result = wrap_command %(cleos push action daccustodian unstake '{ "cand": "allocate31", "dac_id": "custtestdac"}' -p allocate31)
-          expect(result.stderr).to include('Cannot unstake tokens before they are unlocked from the time delay.')
+          result = wrap_command %(cleos push action daccustodian unstakee '{ "cand": "allocate31", "dac_id": "custtestdac"}' -p allocate31)
+          expect(result.stderr).to include('ERR::UNSTAKE_CANNOT_UNSTAKE_UNDER_TIME_LOCK')
         end
       end
     end
@@ -1481,8 +1481,8 @@ describe "eosdacelect" do
 
     context "for a resigned custodian after time expired" do
       it do
-        result = wrap_command %(cleos push action daccustodian unstake '{ "cand": "unreguser2", "dac_id": "custtestdac"}' -p unreguser2)
-        expect(result.stdout).to include('daccustodian::unstake')
+        result = wrap_command %(cleos push action daccustodian unstakee '{ "cand": "unreguser2", "dac_id": "custtestdac"}' -p unreguser2)
+        expect(result.stdout).to include('daccustodian::unstakee')
       end
     end
 
@@ -1502,10 +1502,10 @@ describe "eosdacelect" do
     end
   end
 
-  describe "fire cand" do
+  describe "firecande" do
     context "with invalid auth" do
       it do
-        result = wrap_command %(cleos push action daccustodian firecand '{ "cand": "votedcust4", "lockupStake": true, "dac_id": "custtestdac"}' -p votedcust4)
+        result = wrap_command %(cleos push action daccustodian firecande '{ "cand": "votedcust4", "lockupStake": true, "dac_id": "custtestdac"}' -p votedcust4)
         expect(result.stderr).to include('missing authority of dacowner')
       end
     end
@@ -1513,14 +1513,14 @@ describe "eosdacelect" do
     xcontext "with valid auth" do # Needs further work to understand how this could be tested.
       context "without locked up stake" do
         it do
-          result = wrap_command %(cleos multisig propose fireproposal '[{"actor": "dacauthority", "permission": "med"}]' '[{"actor": "allocate2", "permission": "active"}, {"actor": "allocate3", "permission": "active"}]' daccustodian firecand '{ "cand": "votedcust4", "lockupStake": false, "dac_id": "custtestdac"}' -p dacowner@active -sdj)
-          expect(result.stderr).to include('Cannot unstake tokens before they are unlocked from the time delay.')
+          result = wrap_command %(cleos multisig propose fireproposal '[{"actor": "dacauthority", "permission": "med"}]' '[{"actor": "allocate2", "permission": "active"}, {"actor": "allocate3", "permission": "active"}]' daccustodian firecande '{ "cand": "votedcust4", "lockupStake": false, "dac_id": "custtestdac"}' -p dacowner@active -sdj)
+          expect(result.stderr).to include('ERR::UNSTAKE_CANNOT_UNSTAKE_UNDER_TIME_LOCK')
         end
       end
       context "with locked up stake" do
         it do
-          result = wrap_command %(cleos push action daccustodian firecand '{ "cand": "votedcust5", "lockupStake": true, "dac_id": "custtestdac"}' -p dacowner)
-          expect(result.stderr).to include('Cannot unstake tokens before they are unlocked from the time delay.')
+          result = wrap_command %(cleos push action daccustodian firecande '{ "cand": "votedcust5", "lockupStake": true, "dac_id": "custtestdac"}' -p dacowner)
+          expect(result.stderr).to include('ERR::UNSTAKE_CANNOT_UNSTAKE_UNDER_TIME_LOCK')
         end
       end
     end
@@ -1559,7 +1559,7 @@ describe "eosdacelect" do
   #
   #   context "with valid auth" do
   #     result = wrap_command %(cleos push action daccustodian firecust '{ "cust": "allocate1"}' -p dacowner)
-  #     expect(result.stderr).to include('Cannot unstake tokens before they are unlocked from the time delay.')
+  #     expect(result.stderr).to include('Cannot unstakee tokens before they are unlocked from the time delay.')
   #   end
   #
   #   context "Read the candidates table after fire candidate" do

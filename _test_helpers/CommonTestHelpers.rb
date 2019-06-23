@@ -59,7 +59,7 @@ def seed_dac_account(name, issue: nil, memberreg: nil, stake: nil, requestedpay:
   end
 
   if !requestedpay.nil? && !dac_id.nil?
-    run %(cleos push action daccustodian nominatecand '{ "cand": "#{name}", "bio": "any bio", "requestedpay": "#{requestedpay}", "dac_id": "#{dac_id}"}' -p #{name})
+    run %(cleos push action daccustodian nominatecane '{ "cand": "#{name}", "bio": "any bio", "requestedpay": "#{requestedpay}", "dac_id": "#{dac_id}"}' -p #{name})
   end
 end
 
@@ -160,9 +160,9 @@ def install_dac_contracts
     run %(cleos set contract dacdirectory ../_compiled_contracts/dacdirectory -p dacdirectory)
     run %(cleos set contract eosdactokens ../_compiled_contracts/eosdactokens -p eosdactokens)
     run %(cleos set contract dacescrow    ../_compiled_contracts/dacescrow -p dacescrow)
-    run %(cleos set contract dacproposals ../_compiled_contracts/dacproposals -p dacproposals)
+    run %(cleos set contract dacproposals ../_compiled_contracts/dacproposals/unit_tests/dacproposals -p dacproposals)
     run %(cleos set contract daccustodian ../_compiled_contracts/daccustodian/unit_tests/daccustodian -p daccustodian)
-    run %(cleos set contract dacmultisigs ../_compiled_contracts/dacmultisigs/dacmultisigs -p dacmultisigs)
+    run %(cleos set contract dacmultisigs ../_compiled_contracts/dacmultisigs/mainnet/dacmultisigs -p dacmultisigs)
 
     # Mock contracts to help testing
     run %(cleos set contract daccustmock  ../_test_helpers/daccustodian_stub/daccustodian -p daccustmock)
