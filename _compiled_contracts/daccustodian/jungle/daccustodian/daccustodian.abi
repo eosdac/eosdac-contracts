@@ -144,6 +144,72 @@
             ]
         },
         {
+            "name": "contr_config_old",
+            "base": "",
+            "fields": [
+                {
+                    "name": "lockupasset",
+                    "type": "asset"
+                },
+                {
+                    "name": "maxvotes",
+                    "type": "uint8"
+                },
+                {
+                    "name": "numelected",
+                    "type": "uint8"
+                },
+                {
+                    "name": "periodlength",
+                    "type": "uint32"
+                },
+                {
+                    "name": "authaccount",
+                    "type": "name"
+                },
+                {
+                    "name": "tokenholder",
+                    "type": "name"
+                },
+                {
+                    "name": "serviceprovider",
+                    "type": "name"
+                },
+                {
+                    "name": "should_pay_via_service_provider",
+                    "type": "bool"
+                },
+                {
+                    "name": "initial_vote_quorum_percent",
+                    "type": "uint32"
+                },
+                {
+                    "name": "vote_quorum_percent",
+                    "type": "uint32"
+                },
+                {
+                    "name": "auth_threshold_high",
+                    "type": "uint8"
+                },
+                {
+                    "name": "auth_threshold_mid",
+                    "type": "uint8"
+                },
+                {
+                    "name": "auth_threshold_low",
+                    "type": "uint8"
+                },
+                {
+                    "name": "lockup_release_time_delay",
+                    "type": "uint32"
+                },
+                {
+                    "name": "requested_pay_max",
+                    "type": "asset"
+                }
+            ]
+        },
+        {
             "name": "contr_state",
             "base": "",
             "fields": [
@@ -805,6 +871,13 @@
         },
         {
             "name": "config",
+            "type": "contr_config_old",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "config2",
             "type": "contr_config",
             "index_type": "i64",
             "key_names": [],

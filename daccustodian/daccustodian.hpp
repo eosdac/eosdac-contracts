@@ -19,10 +19,34 @@ namespace eosdac {
 #ifndef TRANSFER_DELAY
 #define TRANSFER_DELAY 60*60
 #endif
-    struct contr_config;
-    typedef eosio::singleton<"config"_n, contr_config> configscontainer;
 
-    struct [[eosio::table("config"), eosio::contract("daccustodian")]] contr_config {
+//old_start
+
+    struct [[eosio::table("config"), eosio::contract("daccustodian")]] contr_config_old {
+        asset lockupasset;
+        uint8_t maxvotes = 5;
+        uint8_t numelected = 3;
+        uint32_t periodlength = 7 * 24 * 60 * 60;
+        name authaccount = name{0};
+        name tokenholder = "eosdacthedac"_n;
+        name serviceprovider;
+        bool should_pay_via_service_provider;
+        uint32_t initial_vote_quorum_percent;
+        uint32_t vote_quorum_percent;
+        uint8_t auth_threshold_high;
+        uint8_t auth_threshold_mid;
+        uint8_t auth_threshold_low;
+        uint32_t lockup_release_time_delay;
+        asset requested_pay_max;
+    };
+
+    typedef singleton<"config"_n, contr_config_old> old_configscontainer;
+    //end_old
+
+    struct contr_config;
+    typedef eosio::singleton<"config2"_n, contr_config> configscontainer;
+
+    struct [[eosio::table("config2"), eosio::contract("daccustodian")]] contr_config {
     //    The amount of assets that are locked up by each candidate applying for election.
         eosio::asset lockupasset;
     //    The maximum number of votes that each member can make for a candidate.
