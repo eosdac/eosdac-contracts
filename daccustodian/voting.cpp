@@ -1,13 +1,11 @@
+#include "../_contract-shared-headers/migration_helpers.hpp"
 
 void daccustodian::votecust(name voter, vector<name> newvotes) {
     votecuste(voter, newvotes, get_self());
 }
 
 void daccustodian::votecuste(name voter, vector<name> newvotes, name dac_id) {
-#ifdef VOTING_DISABLED
-    check(false,"ERR::VOTECUST_VOTING_IS_DISABLED::Voting is currently disabled.");
-#endif
-    votes_table votes_cast_by_members(_self, dac_id.value);
+
     candidates_table registered_candidates(_self, dac_id.value);
     contr_config configs = contr_config::get_current_configs(_self, dac_id);
 
@@ -23,6 +21,7 @@ void daccustodian::votecuste(name voter, vector<name> newvotes, name dac_id) {
     }
 
     // Find a vote that has been cast by this voter previously.
+    votes_table votes_cast_by_members(_self, dac_id.value);
     auto existingVote = votes_cast_by_members.find(voter.value);
     if (existingVote != votes_cast_by_members.end()) {
         modifyVoteWeights(voter, existingVote->candidates, newvotes, dac_id);
@@ -45,6 +44,34 @@ void daccustodian::votecuste(name voter, vector<name> newvotes, name dac_id) {
             v.candidates = newvotes;
         });
     }
+
+    //Temp block for migrations to new scope
+    if (dac_id == get_self()) {
+        votes_table votes_cast_by_members(_self, NEW_SCOPE.value);
+        auto existingVote = votes_cast_by_members.find(voter.value);
+        if (existingVote != votes_cast_by_members.end()) {
+            modifyVoteWeights(voter, existingVote->candidates, newvotes, NEW_SCOPE);
+
+            if (newvotes.size() == 0) {
+                // Remove the vote if the array of candidates is empty
+                votes_cast_by_members.erase(existingVote);
+                eosio::print("\n Removing empty vote.");
+            } else {
+                votes_cast_by_members.modify(existingVote, voter, [&](vote &v) {
+                    v.candidates = newvotes;
+                    v.proxy = name();
+                });
+            }
+        } else {
+            modifyVoteWeights(voter, {}, newvotes, NEW_SCOPE);
+
+            votes_cast_by_members.emplace(voter, [&](vote &v) {
+                v.voter = voter;
+                v.candidates = newvotes;
+            });
+        }
+    }
+    //end Temp block
 }
 
 //void daccustodian::voteproxy(name voter, name proxy) {

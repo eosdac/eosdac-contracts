@@ -1,16 +1,105 @@
 
+#include "../_contract-shared-headers/migration_helpers.hpp"
 
+ACTION daccustodian::migrate(uint16_t skip, uint16_t batch_size) {
+    
+    { // candidates_table
+        candidates_table source(get_self(), get_self().value);
+        candidates_table destination(get_self(), NEW_SCOPE.value);
 
-template <typename T>
-void cleanTable(uint64_t code, uint64_t account){
-    T db(code, account);
-    while(db.begin() != db.end()){
-        auto itr = --db.end();
-        db.erase(itr);
+        auto source_itrr = source.begin();
+        for (uint16_t count = 0; count < skip; count++) { source_itrr++; }
+
+        uint16_t batch_counter = 0;
+        while (batch_counter < batch_size && source_itrr != source.end()) {
+            if (destination.find(source_itrr->primary_key()) == destination.end()) {
+                destination.emplace(get_self(), [&](candidate &dest){
+                    dest.candidate_name = source_itrr->candidate_name;
+                    dest.requestedpay = source_itrr->requestedpay;
+                    dest.locked_tokens = source_itrr->locked_tokens;
+                    dest.total_votes = source_itrr->total_votes;
+                    dest.is_active = source_itrr->is_active;
+                    dest.custodian_end_time_stamp = source_itrr->custodian_end_time_stamp;
+                });
+            }
+            ++source_itrr;
+            ++batch_counter;
+        }
+    }
+
+        { // custodians_table
+        custodians_table source(get_self(), get_self().value);
+        custodians_table destination(get_self(), NEW_SCOPE.value);
+        
+        auto source_itrr = source.begin();
+        for (uint16_t count = 0; count < skip; count++) { source_itrr++; }
+
+        uint16_t batch_counter = 0;
+        while (batch_counter < batch_size && source_itrr != source.end()) {
+            if (destination.find(source_itrr->primary_key()) == destination.end()) {
+                destination.emplace(get_self(), [&](custodian &dest){
+                    dest.cust_name = source_itrr->cust_name;
+                    dest.requestedpay = source_itrr->requestedpay;
+                    dest.total_votes = source_itrr->total_votes;
+                });
+            }
+            ++source_itrr;
+            ++batch_counter;
+        }
+    }
+
+    // { // pendingpay
+    //     pending_pay_table source(get_self(), get_self().value);
+    //     pending_pay_table destination(get_self(), NEW_SCOPE.value);
+    //     auto source_itrr = source.begin();
+    //     for (uint16_t count = 0; count < skip; count++) { source_itrr++; }
+            
+    //     uint16_t batch_counter = 0;
+    //     while (batch_counter < batch_size && source_itrr != source.end()) {
+    //         if (destination.find(source_itrr->primary_key()) == destination.end()) {
+    //             destination.emplace(get_self(), [&](pay &dest){
+    //                 dest.key = source_itrr->key;
+    //                 dest.receiver = source_itrr->receiver;
+    //                 dest.quantity = source_itrr->quantity;
+    //                 dest.memo = source_itrr->memo;
+    //             });
+    //         }
+    //         ++source_itrr;
+    //         ++batch_counter;
+    //     }
+    // }
+    { // state
+        statecontainer source(get_self(), get_self().value);
+        statecontainer destination(get_self(), NEW_SCOPE.value);
+        if (source.exists()) {
+            destination.set(source.get(), get_self());
+        }
+    }
+
+    { // votes
+        votes_table source(get_self(), get_self().value);
+        votes_table destination(get_self(), NEW_SCOPE.value);
+
+        auto source_itrr = source.begin();
+        for (uint16_t count = 0; count < skip; count++) { source_itrr++; }
+            
+        uint16_t batch_counter = 0;
+        while (batch_counter < batch_size && source_itrr != source.end()) {
+            if (destination.find(source_itrr->primary_key()) == destination.end()) {
+                destination.emplace(get_self(), [&](vote &dest){
+                    dest.voter = source_itrr->voter;
+                    dest.proxy = source_itrr->proxy;
+                    dest.candidates = source_itrr->candidates;
+                });
+            }
+            ++source_itrr;
+            ++batch_counter;
+        }
     }
 }
 
-void daccustodian::migrate() {
+
+// void daccustodian::migrate() {
 
 //    contr_config2 oldconf = configs();
 
@@ -80,4 +169,4 @@ void daccustodian::migrate() {
             it = holding_table.erase(it);
         }
         */
-}
+// }

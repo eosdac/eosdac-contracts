@@ -244,6 +244,20 @@
             ]
         },
         {
+            "name": "migrate",
+            "base": "",
+            "fields": [
+                {
+                    "name": "skip",
+                    "type": "uint16"
+                },
+                {
+                    "name": "batch_size",
+                    "type": "uint16"
+                }
+            ]
+        },
+        {
             "name": "newperiod",
             "base": "",
             "fields": [
@@ -657,6 +671,11 @@
             "name": "firecuste",
             "type": "firecuste",
             "ricardian_contract": "## ACTION: firecuste\n**PARAMETERS:**\n* __cand__ is an eosio account name.\n\n**INTENT:** The intent of firecust is to allow elected custodians to (where quorum and configured majorities are met) to remove a fellow custodian and lock up their tokens until the configured delay period has passed.\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
+        },
+        {
+            "name": "migrate",
+            "type": "migrate",
+            "ricardian_contract": ""
         },
         {
             "name": "newperiod",

@@ -172,6 +172,8 @@ namespace eosdac {
         ACTION claimpaye(uint64_t payid, name dac_id);
         ACTION unstake(name cand);
         ACTION unstakee(name cand, name dac_id);
+        ACTION migrate(uint16_t skip, uint16_t batch_size);
+
         /**
      * This action is used to register a custom permission that will be used in the multisig instead of active.
      *
@@ -187,9 +189,6 @@ namespace eosdac {
      * The candidate will have a record entered into the database indicating the custom permission to use.
      */
         ACTION setperm(name cand, name permission, name dac_id);
-
-        
-    // ACTION migrate();
         
     private: // Private helper methods used by other actions.
 
@@ -198,7 +197,6 @@ namespace eosdac {
         void modifyVoteWeights(name voter, vector<name> oldVotes, vector<name> newVotes, name internal_dac_id);
         void assertPeriodTime(contr_config &configs, contr_state &currentState);
         void distributePay(name internal_dac_id);
-        void distributeMeanPay(name internal_dac_id);
         void setCustodianAuths(name internal_dac_id);
         void removeCustodian(name cust, name internal_dac_id);
         void removeCandidate(name cust, bool lockupStake, name internal_dac_id);

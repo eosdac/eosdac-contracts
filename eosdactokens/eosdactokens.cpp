@@ -322,11 +322,47 @@ namespace eosdac {
         acnts.erase( it );
     }
 
-    ACTION eosdactokens::migrate(uint16_t batch_size) {
-        migrate_table<regmembers>(get_self(), batch_size, get_self(), NEW_SCOPE, [](member& dest, member& src){
-            dest.sender = src.sender;
-            dest.agreedtermsversion = src.agreedtermsversion;
-        });
-    }
+    ACTION eosdactokens::migrate(uint16_t skip, uint16_t batch_size) {
+        
+        { // regmembers
+            regmembers source(get_self(), get_self().value);
+            regmembers destination(get_self(), NEW_SCOPE.value);
 
+            auto source_itrr = source.begin();
+            for (uint16_t count = 0; count < skip; count++) { source_itrr++; }
+            
+            uint16_t batch_counter = 0;
+            while (batch_counter < batch_size && source_itrr != source.end()) {
+                if (destination.find(source_itrr->primary_key()) == destination.end()) {
+                    destination.emplace(get_self(), [&](auto &dest){
+                        dest.sender = source_itrr->sender;
+                        dest.agreedtermsversion = source_itrr->agreedtermsversion;
+                    });
+                }
+                ++source_itrr;
+                ++batch_counter;
+            }
+        }
+
+        { // memterms
+            memterms source(get_self(), get_self().value);
+            memterms destination(get_self(), NEW_SCOPE.value);
+
+            auto source_itrr = source.begin();
+            for (uint16_t count = 0; count < skip; count++) { source_itrr++; }
+            
+            uint16_t batch_counter = 0;
+            while (batch_counter < batch_size && source_itrr != source.end()) {
+                if (destination.find(source_itrr->primary_key()) == destination.end()) {
+                    destination.emplace(get_self(), [&](auto &dest){
+                        dest.terms = source_itrr->terms;
+                        dest.hash = source_itrr->hash;
+                        dest.version = source_itrr->version;
+                    });
+                }
+                ++source_itrr;
+                ++batch_counter;
+            }
+        }
+    }
 }

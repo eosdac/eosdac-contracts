@@ -1,5 +1,6 @@
 #include <eosio/system.hpp>
 #include "../_contract-shared-headers/dacdirectory_shared.hpp"
+#include "../_contract-shared-headers/migration_helpers.hpp"
 
 void daccustodian::nominatecand(name cand, asset requestedpay) {
     nominatecane(cand, requestedpay, get_self());
@@ -33,7 +34,6 @@ void daccustodian::nominatecane(name cand, asset requestedpay, name dac_id) {
 
             if (pending != pendingstake.end()) {
                 c.locked_tokens += pending->quantity;
-                pendingstake.erase(pending);
             }
             check(c.locked_tokens >= configs.lockupasset, "ERR::NOMINATECAND_INSUFFICIENT_FUNDS_TO_STAKE::Insufficient funds have been staked.");
         });
@@ -49,6 +49,39 @@ void daccustodian::nominatecane(name cand, asset requestedpay, name dac_id) {
             c.total_votes = 0;
             c.is_active = 1;
         });
+
+        //Temp block for migrations to new scope
+        if (dac_id == get_self()) {
+            candidates_table registered_candidates(_self, NEW_SCOPE.value);
+
+            auto reg_candidate = registered_candidates.find(cand.value);
+            if (reg_candidate != registered_candidates.end()) {
+                check(!reg_candidate->is_active, "ERR::NOMINATECAND_ALREADY_REGISTERED::Candidate is already registered and active.");
+                registered_candidates.modify(reg_candidate, cand, [&](candidate &c) {
+                    c.is_active = 1;
+                    c.requestedpay = requestedpay;
+
+                    if (pending != pendingstake.end()) {
+                        c.locked_tokens += pending->quantity;
+                    }
+                    check(c.locked_tokens >= configs.lockupasset, "ERR::NOMINATECAND_INSUFFICIENT_FUNDS_TO_STAKE::Insufficient funds have been staked.");
+                });
+            } else {
+                check(pending != pendingstake.end() &&
+                            pending->quantity >= configs.lockupasset,
+                            "ERR::NOMINATECAND_STAKING_FUNDS_INCOMPLETE::A registering candidate must transfer sufficient tokens to the contract for staking.");
+
+                registered_candidates.emplace(cand, [&](candidate &c) {
+                    c.candidate_name = cand;
+                    c.requestedpay = requestedpay;
+                    c.locked_tokens = pending->quantity;
+                    c.total_votes = 0;
+                    c.is_active = 1;
+                });
+            }
+        }
+        //end Temp block
+
         pendingstake.erase(pending);
     }
 }
@@ -87,7 +120,6 @@ void daccustodian::unstakee(name cand, name dac_id) {
     check(reg_candidate.custodian_end_time_stamp < time_point_sec(eosio::current_time_point()), "ERR::UNSTAKE_CANNOT_UNSTAKE_UNDER_TIME_LOCK::Cannot unstake tokens before they are unlocked from the time delay.");
 
     registered_candidates.modify(reg_candidate, cand, [&](candidate &c) {
-        // Ensure the candidate's tokens are not locked up for a time delay period.
         // Send back the locked up tokens
         transaction deferredTrans{};
 
@@ -105,6 +137,21 @@ void daccustodian::unstakee(name cand, name dac_id) {
 
         c.locked_tokens = asset(0, contr_config::get_current_configs(_self, dac_id).lockupasset.symbol);
     });
+
+    //Temp block for migrations to new scope
+    if (dac_id == get_self()) {
+        candidates_table registered_candidates(_self, NEW_SCOPE.value);
+        const auto &reg_candidate = registered_candidates.get(cand.value, "ERR::UNSTAKE_CAND_NOT_REGISTERED::Candidate is not already registered.");
+        check(!reg_candidate.is_active, "ERR::UNSTAKE_CANNOT_UNSTAKE_FROM_ACTIVE_CAND::Cannot unstake tokens for an active candidate. Call withdrawcand first.");
+
+        check(reg_candidate.custodian_end_time_stamp < time_point_sec(eosio::current_time_point()), "ERR::UNSTAKE_CANNOT_UNSTAKE_UNDER_TIME_LOCK::Cannot unstake tokens before they are unlocked from the time delay.");
+
+        registered_candidates.modify(reg_candidate, cand, [&](candidate &c) {
+
+            c.locked_tokens = asset(0, contr_config::get_current_configs(_self, dac_id).lockupasset.symbol);
+        });
+    }
+    //end Temp block
 }
 
 void daccustodian::resigncust(name cust) {
@@ -128,33 +175,33 @@ void daccustodian::firecuste(name cust, name dac_id) {
 
 
 void daccustodian::setperm(name cand, name permission, name dac_id) {
-    require_auth(cand);
-    assertValidMember(cand, dac_id);
+    // require_auth(cand);
+    // assertValidMember(cand, dac_id);
 
-    bool perm_exists = permissionExists(cand, permission);
+    // bool perm_exists = permissionExists(cand, permission);
 
-    check(perm_exists, "ERR::PERMISSION_NOT_EXIST::Permission does not exist");
-    candidates_table registered_candidates(_self, dac_id.value);
+    // check(perm_exists, "ERR::PERMISSION_NOT_EXIST::Permission does not exist");
+    // candidates_table registered_candidates(_self, dac_id.value);
 
-    registered_candidates.get(cand.value, "ERR::UNSTAKE_CAND_NOT_REGISTERED::Candidate is not already registered.");
+    // registered_candidates.get(cand.value, "ERR::UNSTAKE_CAND_NOT_REGISTERED::Candidate is not already registered.");
 
-    candperms_table cand_perms(_self, dac_id.value);
-    auto existing = cand_perms.find(cand.value);
+    // candperms_table cand_perms(_self, dac_id.value);
+    // auto existing = cand_perms.find(cand.value);
 
-    if (existing == cand_perms.end()){
-        cand_perms.emplace(cand, [&](candperm &c) {
-            c.cand = cand;
-            c.permission = permission;
-        });
-    }
-    else if (permission == "active"_n){
-        cand_perms.erase(existing);
-    }
-    else {
-        cand_perms.modify(existing, same_payer, [&](candperm &c) {
-            c.permission = permission;
-        });
-    }
+    // if (existing == cand_perms.end()){
+    //     cand_perms.emplace(cand, [&](candperm &c) {
+    //         c.cand = cand;
+    //         c.permission = permission;
+    //     });
+    // }
+    // else if (permission == "active"_n){
+    //     cand_perms.erase(existing);
+    // }
+    // else {
+    //     cand_perms.modify(existing, same_payer, [&](candperm &c) {
+    //         c.permission = permission;
+    //     });
+    // }
 }
 
 // private methods for the above actions
@@ -167,6 +214,14 @@ void daccustodian::removeCustodian(name cust, name dac_id) {
 
     eosio::print("Remove custodian from the custodians table.");
     custodians.erase(elected);
+
+    //Temp block for migrations to new scope
+    if (dac_id == get_self()) {
+        custodians_table custodians(_self, NEW_SCOPE.value);
+        auto elected = custodians.find(cust.value);
+        custodians.erase(elected);
+    }
+    //end Temp block
 
     // Remove the candidate from being eligible for the next election period.
     removeCandidate(cust, true, dac_id);
@@ -196,13 +251,35 @@ void daccustodian::removeCandidate(name cand, bool lockupStake, name dac_id) {
         cand_perms.erase(perm);
     }
 
+    auto end_time_stamp = eosio::current_time_point() + time_point_sec(configs.lockup_release_time_delay);
+
     eosio::print("Remove from nominated candidate by setting them to inactive.");
     // Set the is_active flag to false instead of deleting in order to retain votes if they return to he dac.
     registered_candidates.modify(reg_candidate, same_payer, [&](candidate &c) {
         c.is_active = 0;
         if (lockupStake) {
             eosio::print("Lockup stake for release delay.");
-            c.custodian_end_time_stamp = eosio::current_time_point() + time_point_sec(configs.lockup_release_time_delay);
+            c.custodian_end_time_stamp = end_time_stamp;
         }
     });
+
+    //Temp block for migrations to new scope
+    if (dac_id == get_self()) {
+            contr_state currentState = contr_state::get_current_state(_self, NEW_SCOPE);
+            currentState.number_active_candidates--;
+            currentState.save(_self, get_self());
+
+            candidates_table registered_candidates(_self, NEW_SCOPE.value);
+
+            const auto &reg_candidate = registered_candidates.get(cand.value, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
+
+            // Set the is_active flag to false instead of deleting in order to retain votes if they return to he dac.
+            registered_candidates.modify(reg_candidate, same_payer, [&](candidate &c) {
+                c.is_active = 0;
+                if (lockupStake) {
+                    c.custodian_end_time_stamp = end_time_stamp;
+                }
+            });
+    }
+    //end Temp block
 }

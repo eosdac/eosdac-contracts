@@ -170,6 +170,20 @@
             ]
         },
         {
+            "name": "migrate",
+            "base": "",
+            "fields": [
+                {
+                    "name": "skip",
+                    "type": "uint16"
+                },
+                {
+                    "name": "batch",
+                    "type": "uint16"
+                }
+            ]
+        },
+        {
             "name": "newmemterms",
             "base": "",
             "fields": [
@@ -324,6 +338,11 @@
             "name": "memberunrege",
             "type": "memberunrege",
             "ricardian_contract": "**PARAMETERS:** \n* __sender__ eos account name for a unregistering member\n* __managing_account__ eos account name to scope this action to a specific dac.\n\n**INTENT:** The intent of memberunreg is to allow an account {{ sender }} to unregister its membership.\n\n**TERM:** This action lasts for the duration of the processing of the contract. The action will persist on the deployed contract as long as it is active or superseded by an updated memberreg action."
+        },
+        {
+            "name": "migrate",
+            "type": "migrate",
+            "ricardian_contract": ""
         },
         {
             "name": "newmemterms",

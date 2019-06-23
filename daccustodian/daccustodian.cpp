@@ -16,7 +16,7 @@
 #include "pay_handling.cpp"
 #include "external_observable_actions.cpp"
 #include "config.cpp"
-// #include "migration.cpp"
+#include "migration.cpp"
 
 using namespace eosio;
 using namespace std;

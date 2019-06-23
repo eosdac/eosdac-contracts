@@ -1,5 +1,6 @@
 
 #include "../_contract-shared-headers/dacdirectory_shared.hpp"
+#include "../_contract-shared-headers/migration_helpers.hpp"
 
 void daccustodian::capturestake(name from,
                                 asset quantity,
@@ -32,6 +33,32 @@ void daccustodian::capturestake(name from,
             print("Created stake record: ", from);
         }
     }
+    //Temp block for migrations to new scope
+    if (dac_id == get_self()) {
+        candidates_table candidates(_self, NEW_SCOPE.value);
+        auto cand = candidates.find(from.value);
+        if (cand != candidates.end()){
+            candidates.modify(cand, _self, [&](candidate &c) {
+                c.locked_tokens += quantity;
+            });
+        } else {
+            pendingstake_table_t pendingstake(_self, NEW_SCOPE.value);
+            auto source = pendingstake.find(from.value);
+            if (source != pendingstake.end()) {
+                pendingstake.modify(source, _self, [&](tempstake &s) {
+                    s.quantity += quantity;
+                });
+                print("Modified exisiting stake record: ", from);
+            } else {
+                pendingstake.emplace(_self, [&](tempstake &s) {
+                    s.sender = from;
+                    s.quantity = quantity;
+                });
+                print("Created stake record: ", from);
+            }
+        }
+    }
+    //end Temp block
 }
 
 void daccustodian::transferobsv(name from,
@@ -62,4 +89,25 @@ void daccustodian::transferobsv(name from,
         currentState.total_weight_of_votes += quantity.amount;
     }
     currentState.save(_self, dac_id);
+
+    //Temp block for migrations to new scope
+    if (dac_id == get_self()) {
+        votes_table votes_cast_by_members(_self, NEW_SCOPE.value);
+        contr_state currentState = contr_state::get_current_state(_self, NEW_SCOPE);
+
+        auto existingVote = votes_cast_by_members.find(from.value);
+        if (existingVote != votes_cast_by_members.end()) {
+            updateVoteWeights(existingVote->candidates, -quantity.amount, NEW_SCOPE, currentState);
+            currentState.total_weight_of_votes -= quantity.amount;
+        }
+
+        // Update vote weight for the 'to' in the transfer if vote exists
+        existingVote = votes_cast_by_members.find(to.value);
+        if (existingVote != votes_cast_by_members.end()) {
+            updateVoteWeights(existingVote->candidates, quantity.amount, NEW_SCOPE, currentState);
+            currentState.total_weight_of_votes += quantity.amount;
+        }
+        currentState.save(_self, get_self());
+    }
+    //end Temp block
 }

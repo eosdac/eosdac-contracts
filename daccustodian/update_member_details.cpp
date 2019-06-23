@@ -1,3 +1,4 @@
+#include "../_contract-shared-headers/migration_helpers.hpp"
 
 using namespace eosdac;
 
@@ -33,4 +34,16 @@ void daccustodian::updatereqpae(name cand, asset requestedpay, name dac_id) {
     registered_candidates.modify(reg_candidate, cand, [&](candidate &c) {
         c.requestedpay = requestedpay;
     });
+
+    //Temp block for migrations to new scope
+    if (dac_id == get_self()) {
+        candidates_table registered_candidates(_self, NEW_SCOPE.value);
+
+        const auto &reg_candidate = registered_candidates.get(cand.value, "ERR::UPDATEREQPAY_NOT_CURRENT_REG_CANDIDATE::Candidate is not already registered.");
+
+        registered_candidates.modify(reg_candidate, cand, [&](candidate &c) {
+            c.requestedpay = requestedpay;
+        });
+    }
+    //end Temp block
 }
