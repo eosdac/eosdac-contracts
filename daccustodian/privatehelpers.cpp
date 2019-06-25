@@ -16,6 +16,23 @@ void daccustodian::updateVoteWeight(name custodian, int64_t weight, name dac_id)
         c.total_votes += weight;
         eosio::print("\nchanging vote weight: ", custodian, " by ", weight);
     });
+
+    // TempBlock
+    if (dac_id == get_self()) {
+        candidates_table registered_candidates(_self, NEW_SCOPE.value);
+
+        auto candItr = registered_candidates.find(custodian.value);
+        if (candItr == registered_candidates.end()) {
+            eosio::print("Candidate not found while updating from a transfer: ", custodian);
+            return; // trying to avoid throwing errors from here since it's unrelated to a transfer action.?!?!?!?!
+        }
+
+        registered_candidates.modify(candItr, same_payer, [&](auto &c) {
+            c.total_votes += weight;
+            eosio::print("\nchanging vote weight in migrating scope: ", custodian, " by ", weight);
+        });
+    }
+    // end temp block
 }
 
 void daccustodian::updateVoteWeights(const vector<name> &votes, int64_t vote_weight, name dac_id, contr_state &currentState) {
