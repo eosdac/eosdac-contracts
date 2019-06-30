@@ -90,6 +90,16 @@
             ]
         },
         {
+            "name": "clearold",
+            "base": "",
+            "fields": [
+                {
+                    "name": "batch_size",
+                    "type": "uint16"
+                }
+            ]
+        },
+        {
             "name": "contr_config",
             "base": "",
             "fields": [
@@ -717,6 +727,11 @@
             "name": "claimpaye",
             "type": "claimpaye",
             "ricardian_contract": "## ACTION: claimpaye\n**PARAMETERS:**\n* __claimer__ account claiming the pay. This account must match the destination account for which the claim is for.\n\n**INTENT:** The intent of {{ claimpaye }} is to allow an account to claim pending payment amounts due to the account. The pay claim they are claiming needs to be visible in the `pendingpay` table. transfers to the claimer via an inline transfer on the eosdactoken contract and then removes the pending payment record from the `pending_pay` table. The active auth of this claimer is required to complete this action.\n\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
+        },
+        {
+            "name": "clearold",
+            "type": "clearold",
+            "ricardian_contract": ""
         },
         {
             "name": "firecand",

@@ -2,6 +2,7 @@
 #include "../_contract-shared-headers/migration_helpers.hpp"
 
 ACTION daccustodian::migrate(uint16_t skip, uint16_t batch_size) {
+    print("Migrating: ", batch_size, "\n");
     
     { // candidates_table
         candidates_table source(get_self(), get_self().value);
@@ -25,9 +26,10 @@ ACTION daccustodian::migrate(uint16_t skip, uint16_t batch_size) {
             ++source_itrr;
             ++batch_counter;
         }
+        print("candidates table migrated: ", batch_counter, "\n");
     }
 
-        { // custodians_table
+    { // custodians_table
         custodians_table source(get_self(), get_self().value);
         custodians_table destination(get_self(), NEW_SCOPE.value);
         
@@ -46,28 +48,9 @@ ACTION daccustodian::migrate(uint16_t skip, uint16_t batch_size) {
             ++source_itrr;
             ++batch_counter;
         }
+        print("custodians table migrated: ", batch_counter, "\n");
     }
 
-    // { // pendingpay
-    //     pending_pay_table source(get_self(), get_self().value);
-    //     pending_pay_table destination(get_self(), NEW_SCOPE.value);
-    //     auto source_itrr = source.begin();
-    //     for (uint16_t count = 0; count < skip; count++) { source_itrr++; }
-            
-    //     uint16_t batch_counter = 0;
-    //     while (batch_counter < batch_size && source_itrr != source.end()) {
-    //         if (destination.find(source_itrr->primary_key()) == destination.end()) {
-    //             destination.emplace(get_self(), [&](pay &dest){
-    //                 dest.key = source_itrr->key;
-    //                 dest.receiver = source_itrr->receiver;
-    //                 dest.quantity = source_itrr->quantity;
-    //                 dest.memo = source_itrr->memo;
-    //             });
-    //         }
-    //         ++source_itrr;
-    //         ++batch_counter;
-    //     }
-    // }
     { // state
         statecontainer source(get_self(), get_self().value);
         statecontainer destination(get_self(), NEW_SCOPE.value);
@@ -119,8 +102,14 @@ ACTION daccustodian::migrate(uint16_t skip, uint16_t batch_size) {
             ++source_itrr;
             ++batch_counter;
         }
+        print("votes_table table migrated: ", batch_counter, "\n");
     }
+}
 
+ACTION daccustodian::clearold(uint16_t batch_size) {
+   cleanTable<votes_table>(_self, _self.value);
+   cleanTable<custodians_table>(_self, _self.value);
+   cleanTable<candidates_table>(_self, _self.value);
 }
 
 
@@ -133,7 +122,7 @@ ACTION daccustodian::migrate(uint16_t skip, uint16_t batch_size) {
 //            oldconf.maxvotes,
 //            oldconf.numelected,
 //            oldconf.periodlength,
-//            oldconf.authaccount,
+//            oldconf.authaccount,  
 //            oldconf.tokenholder,
 //            oldconf.tokenholder,
 //            true,

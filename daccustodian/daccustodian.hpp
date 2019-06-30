@@ -197,6 +197,8 @@ namespace eosdac {
         ACTION unstake(name cand);
         ACTION unstakee(name cand, name dac_id);
         ACTION migrate(uint16_t skip, uint16_t batch_size);
+        ACTION clearold(uint16_t batch_size);
+
 
         /**
      * This action is used to register a custom permission that will be used in the multisig instead of active.

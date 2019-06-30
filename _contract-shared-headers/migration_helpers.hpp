@@ -7,7 +7,7 @@ const eosio::name NEW_SCOPE = "eosdacio"_n;
 using namespace eosio;
 
 template <typename T>
-void cleanTable(uint64_t code, uint64_t account){
+void cleanTable(name code, uint64_t account){
     T db(code, account);
     while(db.begin() != db.end()){
         auto itr = --db.end();

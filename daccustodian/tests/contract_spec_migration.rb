@@ -9,7 +9,7 @@ def configure_contracts_for_tests
   run %(cleos push action dacdirectory regdac '{"owner": "dacowner",  "dac_name": "eosdacio", "dac_symbol": "4,EOSDAC", "title": "Custodian Test DAC", "refs": [[1,"some_ref"]], "accounts": [[2,"daccustodian"], [5,"dacocoiogmbh"], [7,"dacescrow"], [0, "dacowner"],  [4, "eosdactokens"], [1, "eosdacthedac"]], "scopes": [] }' -p dacowner)
 
   run %(cleos push action daccustodian updateconfige '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_id": "eosdacio"}' -p dacowner)
-  run %(cleos push action daccustodian updateconfige '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_id": "otherdac"}' -p otherowner -p dacowner)
+  # run %(cleos push action daccustodian updateconfige '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_id": "otherdac"}' -p otherowner -p dacowner)
 
   # run %(cleos push action eosdactokens create '{ "issuer": "dacowner",   "maximum_supply": "100000.0000 EOSDAC", "transfer_locked": false}' -p dacowner)
   # run %(cleos push action eosdactokens create '{ "issuer": "otherowner", "maximum_supply": "100000.0000 OTRDAC", "transfer_locked": false}' -p otherowner)
@@ -25,13 +25,13 @@ def configure_contracts_for_tests
   # run %(cleos push action eosdactokens newmemtermse '{ "terms": "normallegalterms", "hash": "New Latest terms", "dac_id": "otherdac"}' -p otherowner -p dacowner)
 
   #create users 
-    # seed_dac_account("testreguser1", issue: "100.0000 EOSDAC", memberreg: "New Latest terms", dac_id: "custtestdac", dac_owner: "dacowner")
-    # seed_dac_account("testreguser1", issue: "100.0000 OTRDAC", memberreg: "New Latest terms", dac_id: "otherdac", dac_owner: "otherowner") # run again for the same user in a different dac should just do the DAC stuff.
-    # seed_dac_account("testreguser2", issue: "100.0000 EOSDAC")
-    # seed_dac_account("testreguser3", issue: "100.0000 EOSDAC", dac_id: "custtestdac", dac_owner: "dacowner")
-    # seed_dac_account("testreguser4", issue: "100.0000 EOSDAC", memberreg: "old terms", dac_id: "custtestdac", dac_owner: "dacowner")
-    # seed_dac_account("testreguser5", issue: "100.0000 EOSDAC", memberreg: "New Latest terms", dac_id: "custtestdac", dac_owner: "dacowner")
-    # seed_dac_account("testregusera", issue: "100.0000 EOSDAC", memberreg: "New Latest terms", dac_id: "custtestdac", dac_owner: "dacowner")
+  # seed_dac_account("testreguser1", issue: "100.0000 EOSDAC", memberreg: "New Latest terms", dac_id: "custtestdac", dac_owner: "dacowner")
+  # seed_dac_account("testreguser1", issue: "100.0000 OTRDAC", memberreg: "New Latest terms", dac_id: "otherdac", dac_owner: "otherowner") # run again for the same user in a different dac should just do the DAC stuff.
+  # seed_dac_account("testreguser2", issue: "100.0000 EOSDAC")
+  # seed_dac_account("testreguser3", issue: "100.0000 EOSDAC", dac_id: "custtestdac", dac_owner: "dacowner")
+  # seed_dac_account("testreguser4", issue: "100.0000 EOSDAC", memberreg: "old terms", dac_id: "custtestdac", dac_owner: "dacowner")
+  # seed_dac_account("testreguser5", issue: "100.0000 EOSDAC", memberreg: "New Latest terms", dac_id: "custtestdac", dac_owner: "dacowner")
+  # seed_dac_account("testregusera", issue: "100.0000 EOSDAC", memberreg: "New Latest terms", dac_id: "custtestdac", dac_owner: "dacowner")
 
   # This is required to allow the newperiode to run and set the account permissions from within the action.
   run %(cleos set account permission dacowner owner '{"threshold": 1,"keys": [{"key": "#{CONTRACT_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' '' -p dacowner@owner)
@@ -41,10 +41,9 @@ def configure_contracts_for_tests
   run %(cleos set account permission dacowner low #{CONTRACT_PUBLIC_KEY} med -p dacowner)
   run %(cleos set account permission dacowner one #{CONTRACT_PUBLIC_KEY} low -p dacowner)
 
-  run %(cleos system buyram dacocoiogmbh daccustodian 6400000 -b) # need more RAM
 end
 
-describe "eosdacelect" do
+describe "migrate" do
   before(:all) do
     # reset_chain
     resume_chain
@@ -60,15 +59,505 @@ describe "eosdacelect" do
     killchain
   end
 
-  describe "updateconfige" do
-    context "before being called with token contract will prevent other actions from working" do
-      it "with valid and registered member" do
-        result = wrap_command %(cleos push action daccustodian nominatecane '{ "cand": "testreguser1", "requestedpay": "11.5000 EOS", "dac_id": "custtestdac"}' -p testreguser1)
-        expect(result.stderr).to include('Error 3050003')
+  describe "preconditions" do
+    context "Read the votes table" do
+      it do
+        result = wrap_command %(cleos get table daccustodian daccustodian votes --limit 40)
+        expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
+          {
+            "rows": [{
+                "voter": "voter1",
+                "proxy": "",
+                "candidates": [
+                  "allocate1",
+                  "allocate2",
+                  "allocate3",
+                  "allocate4",
+                  "allocate5"
+                ]
+              },{
+                "voter": "voter2",
+                "proxy": "",
+                "candidates": [
+                  "allocate11",
+                  "allocate21",
+                  "allocate31",
+                  "allocate41",
+                  "allocate51"
+                ]
+              },{
+                "voter": "voter3",
+                "proxy": "",
+                "candidates": [
+                  "allocate12",
+                  "allocate22",
+                  "allocate32",
+                  "allocate4",
+                  "allocate5"
+                ]
+              }
+            ],
+            "more": false
+          }
+        JSON
+      end
+    end
+    context "Read the custodians table" do
+      it do
+        result = wrap_command %(cleos get table daccustodian daccustodian custodians --limit 40)
+        expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
+          {
+            "rows": [{
+                "cust_name": "allocate1",
+                "requestedpay": "11.0000 EOS",
+                "total_votes": 30000000
+              },{
+                "cust_name": "allocate11",
+                "requestedpay": "16.0000 EOS",
+                "total_votes": 14080000
+              },{
+                "cust_name": "allocate12",
+                "requestedpay": "21.0000 EOS",
+                "total_votes": 1100000
+              },{
+                "cust_name": "allocate2",
+                "requestedpay": "12.0000 EOS",
+                "total_votes": 30000000
+              },{
+                "cust_name": "allocate21",
+                "requestedpay": "17.0000 EOS",
+                "total_votes": 14080000
+              },{
+                "cust_name": "allocate22",
+                "requestedpay": "22.0000 EOS",
+                "total_votes": 1100000
+              },{
+                "cust_name": "allocate3",
+                "requestedpay": "13.0000 EOS",
+                "total_votes": 30000000
+              },{
+                "cust_name": "allocate32",
+                "requestedpay": "23.0000 EOS",
+                "total_votes": 1100000
+              },{
+                "cust_name": "allocate4",
+                "requestedpay": "14.0000 EOS",
+                "total_votes": 31100000
+              },{
+                "cust_name": "allocate41",
+                "requestedpay": "19.0000 EOS",
+                "total_votes": 14080000
+              },{
+                "cust_name": "allocate5",
+                "requestedpay": "15.0000 EOS",
+                "total_votes": 31100000
+              },{
+                "cust_name": "allocate51",
+                "requestedpay": "20.0000 EOS",
+                "total_votes": 14080000
+              }
+            ],
+            "more": false
+          }
+        JSON
+      end
+    end
+    context "Read the candidates table after _create_ vote" do
+      it do
+        result = wrap_command %(cleos get table daccustodian daccustodian candidates --limit 40)
+        json = JSON.parse(result.stdout)
+        expect(json["rows"].count).to eq 25
+
+        candidate = json["rows"][4]
+        expect(candidate["candidate_name"]).to eq 'allocate21'
+        expect(candidate["requestedpay"]).to eq '17.0000 EOS'
+        expect(candidate["total_votes"]).to eq 14080000
+        expect(candidate["is_active"]).to eq 1
+        expect(candidate["custodian_end_time_stamp"]).to eq "2019-06-26T08:42:19"
+
+        candidate = json["rows"][24]
+        expect(candidate["candidate_name"]).to eq 'votedcust5'
+        expect(candidate["requestedpay"]).to eq '15.0000 EOS'
+        expect(candidate["locked_tokens"]).to eq '23.0000 EOSDAC'
+        expect(candidate["total_votes"]).to eq 0
+        expect(candidate["is_active"]).to eq 1
+        expect(candidate["custodian_end_time_stamp"]).to eq "1970-01-01T00:00:00"
+      end
+    end
+
+    context "Read the config table" do
+      it do
+        result = wrap_command %(cleos get table daccustodian daccustodian config --limit 40)
+        expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
+          {
+            "rows": [{
+                "lockupasset": "10.0000 EOSDAC",
+                "maxvotes": 5,
+                "numelected": 12,
+                "periodlength": 1,
+                "authaccount": "dacauthority",
+                "tokenholder": "eosdacthedac",
+                "serviceprovider": "dacocoiogmbh",
+                "should_pay_via_service_provider": 1,
+                "initial_vote_quorum_percent": 15,
+                "vote_quorum_percent": 4,
+                "auth_threshold_high": 3,
+                "auth_threshold_mid": 2,
+                "auth_threshold_low": 1,
+                "lockup_release_time_delay": 10,
+                "requested_pay_max": "450.0000 EOS"
+              }
+            ],
+            "more": false
+          }
+
+        JSON
+      end
+    end
+    context "Read the state table" do
+      it do
+        result = wrap_command %(cleos get table daccustodian daccustodian state --limit 40)
+        json = JSON.parse(result.stdout)
+        expect(json["rows"].count).to eq 1
+        state = json["rows"][0]
+
+        expect(state["lastperiodtime"]).to eq "2019-06-26T08:42:09"
+        expect(state["total_weight_of_votes"]).to eq 45180000
+        expect(state["total_votes_on_candidates"]).to eq 225900000
+        expect(state["number_active_candidates"]).to eq 23
+        expect(state["met_initial_votes_threshold"]).to eq 1
+      end
+    end
+
+    describe "updateconfige" do
+      context "before being called with token contract will prevent other actions from working" do
+        it "with valid and registered member" do
+          result = wrap_command %(cleos push action daccustodian nominatecane '{ "cand": "testreguser1", "requestedpay": "11.5000 EOS", "dac_id": "custtestdac"}' -p testreguser1)
+          expect(result.stderr).to include('Error 3050003')
+        end
       end
     end
   end
+
+  describe "state after migrating first batch" do
+    context "After migrating 2 rows from the start" do
+      it "should migrate 2 rows and leave the original unchanged" do
+        result = wrap_command %(cleos push action daccustodian migrate '{ "skip": 0, "batch_size": 2}' -p daccustodian)
+        expect(result.stdout).to include('daccustodian::migrate')
+      end
+    end
+
+    context "Read the votes table" do
+      it do
+        result = wrap_command %(cleos get table daccustodian eosdacio votes --limit 40)
+        expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
+          {
+            "rows": [{
+                "voter": "voter1",
+                "proxy": "",
+                "candidates": [
+                  "allocate1",
+                  "allocate2",
+                  "allocate3",
+                  "allocate4",
+                  "allocate5"
+                ]
+              },{
+                "voter": "voter2",
+                "proxy": "",
+                "candidates": [
+                  "allocate11",
+                  "allocate21",
+                  "allocate31",
+                  "allocate41",
+                  "allocate51"
+                ]
+              }
+            ],
+            "more": false
+          }
+        JSON
+      end
+    end
+    context "Read the custodians table" do
+      it do
+        result = wrap_command %(cleos get table daccustodian eosdacio custodians --limit 40)
+        expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
+          {
+            "rows": [{
+                "cust_name": "allocate1",
+                "requestedpay": "11.0000 EOS",
+                "total_votes": 30000000
+              },{
+                "cust_name": "allocate11",
+                "requestedpay": "16.0000 EOS",
+                "total_votes": 14080000
+              }
+            ],
+            "more": false
+          }
+        JSON
+      end
+    end
+    context "Read the candidates table after _create_ vote" do
+      it do
+        result = wrap_command %(cleos get table daccustodian eosdacio candidates --limit 40)
+        json = JSON.parse(result.stdout)
+        expect(json).to eq JSON.parse <<~JSON
+        {
+        "rows": [{
+            "candidate_name": "allocate1",
+            "requestedpay": "11.0000 EOS",
+            "locked_tokens": "23.0000 EOSDAC",
+            "total_votes": 30000000,
+            "is_active": 1,
+            "custodian_end_time_stamp": "2019-06-26T08:42:19"
+          },{
+            "candidate_name": "allocate11",
+            "requestedpay": "16.0000 EOS",
+            "locked_tokens": "23.0000 EOSDAC",
+            "total_votes": 14080000,
+            "is_active": 1,
+            "custodian_end_time_stamp": "2019-06-26T08:42:19"
+          }
+        ],
+        "more": false
+      }
+      JSON
+      end
+    end
+
+    context "Read the old config table" do
+      it do
+        result = wrap_command %(cleos get table daccustodian eosdacio config --limit 40)
+        expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
+          {
+            "rows": [],
+            "more": false
+          }
+
+        JSON
+      end
+    end
+    context "Read the new config table" do
+      it do
+        result = wrap_command %(cleos get table daccustodian eosdacio config2 --limit 40)
+        expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
+          {
+            "rows": [{
+                "lockupasset": "10.0000 EOSDAC",
+                "maxvotes": 5,
+                "numelected": 12,
+                "periodlength": 1,
+                "should_pay_via_service_provider": 1,
+                "initial_vote_quorum_percent": 15,
+                "vote_quorum_percent": 4,
+                "auth_threshold_high": 3,
+                "auth_threshold_mid": 2,
+                "auth_threshold_low": 1,
+                "lockup_release_time_delay": 10,
+                "requested_pay_max": "450.0000 EOS"
+              }
+            ],
+            "more": false
+          }
+
+        JSON
+      end
+    end
+    context "Read the state table" do
+      it do
+        result = wrap_command %(cleos get table daccustodian eosdacio state --limit 40)
+        json = JSON.parse(result.stdout)
+        expect(json["rows"].count).to eq 1
+        state = json["rows"][0]
+
+        expect(state["lastperiodtime"]).to eq "2019-06-26T08:42:09"
+        expect(state["total_weight_of_votes"]).to eq 45180000
+        expect(state["total_votes_on_candidates"]).to eq 225900000
+        expect(state["number_active_candidates"]).to eq 23
+        expect(state["met_initial_votes_threshold"]).to eq 1
+      end
+    end
   end
+
+  describe "state after migrating second batch" do
+    context "After migrating 2 rows from the after the first 2" do
+      it "should migrate 2 rows and leave the original unchanged" do
+        result = wrap_command %(cleos push action daccustodian migrate '{ "skip": 2, "batch_size": 2}' -p daccustodian)
+        expect(result.stdout).to include('daccustodian::migrate')
+      end
+    end
+
+    context "Read the votes table" do
+      it do
+        result = wrap_command %(cleos get table daccustodian eosdacio votes --limit 40)
+        expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
+          {
+            "rows": [{
+                "voter": "voter1",
+                "proxy": "",
+                "candidates": [
+                  "allocate1",
+                  "allocate2",
+                  "allocate3",
+                  "allocate4",
+                  "allocate5"
+                ]
+              },{
+                "voter": "voter2",
+                "proxy": "",
+                "candidates": [
+                  "allocate11",
+                  "allocate21",
+                  "allocate31",
+                  "allocate41",
+                  "allocate51"
+                ]
+              },{
+                "voter": "voter3",
+                "proxy": "",
+                "candidates": [
+                  "allocate12",
+                  "allocate22",
+                  "allocate32",
+                  "allocate4",
+                  "allocate5"
+                ]
+              }
+            ],
+            "more": false
+          }
+        JSON
+      end
+    end
+    context "Read the custodians table" do
+      it do
+        result = wrap_command %(cleos get table daccustodian eosdacio custodians --limit 40)
+        expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
+          {
+            "rows": [{
+                "cust_name": "allocate1",
+                "requestedpay": "11.0000 EOS",
+                "total_votes": 30000000
+              },{
+                "cust_name": "allocate11",
+                "requestedpay": "16.0000 EOS",
+                "total_votes": 14080000
+              },{
+                "cust_name": "allocate12",
+                "requestedpay": "21.0000 EOS",
+                "total_votes": 1100000
+              },{
+                "cust_name": "allocate2",
+                "requestedpay": "12.0000 EOS",
+                "total_votes": 30000000
+              }
+            ],
+            "more": false
+          }
+        JSON
+      end
+    end
+    context "Read the candidates table after _create_ vote" do
+      it do
+        result = wrap_command %(cleos get table daccustodian eosdacio candidates --limit 40)
+        json = JSON.parse(result.stdout)
+        expect(json).to eq JSON.parse <<~JSON
+        {
+          "rows": [{
+              "candidate_name": "allocate1",
+              "requestedpay": "11.0000 EOS",
+              "locked_tokens": "23.0000 EOSDAC",
+              "total_votes": 30000000,
+              "is_active": 1,
+              "custodian_end_time_stamp": "2019-06-26T08:42:19"
+            },{
+              "candidate_name": "allocate11",
+              "requestedpay": "16.0000 EOS",
+              "locked_tokens": "23.0000 EOSDAC",
+              "total_votes": 14080000,
+              "is_active": 1,
+              "custodian_end_time_stamp": "2019-06-26T08:42:19"
+            },{
+              "candidate_name": "allocate12",
+              "requestedpay": "21.0000 EOS",
+              "locked_tokens": "23.0000 EOSDAC",
+              "total_votes": 1100000,
+              "is_active": 1,
+              "custodian_end_time_stamp": "2019-06-26T08:42:19"
+            },{
+              "candidate_name": "allocate2",
+              "requestedpay": "12.0000 EOS",
+              "locked_tokens": "23.0000 EOSDAC",
+              "total_votes": 30000000,
+              "is_active": 1,
+              "custodian_end_time_stamp": "2019-06-26T08:42:19"
+            }
+          ],
+          "more": false
+        }
+
+        JSON
+      end
+    end
+
+    context "Read the old config table" do
+      it do
+        result = wrap_command %(cleos get table daccustodian eosdacio config --limit 40)
+        expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
+          {
+            "rows": [],
+            "more": false
+          }
+
+        JSON
+      end
+    end
+    context "Read the new config table" do
+      it do
+        result = wrap_command %(cleos get table daccustodian eosdacio config2 --limit 40)
+        expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
+          {
+            "rows": [{
+                "lockupasset": "10.0000 EOSDAC",
+                "maxvotes": 5,
+                "numelected": 12,
+                "periodlength": 1,
+                "should_pay_via_service_provider": 1,
+                "initial_vote_quorum_percent": 15,
+                "vote_quorum_percent": 4,
+                "auth_threshold_high": 3,
+                "auth_threshold_mid": 2,
+                "auth_threshold_low": 1,
+                "lockup_release_time_delay": 10,
+                "requested_pay_max": "450.0000 EOS"
+              }
+            ],
+            "more": false
+          }
+
+        JSON
+      end
+    end
+    context "Read the state table" do
+      it do
+        result = wrap_command %(cleos get table daccustodian eosdacio state --limit 40)
+        json = JSON.parse(result.stdout)
+        expect(json["rows"].count).to eq 1
+        state = json["rows"][0]
+
+        expect(state["lastperiodtime"]).to eq "2019-06-26T08:42:09"
+        expect(state["total_weight_of_votes"]).to eq 45180000
+        expect(state["total_votes_on_candidates"]).to eq 225900000
+        expect(state["number_active_candidates"]).to eq 23
+        expect(state["met_initial_votes_threshold"]).to eq 1
+      end
+    end
+  end
+
+end
+
 #
 #     context "with invalid auth" do
 #       it do
