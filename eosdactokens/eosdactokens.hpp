@@ -38,6 +38,19 @@ namespace eosdac {
         ACTION migrate(uint16_t skip, uint16_t batch);
         ACTION clearold(uint16_t batch_size);
 
+        struct [[eosio::table("config")]] contr_config {
+
+            //The additional account to notify of any transfers. Currently used to maintain "live" vote counts.
+            name notifycontr = "daccustodian"_n;
+
+            EOSLIB_SERIALIZE(contr_config,
+            (notifycontr)
+
+            )
+        };
+
+        typedef singleton<"config"_n, contr_config> oldconfigscontainer;
+
         TABLE member {
             name sender;
             // agreed terms version

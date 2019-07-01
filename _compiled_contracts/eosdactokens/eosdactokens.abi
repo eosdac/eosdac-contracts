@@ -52,6 +52,16 @@
             ]
         },
         {
+            "name": "contr_config",
+            "base": "",
+            "fields": [
+                {
+                    "name": "notifycontr",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "create",
             "base": "",
             "fields": [
@@ -394,6 +404,13 @@
         {
             "name": "accounts",
             "type": "account",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "config",
+            "type": "contr_config",
             "index_type": "i64",
             "key_names": [],
             "key_types": []

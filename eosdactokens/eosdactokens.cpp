@@ -365,7 +365,7 @@ namespace eosdac {
             }
         }
         {
-            // old_config_container.remove();
+            oldconfigscontainer(_self, _self.value).remove();
         }
     }
 

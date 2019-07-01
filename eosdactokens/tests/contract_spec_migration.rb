@@ -3,7 +3,7 @@ require_relative '../../_test_helpers/CommonTestHelpers'
 # Configure the initial state for the contracts for elements that are assumed to work from other contracts already.
 def configure_contracts_for_tests
   # configure accounts for eosdactokens
-  run? %(cleos system newaccount --stake-cpu "10.0000 EOS" --stake-net "10.0000 EOS" --transfer --buy-ram-kbytes 2024 eosio dacowner #{CONTRACT_PUBLIC_KEY} #{CONTRACT_PUBLIC_KEY})
+  run? %(cleos system newaccount --stake-cpu "10.0000 EOS" --stake-net "20.0000 EOS" --transfer --buy-ram-kbytes 2024 eosio dacowner #{CONTRACT_PUBLIC_KEY} #{CONTRACT_PUBLIC_KEY})
   run? %(cleos system newaccount --stake-cpu "10.0000 EOS" --stake-net "10.0000 EOS" --transfer --buy-ram-kbytes 2024 eosio otherowner #{CONTRACT_PUBLIC_KEY} #{CONTRACT_PUBLIC_KEY})
 
   run %(cleos push action dacdirectory regdac '{"owner": "dacowner",  "dac_name": "eosdacio", "dac_symbol": "4,EOSDAC", "title": "Custodian Test DAC", "refs": [[1,"some_ref"]], "accounts": [[2,"daccustodian"], [5,"dacocoiogmbh"], [7,"dacescrow"], [0, "dacowner"],  [4, "eosdactokens"], [1, "eosdacthedac"]], "scopes": [] }' -p dacowner)
@@ -48,8 +48,10 @@ describe "migrate" do
     # reset_chain
     resume_chain
     configure_wallet
-    # seed_system_contracts
+    seed_system_contracts
+
     configure_dac_accounts_and_permissions
+
     install_dac_contracts
 
     configure_contracts_for_tests
@@ -64,14 +66,29 @@ describe "migrate" do
       it do
         result = wrap_command %(cleos get table eosdactokens eosdactokens members --limit 40)
         expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
-          {
-            "rows": [{
-                "sender": "testuser2",
-                "agreedtermsversion": 1
-              }
-            ],
-            "more": false
-          }
+        {
+          "rows": [{
+              "sender": "testuser1",
+              "agreedtermsversion": 2
+            },{
+              "sender": "testuser11",
+              "agreedtermsversion": 2
+            },{
+              "sender": "testuser12",
+              "agreedtermsversion": 2
+            },{
+              "sender": "testuser2",
+              "agreedtermsversion": 2
+            },{
+              "sender": "testuser4",
+              "agreedtermsversion": 2
+            },{
+              "sender": "testuser5",
+              "agreedtermsversion": 2
+            }
+          ],
+          "more": false
+        }        
         JSON
       end
     end
@@ -109,7 +126,7 @@ describe "migrate" do
   describe "state after migrating first batch" do
     context "After migrating 2 rows from the start" do
       it "should migrate 2 rows and leave the original unchanged" do
-        result = wrap_command %(cleos push action eosdactokens migrate '{ "skip": 0, "batch_size": 2}' -p eosdactokens)
+        result = wrap_command %(cleos push action eosdactokens migrate '{ "skip": 0, "batch": 2}' -p eosdactokens)
         expect(result.stdout).to include('eosdactokens::migrate')
       end
     end
@@ -118,14 +135,17 @@ describe "migrate" do
       it do
         result = wrap_command %(cleos get table eosdactokens eosdacio members --limit 40)
         expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
-          {
-            "rows": [{
-                "sender": "testuser2",
-                "agreedtermsversion": 1
-              }
-            ],
-            "more": false
-          }
+        {
+          "rows": [{
+              "sender": "testuser1",
+              "agreedtermsversion": 2
+            },{
+              "sender": "testuser11",
+              "agreedtermsversion": 2
+            }
+          ],
+          "more": false
+        }
         JSON
       end
     end
@@ -154,8 +174,58 @@ describe "migrate" do
   describe "state after migrating second batch" do
     context "After migrating 2 rows from the after the first 2" do
       it "should migrate 2 rows and leave the original unchanged" do
-        result = wrap_command %(cleos push action daccustodian migrate '{ "skip": 2, "batch_size": 2}' -p daccustodian)
-        expect(result.stdout).to include('daccustodian::migrate')
+        result = wrap_command %(cleos push action eosdactokens migrate '{ "skip": 2, "batch": 10}' -p eosdactokens)
+        expect(result.stdout).to include('eosdactokens::migrate')
+      end
+    end
+    context "Read the members table" do
+      it do
+        result = wrap_command %(cleos get table eosdactokens eosdacio members --limit 40)
+        expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
+        {
+          "rows": [{
+              "sender": "testuser1",
+              "agreedtermsversion": 2
+            },{
+              "sender": "testuser11",
+              "agreedtermsversion": 2
+            },{
+              "sender": "testuser12",
+              "agreedtermsversion": 2
+            },{
+              "sender": "testuser2",
+              "agreedtermsversion": 2
+            },{
+              "sender": "testuser4",
+              "agreedtermsversion": 2
+            },{
+              "sender": "testuser5",
+              "agreedtermsversion": 2
+            }
+          ],
+          "more": false
+        }
+        JSON
+      end
+    end
+    context "Read the memberterms table" do
+      it do
+        result = wrap_command %(cleos get table eosdactokens eosdacio memberterms --limit 40)
+        expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
+          {
+            "rows": [{
+                "terms": "newtermslocation",
+                "hash": "asdfasdfasdfasdfasdfasd",
+                "version": 1
+              },{
+                "terms": "normallegalterms2",
+                "hash": "dfghdfghdfghdfghdfg",
+                "version": 2
+              }
+            ],
+            "more": false
+          }
+        JSON
       end
     end
   end

@@ -132,7 +132,8 @@ def configure_dac_accounts_and_permissions
 
     run? %(cleos system newaccount --stake-cpu "10.0000 EOS" --stake-net "10.0000 EOS" --transfer --buy-ram-kbytes 1024 eosio dacdirtester #{CONTRACT_PUBLIC_KEY} #{CONTRACT_PUBLIC_KEY})
 
-    run %(cleos system buyram eosio daccustodian 1000000 -b) # need more RAM
+    run %(cleos system buyram eosio daccustodian 5000000 -b) # need more RAM
+    run %(cleos system delegatebw eosio daccustodian "20.0000 EOS" "20.0000 EOS")
 
     # Setup the inital permissions.
     run? %(cleos set account permission dacauthority owner '{"threshold": 1,"keys": [{"key": "#{CONTRACT_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' '' -p dacauthority@owner)
