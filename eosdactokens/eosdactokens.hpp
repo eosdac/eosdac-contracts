@@ -36,6 +36,7 @@ namespace eosdac {
         ACTION close(name owner, const symbol& symbol);
 
         ACTION migrate(uint16_t skip, uint16_t batch);
+        ACTION clearold(uint16_t batch_size);
 
         TABLE member {
             name sender;

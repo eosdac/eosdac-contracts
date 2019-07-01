@@ -364,5 +364,13 @@ namespace eosdac {
                 ++batch_counter;
             }
         }
+        {
+            // old_config_container.remove();
+        }
+    }
+
+    ACTION eosdactokens::clearold(uint16_t batch_size) {
+       cleanTable<regmembers>(_self, _self.value);
+       cleanTable<memterms>(_self, _self.value);
     }
 }

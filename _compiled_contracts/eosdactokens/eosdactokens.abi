@@ -28,6 +28,16 @@
             ]
         },
         {
+            "name": "clearold",
+            "base": "",
+            "fields": [
+                {
+                    "name": "batch_size",
+                    "type": "uint16"
+                }
+            ]
+        },
+        {
             "name": "close",
             "base": "",
             "fields": [
@@ -303,6 +313,11 @@
             "name": "burn",
             "type": "burn",
             "ricardian_contract": "**PARAMETERS:** \n* __from__ is a type of eosio account_name for the owner of the tokens to burn.\n* __quantity__ is a type of eosio asset\n\n**INTENT:** The intent of {{ burn }} is to allow a user to burn {{ quantity }} tokens that belong to them. \n\n**TERM:** The burn action lasts for the duration of the processing of the contract. The reduction in token supply persists on the deployed contract as long as it is active."
+        },
+        {
+            "name": "clearold",
+            "type": "clearold",
+            "ricardian_contract": ""
         },
         {
             "name": "close",
