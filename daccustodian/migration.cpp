@@ -79,7 +79,11 @@ ACTION daccustodian::migrate(uint16_t skip, uint16_t batch_size) {
                                         };
             configscontainer newconfig_container = configscontainer(get_self(), NEW_SCOPE.value);
             newconfig_container.set(new_config, get_self());
-            old_config_container.remove();
+
+            // Also write back to the old scope for gradual migration
+            newconfig_container = configscontainer(get_self(), get_self().value);
+            newconfig_container.set(new_config, get_self());
+
         }
     }
 
@@ -110,6 +114,12 @@ ACTION daccustodian::clearold(uint16_t batch_size) {
    cleanTable<votes_table>(_self, _self.value);
    cleanTable<custodians_table>(_self, _self.value);
    cleanTable<candidates_table>(_self, _self.value);
+
+    old_configscontainer old_config_container = old_configscontainer(get_self(), get_self().value);
+    old_config_container.remove();
+
+    statecontainer source(get_self(), get_self().value);
+    source.remove();
 }
 
 

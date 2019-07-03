@@ -4,6 +4,7 @@
 #include <eosio/asset.hpp>
 #include "dacdirectory_shared.hpp"
 #include "common_utilities.hpp"
+#include "eosio/eosio.hpp"
 
 namespace eosdac {
 
@@ -39,9 +40,16 @@ namespace eosdac {
 
 
     static void assertValidMember(eosio::name member, eosio::name dac_scope) {
+        eosio::name member_terms_account;
         
-        eosio::name member_terms_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::TOKEN);
-
+        // Start TempBlock
+        if (dac_scope == "daccustodian"_n) {
+            dac_scope = "eosdactokens"_n;
+            member_terms_account = "eosdactokens"_n;
+        } else {
+        // End TempBlock
+            member_terms_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::TOKEN); // Need this line without the temp block
+        }
         regmembers reg_members(member_terms_account, dac_scope.value);
         memterms memberterms(member_terms_account, dac_scope.value);
 
