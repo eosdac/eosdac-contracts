@@ -2,7 +2,7 @@
 #define MIGRATION_HELPERS_H
 #include <eosio/eosio.hpp>
 
-const eosio::name NEW_SCOPE = "eosdacio"_n;
+const eosio::name NEW_SCOPE = "eosdac"_n;
 
 using namespace eosio;
 

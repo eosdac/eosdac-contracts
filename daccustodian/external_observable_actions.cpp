@@ -91,20 +91,20 @@ void daccustodian::transferobsv(name from,
     currentState.save(_self, dac_id);
 
     //Temp block for migrations to new scope
-    if (dac_id == get_self()) {
-        votes_table votes_cast_by_members(_self, NEW_SCOPE.value);
-        contr_state currentState = contr_state::get_current_state(_self, NEW_SCOPE);
+    if (dac_id == NEW_SCOPE) {
+        votes_table votes_cast_by_members(_self, get_self().value);
+        contr_state currentState = contr_state::get_current_state(_self, get_self());
 
         auto existingVote = votes_cast_by_members.find(from.value);
         if (existingVote != votes_cast_by_members.end()) {
-            updateVoteWeights(existingVote->candidates, -quantity.amount, NEW_SCOPE, currentState);
+            updateVoteWeights(existingVote->candidates, -quantity.amount, get_self(), currentState);
             currentState.total_weight_of_votes -= quantity.amount;
         }
 
         // Update vote weight for the 'to' in the transfer if vote exists
         existingVote = votes_cast_by_members.find(to.value);
         if (existingVote != votes_cast_by_members.end()) {
-            updateVoteWeights(existingVote->candidates, quantity.amount, NEW_SCOPE, currentState);
+            updateVoteWeights(existingVote->candidates, quantity.amount, get_self(), currentState);
             currentState.total_weight_of_votes += quantity.amount;
         }
         currentState.save(_self, get_self());

@@ -6,9 +6,9 @@ def configure_contracts_for_tests
   run? %(cleos system newaccount --stake-cpu "10.0000 EOS" --stake-net "10.0000 EOS" --transfer --buy-ram-kbytes 2024 eosio dacowner #{CONTRACT_PUBLIC_KEY} #{CONTRACT_PUBLIC_KEY})
   run? %(cleos system newaccount --stake-cpu "10.0000 EOS" --stake-net "10.0000 EOS" --transfer --buy-ram-kbytes 2024 eosio otherowner #{CONTRACT_PUBLIC_KEY} #{CONTRACT_PUBLIC_KEY})
 
-  run %(cleos push action dacdirectory regdac '{"owner": "dacowner",  "dac_name": "eosdacio", "dac_symbol": "4,EOSDAC", "title": "Custodian Test DAC", "refs": [[1,"some_ref"]], "accounts": [[2,"daccustodian"], [5,"dacocoiogmbh"], [7,"dacescrow"], [0, "dacowner"],  [4, "eosdactokens"], [1, "eosdacthedac"]], "scopes": [] }' -p dacowner)
+  run %(cleos push action dacdirectory regdac '{"owner": "dacowner",  "dac_name": "eosdac", "dac_symbol": "4,EOSDAC", "title": "Custodian Test DAC", "refs": [[1,"some_ref"]], "accounts": [[2,"daccustodian"], [5,"dacocoiogmbh"], [7,"dacescrow"], [0, "dacowner"],  [4, "eosdactokens"], [1, "eosdacthedac"]], "scopes": [] }' -p dacowner)
 
-  run %(cleos push action daccustodian updateconfige '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_id": "eosdacio"}' -p dacowner)
+  run %(cleos push action daccustodian updateconfige '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_id": "eosdac"}' -p dacowner)
   # run %(cleos push action daccustodian updateconfige '{"newconfig": { "lockupasset": "10.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "should_pay_via_service_provider": 1, "auththresh": 3, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 10, "auth_threshold_high": 11, "auth_threshold_mid": 7, "auth_threshold_low": 3, "lockup_release_time_delay": 10, "requested_pay_max": "450.0000 EOS"}, "dac_id": "otherdac"}' -p otherowner -p dacowner)
 
   # run %(cleos push action eosdactokens create '{ "issuer": "dacowner",   "maximum_supply": "100000.0000 EOSDAC", "transfer_locked": false}' -p dacowner)
@@ -249,7 +249,7 @@ describe "migrate" do
 
     context "Read the votes table" do
       it do
-        result = wrap_command %(cleos get table daccustodian eosdacio votes --limit 40)
+        result = wrap_command %(cleos get table daccustodian eosdac votes --limit 40)
         expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
           {
             "rows": [{
@@ -281,7 +281,7 @@ describe "migrate" do
     end
     context "Read the custodians table" do
       it do
-        result = wrap_command %(cleos get table daccustodian eosdacio custodians --limit 40)
+        result = wrap_command %(cleos get table daccustodian eosdac custodians --limit 40)
         expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
           {
             "rows": [{
@@ -301,7 +301,7 @@ describe "migrate" do
     end
     context "Read the candidates table after _create_ vote" do
       it do
-        result = wrap_command %(cleos get table daccustodian eosdacio candidates --limit 40)
+        result = wrap_command %(cleos get table daccustodian eosdac candidates --limit 40)
         json = JSON.parse(result.stdout)
         expect(json).to eq JSON.parse <<~JSON
         {
@@ -329,7 +329,7 @@ describe "migrate" do
 
     context "Read the old config table" do
       it do
-        result = wrap_command %(cleos get table daccustodian eosdacio config --limit 40)
+        result = wrap_command %(cleos get table daccustodian eosdac config --limit 40)
         expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
           {
             "rows": [],
@@ -341,7 +341,7 @@ describe "migrate" do
     end
     context "Read the new config table" do
       it do
-        result = wrap_command %(cleos get table daccustodian eosdacio config2 --limit 40)
+        result = wrap_command %(cleos get table daccustodian eosdac config2 --limit 40)
         expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
           {
             "rows": [{
@@ -367,7 +367,7 @@ describe "migrate" do
     end
     context "Read the state table" do
       it do
-        result = wrap_command %(cleos get table daccustodian eosdacio state --limit 40)
+        result = wrap_command %(cleos get table daccustodian eosdac state --limit 40)
         json = JSON.parse(result.stdout)
         expect(json["rows"].count).to eq 1
         state = json["rows"][0]
@@ -391,7 +391,7 @@ describe "migrate" do
 
     context "Read the votes table" do
       it do
-        result = wrap_command %(cleos get table daccustodian eosdacio votes --limit 40)
+        result = wrap_command %(cleos get table daccustodian eosdac votes --limit 40)
         expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
           {
             "rows": [{
@@ -433,7 +433,7 @@ describe "migrate" do
     end
     context "Read the custodians table" do
       it do
-        result = wrap_command %(cleos get table daccustodian eosdacio custodians --limit 40)
+        result = wrap_command %(cleos get table daccustodian eosdac custodians --limit 40)
         expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
           {
             "rows": [{
@@ -461,7 +461,7 @@ describe "migrate" do
     end
     context "Read the candidates table after _create_ vote" do
       it do
-        result = wrap_command %(cleos get table daccustodian eosdacio candidates --limit 40)
+        result = wrap_command %(cleos get table daccustodian eosdac candidates --limit 40)
         json = JSON.parse(result.stdout)
         expect(json).to eq JSON.parse <<~JSON
         {
@@ -504,7 +504,7 @@ describe "migrate" do
 
     context "Read the old config table" do
       it do
-        result = wrap_command %(cleos get table daccustodian eosdacio config --limit 40)
+        result = wrap_command %(cleos get table daccustodian eosdac config --limit 40)
         expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
           {
             "rows": [],
@@ -516,7 +516,7 @@ describe "migrate" do
     end
     context "Read the new config table" do
       it do
-        result = wrap_command %(cleos get table daccustodian eosdacio config2 --limit 40)
+        result = wrap_command %(cleos get table daccustodian eosdac config2 --limit 40)
         expect(JSON.parse(result.stdout)).to eq JSON.parse <<~JSON
           {
             "rows": [{
@@ -542,7 +542,7 @@ describe "migrate" do
     end
     context "Read the state table" do
       it do
-        result = wrap_command %(cleos get table daccustodian eosdacio state --limit 40)
+        result = wrap_command %(cleos get table daccustodian eosdac state --limit 40)
         json = JSON.parse(result.stdout)
         expect(json["rows"].count).to eq 1
         state = json["rows"][0]
