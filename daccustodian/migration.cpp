@@ -59,34 +59,6 @@ ACTION daccustodian::migrate(uint16_t skip, uint16_t batch_size) {
         }
     }
 
-    { // contr_config
-        old_configscontainer old_config_container = old_configscontainer(get_self(), get_self().value);
-        if (old_config_container.exists()) {
-            contr_config_old o = old_config_container.get();
-            contr_config new_config {
-                                        o.lockupasset, 
-                                        o.maxvotes, 
-                                        o.numelected, 
-                                        o.periodlength, 
-                                        o.should_pay_via_service_provider, 
-                                        o.initial_vote_quorum_percent, 
-                                        o.vote_quorum_percent, 
-                                        o.auth_threshold_high, 
-                                        o.auth_threshold_mid, 
-                                        o.auth_threshold_low, 
-                                        o.lockup_release_time_delay, 
-                                        o.requested_pay_max 
-                                        };
-            configscontainer newconfig_container = configscontainer(get_self(), NEW_SCOPE.value);
-            newconfig_container.set(new_config, get_self());
-
-            // Also write back to the old scope for gradual migration
-            newconfig_container = configscontainer(get_self(), get_self().value);
-            newconfig_container.set(new_config, get_self());
-
-        }
-    }
-
     { // votes
         votes_table source(get_self(), get_self().value);
         votes_table destination(get_self(), NEW_SCOPE.value);

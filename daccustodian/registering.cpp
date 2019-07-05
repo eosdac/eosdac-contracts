@@ -175,33 +175,33 @@ void daccustodian::firecuste(name cust, name dac_id) {
 
 
 void daccustodian::setperm(name cand, name permission, name dac_id) {
-    // require_auth(cand);
-    // assertValidMember(cand, dac_id);
+    require_auth(cand);
+    assertValidMember(cand, dac_id);
 
-    // bool perm_exists = permissionExists(cand, permission);
+    bool perm_exists = permissionExists(cand, permission);
 
-    // check(perm_exists, "ERR::PERMISSION_NOT_EXIST::Permission does not exist");
-    // candidates_table registered_candidates(_self, dac_id.value);
+    check(perm_exists, "ERR::PERMISSION_NOT_EXIST::Permission does not exist");
+    candidates_table registered_candidates(_self, dac_id.value);
 
-    // registered_candidates.get(cand.value, "ERR::UNSTAKE_CAND_NOT_REGISTERED::Candidate is not already registered.");
+    registered_candidates.get(cand.value, "ERR::UNSTAKE_CAND_NOT_REGISTERED::Candidate is not already registered.");
 
-    // candperms_table cand_perms(_self, dac_id.value);
-    // auto existing = cand_perms.find(cand.value);
+    candperms_table cand_perms(_self, dac_id.value);
+    auto existing = cand_perms.find(cand.value);
 
-    // if (existing == cand_perms.end()){
-    //     cand_perms.emplace(cand, [&](candperm &c) {
-    //         c.cand = cand;
-    //         c.permission = permission;
-    //     });
-    // }
-    // else if (permission == "active"_n){
-    //     cand_perms.erase(existing);
-    // }
-    // else {
-    //     cand_perms.modify(existing, same_payer, [&](candperm &c) {
-    //         c.permission = permission;
-    //     });
-    // }
+    if (existing == cand_perms.end()){
+        cand_perms.emplace(cand, [&](candperm &c) {
+            c.cand = cand;
+            c.permission = permission;
+        });
+    }
+    else if (permission == "active"_n){
+        cand_perms.erase(existing);
+    }
+    else {
+        cand_perms.modify(existing, same_payer, [&](candperm &c) {
+            c.permission = permission;
+        });
+    }
 }
 
 // private methods for the above actions

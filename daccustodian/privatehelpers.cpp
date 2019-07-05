@@ -38,7 +38,7 @@ void daccustodian::modifyVoteWeights(name voter, vector<name> oldVotes, vector<n
 
     // dacdir::dac found_dac = dacdir::dac_for_id(dac_id); // Need this after migration
     // accounts accountstable(found_dac.account_for_type(dacdir::TOKEN), voter.value); // Need this after migration
-    accounts accountstable("eosdactokens"_n, voter.value);
+    accounts accountstable("kasdactokens"_n, voter.value);
 
     const auto ac = accountstable.find(asset_name);
     if (ac == accountstable.end()) {
