@@ -329,7 +329,7 @@ namespace eosdac {
             regmembers destination(get_self(), NEW_SCOPE.value);
 
             auto source_itrr = source.begin();
-            for (uint16_t count = 0; count < skip; count++) { source_itrr++; }
+            for (uint16_t count = 0; count < skip && source_itrr != source.end(); count++) { source_itrr++; }
             
             uint16_t batch_counter = 0;
             while (batch_counter < batch_size && source_itrr != source.end()) {
@@ -349,7 +349,7 @@ namespace eosdac {
             memterms destination(get_self(), NEW_SCOPE.value);
 
             auto source_itrr = source.begin();
-            for (uint16_t count = 0; count < skip; count++) { source_itrr++; }
+            for (uint16_t count = 0; count < skip && source_itrr != source.end(); count++) { source_itrr++; }
             
             uint16_t batch_counter = 0;
             while (batch_counter < batch_size && source_itrr != source.end()) {
@@ -370,7 +370,8 @@ namespace eosdac {
     }
 
     ACTION eosdactokens::clearold(uint16_t batch_size) {
-       cleanTable<regmembers>(_self, _self.value);
-       cleanTable<memterms>(_self, _self.value);
+        require_auth(_self);
+        cleanTable<regmembers>(_self, _self.value, batch_size);
+        cleanTable<memterms>(_self, _self.value, batch_size);
     }
 }

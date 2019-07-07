@@ -9,7 +9,7 @@ ACTION daccustodian::migrate(uint16_t skip, uint16_t batch_size) {
         candidates_table destination(get_self(), NEW_SCOPE.value);
 
         auto source_itrr = source.begin();
-        for (uint16_t count = 0; count < skip; count++) { source_itrr++; }
+        for (uint16_t count = 0; count < skip && source_itrr != source.end(); count++) { source_itrr++; }
 
         uint16_t batch_counter = 0;
         while (batch_counter < batch_size && source_itrr != source.end()) {
@@ -34,7 +34,7 @@ ACTION daccustodian::migrate(uint16_t skip, uint16_t batch_size) {
         custodians_table destination(get_self(), NEW_SCOPE.value);
         
         auto source_itrr = source.begin();
-        for (uint16_t count = 0; count < skip; count++) { source_itrr++; }
+        for (uint16_t count = 0; count < skip && source_itrr != source.end(); count++) { source_itrr++; }
 
         uint16_t batch_counter = 0;
         while (batch_counter < batch_size && source_itrr != source.end()) {
@@ -64,7 +64,7 @@ ACTION daccustodian::migrate(uint16_t skip, uint16_t batch_size) {
         votes_table destination(get_self(), NEW_SCOPE.value);
 
         auto source_itrr = source.begin();
-        for (uint16_t count = 0; count < skip; count++) { source_itrr++; }
+        for (uint16_t count = 0; count < skip && source_itrr != source.end(); count++) { source_itrr++; }
             
         uint16_t batch_counter = 0;
         while (batch_counter < batch_size && source_itrr != source.end()) {
@@ -83,9 +83,10 @@ ACTION daccustodian::migrate(uint16_t skip, uint16_t batch_size) {
 }
 
 ACTION daccustodian::clearold(uint16_t batch_size) {
-   cleanTable<votes_table>(_self, _self.value);
-   cleanTable<custodians_table>(_self, _self.value);
-   cleanTable<candidates_table>(_self, _self.value);
+    require_auth(_self);
+    cleanTable<votes_table>(_self, _self.value, batch_size);
+    cleanTable<custodians_table>(_self, _self.value, batch_size);
+    cleanTable<candidates_table>(_self, _self.value, batch_size);
 
     old_configscontainer old_config_container = old_configscontainer(get_self(), get_self().value);
     old_config_container.remove();

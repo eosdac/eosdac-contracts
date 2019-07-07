@@ -7,11 +7,12 @@ const eosio::name NEW_SCOPE = "eos.dac"_n;
 using namespace eosio;
 
 template <typename T>
-void cleanTable(name code, uint64_t account){
+void cleanTable(name code, uint64_t account, const uint32_t batchSize){
     T db(code, account);
-    while(db.begin() != db.end()){
-        auto itr = --db.end();
-        db.erase(itr);
+    uint32_t counter = 0;
+    auto itr = --db.end();
+    while(itr != db.end() && counter++ < batchSize) {
+        itr = db.erase(itr);
     }
 }
 
