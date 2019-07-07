@@ -6,7 +6,10 @@
     * tokencontract@eosio.code needs adding to tokencontract@active before migration of contracts to allow for inline action
     * First `newperiode` charges more ram to dacauthority so the first `newperiode` after the migration will need to have dacauthority permission.
     * Also any changes to the configuration of the dac that may lead to an increase in RAM occupation eg. increased number of custodians, extra permission structures realted to the dac may increase the RAM so therefore will also need the dacauthority permission to enable that extra consumption.
-    
+    * Custom linkauths for dacauthority need to be added for the new method names
+        * @med
+            * daccustodian::firecande
+            * daccustodian::firecuste
 
 The tables that will be migrated are:
     * eosdactokens:
