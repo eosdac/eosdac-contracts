@@ -194,6 +194,7 @@ namespace eosdac {
         ACTION newperiode(std::string message, name dac_id);
         ACTION claimpay(uint64_t payid);
         ACTION claimpaye(uint64_t payid, name dac_id);
+        ACTION rejectcuspay(uint64_t payid, name dac_id);
         ACTION unstake(name cand);
         ACTION unstakee(name cand, name dac_id);
         ACTION migrate(uint16_t skip, uint16_t batch_size);

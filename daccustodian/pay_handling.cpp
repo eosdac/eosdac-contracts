@@ -7,7 +7,7 @@ void daccustodian::claimpay(uint64_t payid) {
 void daccustodian::claimpaye(uint64_t payid, name dac_id) {
     pending_pay_table pending_pay(_self, dac_id.value);
     
-    dacdir::dac found_dac = dacdir::dac_for_id(dac_id);
+    dacdir::dac dac = dacdir::dac_for_id(dac_id);
 
     contr_config configs = contr_config::get_current_configs(_self, dac_id);
     const pay &payClaim = pending_pay.get(payid, "ERR::CLAIMPAY_INVALID_CLAIM_ID::Invalid pay claim id.");
@@ -20,7 +20,6 @@ void daccustodian::claimpaye(uint64_t payid, name dac_id) {
     name payment_destination;
     string memo;
 
-    auto dac = dacdir::dac_for_id(dac_id);
     name service_account = dac.account_for_type(dacdir::SERVICE);
     name token_holder = dac.account_for_type(dacdir::TREASURY);
 
@@ -44,7 +43,7 @@ void daccustodian::claimpaye(uint64_t payid, name dac_id) {
     } else {
         deferredTrans.actions.emplace_back(
                 action(permission_level{token_holder, "xfer"_n},
-                        found_dac.account_for_type(dacdir::TOKEN),
+                        dac.account_for_type(dacdir::TOKEN),
                         "transfer"_n,
                         std::make_tuple(token_holder, payment_destination, payClaim.quantity, memo)
                 ));
@@ -52,6 +51,16 @@ void daccustodian::claimpaye(uint64_t payid, name dac_id) {
 
     deferredTrans.delay_sec = TRANSFER_DELAY;
     deferredTrans.send(uint128_t(payid) << 64 | time_point_sec(current_time_point()).sec_since_epoch() , _self);
+
+    pending_pay.erase(payClaim);
+}
+
+void daccustodian::rejectcuspay(uint64_t payid, name dac_id) {
+    pending_pay_table pending_pay(_self, dac_id.value);
+    const pay &payClaim = pending_pay.get(payid, "ERR::CLAIMPAY_INVALID_CLAIM_ID::Invalid pay claim id.");
+    assertValidMember(payClaim.receiver, dac_id);
+
+    require_auth(payClaim.receiver);
 
     pending_pay.erase(payClaim);
 }

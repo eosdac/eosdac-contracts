@@ -375,6 +375,18 @@ The intent of forehand is to set a candidate to a state of inactive so they will
 **TERM:** This action lasts for the duration of the time taken to process the transaction.
 
 <h1 class="contract">
+  rejectcuspay
+</h1>
+
+## ACTION: rejectcuspay
+**PARAMETERS:**
+* __payid__ the pay id for the arrange payment.
+
+**INTENT:** The intent of {{ rejectcuspay }} is to allow an account to reject a claim for pending payment amounts due to that account. The pay claim they are claiming needs to be visible in the `pendingpay` table and is then removed from the `pending_pay` table. The active auth of the intended claimer for the payment is required to complete this action.
+
+**TERM:** This action lasts for the duration of the time taken to process the transaction.
+
+<h1 class="contract">
 transferobsv
 </h1>
 

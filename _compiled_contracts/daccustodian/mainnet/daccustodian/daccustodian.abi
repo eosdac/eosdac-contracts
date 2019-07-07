@@ -412,6 +412,20 @@
             ]
         },
         {
+            "name": "rejectcuspay",
+            "base": "",
+            "fields": [
+                {
+                    "name": "payid",
+                    "type": "uint64"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "resigncust",
             "base": "",
             "fields": [
@@ -777,6 +791,11 @@
             "name": "nominatecane",
             "type": "nominatecane",
             "ricardian_contract": "## ACTION: nominatecane\n**PARAMETERS:**\n* __cand__ is an account_name parameter for the nominating candidate.\n* __requestedpay__ is an asset requested by the candidate as pay for being an elected custodian. It should be passed to the action in the format: \\\"10.0000 EOSDAC\\\".\n\n**INTENT:** The intent of {{ nominatecand }} is to nominates a candidate to custodian election, Accounts must nominate as a candidate before they can be voted for. The candidate must lock a configurable number of tokens before trying to nominate (configurable via {{ updateconfig }} in the parameter lockupasset which will be sent from the token contract as defined and set in the code of the contract. If a user previously been a candidate they may have enough staked tokens to not require further staking but will otherwise need to transfer the difference to meet the required stake. \n\n**TERM:** A candidate remains a candidate until they are removed from candidate status by a subsequent transaction."
+        },
+        {
+            "name": "rejectcuspay",
+            "type": "rejectcuspay",
+            "ricardian_contract": "## ACTION: rejectcuspay\n**PARAMETERS:**\n* __payid__ the pay id for the arrange payment.\n\n**INTENT:** The intent of {{ rejectcuspay }} is to allow an account to reject a claim for pending payment amounts due to that account. The pay claim they are claiming needs to be visible in the `pendingpay` table and is then removed from the `pending_pay` table. The active auth of the intended claimer for the payment is required to complete this action.\n\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
         },
         {
             "name": "resigncust",
