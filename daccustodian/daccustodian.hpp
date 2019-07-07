@@ -222,7 +222,7 @@ namespace eosdac {
         void updateVoteWeights(const vector<name> &votes, int64_t vote_weight, name internal_dac_id, contr_state &currentState);
         void modifyVoteWeights(name voter, vector<name> oldVotes, vector<name> newVotes, name internal_dac_id);
         void assertPeriodTime(contr_config &configs, contr_state &currentState);
-        void distributePay(name internal_dac_id);
+        void distributeMeanPay(name internal_dac_id);
         void setCustodianAuths(name internal_dac_id);
         void removeCustodian(name cust, name internal_dac_id);
         void removeCandidate(name cust, bool lockupStake, name internal_dac_id);

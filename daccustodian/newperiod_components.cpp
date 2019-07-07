@@ -1,65 +1,65 @@
 #include "../_contract-shared-headers/migration_helpers.hpp"
 
-void daccustodian::distributePay(name dac_id) {
-    custodians_table custodians(_self, dac_id.value);
-    pending_pay_table pending_pay(_self, dac_id.value);
-
-    //Find the median pay using a temporary vector to hold the requestedpay amounts.
-    std::vector<asset> reqpays;
-    for (auto cust: custodians) {
-        reqpays.push_back(cust.requestedpay);
-    }
-
-    // Using nth_element to just sort for the entry we need for the median value.
-    size_t mid = reqpays.size() / 2;
-    std::nth_element(reqpays.begin(), reqpays.begin() + mid, reqpays.end());
-
-    asset medianAsset = reqpays[mid];
-
-    if (medianAsset.amount > 0) {
-        for (auto cust: custodians) {
-            pending_pay.emplace(_self, [&](pay &p) {
-                p.key = pending_pay.available_primary_key();
-                p.receiver = cust.cust_name;
-                p.quantity = medianAsset;
-                p.memo = "Custodian pay. Thank you.";
-            });
-        } 
-    }
-
-    print("distribute pay");
-}
-
-// void daccustodian::distributeMeanPay(name dac_id) {
+// void daccustodian::distributePay(name dac_id) {
 //     custodians_table custodians(_self, dac_id.value);
 //     pending_pay_table pending_pay(_self, dac_id.value);
-//     contr_config configs = contr_config::get_current_configs(_self, dac_id);
 
-//     //Find the mean pay using a temporary vector to hold the requestedpay amounts.
-//     asset total = asset{0, configs.requested_pay_max.symbol};
-//     int64_t count = 0;
+//     //Find the median pay using a temporary vector to hold the requestedpay amounts.
+//     std::vector<asset> reqpays;
 //     for (auto cust: custodians) {
-//         total += cust.requestedpay;
-//         count += 1;
-//         // print_f("cust % with amount %\n", cust.cust_name, cust.requestedpay);
+//         reqpays.push_back(cust.requestedpay);
 //     }
 
-//     asset meanAsset = count == 0 ? total : total / count;
+//     // Using nth_element to just sort for the entry we need for the median value.
+//     size_t mid = reqpays.size() / 2;
+//     std::nth_element(reqpays.begin(), reqpays.begin() + mid, reqpays.end());
 
-//     // print_f("Calclulated mean is: %", meanAsset);
-//     if (meanAsset.amount > 0) {
+//     asset medianAsset = reqpays[mid];
+
+//     if (medianAsset.amount > 0) {
 //         for (auto cust: custodians) {
 //             pending_pay.emplace(_self, [&](pay &p) {
 //                 p.key = pending_pay.available_primary_key();
 //                 p.receiver = cust.cust_name;
-//                 p.quantity = meanAsset;
+//                 p.quantity = medianAsset;
 //                 p.memo = "Custodian pay. Thank you.";
 //             });
-//         }
+//         } 
 //     }
 
-//     print("distribute mean pay");
+//     print("distribute pay");
 // }
+
+void daccustodian::distributeMeanPay(name dac_id) {
+    custodians_table custodians(_self, dac_id.value);
+    pending_pay_table pending_pay(_self, dac_id.value);
+    contr_config configs = contr_config::get_current_configs(_self, dac_id);
+
+    //Find the mean pay using a temporary vector to hold the requestedpay amounts.
+    asset total = asset{0, configs.requested_pay_max.symbol};
+    int64_t count = 0;
+    for (auto cust: custodians) {
+        total += cust.requestedpay;
+        count += 1;
+        // print_f("cust % with amount %\n", cust.cust_name, cust.requestedpay);
+    }
+
+    asset meanAsset = count == 0 ? total : total / count;
+
+    // print_f("Calclulated mean is: %", meanAsset);
+    if (meanAsset.amount > 0) {
+        for (auto cust: custodians) {
+            pending_pay.emplace(_self, [&](pay &p) {
+                p.key = pending_pay.available_primary_key();
+                p.receiver = cust.cust_name;
+                p.quantity = meanAsset;
+                p.memo = "Custodian pay. Thank you.";
+            });
+        }
+    }
+
+    print("distribute mean pay");
+}
 
 void daccustodian::assertPeriodTime(contr_config &configs, contr_state &currentState) {
     time_point_sec timestamp = time_point_sec(eosio::current_time_point());
@@ -252,7 +252,7 @@ void daccustodian::newperiode(string message, name dac_id) {
                  "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_PROCESS::Voter engagement is insufficient to process a new period");
 
     // Distribute pay to the current custodians.
-    distributePay(dac_id);
+    distributeMeanPay(dac_id);
 
     // Set custodians for the next period.
     allocateCustodians(false, dac_id);
