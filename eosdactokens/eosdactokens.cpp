@@ -118,7 +118,7 @@ namespace eosdac {
         if (is_account(custodian_contract)) {
             if (to == custodian_contract) {        
                 eosio::action(
-                    eosio::permission_level{ get_self(), "active"_n },
+                    eosio::permission_level{ get_self(), "notify"_n },
                     custodian_contract, "capturestake"_n,
                     make_tuple(from, quantity, dac.dac_name)
                 ).send();
@@ -128,7 +128,7 @@ namespace eosdac {
             } else {
                 //Send to notify of transfer
                 eosio::action(
-                    eosio::permission_level{ get_self(), "active"_n },
+                    eosio::permission_level{ get_self(), "notify"_n },
                     custodian_contract, "transferobsv"_n,
                     make_tuple(from, to, quantity, dac.dac_name)
                 ).send();
