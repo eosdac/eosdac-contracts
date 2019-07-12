@@ -149,7 +149,7 @@
                 },
                 {
                     "name": "requested_pay_max",
-                    "type": "asset"
+                    "type": "extended_asset"
                 }
             ]
         },

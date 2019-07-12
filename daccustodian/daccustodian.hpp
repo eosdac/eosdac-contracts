@@ -74,7 +74,7 @@ namespace eosdac {
         // The time before locked up stake can be released back to the candidate using the unstake action
         uint32_t lockup_release_time_delay;
 
-        eosio::asset requested_pay_max;
+        eosio::extended_asset requested_pay_max;
 
         static contr_config get_current_configs(eosio::name account, eosio::name scope) {
             return configscontainer(account, scope.value).get_or_default(contr_config());

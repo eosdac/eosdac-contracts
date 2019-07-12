@@ -36,7 +36,7 @@ void daccustodian::distributeMeanPay(name dac_id) {
     contr_config configs = contr_config::get_current_configs(_self, dac_id);
 
     //Find the mean pay using a temporary vector to hold the requestedpay amounts.
-    asset total = asset{0, configs.requested_pay_max.symbol};
+    asset total = asset{0, configs.requested_pay_max.quantity.symbol};
     int64_t count = 0;
     for (auto cust: custodians) {
         total += cust.requestedpay;

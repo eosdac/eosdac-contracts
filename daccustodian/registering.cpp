@@ -14,7 +14,7 @@ void daccustodian::nominatecane(name cand, asset requestedpay, name dac_id) {
 
     check(requestedpay.amount >= 0, "ERR::UPDATEREQPAY_UNDER_ZERO::Requested pay amount must not be negative.");
     // This implicitly asserts that the symbol of requestedpay matches the configs.max pay.
-    check(requestedpay <= configs.requested_pay_max,
+    check(requestedpay <= configs.requested_pay_max.quantity,
                  "ERR::NOMINATECAND_PAY_LIMIT_EXCEEDED::Requested pay limit for a candidate was exceeded.");
 
     currentState.number_active_candidates++;
