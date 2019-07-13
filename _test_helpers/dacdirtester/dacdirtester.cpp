@@ -12,7 +12,7 @@ using namespace eosdac;
     }
 
 
-    ACTION dacdirtester::assertdacsym(eosio::symbol sym, uint8_t id) {
+    ACTION dacdirtester::assertdacsym(eosio::extended_symbol sym, uint8_t id) {
       auto account = dacdir::dac_for_symbol(sym).account_for_type(id);
       print("found dac with symbol: ", account);
       check(account != name{}, "No account found for the given id.");

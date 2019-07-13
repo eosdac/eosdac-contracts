@@ -4,6 +4,7 @@
 #include <eosio/eosio.hpp>
 #include <eosio/multi_index.hpp>
 #include <eosio/symbol.hpp>
+#include "../_contract-shared-headers/common_utilities.hpp"
 
 namespace eosdac {
 
@@ -14,7 +15,6 @@ namespace eosdac {
             TREASURY = 1,
             CUSTODIAN = 2,
             MSIGS = 3,
-            TOKEN = 4,
             SERVICE = 5,
             PROPOSALS = 6,
             ESCROW = 7,
@@ -31,7 +31,7 @@ namespace eosdac {
             eosio::name         owner;
             eosio::name         dac_name;
             std::string         title;
-            eosio::symbol       symbol;
+            eosio::extended_symbol       symbol;
             std::map<uint8_t, std::string> refs;
             std::map<uint8_t, eosio::name> accounts;
             uint8_t      dac_state;
@@ -43,12 +43,12 @@ namespace eosdac {
 
             uint64_t primary_key() const { return dac_name.value; }
             uint64_t by_owner() const { return owner.value; }
-            uint64_t by_symbol() const { return symbol.raw(); }
+            uint128_t by_symbol() const { return eosdac::raw_from_extended_symbol(symbol); }
         };
 
         typedef eosio::multi_index< "dacs"_n,  dac,
                                     eosio::indexed_by<"byowner"_n, eosio::const_mem_fun<dac, uint64_t, &dac::by_owner>>,
-                                    eosio::indexed_by<"bysymbol"_n, eosio::const_mem_fun<dac, uint64_t, &dac::by_symbol>>
+                                    eosio::indexed_by<"bysymbol"_n, eosio::const_mem_fun<dac, uint128_t, &dac::by_symbol>>
                                     > dac_table;
 
 
@@ -57,10 +57,10 @@ namespace eosdac {
             return dactable.get(id.value, "dac with dac_name not found");
         }
 
-        const dac dac_for_symbol(eosio::symbol sym) {
+        const dac dac_for_symbol(eosio::extended_symbol sym) {
             dac_table dactable = dac_table("dacdirectory"_n, "dacdirectory"_n.value);
             auto index = dactable.get_index<"bysymbol"_n>();
-            auto dac_idx = index.find(sym.raw());
+            auto dac_idx = index.find(eosdac::raw_from_extended_symbol(sym));
             print("\ndac_for_symbol: ", sym, "\n"); 
             eosio::check(dac_idx != index.end() && dac_idx->symbol == sym, "dac not found for the given symbol");
             return *dac_idx;

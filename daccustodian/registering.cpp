@@ -112,7 +112,7 @@ void daccustodian::unstake(name cand) {
 void daccustodian::unstakee(name cand, name dac_id) {
     
     dacdir::dac found_dac = dacdir::dac_for_id(dac_id);
-    name token_account = found_dac.account_for_type(dacdir::TOKEN);
+    name token_account = found_dac.symbol.get_contract();
     candidates_table registered_candidates(_self, dac_id.value);
     const auto &reg_candidate = registered_candidates.get(cand.value, "ERR::UNSTAKE_CAND_NOT_REGISTERED::Candidate is not already registered.");
     check(!reg_candidate.is_active, "ERR::UNSTAKE_CANNOT_UNSTAKE_FROM_ACTIVE_CAND::Cannot unstake tokens for an active candidate. Call withdrawcand first.");

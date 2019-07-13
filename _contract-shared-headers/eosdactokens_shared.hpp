@@ -48,7 +48,7 @@ namespace eosdac {
             member_terms_account = "kasdactokens"_n;
         } else {
         // End TempBlock
-            member_terms_account = dacdir::dac_for_id(dac_scope).account_for_type(dacdir::TOKEN); // Need this line without the temp block
+            member_terms_account = dacdir::dac_for_id(dac_scope).symbol.get_contract(); // Need this line without the temp block
         }
         regmembers reg_members(member_terms_account, dac_scope.value);
         memterms memberterms(member_terms_account, dac_scope.value);

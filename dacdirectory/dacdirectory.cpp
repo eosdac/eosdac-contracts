@@ -11,13 +11,13 @@ namespace eosdac {
                 ,_dacs( get_self(), get_self().value )
         {}
 
-        void dacdirectory::regdac( eosio::name owner, eosio::name dac_name, symbol dac_symbol, string title, map<uint8_t, string> refs,  map<uint8_t, eosio::name> accounts ) {
+        void dacdirectory::regdac( eosio::name owner, eosio::name dac_name, extended_symbol dac_symbol, string title, map<uint8_t, string> refs,  map<uint8_t, eosio::name> accounts ) {
             require_auth(owner);
 
             auto existing = _dacs.find(dac_name.value);
 
             auto symbol_idx = _dacs.get_index<"bysymbol"_n>();
-            auto matching_symbol_itr = symbol_idx.find(dac_symbol.raw());
+            auto matching_symbol_itr = symbol_idx.find(eosdac::raw_from_extended_symbol(dac_symbol));
             eosio::check(matching_symbol_itr == symbol_idx.end() && matching_symbol_itr->symbol != dac_symbol, "A dac already exists for the provided symbol.");
 
             if (existing == _dacs.end()){

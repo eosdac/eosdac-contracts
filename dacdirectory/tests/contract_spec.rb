@@ -23,13 +23,13 @@ describe "dacdirectory" do
   describe "regdac" do
     context "Without valid permission" do
       it do
-        result = wrap_command %(cleos push action dacdirectory regdac '{"owner": "testaccount1", "dac_name": "mydacname", "dac_symbol": "4,MYSYM", "title": "Dac Title", "refs": [[1,"some_ref"]], "accounts": [[1,"account1"]], "scopes": []}' -p testaccount2)
+        result = wrap_command %(cleos push action dacdirectory regdac '{"owner": "testaccount1", "dac_name": "mydacname", "dac_symbol": { "contract": "eosdactokens","symbol": "4,MYSYM"}, "title": "Dac Title", "refs": [[1,"some_ref"]], "accounts": [[1,"account1"]], "scopes": []}' -p testaccount2)
         expect(result.stderr).to include('missing authority of testaccount1')
       end
     end
     context "With valid permission" do
       it do
-        result = wrap_command %(cleos push action dacdirectory regdac '{"owner": "testaccount1", "dac_name": "mydacname", "dac_symbol": "4,MYSYM", "title": "Dac Title", "refs": [[1,"some_ref"]], "accounts": [[1,"account1"]], "scopes": []}' -p testaccount1)
+        result = wrap_command %(cleos push action dacdirectory regdac '{"owner": "testaccount1", "dac_name": "mydacname", "dac_symbol": { "contract": "eosdactokens","symbol": "4,MYSYM"}, "title": "Dac Title", "refs": [[1,"some_ref"]], "accounts": [[1,"account1"]], "scopes": []}' -p testaccount1)
         expect(result.stdout).to include('dacdirectory::regdac')
       end
     end
@@ -42,7 +42,7 @@ describe "dacdirectory" do
                 "owner": "testaccount1",
                 "dac_name": "mydacname",
                 "title": "Dac Title",
-                "symbol": "4,MYSYM",
+                "symbol": { "contract": "eosdactokens","symbol": "4,MYSYM"},
                 "refs": [{
                     "key": 1,
                     "value": "some_ref"
@@ -84,7 +84,7 @@ describe "dacdirectory" do
                 "owner": "testaccount1",
                 "dac_name": "mydacname",
                 "title": "Dac Title",
-                "symbol": "4,MYSYM",
+                "symbol": { "contract": "eosdactokens","symbol": "4,MYSYM"},
                 "refs": [{
                     "key": 1,
                     "value": "some_ref"
@@ -127,7 +127,7 @@ describe "dacdirectory" do
                 "owner": "testaccount1",
                 "dac_name": "mydacname",
                 "title": "Dac Title",
-                "symbol": "4,MYSYM",
+                "symbol": { "contract": "eosdactokens","symbol": "4,MYSYM"},
                 "refs": [{
                     "key": 1,
                     "value": "some_ref"
@@ -170,7 +170,7 @@ describe "dacdirectory" do
                 "owner": "testaccount2",
                 "dac_name": "mydacname",
                 "title": "Dac Title",
-                "symbol": "4,MYSYM",
+                "symbol": { "contract": "eosdactokens","symbol": "4,MYSYM"},
                 "refs": [{
                     "key": 1,
                     "value": "some_ref"
@@ -216,13 +216,13 @@ describe "dacdirectory" do
   describe "read account from contract with symbol" do
     context "with exisitng dac symbol" do
       it do
-        result = wrap_command %(cleos push action dacdirtester assertdacsym '{ "sym": "4,MYSYM","id": 1}' -p testaccount2)
+        result = wrap_command %(cleos push action dacdirtester assertdacsym '{ "sym": { "contract": "eosdactokens","symbol": "4,MYSYM"},"id": 1}' -p testaccount2)
         expect(result.stdout).to include('dacdirtester <= dacdirtester::assertdacsym')
       end
     end
     context "with non-existing dac symbol" do
       it do
-        result = wrap_command %(cleos push action dacdirtester assertdacsym '{ "sym": "4,OTHR","id": 2}' -p testaccount2)
+        result = wrap_command %(cleos push action dacdirtester assertdacsym '{ "sym": { "contract": "eosdactokens","symbol": "4,OTHR"},"id": 2}' -p testaccount2)
         expect(result.stderr).to include('dac not found for the given symbol')
       end
     end

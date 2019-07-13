@@ -21,7 +21,7 @@
                 },
                 {
                     "name": "symbol",
-                    "type": "symbol"
+                    "type": "extended_symbol"
                 },
                 {
                     "name": "refs",
@@ -34,6 +34,20 @@
                 {
                     "name": "dac_state",
                     "type": "uint8"
+                }
+            ]
+        },
+        {
+            "name": "extended_symbol",
+            "base": "",
+            "fields": [
+                {
+                    "name": "symbol",
+                    "type": "symbol"
+                },
+                {
+                    "name": "contract",
+                    "type": "name"
                 }
             ]
         },
@@ -97,7 +111,7 @@
                 },
                 {
                     "name": "dac_symbol",
-                    "type": "symbol"
+                    "type": "extended_symbol"
                 },
                 {
                     "name": "title",

@@ -227,8 +227,8 @@ void daccustodian::newperiode(string message, name dac_id) {
 
     // Get the max supply of the lockup asset token (eg. EOSDAC)
     auto tokenStats = stats(
-                            found_dac.account_for_type(dacdir::TOKEN), 
-                            found_dac.symbol.code().raw()
+                            found_dac.symbol.get_contract(),
+                            found_dac.symbol.get_symbol().raw()
                             ).begin();
     uint64_t max_supply = tokenStats->supply.amount;
 

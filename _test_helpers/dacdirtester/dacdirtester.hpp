@@ -8,5 +8,5 @@ public:
         :contract(s,code,ds){}
 
     ACTION assertdacid(eosio::name dac_name, uint8_t id);
-    ACTION assertdacsym(eosio::symbol sym, uint8_t id);
+    ACTION assertdacsym(eosio::extended_symbol sym, uint8_t id);
 };

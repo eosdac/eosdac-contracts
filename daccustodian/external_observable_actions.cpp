@@ -7,7 +7,7 @@ void daccustodian::capturestake(name from,
                                 name dac_id) {
     
     auto dac = dacdir::dac_for_id(dac_id);
-    auto token_contract = dac.account_for_type(dacdir::TOKEN);
+    auto token_contract = dac.symbol.get_contract();
     print("token contract: ", token_contract);
     require_auth(token_contract);
 
@@ -69,7 +69,7 @@ void daccustodian::transferobsv(name from,
     eosio::print("\n > transfer from : ", from, " to: ", to, " quantity: ", quantity);
 
     auto dac = dacdir::dac_for_id(dac_id);
-    auto token_contract = dac.account_for_type(dacdir::TOKEN);
+    auto token_contract = dac.symbol.get_contract();
     print("token contract: ", token_contract);
     require_auth(token_contract);
 

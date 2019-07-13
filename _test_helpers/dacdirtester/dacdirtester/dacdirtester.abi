@@ -23,11 +23,25 @@
             "fields": [
                 {
                     "name": "sym",
-                    "type": "symbol"
+                    "type": "extended_symbol"
                 },
                 {
                     "name": "id",
                     "type": "uint8"
+                }
+            ]
+        },
+        {
+            "name": "extended_symbol",
+            "base": "",
+            "fields": [
+                {
+                    "name": "symbol",
+                    "type": "symbol"
+                },
+                {
+                    "name": "contract",
+                    "type": "name"
                 }
             ]
         }

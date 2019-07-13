@@ -19,6 +19,10 @@ namespace eosdac {
     static const uint128_t combine_ids(const uint64_t &x, const uint64_t &y) {
         return (uint128_t{x} << 64) | y;
     }
+
+    static const __uint128_t raw_from_extended_symbol(const extended_symbol &symbol) {
+        return (uint128_t{symbol.get_contract().value} << 64) | symbol.get_symbol().raw();
+    }
 }
 
 #endif

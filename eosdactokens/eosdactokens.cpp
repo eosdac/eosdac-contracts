@@ -112,7 +112,7 @@ namespace eosdac {
         
         require_recipient(from, to);
 
-        dacdir::dac dac = dacdir::dac_for_symbol(quantity.symbol);
+        dacdir::dac dac = dacdir::dac_for_symbol(extended_symbol{quantity.symbol, get_self()});
         eosio::name custodian_contract = dac.account_for_type(dacdir::CUSTODIAN);
 
         if (is_account(custodian_contract)) {
