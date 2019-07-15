@@ -35,11 +35,11 @@ void daccustodian::nominatecane(name cand, asset requestedpay, name dac_id) {
             if (pending != pendingstake.end()) {
                 c.locked_tokens += pending->quantity;
             }
-            check(c.locked_tokens >= configs.lockupasset, "ERR::NOMINATECAND_INSUFFICIENT_FUNDS_TO_STAKE::Insufficient funds have been staked.");
+            check(c.locked_tokens >= configs.lockupasset.quantity, "ERR::NOMINATECAND_INSUFFICIENT_FUNDS_TO_STAKE::Insufficient funds have been staked.");
         });
     } else {
         check(pending != pendingstake.end() &&
-                     pending->quantity >= configs.lockupasset,
+                     pending->quantity >= configs.lockupasset.quantity,
                      "ERR::NOMINATECAND_STAKING_FUNDS_INCOMPLETE::A registering candidate must transfer sufficient tokens to the contract for staking.");
 
         registered_candidates.emplace(cand, [&](candidate &c) {
@@ -64,11 +64,11 @@ void daccustodian::nominatecane(name cand, asset requestedpay, name dac_id) {
                     if (pending != pendingstake.end()) {
                         c.locked_tokens += pending->quantity;
                     }
-                    check(c.locked_tokens >= configs.lockupasset, "ERR::NOMINATECAND_INSUFFICIENT_FUNDS_TO_STAKE::Insufficient funds have been staked.");
+                    check(c.locked_tokens >= configs.lockupasset.quantity, "ERR::NOMINATECAND_INSUFFICIENT_FUNDS_TO_STAKE::Insufficient funds have been staked.");
                 });
             } else {
                 check(pending != pendingstake.end() &&
-                            pending->quantity >= configs.lockupasset,
+                            pending->quantity >= configs.lockupasset.quantity,
                             "ERR::NOMINATECAND_STAKING_FUNDS_INCOMPLETE::A registering candidate must transfer sufficient tokens to the contract for staking.");
 
                 registered_candidates.emplace(cand, [&](candidate &c) {
@@ -112,9 +112,10 @@ void daccustodian::unstake(name cand) {
 void daccustodian::unstakee(name cand, name dac_id) {
     
     dacdir::dac found_dac = dacdir::dac_for_id(dac_id);
-    name token_account = found_dac.symbol.get_contract();
+    // name token_account = found_dac.symbol.get_contract();
     candidates_table registered_candidates(_self, dac_id.value);
     const auto &reg_candidate = registered_candidates.get(cand.value, "ERR::UNSTAKE_CAND_NOT_REGISTERED::Candidate is not already registered.");
+    extended_asset lockup_asset = contr_config::get_current_configs(_self, dac_id).lockupasset;
     check(!reg_candidate.is_active, "ERR::UNSTAKE_CANNOT_UNSTAKE_FROM_ACTIVE_CAND::Cannot unstake tokens for an active candidate. Call withdrawcand first.");
 
     check(reg_candidate.custodian_end_time_stamp < time_point_sec(eosio::current_time_point()), "ERR::UNSTAKE_CANNOT_UNSTAKE_UNDER_TIME_LOCK::Cannot unstake tokens before they are unlocked from the time delay.");
@@ -125,7 +126,7 @@ void daccustodian::unstakee(name cand, name dac_id) {
 
         deferredTrans.actions.emplace_back(
         action(permission_level{_self, "xfer"_n},
-               token_account,
+               lockup_asset.contract,
                "transfer"_n,
                make_tuple(_self, cand, c.locked_tokens,
                           string("Returning locked up stake. Thank you."))
@@ -135,7 +136,7 @@ void daccustodian::unstakee(name cand, name dac_id) {
         deferredTrans.delay_sec = TRANSFER_DELAY;
         deferredTrans.send(cand.value, _self);
 
-        c.locked_tokens = asset(0, contr_config::get_current_configs(_self, dac_id).lockupasset.symbol);
+        c.locked_tokens = asset(0, lockup_asset.quantity.symbol);
     });
 
     //Temp block for migrations to new scope
@@ -148,7 +149,7 @@ void daccustodian::unstakee(name cand, name dac_id) {
 
         registered_candidates.modify(reg_candidate, cand, [&](candidate &c) {
 
-            c.locked_tokens = asset(0, contr_config::get_current_configs(_self, dac_id).lockupasset.symbol);
+            c.locked_tokens = asset(0, contr_config::get_current_configs(_self, dac_id).lockupasset.quantity.symbol);
         });
     }
     //end Temp block

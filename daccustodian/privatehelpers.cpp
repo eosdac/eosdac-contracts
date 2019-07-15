@@ -32,15 +32,10 @@ void daccustodian::modifyVoteWeights(name voter, vector<name> oldVotes, vector<n
     // This could be optimised with set diffing to avoid remove then add for unchanged votes. - later
     eosio::print("Modify vote weights: ", voter, "\n");
 
-    contr_config configs = contr_config::get_current_configs(_self, dac_id);
+    dacdir::dac found_dac = dacdir::dac_for_id(dac_id);
+    accounts accountstable(found_dac.symbol.get_contract(), voter.value);
 
-    uint64_t asset_name = configs.lockupasset.symbol.code().raw();
-
-    // dacdir::dac found_dac = dacdir::dac_for_id(dac_id); // Need this after migration
-    // accounts accountstable(found_dac.account_for_type(dacdir::TOKEN), voter.value); // Need this after migration
-    accounts accountstable("kasdactokens"_n, voter.value);
-
-    const auto ac = accountstable.find(asset_name);
+    const auto ac = accountstable.find(found_dac.symbol.get_symbol().raw());
     if (ac == accountstable.end()) {
         print("Voter has no balance therefore no need to update vote weights");
         return;

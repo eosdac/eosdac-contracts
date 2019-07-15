@@ -48,7 +48,7 @@ namespace eosdac {
 
     struct [[eosio::table("config2"), eosio::contract("daccustodian")]] contr_config {
     //    The amount of assets that are locked up by each candidate applying for election.
-        eosio::asset lockupasset;
+        eosio::extended_asset lockupasset;
     //    The maximum number of votes that each member can make for a candidate.
         uint8_t maxvotes = 5;
     //    Number of custodians to be elected for each election count.
