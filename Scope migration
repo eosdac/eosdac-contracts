@@ -33,10 +33,10 @@ The plan:
 
 eg.
 main net : 
- `cleos push action daccustodian updateconfige '{"newconfig": { "lockupasset": "35000.0000 EOSDAC", "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "should_pay_via_service_provider": 1, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 3, "auth_threshold_high": 10, "auth_threshold_mid": 9, "auth_threshold_low": 7, "lockup_release_time_delay": 7776000, "requested_pay_max": "50.0000 EOS"}, "dac_id": "eosdac"}' -p dacowner`
+ `cleos push action daccustodian updateconfige '{"newconfig": { "lockupasset": { "contract": "eosdactokens","quantity": "35000.0000 EOSDAC"}, "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "should_pay_via_service_provider": 1, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 3, "auth_threshold_high": 10, "auth_threshold_mid": 9, "auth_threshold_low": 7, "lockup_release_time_delay": 7776000, "requested_pay_max": { "contract": "eosio.token", "quantity": "50.0000 EOS"}}, "dac_id": "eosdac"}' -p dacowner`
 
 jungle net : 
- `cleos push action dacelections updateconfige '{"newconfig": { "lockupasset": "10.0000 KASDAC", "maxvotes": 5, "periodlength": 12 , "numelected": 12, "should_pay_via_service_provider": 1, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 3, "auth_threshold_high": 10, "auth_threshold_mid": 9, "auth_threshold_low": 7, "lockup_release_time_delay": 7776000, "requested_pay_max": "50.0000 EOS"}, "dac_id": "eosdac"}' -p dacowner`
+ `cleos push action dacelections updateconfige '{"newconfig": { "lockupasset": { "contract": "kasdactokens","quantity": "10.0000 KASDAC"}, "maxvotes": 5, "periodlength": 12 , "numelected": 12, "should_pay_via_service_provider": 1, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 3, "auth_threshold_high": 10, "auth_threshold_mid": 9, "auth_threshold_low": 7, "lockup_release_time_delay": 7776000, "requested_pay_max": { "contract": "eosio.token","quantity": "50.0000 EOS"}}, "dac_id": "eosdac"}' -p dacowner`
 
 3. migrate the tables in both contracts using the `migrate(skip: Int, batchsize: Int)` action.
     This is designed to loop through each migratable table starting at the `skip` offset and then copy `batch_size` number of records to the new scope or to the end of that table.
