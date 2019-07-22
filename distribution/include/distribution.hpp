@@ -20,7 +20,7 @@ CONTRACT distribution : public contract {
     enum distri_types: uint8_t {
         CLAIMABLE = 0,
         SENDABLE = 1,
-        INVALID = 3
+        INVALID = 2
     };
 
     ACTION regdistri(name distri_id, name owner, name approver_account, extended_asset total_amount, uint8_t distri_type, string memo);
@@ -56,18 +56,8 @@ CONTRACT distribution : public contract {
       name receiver;
       asset amount;
       uint64_t primary_key() const { return receiver.value; }
-
     };
     
     typedef eosio::multi_index<"distris"_n, distri> distri_table;
-    
-    
 
 };
-
-EOSIO_DISPATCH(distribution, (regdistri) (deldistrconf) (approve) (populate) (empty) (sendtokens) (claim) )
-
-
-
-
-

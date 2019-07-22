@@ -32,7 +32,6 @@ ACTION distribution::deldistrconf(name distri_id){
   check(districonf != districonf_t.end(), "Distribution config with this id doesn't exists.");
   require_auth(districonf->owner);
   
-  
   distri_table distri_t(get_self(), distri_id.value);
   check(distri_t.begin() == distri_t.end(), "Can't delete config while the distribution list isn't empty. Empty the distribution list before calling this action.");
 
@@ -169,29 +168,3 @@ ACTION distribution::claim(name distri_id, name receiver){
   distri_t.erase(claim_entry);
   
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
