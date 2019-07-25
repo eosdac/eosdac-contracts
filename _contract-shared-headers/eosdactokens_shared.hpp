@@ -43,9 +43,9 @@ namespace eosdac {
         eosio::name member_terms_account;
         
         // Start TempBlock
-        if (dac_scope == "dacelections"_n) {
-            dac_scope = "kasdactokens"_n;
-            member_terms_account = "kasdactokens"_n;
+        if (dac_scope == "daccustodian"_n) {
+            dac_scope = "eosdactokens"_n;
+            member_terms_account = "eosdactokens"_n;
         } else {
         // End TempBlock
             member_terms_account = dacdir::dac_for_id(dac_scope).symbol.get_contract(); // Need this line without the temp block
