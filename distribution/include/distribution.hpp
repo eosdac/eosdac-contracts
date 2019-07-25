@@ -23,11 +23,11 @@ CONTRACT distribution : public contract {
         INVALID = 2
     };
 
-    ACTION regdistri(name distri_id, name owner, name approver_account, extended_asset total_amount, uint8_t distri_type, string memo);
+    ACTION regdistri(name distri_id, name dac_id, name owner, name approver_account, extended_asset total_amount, uint8_t distri_type, string memo);
     ACTION deldistrconf(name distri_id);
     ACTION approve(name distri_id);
 
-    ACTION populate(name distri_id, vector <dropdata> data);
+    ACTION populate(name distri_id, vector <dropdata> data, bool allow_modify);
     ACTION empty(name distri_id, uint8_t batch_size);
     ACTION sendtokens(name distri_id, uint8_t batch_size);
     ACTION claim(name distri_id, name receiver);
@@ -38,6 +38,7 @@ CONTRACT distribution : public contract {
     TABLE districonf {
       
       name distri_id;
+      name dac_id;
       name owner;
       bool approved; //default false
       uint8_t distri_type;
@@ -47,8 +48,13 @@ CONTRACT distribution : public contract {
       string memo;
       
       uint64_t primary_key() const { return distri_id.value; }
+      uint64_t by_dac_id() const { return dac_id.value; }
+      uint64_t by_owner() const { return owner.value; }
     };
-    typedef eosio::multi_index<"districonfs"_n, districonf> districonf_table;
+    typedef eosio::multi_index<"districonfs"_n, districonf,
+    eosio::indexed_by<"bydacid"_n, eosio::const_mem_fun<districonf, uint64_t, &districonf::by_dac_id>>,
+    eosio::indexed_by<"byowner"_n, eosio::const_mem_fun<districonf, uint64_t, &districonf::by_owner>>
+    > districonf_table;
 
     //scoped table by distri_id
     TABLE distri {

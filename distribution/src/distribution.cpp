@@ -1,6 +1,6 @@
 #include <distribution.hpp>
 
-ACTION distribution::regdistri(name distri_id, name owner, name approver_account, extended_asset total_amount, uint8_t distri_type, string memo){
+ACTION distribution::regdistri(name distri_id, name dac_id, name owner, name approver_account, extended_asset total_amount, uint8_t distri_type, string memo){
   
   require_auth(owner);
   check(distri_type < INVALID, "Distribution type out of bound. Use 0 = claim; 1 = send tokens");
@@ -15,6 +15,7 @@ ACTION distribution::regdistri(name distri_id, name owner, name approver_account
   //rampayer is owner
   districonf_t.emplace(owner, [&](auto& n) {
     n.distri_id = distri_id;
+    n.dac_id = dac_id;
     n.owner = owner;
     n.total_amount = total_amount;
     n.approved = 0;
@@ -50,14 +51,13 @@ ACTION distribution::approve(name distri_id){
 
   check(districonf->approved == 0, "Distribution is already approved.");
   
-  name rampayer = districonf->owner;
-  districonf_t.modify(districonf, rampayer, [&](auto& n) {
+  districonf_t.modify(districonf, same_payer, [&](auto& n) {
     n.approved = 1;
   });
   
 }
 
-ACTION distribution::populate(name distri_id, vector <dropdata> data){
+ACTION distribution::populate(name distri_id, vector <dropdata> data, bool allow_modify){
   
   districonf_table districonf_t(get_self(), get_self().value);
   auto existing_distri = districonf_t.find(distri_id.value);
@@ -66,17 +66,58 @@ ACTION distribution::populate(name distri_id, vector <dropdata> data){
   check(existing_distri->approved == 0, "Can't populate an already approved distribution list.");
   
   distri_table distri_t(get_self(), distri_id.value);
-  
+
+
   name rampayer = existing_distri->owner;
   
   for (dropdata dropitem: data) {
       check(dropitem.amount.amount > 0, "Amount must be greater then zero.");
       check(dropitem.amount.symbol == existing_distri->total_amount.quantity.symbol, "Symbol doesn't match the distribution config.");
-      
-      distri_t.emplace(rampayer, [&](auto& n) {
+  
+      if(allow_modify){
+        auto existing_entry = distri_t.find(dropitem.receiver.value);
+        
+        if(existing_entry == distri_t.end() ){
+          //new entry
+          distri_t.emplace(rampayer, [&](auto& n) {
+            n.receiver = dropitem.receiver;
+            n.amount = dropitem.amount;
+          });
+        }
+        else{
+          //existing entry
+          distri_t.modify(existing_entry, same_payer, [&](auto& n) {
+            n.amount = dropitem.amount;
+          });
+          
+        }
+      }
+      else{
+  
+        distri_t.emplace(rampayer, [&](auto& n) {
           n.receiver = dropitem.receiver;
           n.amount = dropitem.amount;
-      });
+        });
+      }
+  
+      auto existing_entry = distri_t.find(dropitem.receiver.value);
+
+      if(existing_entry == distri_t.end() ){
+        //new entry
+        distri_t.emplace(rampayer, [&](auto& n) {
+          n.receiver = dropitem.receiver;
+          n.amount = dropitem.amount;
+        });
+      }
+      else{
+        //existing entry
+        check(allow_modify, "Modify existing entry not allowed.");
+        
+        distri_t.modify(existing_entry, same_payer, [&](auto& n) {
+          n.amount = dropitem.amount;
+        });
+        
+      }
   }
 }
 
@@ -106,7 +147,7 @@ ACTION distribution::sendtokens(name distri_id, uint8_t batch_size){
   auto existing_distri = districonf_t.find(distri_id.value);
   check(existing_distri != districonf_t.end(), "Distribution config with this id doesn't exists.");
   check(existing_distri->approved == 1, "Distribution must be approved first.");
-  check(existing_distri->distri_type == SENDABLE, "Distribution must be claimed.");
+  check(existing_distri->distri_type == SENDABLE, "distri_type must be of type SENDABLE.");
 
   distri_table distri_t(get_self(), distri_id.value);
   check(distri_t.begin() != distri_t.end(), "Sending tokens completed, no more entries.");
@@ -115,8 +156,7 @@ ACTION distribution::sendtokens(name distri_id, uint8_t batch_size){
 
   string memo = existing_distri->memo;
   name tokencontract = existing_distri->total_amount.contract;
-  name rampayer = existing_distri->owner;
-  
+
   uint8_t count = 0;
   for(auto itr = distri_t.begin(); itr != distri_t.end() && count!=batch_size;) {
     
@@ -127,7 +167,7 @@ ACTION distribution::sendtokens(name distri_id, uint8_t batch_size){
       )
       .send();
       
-      districonf_t.modify(existing_distri, rampayer, [&](auto& n) {
+      districonf_t.modify(existing_distri, same_payer, [&](auto& n) {
         n.total_sent += itr->amount;
       });
       
@@ -143,7 +183,7 @@ ACTION distribution::claim(name distri_id, name receiver){
   auto existing_distri = districonf_t.find(distri_id.value);
   check(existing_distri != districonf_t.end(), "Distribution config with this id doesn't exists.");
   check(existing_distri->approved == 1, "Distribution must be approved first.");
-  check(existing_distri->distri_type == CLAIMABLE, "Distribution can't be claimed, tokens will be airdropped.");
+  check(existing_distri->distri_type == CLAIMABLE, "distri_type must be of type CLAIMABLE.");
   
   distri_table distri_t(get_self(), distri_id.value);
   auto claim_entry = distri_t.find(receiver.value);
@@ -160,8 +200,7 @@ ACTION distribution::claim(name distri_id, name receiver){
   )
   .send();
   
-  name rampayer = existing_distri->owner;
-  districonf_t.modify(existing_distri, rampayer, [&](auto& n) {
+  districonf_t.modify(existing_distri, same_payer, [&](auto& n) {
     n.total_sent += claim_entry->amount;
   });
 

@@ -60,6 +60,10 @@
                     "type": "name"
                 },
                 {
+                    "name": "dac_id",
+                    "type": "name"
+                },
+                {
                     "name": "owner",
                     "type": "name"
                 },
@@ -128,6 +132,10 @@
                 {
                     "name": "data",
                     "type": "dropdata[]"
+                },
+                {
+                    "name": "allow_modify",
+                    "type": "bool"
                 }
             ]
         },
@@ -137,6 +145,10 @@
             "fields": [
                 {
                     "name": "distri_id",
+                    "type": "name"
+                },
+                {
+                    "name": "dac_id",
                     "type": "name"
                 },
                 {
