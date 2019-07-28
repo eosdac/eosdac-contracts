@@ -35,7 +35,7 @@ void daccustodian::modifyVoteWeights(name voter, vector<name> oldVotes, vector<n
     dacdir::dac found_dac = dacdir::dac_for_id(dac_id);
     accounts accountstable(found_dac.symbol.get_contract(), voter.value);
 
-    const auto ac = accountstable.find(found_dac.symbol.get_symbol().raw());
+    const auto ac = accountstable.find(found_dac.symbol.get_symbol().code().raw());
     if (ac == accountstable.end()) {
         print("Voter has no balance therefore no need to update vote weights");
         return;
