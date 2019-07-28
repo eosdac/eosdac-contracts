@@ -107,7 +107,7 @@ namespace eosdac {
         const auto &st = statstable.get(sym.raw());
 
         if (st.transfer_locked) {
-            require_auth(st.issuer);
+            check(has_auth(st.issuer), "Transfer is locked, need issuer permission");
         }
         
         require_recipient(from, to);
