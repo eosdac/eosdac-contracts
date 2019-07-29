@@ -93,21 +93,24 @@ void daccustodian::transferobsv(name from,
     //Temp block for migrations to new scope
     if (dac_id == NEW_SCOPE) {
         votes_table votes_cast_by_members(_self, get_self().value);
-        contr_state currentState = contr_state::get_current_state(_self, get_self());
+        statecontainer sc(_self, get_self().value);
 
-        auto existingVote = votes_cast_by_members.find(from.value);
-        if (existingVote != votes_cast_by_members.end()) {
-            updateVoteWeights(existingVote->candidates, -quantity.amount, get_self(), currentState);
-            currentState.total_weight_of_votes -= quantity.amount;
-        }
+        if (sc.exists()){
+            contr_state currentState = sc.get();
+            auto existingVote = votes_cast_by_members.find(from.value);
+            if (existingVote != votes_cast_by_members.end()) {
+                updateVoteWeights(existingVote->candidates, -quantity.amount, get_self(), currentState);
+                currentState.total_weight_of_votes -= quantity.amount;
+            }
 
-        // Update vote weight for the 'to' in the transfer if vote exists
-        existingVote = votes_cast_by_members.find(to.value);
-        if (existingVote != votes_cast_by_members.end()) {
-            updateVoteWeights(existingVote->candidates, quantity.amount, get_self(), currentState);
-            currentState.total_weight_of_votes += quantity.amount;
+            // Update vote weight for the 'to' in the transfer if vote exists
+            existingVote = votes_cast_by_members.find(to.value);
+            if (existingVote != votes_cast_by_members.end()) {
+                updateVoteWeights(existingVote->candidates, quantity.amount, get_self(), currentState);
+                currentState.total_weight_of_votes += quantity.amount;
+            }
+            currentState.save(_self, get_self());
         }
-        currentState.save(_self, get_self());
     }
     //end Temp block
 }
