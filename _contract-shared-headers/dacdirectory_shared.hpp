@@ -22,6 +22,16 @@ namespace eosdac {
             OTHER = 255
         };
 
+        enum ref_type: uint8_t {
+            HOMEPAGE = 0,
+            LOGO_URL = 1,
+            DESCRIPTION = 2,
+            LOGO_NOTEXT_URL = 3,
+            BACKGROUND_URL = 4,
+            COLORS = 5,
+            CLIENT_EXTENSION = 6
+        };
+
         enum dac_state_type: uint8_t {
             dac_state_typeINACTIVE = 0,
             dac_state_typeACTIVE = 1
