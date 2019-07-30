@@ -198,6 +198,7 @@ namespace eosdac {
         ACTION rejectcuspay(uint64_t payid, name dac_id);
         ACTION unstake(name cand);
         ACTION unstakee(name cand, name dac_id);
+        ACTION clearstake(name cand, asset new_value, name dac_id);
         ACTION migrate(uint16_t batch_size);
         ACTION clearold(uint16_t batch_size);
 
@@ -235,5 +236,6 @@ namespace eosdac {
                                                 const char* perms_data,   uint32_t perms_size);
                                                 
         permission_level getCandidatePermission(name account, name internal_dac_id);
+        void validateUnstake(name code, name cand, name dac_id);
     };
 };

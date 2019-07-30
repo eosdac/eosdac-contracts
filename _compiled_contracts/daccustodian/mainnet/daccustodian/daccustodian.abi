@@ -100,6 +100,24 @@
             ]
         },
         {
+            "name": "clearstake",
+            "base": "",
+            "fields": [
+                {
+                    "name": "cand",
+                    "type": "name"
+                },
+                {
+                    "name": "new_value",
+                    "type": "asset"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "contr_config",
             "base": "",
             "fields": [
@@ -755,6 +773,11 @@
         {
             "name": "clearold",
             "type": "clearold",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "clearstake",
+            "type": "clearstake",
             "ricardian_contract": ""
         },
         {

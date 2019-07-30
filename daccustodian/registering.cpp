@@ -110,34 +110,32 @@ void daccustodian::unstake(name cand) {
 }
 
 void daccustodian::unstakee(name cand, name dac_id) {
-    
-    dacdir::dac found_dac = dacdir::dac_for_id(dac_id);
-    // name token_account = found_dac.symbol.get_contract();
-    candidates_table registered_candidates(_self, dac_id.value);
+    validateUnstake(get_self(), cand, dac_id);
+
+    extended_asset lockup_asset = contr_config::get_current_configs(get_self(), dac_id).lockupasset;
+
+    candidates_table registered_candidates(get_self(), dac_id.value);
     const auto &reg_candidate = registered_candidates.get(cand.value, "ERR::UNSTAKE_CAND_NOT_REGISTERED::Candidate is not already registered.");
-    extended_asset lockup_asset = contr_config::get_current_configs(_self, dac_id).lockupasset;
-    check(!reg_candidate.is_active, "ERR::UNSTAKE_CANNOT_UNSTAKE_FROM_ACTIVE_CAND::Cannot unstake tokens for an active candidate. Call withdrawcand first.");
 
-    check(reg_candidate.custodian_end_time_stamp < time_point_sec(eosio::current_time_point()), "ERR::UNSTAKE_CANNOT_UNSTAKE_UNDER_TIME_LOCK::Cannot unstake tokens before they are unlocked from the time delay.");
+    transaction deferredTrans{};
 
-    registered_candidates.modify(reg_candidate, cand, [&](candidate &c) {
-        // Send back the locked up tokens
-        transaction deferredTrans{};
+    deferredTrans.actions.emplace_back(
+            action(permission_level{get_self(), "xfer"_n},
+                   lockup_asset.contract,
+                   "transfer"_n,
+                   make_tuple(get_self(), cand, reg_candidate.locked_tokens,
+                              string("Returning locked up stake. Thank you."))
+            )
+    );
+    deferredTrans.actions.emplace_back(
+            action(permission_level{get_self(), "pay"_n},
+                   get_self(), "clearstake"_n,
+                   make_tuple(cand, asset(0, lockup_asset.quantity.symbol), dac_id)
+            )
+    );
 
-        deferredTrans.actions.emplace_back(
-        action(permission_level{_self, "xfer"_n},
-               lockup_asset.contract,
-               "transfer"_n,
-               make_tuple(_self, cand, c.locked_tokens,
-                          string("Returning locked up stake. Thank you."))
-        )
-        );
-
-        deferredTrans.delay_sec = TRANSFER_DELAY;
-        deferredTrans.send(cand.value, _self);
-
-        c.locked_tokens = asset(0, lockup_asset.quantity.symbol);
-    });
+    deferredTrans.delay_sec = TRANSFER_DELAY;
+    deferredTrans.send(cand.value, get_self());
 
     //Temp block for migrations to new scope
     if (dac_id == get_self()) {
@@ -148,11 +146,23 @@ void daccustodian::unstakee(name cand, name dac_id) {
         check(reg_candidate.custodian_end_time_stamp < time_point_sec(eosio::current_time_point()), "ERR::UNSTAKE_CANNOT_UNSTAKE_UNDER_TIME_LOCK::Cannot unstake tokens before they are unlocked from the time delay.");
 
         registered_candidates.modify(reg_candidate, cand, [&](candidate &c) {
-
             c.locked_tokens = asset(0, contr_config::get_current_configs(_self, dac_id).lockupasset.quantity.symbol);
         });
     }
     //end Temp block
+}
+
+void daccustodian::clearstake(name cand, asset new_value, name dac_id) {
+    require_auth(get_self());
+
+    validateUnstake(get_self(), cand, dac_id);
+
+    candidates_table registered_candidates(get_self(), dac_id.value);
+    const auto &reg_candidate = registered_candidates.get(cand.value, "ERR::UNSTAKE_CAND_NOT_REGISTERED::Candidate is not already registered.");
+
+    registered_candidates.modify(reg_candidate, cand, [&](candidate &c) {
+        c.locked_tokens = new_value;
+    });
 }
 
 void daccustodian::resigncust(name cust) {
@@ -206,6 +216,17 @@ void daccustodian::setperm(name cand, name permission, name dac_id) {
 }
 
 // private methods for the above actions
+
+void daccustodian::validateUnstake(name code, name cand, name dac_id){
+    // Will assert if adc_id not found
+    dacdir::dac_for_id(dac_id);
+    candidates_table registered_candidates(code, dac_id.value);
+    const auto &reg_candidate = registered_candidates.get(cand.value, "ERR::UNSTAKE_CAND_NOT_REGISTERED::Candidate is not already registered.");
+    extended_asset lockup_asset = contr_config::get_current_configs(code, dac_id).lockupasset;
+    check(!reg_candidate.is_active, "ERR::UNSTAKE_CANNOT_UNSTAKE_FROM_ACTIVE_CAND::Cannot unstake tokens for an active candidate. Call withdrawcand first.");
+
+    check(reg_candidate.custodian_end_time_stamp < time_point_sec(eosio::current_time_point()), "ERR::UNSTAKE_CANNOT_UNSTAKE_UNDER_TIME_LOCK::Cannot unstake tokens before they are unlocked from the time delay.");
+}
 
 void daccustodian::removeCustodian(name cust, name dac_id) {
 
