@@ -35,19 +35,32 @@ void daccustodian::claimpaye(uint64_t payid, name dac_id) {
 
     deferredTrans.actions.emplace_back(
             action(permission_level{token_holder, "xfer"_n},
-                    configs.requested_pay_max.contract, 
-                    "transfer"_n,
-                    std::make_tuple(token_holder, payment_destination, payClaim.quantity, memo)
+                   configs.requested_pay_max.contract,
+                   "transfer"_n,
+                   std::make_tuple(token_holder, payment_destination, payClaim.quantity, memo)
+            ));
+
+    deferredTrans.actions.emplace_back(
+            action(permission_level{get_self(), "pay"_n},
+                   get_self(), "removecuspay"_n,
+                   std::make_tuple(payid, dac_id)
             ));
 
     deferredTrans.delay_sec = TRANSFER_DELAY;
-    deferredTrans.send(uint128_t(payid) << 64 | time_point_sec(current_time_point()).sec_since_epoch() , _self);
+    deferredTrans.send(uint128_t(payid) << 64 | time_point_sec(current_time_point()).sec_since_epoch() , get_self());
+}
+
+void daccustodian::removecuspay(uint64_t payid, name dac_id) {
+    require_auth(get_self());
+
+    pending_pay_table pending_pay(get_self(), dac_id.value);
+    const pay &payClaim = pending_pay.get(payid, "ERR::CLAIMPAY_INVALID_CLAIM_ID::Invalid pay claim id.");
 
     pending_pay.erase(payClaim);
 }
 
 void daccustodian::rejectcuspay(uint64_t payid, name dac_id) {
-    pending_pay_table pending_pay(_self, dac_id.value);
+    pending_pay_table pending_pay(get_self(), dac_id.value);
     const pay &payClaim = pending_pay.get(payid, "ERR::CLAIMPAY_INVALID_CLAIM_ID::Invalid pay claim id.");
     assertValidMember(payClaim.receiver, dac_id);
 

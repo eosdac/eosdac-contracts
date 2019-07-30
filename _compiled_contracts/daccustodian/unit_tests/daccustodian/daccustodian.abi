@@ -422,6 +422,20 @@
             ]
         },
         {
+            "name": "removecuspay",
+            "base": "",
+            "fields": [
+                {
+                    "name": "payid",
+                    "type": "uint64"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "resigncust",
             "base": "",
             "fields": [
@@ -792,6 +806,11 @@
             "name": "rejectcuspay",
             "type": "rejectcuspay",
             "ricardian_contract": "## ACTION: rejectcuspay\n**PARAMETERS:**\n* __payid__ the pay id for the arrange payment.\n\n**INTENT:** The intent of {{ rejectcuspay }} is to allow an account to reject a claim for pending payment amounts due to that account. The pay claim they are claiming needs to be visible in the `pendingpay` table and is then removed from the `pending_pay` table. The active auth of the intended claimer for the payment is required to complete this action.\n\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
+        },
+        {
+            "name": "removecuspay",
+            "type": "removecuspay",
+            "ricardian_contract": ""
         },
         {
             "name": "resigncust",
