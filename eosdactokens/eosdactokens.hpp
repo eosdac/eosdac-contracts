@@ -35,7 +35,7 @@ namespace eosdac {
         ACTION updateterms(uint64_t termsid, string terms);
         ACTION close(name owner, const symbol& symbol);
 
-        ACTION migrate(uint16_t skip, uint16_t batch);
+        ACTION migrate(uint16_t batch);
         ACTION clearold(uint16_t batch_size);
 
         struct [[eosio::table("config")]] contr_config {

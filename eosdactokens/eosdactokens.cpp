@@ -322,15 +322,20 @@ namespace eosdac {
         acnts.erase( it );
     }
 
-    ACTION eosdactokens::migrate(uint16_t skip, uint16_t batch_size) {
+    ACTION eosdactokens::migrate(uint16_t batch_size) {
         
         { // regmembers
             regmembers source(get_self(), get_self().value);
             regmembers destination(get_self(), NEW_SCOPE.value);
 
+            name begin_account = name(0);
             auto source_itrr = source.begin();
-            for (uint16_t count = 0; count < skip && source_itrr != source.end(); count++) { source_itrr++; }
-            
+            auto last_destination = destination.end();
+            if (destination.begin() != destination.end()){
+                begin_account = (--last_destination)->sender;
+                source_itrr = source.find(begin_account.value);
+            }
+
             uint16_t batch_counter = 0;
             while (batch_counter < batch_size && source_itrr != source.end()) {
                 if (destination.find(source_itrr->primary_key()) == destination.end()) {
@@ -345,12 +350,13 @@ namespace eosdac {
         }
 
         { // memterms
+            // quantity in memberterms should always be less than the batch size
             memterms source(get_self(), get_self().value);
             memterms destination(get_self(), NEW_SCOPE.value);
 
+            name begin_account = name(0);
             auto source_itrr = source.begin();
-            for (uint16_t count = 0; count < skip && source_itrr != source.end(); count++) { source_itrr++; }
-            
+
             uint16_t batch_counter = 0;
             while (batch_counter < batch_size && source_itrr != source.end()) {
                 if (destination.find(source_itrr->primary_key()) == destination.end()) {

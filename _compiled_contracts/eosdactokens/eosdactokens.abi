@@ -194,10 +194,6 @@
             "base": "",
             "fields": [
                 {
-                    "name": "skip",
-                    "type": "uint16"
-                },
-                {
                     "name": "batch",
                     "type": "uint16"
                 }
