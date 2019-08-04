@@ -284,7 +284,7 @@ namespace eosdac {
         require_auth(auth_account);
 
         configs_table configs(_self, dac_id.value);
-        configs.set(new_config, _self);
+        configs.set(new_config, auth_account);
     }
 
     ACTION dacproposals::clearexpprop(uint64_t proposal_id, name dac_id) {
