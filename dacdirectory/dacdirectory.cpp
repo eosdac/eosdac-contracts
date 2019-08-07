@@ -18,7 +18,9 @@ namespace eosdac {
 
             auto symbol_idx = _dacs.get_index<"bysymbol"_n>();
             auto matching_symbol_itr = symbol_idx.find(eosdac::raw_from_extended_symbol(dac_symbol));
-            eosio::check(matching_symbol_itr == symbol_idx.end() && matching_symbol_itr->symbol != dac_symbol, "A dac already exists for the provided symbol.");
+            if (existing == _dacs.end()){
+                eosio::check(matching_symbol_itr == symbol_idx.end() && matching_symbol_itr->symbol != dac_symbol, "A dac already exists for the provided symbol.");
+            }
 
             if (existing == _dacs.end()){
                 _dacs.emplace(owner, [&](dac& d) {
@@ -35,7 +37,6 @@ namespace eosdac {
 
                 _dacs.modify(existing, same_payer, [&](dac& d) {
                     d.dac_name = dac_name;
-                    d.symbol = dac_symbol;
                     d.title = title;
                     d.refs = refs;
                     d.accounts = accounts;
