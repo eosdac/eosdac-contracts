@@ -23,6 +23,13 @@ namespace eosdac {
             }
 
             if (existing == _dacs.end()){
+                if (accounts.at(AUTH)){
+                    require_auth(accounts.at(AUTH));
+                }
+                if (accounts.at(TREASURY)){
+                    require_auth(accounts.at(TREASURY));
+                }
+
                 _dacs.emplace(owner, [&](dac& d) {
                     d.owner = owner;
                     d.dac_name = dac_name;
@@ -36,10 +43,8 @@ namespace eosdac {
                 require_auth(existing->owner);
 
                 _dacs.modify(existing, same_payer, [&](dac& d) {
-                    d.dac_name = dac_name;
                     d.title = title;
                     d.refs = refs;
-                    d.accounts = accounts;
                 });
             }
         }
@@ -62,6 +67,13 @@ namespace eosdac {
             check(dac_inst != _dacs.end(), "DAC not found in directory");
 
             require_auth(dac_inst->owner);
+
+            if (type == AUTH){
+                require_auth(account);
+            }
+            else if (type == TREASURY){
+                require_auth(account);
+            }
 
             _dacs.modify(dac_inst, same_payer, [&](dac& d) {
                 d.accounts[type] = account;
