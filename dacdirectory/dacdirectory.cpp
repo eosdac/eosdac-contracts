@@ -23,6 +23,26 @@ namespace eosdac {
             }
 
             if (existing == _dacs.end()){
+                // dac name must be >= 5 characters, with no dots
+                // skip the extra 4 bytes
+                uint64_t tmp = dac_name.value >> 4;
+                bool started = false;
+                uint8_t length = 0;
+                for (uint8_t i = 0;i < 12;i++){
+                    if (!(tmp & 0x1f)){
+                        // blank (dot)
+                        check(!started, "ERR::DAC_NAME_DOTS::DAC ID cannot contain dots");
+                    }
+                    else {
+                        started = true;
+                        length++;
+                    }
+
+                    tmp >>= 5;
+                }
+                check(length > 4, "ERR::DAC_ID_SHORT::DAC ID must be at least 5 characters");
+
+
                 if (accounts.at(AUTH)){
                     require_auth(accounts.at(AUTH));
                 }
