@@ -11,10 +11,10 @@ namespace eosdac {
                 ,_dacs( get_self(), get_self().value )
         {}
 
-        void dacdirectory::regdac( eosio::name owner, eosio::name dac_name, extended_symbol dac_symbol, string title, map<uint8_t, string> refs,  map<uint8_t, eosio::name> accounts ) {
+        void dacdirectory::regdac( eosio::name owner, eosio::name dac_id, extended_symbol dac_symbol, string title, map<uint8_t, string> refs,  map<uint8_t, eosio::name> accounts ) {
             require_auth(owner);
 
-            auto existing = _dacs.find(dac_name.value);
+            auto existing = _dacs.find(dac_id.value);
 
             auto symbol_idx = _dacs.get_index<"bysymbol"_n>();
             auto matching_symbol_itr = symbol_idx.find(eosdac::raw_from_extended_symbol(dac_symbol));
@@ -25,13 +25,13 @@ namespace eosdac {
             if (existing == _dacs.end()){
                 // dac name must be >= 5 characters, with no dots
                 // skip the extra 4 bytes
-                uint64_t tmp = dac_name.value >> 4;
+                uint64_t tmp = dac_id.value >> 4;
                 bool started = false;
                 uint8_t length = 0;
                 for (uint8_t i = 0;i < 12;i++){
                     if (!(tmp & 0x1f)){
                         // blank (dot)
-                        check(!started, "ERR::DAC_NAME_DOTS::DAC ID cannot contain dots");
+                        check(!started, "ERR::DAC_ID_DOTS::DAC ID cannot contain dots");
                     }
                     else {
                         started = true;
@@ -52,7 +52,7 @@ namespace eosdac {
 
                 _dacs.emplace(owner, [&](dac& d) {
                     d.owner = owner;
-                    d.dac_name = dac_name;
+                    d.dac_id = dac_id;
                     d.symbol = dac_symbol;
                     d.title = title;
                     d.refs = refs;
@@ -69,9 +69,9 @@ namespace eosdac {
             }
         }
 
-        void dacdirectory::unregdac( name dac_name ) {
+        void dacdirectory::unregdac( name dac_id ) {
 
-            auto dac = _dacs.find(dac_name.value);
+            auto dac = _dacs.find(dac_id.value);
             check(dac != _dacs.end(), "DAC not found in directory");
 
             require_auth(dac->owner);
@@ -79,11 +79,11 @@ namespace eosdac {
             _dacs.erase(dac);
         }
 
-        void dacdirectory::regaccount( name dac_name, name account, uint8_t type){
+        void dacdirectory::regaccount( name dac_id, name account, uint8_t type){
 
             check(is_account(account), "Invalid or non-existent account supplied");
 
-            auto dac_inst = _dacs.find(dac_name.value);
+            auto dac_inst = _dacs.find(dac_id.value);
             check(dac_inst != _dacs.end(), "DAC not found in directory");
 
             require_auth(dac_inst->owner);
@@ -100,9 +100,9 @@ namespace eosdac {
             });
         }
 
-        void dacdirectory::unregaccount( name dac_name, uint8_t type ){
+        void dacdirectory::unregaccount( name dac_id, uint8_t type ){
 
-            auto dac_inst = _dacs.find(dac_name.value);
+            auto dac_inst = _dacs.find(dac_id.value);
             check(dac_inst != _dacs.end(), "DAC not found in directory");
 
             require_auth(dac_inst->owner);
@@ -112,9 +112,9 @@ namespace eosdac {
             });
         }
 
-        void dacdirectory::regref( name dac_name, string value, uint8_t type ){
+        void dacdirectory::regref( name dac_id, string value, uint8_t type ){
 
-            auto dac_inst = _dacs.find(dac_name.value);
+            auto dac_inst = _dacs.find(dac_id.value);
             check(dac_inst != _dacs.end(), "DAC not found in directory");
 
             require_auth(dac_inst->owner);
@@ -124,9 +124,9 @@ namespace eosdac {
             });
         }
 
-        void dacdirectory::unregref( name dac_name, uint8_t type ){
+        void dacdirectory::unregref( name dac_id, uint8_t type ){
 
-            auto dac_inst = _dacs.find(dac_name.value);
+            auto dac_inst = _dacs.find(dac_id.value);
             check(dac_inst != _dacs.end(), "DAC not found in directory");
 
             require_auth(dac_inst->owner);
@@ -136,9 +136,9 @@ namespace eosdac {
             });
         }
 
-        void dacdirectory::setowner( name dac_name, name new_owner ){
+        void dacdirectory::setowner( name dac_id, name new_owner ){
 
-            auto existing_dac = _dacs.find(dac_name.value);
+            auto existing_dac = _dacs.find(dac_id.value);
             check(existing_dac != _dacs.end(), "DAC not found in directory");
 
             require_auth(existing_dac->owner);
@@ -149,8 +149,8 @@ namespace eosdac {
             });
         }
 
-        void dacdirectory::setstatus( name dac_name, uint8_t value ){
-            auto dac_inst = _dacs.find(dac_name.value);
+        void dacdirectory::setstatus( name dac_id, uint8_t value ){
+            auto dac_inst = _dacs.find(dac_id.value);
             check(dac_inst != _dacs.end(), "DAC not found in directory");
 
             require_auth(get_self());

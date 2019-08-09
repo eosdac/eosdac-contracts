@@ -39,7 +39,7 @@ namespace eosdac {
 
         struct [[eosio::table("dacs"), eosio::contract("dacdirectory")]] dac {
             eosio::name         owner;
-            eosio::name         dac_name;
+            eosio::name         dac_id;
             std::string         title;
             eosio::extended_symbol       symbol;
             std::map<uint8_t, std::string> refs;
@@ -51,7 +51,7 @@ namespace eosdac {
                 return accounts.at(type);
             }
 
-            uint64_t primary_key() const { return dac_name.value; }
+            uint64_t primary_key() const { return dac_id.value; }
             uint64_t by_owner() const { return owner.value; }
             uint128_t by_symbol() const { return eosdac::raw_from_extended_symbol(symbol); }
         };
@@ -64,7 +64,7 @@ namespace eosdac {
 
         const dac dac_for_id(eosio::name id) {
             dac_table dactable = dac_table("dacdirectory"_n, "dacdirectory"_n.value);
-            return dactable.get(id.value, "dac with dac_name not found");
+            return dactable.get(id.value, "dac with dac_id not found");
         }
 
         const dac dac_for_symbol(eosio::extended_symbol sym) {

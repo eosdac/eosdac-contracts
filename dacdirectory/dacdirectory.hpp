@@ -14,14 +14,14 @@ namespace eosdac {
         public:
             dacdirectory( name self, name first_receiver, datastream<const char*> ds );
 
-            ACTION regdac( name owner, name dac_name, extended_symbol dac_symbol, string title, map<uint8_t, string> refs,  map<uint8_t, eosio::name> accounts );
-            ACTION unregdac( name dac_name );
-            ACTION regaccount( name dac_name, name account, uint8_t type );
-            ACTION unregaccount( name dac_name, uint8_t type );
-            ACTION regref( name dac_name, string value, uint8_t type );
-            ACTION unregref( name dac_name, uint8_t type );
-            ACTION setowner( name dac_name, name new_owner );
-            ACTION setstatus( name dac_name, uint8_t value );
+            ACTION regdac( name owner, name dac_id, extended_symbol dac_symbol, string title, map<uint8_t, string> refs,  map<uint8_t, eosio::name> accounts );
+            ACTION unregdac( name dac_id );
+            ACTION regaccount( name dac_id, name account, uint8_t type );
+            ACTION unregaccount( name dac_id, uint8_t type );
+            ACTION regref( name dac_id, string value, uint8_t type );
+            ACTION unregref( name dac_id, uint8_t type );
+            ACTION setowner( name dac_id, name new_owner );
+            ACTION setstatus( name dac_id, uint8_t value );
 
         protected:
             dac_table      _dacs;
