@@ -120,7 +120,7 @@ namespace eosdac {
                 eosio::action(
                     eosio::permission_level{ get_self(), "notify"_n },
                     custodian_contract, "capturestake"_n,
-                    make_tuple(from, quantity, dac.dac_name)
+                    make_tuple(from, quantity, dac.dac_id)
                 ).send();
 
                 print("notifying staking transaction.");
@@ -130,7 +130,7 @@ namespace eosdac {
                 eosio::action(
                     eosio::permission_level{ get_self(), "notify"_n },
                     custodian_contract, "transferobsv"_n,
-                    make_tuple(from, to, quantity, dac.dac_name)
+                    make_tuple(from, to, quantity, dac.dac_id)
                 ).send();
 
                 print("notifying transfer transaction.");
