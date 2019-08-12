@@ -21,7 +21,7 @@ namespace eosdac {
     }
 
     static const __uint128_t raw_from_extended_symbol(const extended_symbol &symbol) {
-        return (uint128_t{symbol.get_contract().value} << 64) | symbol.get_symbol().raw();
+        return (uint128_t{symbol.get_contract().value} << 64) | symbol.get_symbol().code().raw();
     }
 }
 
