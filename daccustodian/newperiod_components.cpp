@@ -34,6 +34,7 @@ void daccustodian::distributeMeanPay(name dac_id) {
     custodians_table custodians(_self, dac_id.value);
     pending_pay_table pending_pay(_self, dac_id.value);
     contr_config configs = contr_config::get_current_configs(_self, dac_id);
+    name auth_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::AUTH);
 
     //Find the mean pay using a temporary vector to hold the requestedpay amounts.
     asset total = asset{0, configs.requested_pay_max.quantity.symbol};
@@ -49,7 +50,7 @@ void daccustodian::distributeMeanPay(name dac_id) {
     // print_f("Calclulated mean is: %", meanAsset);
     if (meanAsset.amount > 0) {
         for (auto cust: custodians) {
-            pending_pay.emplace(_self, [&](pay &p) {
+            pending_pay.emplace(auth_account, [&](pay &p) {
                 p.key = pending_pay.available_primary_key();
                 p.receiver = cust.cust_name;
                 p.quantity = meanAsset;
