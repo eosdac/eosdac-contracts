@@ -478,6 +478,20 @@
             ]
         },
         {
+            "name": "runnewperiod",
+            "base": "",
+            "fields": [
+                {
+                    "name": "message",
+                    "type": "string"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "setperm",
             "base": "",
             "fields": [
@@ -844,6 +858,11 @@
             "name": "resigncuste",
             "type": "resigncuste",
             "ricardian_contract": "## ACTION: resigncuste\n**PARAMETERS:**\n* __cust__ is an eosio account name.\n\n**INTENT:** The intent of resigncust is to remove an elected custodian. This action must be run by the resigning custodian and the outcome should remove the elected custodian and lock up their tokens until the delay period has passed so the tokens can be claimed with the unstake action.\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
+        },
+        {
+            "name": "runnewperiod",
+            "type": "runnewperiod",
+            "ricardian_contract": ""
         },
         {
             "name": "setperm",

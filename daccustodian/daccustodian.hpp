@@ -192,6 +192,7 @@ namespace eosdac {
     //    void voteproxy(name voter, name proxy);
         ACTION newperiod(std::string message);
         ACTION newperiode(std::string message, name dac_id);
+        ACTION runnewperiod(std::string message, name dac_id);
         ACTION claimpay(uint64_t payid);
         ACTION claimpaye(uint64_t payid, name dac_id);
         ACTION removecuspay(uint64_t payid, name dac_id);

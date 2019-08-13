@@ -217,6 +217,16 @@ void daccustodian::newperiod(string message) {
 }
 
 void daccustodian::newperiode(string message, name dac_id) {
+    name auth_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::AUTH);
+
+    eosio::action(
+            eosio::permission_level{ auth_account, "owner"_n },
+            get_self(), "runnewperiod"_n,
+            make_tuple(message, dac_id)
+    ).send();
+}
+
+void daccustodian::runnewperiod(string message, name dac_id) {
 
     contr_config configs = contr_config::get_current_configs(_self, dac_id);
     contr_state currentState = contr_state::get_current_state(_self, dac_id);
@@ -227,9 +237,9 @@ void daccustodian::newperiode(string message, name dac_id) {
 
     // Get the max supply of the lockup asset token (eg. EOSDAC)
     auto tokenStats = stats(
-                            found_dac.symbol.get_contract(),
-                            found_dac.symbol.get_symbol().raw()
-                            ).begin();
+            found_dac.symbol.get_contract(),
+            found_dac.symbol.get_symbol().raw()
+    ).begin();
     uint64_t max_supply = tokenStats->supply.amount;
 
     double percent_of_current_voter_engagement =
@@ -244,12 +254,12 @@ void daccustodian::newperiode(string message, name dac_id) {
     eosio::print("\n\nPercent of current voter engagement: ", percent_of_current_voter_engagement, "\n\n");
 
     check(currentState.met_initial_votes_threshold == true ||
-                 percent_of_current_voter_engagement > configs.initial_vote_quorum_percent,
-                 "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_ACTIVATE::Voter engagement is insufficient to activate the DAC.");
+          percent_of_current_voter_engagement > configs.initial_vote_quorum_percent,
+          "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_ACTIVATE::Voter engagement is insufficient to activate the DAC.");
     currentState.met_initial_votes_threshold = true;
 
     check(percent_of_current_voter_engagement > configs.vote_quorum_percent,
-                 "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_PROCESS::Voter engagement is insufficient to process a new period");
+          "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_PROCESS::Voter engagement is insufficient to process a new period");
 
     // Distribute pay to the current custodians.
     distributeMeanPay(dac_id);
