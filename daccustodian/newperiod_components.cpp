@@ -236,19 +236,19 @@ void daccustodian::runnewperiod(string message, name dac_id) {
     dacdir::dac found_dac = dacdir::dac_for_id(dac_id);
 
 
-    // Get the max supply of the lockup asset token (eg. EOSDAC)
+    // Get the token supply of the lockup asset token (eg. EOSDAC)
     auto tokenStats = stats(
             found_dac.symbol.get_contract(),
             found_dac.symbol.get_symbol().raw()
     ).begin();
-    uint64_t max_supply = tokenStats->supply.amount;
+    uint64_t token_current_supply = tokenStats->supply.amount;
 
     double percent_of_current_voter_engagement =
-            double(currentState.total_weight_of_votes) / double(max_supply) * 100.0;
+            double(currentState.total_weight_of_votes) / double(token_current_supply) * 100.0;
 
-    eosio::print("\n\nToken max supply: ", max_supply, " total votes so far: ", currentState.total_weight_of_votes);
+    eosio::print("\n\nToken current supply as decimal units: ", token_current_supply, " total votes so far: ", currentState.total_weight_of_votes);
     eosio::print("\n\nNeed inital engagement of: ", configs.initial_vote_quorum_percent, "% to start the DAC.");
-    eosio::print("\n\nToken supply: ", max_supply * 0.0001, " total votes so far: ", currentState.total_weight_of_votes * 0.0001);
+    eosio::print("\n\nToken supply: ", token_current_supply * 0.0001, " total votes so far: ", currentState.total_weight_of_votes * 0.0001);
     eosio::print("\n\nNeed initial engagement of: ", configs.initial_vote_quorum_percent, "% to start the DAC.");
     eosio::print("\n\nNeed ongoing engagement of: ", configs.vote_quorum_percent,
                  "% to allow new periods to trigger after initial activation.");
