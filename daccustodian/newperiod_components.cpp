@@ -31,9 +31,9 @@
 // }
 
 void daccustodian::distributeMeanPay(name dac_id) {
-    custodians_table custodians(_self, dac_id.value);
-    pending_pay_table pending_pay(_self, dac_id.value);
-    contr_config configs = contr_config::get_current_configs(_self, dac_id);
+    custodians_table custodians(get_self(), dac_id.value);
+    pending_pay_table pending_pay(get_self(), get_self().value);
+    contr_config configs = contr_config::get_current_configs(get_self(), dac_id);
     name auth_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::AUTH);
 
     //Find the mean pay using a temporary vector to hold the requestedpay amounts.
@@ -73,9 +73,9 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
 
     eosio::print("Configure custodians for the next period.");
 
-    custodians_table custodians(_self, dac_id.value);
-    candidates_table registered_candidates(_self, dac_id.value);
-    contr_config configs = contr_config::get_current_configs(_self, dac_id);
+    custodians_table custodians(get_self(), dac_id.value);
+    candidates_table registered_candidates(get_self(), dac_id.value);
+    contr_config configs = contr_config::get_current_configs(get_self(), dac_id);
     name auth_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::AUTH);
     
     auto byvotes = registered_candidates.get_index<"byvotesrank"_n>();
@@ -129,8 +129,8 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
 
 void daccustodian::setCustodianAuths(name dac_id) {
 
-    custodians_table custodians(_self, dac_id.value);
-    contr_config current_config = contr_config::get_current_configs(_self, dac_id);
+    custodians_table custodians(get_self(), dac_id.value);
+    contr_config current_config = contr_config::get_current_configs(get_self(), dac_id);
 
     auto dac = dacdir::dac_for_id(dac_id);
     
@@ -229,8 +229,8 @@ void daccustodian::newperiode(string message, name dac_id) {
 
 void daccustodian::runnewperiod(string message, name dac_id) {
 
-    contr_config configs = contr_config::get_current_configs(_self, dac_id);
-    contr_state currentState = contr_state::get_current_state(_self, dac_id);
+    contr_config configs = contr_config::get_current_configs(get_self(), dac_id);
+    contr_state currentState = contr_state::get_current_state(get_self(), dac_id);
     assertPeriodTime(configs, currentState);
 
     dacdir::dac found_dac = dacdir::dac_for_id(dac_id);
@@ -272,7 +272,7 @@ void daccustodian::runnewperiod(string message, name dac_id) {
     setCustodianAuths(dac_id);
 
     currentState.lastperiodtime = current_block_time();
-    currentState.save(_self, dac_id);
+    currentState.save(get_self(), dac_id);
 
 
 //        Schedule the the next election cycle at the end of the period.

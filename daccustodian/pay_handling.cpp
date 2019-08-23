@@ -5,11 +5,11 @@ void daccustodian::claimpay(uint64_t payid) {
 }
 
 void daccustodian::claimpaye(uint64_t payid, name dac_id) {
-    pending_pay_table pending_pay(_self, dac_id.value);
+    pending_pay_table pending_pay(get_self(), get_self().value);
     
     dacdir::dac dac = dacdir::dac_for_id(dac_id);
 
-    contr_config configs = contr_config::get_current_configs(_self, dac_id);
+    contr_config configs = contr_config::get_current_configs(get_self(), dac_id);
     const pay &payClaim = pending_pay.get(payid, "ERR::CLAIMPAY_INVALID_CLAIM_ID::Invalid pay claim id.");
     assertValidMember(payClaim.receiver, dac_id);
 
@@ -53,14 +53,14 @@ void daccustodian::claimpaye(uint64_t payid, name dac_id) {
 void daccustodian::removecuspay(uint64_t payid, name dac_id) {
     require_auth(get_self());
 
-    pending_pay_table pending_pay(get_self(), dac_id.value);
+    pending_pay_table pending_pay(get_self(), get_self().value);
     const pay &payClaim = pending_pay.get(payid, "ERR::CLAIMPAY_INVALID_CLAIM_ID::Invalid pay claim id.");
 
     pending_pay.erase(payClaim);
 }
 
 void daccustodian::rejectcuspay(uint64_t payid, name dac_id) {
-    pending_pay_table pending_pay(get_self(), dac_id.value);
+    pending_pay_table pending_pay(get_self(), get_self().value);
     const pay &payClaim = pending_pay.get(payid, "ERR::CLAIMPAY_INVALID_CLAIM_ID::Invalid pay claim id.");
     assertValidMember(payClaim.receiver, dac_id);
 
