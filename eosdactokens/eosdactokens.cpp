@@ -174,7 +174,7 @@ namespace eosdac {
     }
 
     void eosdactokens::newmemterms(string terms, string hash) {
-        newmemtermse(terms, hash, get_self());
+        check(false, "This action is deprecated. Call `newmemtermse` instead.");
     }
 
     void eosdactokens::newmemtermse(string terms, string hash, name dac_id) {
@@ -209,7 +209,7 @@ namespace eosdac {
     }
 
     void eosdactokens::memberreg(name sender, string agreedterms) {
-        memberrege(sender,agreedterms, get_self());
+        check(false, "This action is deprecated. Call `memberrege` instead.");
     }
 
     void eosdactokens::memberrege(name sender, string agreedterms, name dac_id) {
@@ -235,28 +235,10 @@ namespace eosdac {
                 mem.agreedtermsversion = latest_member_terms->version;
             });
         }
-
-        //Temp block for migrations to new scope
-         if (dac_id == get_self()) {
-            regmembers registeredgmembers = regmembers(_self, NEW_SCOPE.value);
-
-            auto existingMember = registeredgmembers.find(sender.value);
-            if (existingMember != registeredgmembers.end()) {
-                registeredgmembers.modify(existingMember, sender, [&](member &mem) {
-                    mem.agreedtermsversion = latest_member_terms->version;
-                });
-            } else {
-                registeredgmembers.emplace(sender, [&](member &mem) {
-                    mem.sender = sender;
-                    mem.agreedtermsversion = latest_member_terms->version;
-                });
-            }
-        }
-        //End temp block
     }
 
     void eosdactokens::updateterms(uint64_t termsid, string terms) {
-        updatetermse(termsid, terms, get_self());
+        check(false, "This action is deprecated. Call `updatetermse` instead.");
     }
 
     void eosdactokens::updatetermse(uint64_t termsid, string terms, name dac_id) {
@@ -278,7 +260,7 @@ namespace eosdac {
     }
 
     void eosdactokens::memberunreg(name sender) {
-        memberunrege(sender, get_self());
+        check(false, "This action is deprecated. Call `memberunrege` instead.");
     }
 
     void eosdactokens::memberunrege(name sender, name dac_id) {
@@ -301,16 +283,6 @@ namespace eosdac {
         auto regMember = registeredgmembers.find(sender.value);
         check(regMember != registeredgmembers.end(), "ERR::MEMBERUNREG_MEMBER_NOT_REGISTERED::Member is not registered.");
         registeredgmembers.erase(regMember);
-
-        //Temp block for migrations to new scope
-         if (dac_id == get_self()) {
-            regmembers registeredgmembers = regmembers(_self, NEW_SCOPE.value);
-            auto regMember = registeredgmembers.find(sender.value);
-            if (regMember != registeredgmembers.end()) {
-                registeredgmembers.erase(regMember);
-            }
-        }
-        //end Temp block
     }
 
     void eosdactokens::close(name owner, const symbol& symbol) {
@@ -322,58 +294,7 @@ namespace eosdac {
         acnts.erase( it );
     }
 
-    ACTION eosdactokens::migrate(uint16_t batch_size) {
-        
-        { // regmembers
-            regmembers source(get_self(), get_self().value);
-            regmembers destination(get_self(), NEW_SCOPE.value);
-
-            name begin_account = name(0);
-            auto source_itrr = source.begin();
-            auto last_destination = destination.end();
-            if (destination.begin() != destination.end()){
-                begin_account = (--last_destination)->sender;
-                source_itrr = source.find(begin_account.value);
-            }
-
-            uint16_t batch_counter = 0;
-            while (batch_counter < batch_size && source_itrr != source.end()) {
-                if (destination.find(source_itrr->primary_key()) == destination.end()) {
-                    destination.emplace(get_self(), [&](auto &dest){
-                        dest.sender = source_itrr->sender;
-                        dest.agreedtermsversion = source_itrr->agreedtermsversion;
-                    });
-                }
-                ++source_itrr;
-                ++batch_counter;
-            }
-        }
-
-        { // memterms
-            // quantity in memberterms should always be less than the batch size
-            memterms source(get_self(), get_self().value);
-            memterms destination(get_self(), NEW_SCOPE.value);
-
-            name begin_account = name(0);
-            auto source_itrr = source.begin();
-
-            uint16_t batch_counter = 0;
-            while (batch_counter < batch_size && source_itrr != source.end()) {
-                if (destination.find(source_itrr->primary_key()) == destination.end()) {
-                    destination.emplace(get_self(), [&](auto &dest){
-                        dest.terms = source_itrr->terms;
-                        dest.hash = source_itrr->hash;
-                        dest.version = source_itrr->version;
-                    });
-                }
-                ++source_itrr;
-                ++batch_counter;
-            }
-        }
-        {
-            oldconfigscontainer(_self, _self.value).remove();
-        }
-    }
+    ACTION eosdactokens::migrate(uint16_t batch_size) {}
 
     ACTION eosdactokens::clearold(uint16_t batch_size) {
         require_auth(_self);
