@@ -1,7 +1,7 @@
 #include <eosio/transaction.hpp>
 
 void daccustodian::claimpay(uint64_t payid) {
-    claimpaye(payid, get_self());
+    check(false, "This action is deprecated call `claimpaye` instead.");
 }
 
 void daccustodian::claimpaye(uint64_t payid, name dac_id) {

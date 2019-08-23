@@ -1,7 +1,7 @@
 #include "../_contract-shared-headers/migration_helpers.hpp"
 
 void daccustodian::votecust(name voter, vector<name> newvotes) {
-    votecuste(voter, newvotes, get_self());
+    check(false, "This action is deprecated call `votecuste` instead.");
 }
 
 void daccustodian::votecuste(name voter, vector<name> newvotes, name dac_id) {
@@ -44,34 +44,6 @@ void daccustodian::votecuste(name voter, vector<name> newvotes, name dac_id) {
             v.candidates = newvotes;
         });
     }
-
-    // Start temp block
-    if (dac_id == get_self()) {
-        votes_table votes_cast_by_members(_self, NEW_SCOPE.value);
-        auto existingVote = votes_cast_by_members.find(voter.value);
-        if (existingVote != votes_cast_by_members.end()) {
-            modifyVoteWeights(voter, existingVote->candidates, newvotes, NEW_SCOPE);
-
-            if (newvotes.size() == 0) {
-                // Remove the vote if the array of candidates is empty
-                votes_cast_by_members.erase(existingVote);
-                eosio::print("\n Removing empty vote.");
-            } else {
-                votes_cast_by_members.modify(existingVote, voter, [&](vote &v) {
-                    v.candidates = newvotes;
-                    v.proxy = name();
-                });
-            }
-        } else {
-            modifyVoteWeights(voter, {}, newvotes, NEW_SCOPE);
-
-            votes_cast_by_members.emplace(voter, [&](vote &v) {
-                v.voter = voter;
-                v.candidates = newvotes;
-            });
-        }
-    }
-    // end temp block
 }
 
 //void daccustodian::voteproxy(name voter, name proxy) {

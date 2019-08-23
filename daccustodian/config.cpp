@@ -1,7 +1,7 @@
 #include "../_contract-shared-headers/dacdirectory_shared.hpp"
 
 void daccustodian::updateconfig(contr_config new_config) {
-    updateconfige(new_config, get_self());
+    check(false, "This action is deprecated call `updateconfige` instead.");
 }
 
 void daccustodian::updateconfige(contr_config new_config, name dac_id) {

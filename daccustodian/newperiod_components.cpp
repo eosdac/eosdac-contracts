@@ -142,7 +142,7 @@ void daccustodian::setCustodianAuths(name dac_id) {
 
     for (auto it = custodians.begin(); it != custodians.end(); it++) {
         eosiosystem::permission_level_weight account{
-                .permission = getCandidatePermission(it->cust_name, dac_id), //eosio::permission_level(it->cust_name, "active"_n),
+                .permission = getCandidatePermission(it->cust_name, dac_id),
                 .weight = (uint16_t) 1,
         };
         accounts.push_back(account);
@@ -214,7 +214,7 @@ void daccustodian::setCustodianAuths(name dac_id) {
 }
 
 void daccustodian::newperiod(string message) {
-    newperiode(message, get_self());
+    check(false, "This action is deprecated call `newperiode` instead.");
 }
 
 void daccustodian::newperiode(string message, name dac_id) {

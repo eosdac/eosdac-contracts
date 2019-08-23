@@ -3,7 +3,7 @@
 using namespace eosdac;
 
 void daccustodian::updatebio(name cand, string bio) {
-    updatebioe(cand, bio, get_self());
+    check(false, "This action is deprecated call `updatebioe` instead.");
 }
 
 void daccustodian::updatebioe(name cand, string bio, name dac_id) {
@@ -17,7 +17,7 @@ void daccustodian::updatebioe(name cand, string bio, name dac_id) {
 }
 
 void daccustodian::updatereqpay(name cand, asset requestedpay) {
-    updatereqpae(cand, requestedpay, get_self());
+    check(false, "This action is deprecated call `updatereqpae` instead.");
 }
 
 void daccustodian::updatereqpae(name cand, asset requestedpay, name dac_id) {
@@ -34,16 +34,4 @@ void daccustodian::updatereqpae(name cand, asset requestedpay, name dac_id) {
     registered_candidates.modify(reg_candidate, cand, [&](candidate &c) {
         c.requestedpay = requestedpay;
     });
-
-    //Temp block for migrations to new scope
-    if (dac_id == get_self()) {
-        candidates_table registered_candidates(_self, NEW_SCOPE.value);
-
-        const auto &reg_candidate = registered_candidates.get(cand.value, "ERR::UPDATEREQPAY_NOT_CURRENT_REG_CANDIDATE::Candidate is not already registered.");
-
-        registered_candidates.modify(reg_candidate, cand, [&](candidate &c) {
-            c.requestedpay = requestedpay;
-        });
-    }
-    //end Temp block
 }
