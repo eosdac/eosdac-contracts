@@ -1,0 +1,13 @@
+{
+        "threshold": 1,
+        "keys": [],
+        "accounts": [{
+            "permission": {
+              "actor": "eosdactokens",
+              "permission": "eosio.code"
+            },
+            "weight": 1
+          }
+        ],
+        "waits": []
+      }
