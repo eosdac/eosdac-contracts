@@ -7,7 +7,7 @@ ACTION daccustodian::migrate(uint16_t batch_size) {
     print("Migrating: ", batch_size, "\n");
     
     { // candidates_table
-        candidates_table source(get_self(), get_self().value);
+        candidates_table source(get_self(), OLD_SCOPE.value);
         candidates_table destination(get_self(), NEW_SCOPE.value);
 
         name begin_account = name(0);
@@ -38,7 +38,7 @@ ACTION daccustodian::migrate(uint16_t batch_size) {
     }
 
     { // custodians_table
-        custodians_table source(get_self(), get_self().value);
+        custodians_table source(get_self(), OLD_SCOPE.value);
         custodians_table destination(get_self(), NEW_SCOPE.value);
 
         name begin_account = name(0);
@@ -68,7 +68,7 @@ ACTION daccustodian::migrate(uint16_t batch_size) {
     }
 
     { // state
-        statecontainer source(get_self(), get_self().value);
+        statecontainer source(get_self(), OLD_SCOPE.value);
         statecontainer destination(get_self(), NEW_SCOPE.value);
         if (source.exists()) {
             destination.set(source.get(), get_self());
@@ -76,7 +76,7 @@ ACTION daccustodian::migrate(uint16_t batch_size) {
     }
 
     { // votes
-        votes_table source(get_self(), get_self().value);
+        votes_table source(get_self(), OLD_SCOPE.value);
         votes_table destination(get_self(), NEW_SCOPE.value);
 
         name begin_account = name(0);
@@ -108,14 +108,14 @@ ACTION daccustodian::migrate(uint16_t batch_size) {
 
 ACTION daccustodian::clearold(uint16_t batch_size) {
     require_auth(_self);
-    cleanTable<votes_table>(_self, _self.value, batch_size);
-    cleanTable<custodians_table>(_self, _self.value, batch_size);
-    cleanTable<candidates_table>(_self, _self.value, batch_size);
+    cleanTable<votes_table>(_self, OLD_SCOPE.value, batch_size);
+    cleanTable<custodians_table>(_self, OLD_SCOPE.value, batch_size);
+    cleanTable<candidates_table>(_self, OLD_SCOPE.value, batch_size);
 
-    old_configscontainer old_config_container = old_configscontainer(get_self(), get_self().value);
+    old_configscontainer old_config_container = old_configscontainer(get_self(), OLD_SCOPE.value);
     old_config_container.remove();
 
-    statecontainer source(get_self(), get_self().value);
+    statecontainer source(get_self(), OLD_SCOPE.value);
     source.remove();
 }
 
