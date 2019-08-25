@@ -1,0 +1,56 @@
+## Migrations Notes
+
+* Only eosdactokens and daccustodian need migration
+
+* Some permission changes are needed first to allow this stuff to run.
+    * tokencontract@eosio.code needs adding to tokencontract@active before migration of contracts to allow for inline action
+    * First `newperiode` charges more ram to dacauthority so the first `newperiode` after the migration will need to have dacauthority permission.
+    * Also any changes to the configuration of the dac that may lead to an increase in RAM occupation eg. increased number of custodians, extra permission structures realted to the dac may increase the RAM so therefore will also need the dacauthority permission to enable that extra consumption.
+    * Custom linkauths for dacauthority need to be added for the new method names
+        * @med
+            * daccustodian::firecande
+            * daccustodian::firecuste
+
+The tables that will be migrated are:
+    * eosdactokens:
+        * members
+        * member terms
+    * daccustodian
+        * votes
+        * candidates
+        * custodians
+
+This does not cover everything but does cover the more persistent tables that are less likely to change from one period to the next and are required to be changed for the scope changes.
+The tables exculded are either not scope sensistive, are transient in nature (eg. pendingpay) or are in contracts that are not been actively used yet.
+
+The plan:
+1. Deploy the Dacdirectory contract and set up a DAC for EOSDAC because the new code will be looking for a DAC from within actions.
+    The contract actions have temporary re-directs from the `_self` to the EOSDAC dacId.
+    This needs to be set up first before deploying the new custodians and token contracts.
+2. deploy the token and custodian contracts within the same transaction since there are API changes which both depend on being updated to work on together.
+3. call `updateconfige` ASAP on daccustodian to prepare for the needed configs and to pre-allocate RAM for the state for the newly added scope.
+(If possible this should be in the same transaction as the setting of code to ensure there is no time of unconfigured contracts.)
+
+eg.
+main net : 
+ `cleos push action daccustodian updateconfige '{"newconfig": { "lockupasset": { "contract": "eosdactokens","quantity": "35000.0000 EOSDAC"}, "maxvotes": 5, "periodlength": 604800 , "numelected": 12, "should_pay_via_service_provider": 1, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 3, "auth_threshold_high": 10, "auth_threshold_mid": 9, "auth_threshold_low": 7, "lockup_release_time_delay": 7776000, "requested_pay_max": { "contract": "eosio.token", "quantity": "50.0000 EOS"}}, "dac_id": "eosdac"}' -p dacowner`
+
+jungle net : 
+ `cleos push action dacelections updateconfige '{"newconfig": { "lockupasset": { "contract": "kasdactokens","quantity": "10.0000 KASDAC"}, "maxvotes": 5, "periodlength": 12 , "numelected": 12, "should_pay_via_service_provider": 1, "initial_vote_quorum_percent": 15, "vote_quorum_percent": 3, "auth_threshold_high": 10, "auth_threshold_mid": 9, "auth_threshold_low": 7, "lockup_release_time_delay": 7776000, "requested_pay_max": { "contract": "eosio.token","quantity": "50.0000 EOS"}}, "dac_id": "eosdac"}' -p dacowner`
+
+3. migrate the tables in both contracts using the `migrate(skip: Int, batchsize: Int)` action.
+    This is designed to loop through each migratable table starting at the `skip` offset and then copy `batch_size` number of records to the new scope or to the end of that table.
+    It will also migrate the singletons over if needed and change the schmema of the daccustodian config if needed.
+4. Because this will take some time live incremental migration should continue via the temp blocks of code which should write to both the old and new scopes at the same time.
+    This should allow time to validate the migration is working without breaking the dac.
+    Actions should be kept to minimum during the migration to minimise untested cases. 
+    The main tested paths which should update both the new AND old scopes include: 
+        * `votecust`: which should update vote records and the `total_votes` field for the relevent candidates.
+        * `transferobsv`: which should update the `total_votes` values for the relevent candidates and the `total_weight_of_votes` and `total_votes_on_candidates` values on the state singleton
+
+5. Once all the batch migrations are believed to be complete then check the tables for parity between scopes using bloks.io or whatever is easiest.
+6. Also validate that individual actions using the old non-scoped actions are writing to both old and scopes and the dac is still working.
+7. Change the client code to start using the scoped actions and pass in the EOSDAC scope for those actions.
+--- Point of No return
+8. Ensure the actions with the new actions are writing to the new scope.
+    This needs to be quickly enough to not collide with a newperiod call just to minimise the complexity of changing data suring the migration.

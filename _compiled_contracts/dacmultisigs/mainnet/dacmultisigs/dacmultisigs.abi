@@ -22,6 +22,28 @@
             ]
         },
         {
+            "name": "approvede",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposer",
+                    "type": "name"
+                },
+                {
+                    "name": "proposal_name",
+                    "type": "name"
+                },
+                {
+                    "name": "approver",
+                    "type": "name"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "cancelled",
             "base": "",
             "fields": [
@@ -40,6 +62,28 @@
             ]
         },
         {
+            "name": "cancellede",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposer",
+                    "type": "name"
+                },
+                {
+                    "name": "proposal_name",
+                    "type": "name"
+                },
+                {
+                    "name": "canceler",
+                    "type": "name"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "clean",
             "base": "",
             "fields": [
@@ -49,6 +93,24 @@
                 },
                 {
                     "name": "proposal_name",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "cleane",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposer",
+                    "type": "name"
+                },
+                {
+                    "name": "proposal_name",
+                    "type": "name"
+                },
+                {
+                    "name": "dac_id",
                     "type": "name"
                 }
             ]
@@ -72,6 +134,28 @@
             ]
         },
         {
+            "name": "executede",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposer",
+                    "type": "name"
+                },
+                {
+                    "name": "proposal_name",
+                    "type": "name"
+                },
+                {
+                    "name": "executer",
+                    "type": "name"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "proposed",
             "base": "",
             "fields": [
@@ -90,11 +174,37 @@
             ]
         },
         {
+            "name": "proposede",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposer",
+                    "type": "name"
+                },
+                {
+                    "name": "proposal_name",
+                    "type": "name"
+                },
+                {
+                    "name": "metadata",
+                    "type": "string"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "storedproposal",
             "base": "",
             "fields": [
                 {
                     "name": "proposalname",
+                    "type": "name"
+                },
+                {
+                    "name": "proposer",
                     "type": "name"
                 },
                 {
@@ -124,6 +234,28 @@
                     "type": "name"
                 }
             ]
+        },
+        {
+            "name": "unapprovede",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposer",
+                    "type": "name"
+                },
+                {
+                    "name": "proposal_name",
+                    "type": "name"
+                },
+                {
+                    "name": "unapprover",
+                    "type": "name"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
         }
     ],
     "actions": [
@@ -133,8 +265,18 @@
             "ricardian_contract": ""
         },
         {
+            "name": "approvede",
+            "type": "approvede",
+            "ricardian_contract": ""
+        },
+        {
             "name": "cancelled",
             "type": "cancelled",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "cancellede",
+            "type": "cancellede",
             "ricardian_contract": ""
         },
         {
@@ -143,8 +285,18 @@
             "ricardian_contract": ""
         },
         {
+            "name": "cleane",
+            "type": "cleane",
+            "ricardian_contract": ""
+        },
+        {
             "name": "executed",
             "type": "executed",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "executede",
+            "type": "executede",
             "ricardian_contract": ""
         },
         {
@@ -153,8 +305,18 @@
             "ricardian_contract": ""
         },
         {
+            "name": "proposede",
+            "type": "proposede",
+            "ricardian_contract": ""
+        },
+        {
             "name": "unapproved",
             "type": "unapproved",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "unapprovede",
+            "type": "unapprovede",
             "ricardian_contract": ""
         }
     ],

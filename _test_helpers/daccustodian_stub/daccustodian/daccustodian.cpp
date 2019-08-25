@@ -6,9 +6,9 @@
 using namespace eosio;
 using namespace std;
 
-void daccustodian::updatecust(std::vector<name> custodians) {
+void daccustodian::updatecust(std::vector<name> custodians, name dac_scope) {
    //Fill up custodians
-   custodians_table cust_table(_self, _self.value);
+   custodians_table cust_table(_self, dac_scope.value);
     for (auto it = custodians.begin(); it != custodians.end(); it++) {
        cust_table.emplace(_self,[&](custodian &c){
           c.cust_name = *it;
@@ -34,7 +34,3 @@ extern "C" { \
       } \
    } \
 }
-
-EOSIO_ABI_EX(daccustodian,
-             (updatecust)
-)

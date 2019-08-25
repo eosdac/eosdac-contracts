@@ -1,0 +1,41 @@
+{
+  "expiration": "2019-08-22T18:59:15",
+  "ref_block_num": 18192,
+  "ref_block_prefix": 4204579276,
+  "max_net_usage_words": 0,
+  "max_cpu_usage_ms": 0,
+  "delay_sec": 0,
+  "context_free_actions": [],
+  "actions": [{
+      "account": "eosio",
+      "name": "updateauth",
+      "authorization": [{
+          "actor": "eosdactokens",
+          "permission": "active"
+        }
+      ],
+      "data": "80a782342393305500000000f8e5329d00000000a8ed323201000000000180a782342393305500804a1401ea3055010000"
+    },{
+      "account": "eosio",
+      "name": "linkauth",
+      "authorization": [{
+        "actor": "eosdactokens",
+        "permission": "active"
+      }
+      ],
+      "data": "80a7823423933055308d4b34638d9049a0a0c9585d9dab4100000000f8e5329d"
+    },{
+    "account": "eosio",
+    "name": "linkauth",
+    "authorization": [{
+      "actor": "eosdactokens",
+      "permission": "active"
+    }
+    ],
+    "data": "80a7823423933055308d4b34638d9049b0f1a1572d3ccdcd00000000f8e5329d"
+  }
+  ],
+  "transaction_extensions": [],
+  "signatures": [],
+  "context_free_data": []
+}

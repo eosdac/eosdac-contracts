@@ -1,0 +1,277 @@
+{
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT ",
+    "version": "eosio::abi/1.1",
+    "types": [],
+    "structs": [
+        {
+            "name": "dac",
+            "base": "",
+            "fields": [
+                {
+                    "name": "owner",
+                    "type": "name"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                },
+                {
+                    "name": "title",
+                    "type": "string"
+                },
+                {
+                    "name": "symbol",
+                    "type": "extended_symbol"
+                },
+                {
+                    "name": "refs",
+                    "type": "pair_uint8_string[]"
+                },
+                {
+                    "name": "accounts",
+                    "type": "pair_uint8_name[]"
+                },
+                {
+                    "name": "dac_state",
+                    "type": "uint8"
+                }
+            ]
+        },
+        {
+            "name": "extended_symbol",
+            "base": "",
+            "fields": [
+                {
+                    "name": "symbol",
+                    "type": "symbol"
+                },
+                {
+                    "name": "contract",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "pair_uint8_name",
+            "base": "",
+            "fields": [
+                {
+                    "name": "key",
+                    "type": "uint8"
+                },
+                {
+                    "name": "value",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "pair_uint8_string",
+            "base": "",
+            "fields": [
+                {
+                    "name": "key",
+                    "type": "uint8"
+                },
+                {
+                    "name": "value",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "regaccount",
+            "base": "",
+            "fields": [
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                },
+                {
+                    "name": "account",
+                    "type": "name"
+                },
+                {
+                    "name": "type",
+                    "type": "uint8"
+                }
+            ]
+        },
+        {
+            "name": "regdac",
+            "base": "",
+            "fields": [
+                {
+                    "name": "owner",
+                    "type": "name"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                },
+                {
+                    "name": "dac_symbol",
+                    "type": "extended_symbol"
+                },
+                {
+                    "name": "title",
+                    "type": "string"
+                },
+                {
+                    "name": "refs",
+                    "type": "pair_uint8_string[]"
+                },
+                {
+                    "name": "accounts",
+                    "type": "pair_uint8_name[]"
+                }
+            ]
+        },
+        {
+            "name": "regref",
+            "base": "",
+            "fields": [
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                },
+                {
+                    "name": "value",
+                    "type": "string"
+                },
+                {
+                    "name": "type",
+                    "type": "uint8"
+                }
+            ]
+        },
+        {
+            "name": "setowner",
+            "base": "",
+            "fields": [
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                },
+                {
+                    "name": "new_owner",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "setstatus",
+            "base": "",
+            "fields": [
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                },
+                {
+                    "name": "value",
+                    "type": "uint8"
+                }
+            ]
+        },
+        {
+            "name": "unregaccount",
+            "base": "",
+            "fields": [
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                },
+                {
+                    "name": "type",
+                    "type": "uint8"
+                }
+            ]
+        },
+        {
+            "name": "unregdac",
+            "base": "",
+            "fields": [
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "unregref",
+            "base": "",
+            "fields": [
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                },
+                {
+                    "name": "type",
+                    "type": "uint8"
+                }
+            ]
+        }
+    ],
+    "actions": [
+        {
+            "name": "regaccount",
+            "type": "regaccount",
+            "ricardian_contract": "## ACTION: regaccount\n**PARAMETERS:**\n* __dac_name__ is an eosio account name uniquely identifying the DAC. \n* __account__ is an eosio account name to be associated with the DAC\n* __type__ a number representing type of the association with the DAC\n\n**INTENT:** \nThe intent of regaccount is create a releationship between an eosio account and the DAC for a particular purpose.\n ####Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later."
+        },
+        {
+            "name": "regdac",
+            "type": "regdac",
+            "ricardian_contract": "## ACTION: <regdac>\n**PARAMETERS:**\n* __owner__ is an eosio account name for the owner account of the DAC. \n* __dac_name__ is an eosio account name uniquely identifying the DAC. \n* __dac_symbol__ is an eosio symbol name representing the primary token used in the DAC. \n*  __title__ is a string that for the title of the DAC.\n* __refs__\n* __accounts__ a map of the key accounts used in the DAC\ns\n**INTENT** The intent of regdac register a new DAC with all the required key accounts \n#### Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later so therefore should only store a unidentifiable hash of content rather than human readable content."
+        },
+        {
+            "name": "regref",
+            "type": "regref",
+            "ricardian_contract": "## ACTION: regref\n**PARAMETERS:**\n* __dac_name__ is an eosio account name uniquely identifying the DAC. \n* __account__ a string, format depends on the type and is not validated by the contract\n* __type__ a number representing type of the association with the DAC\n\n**INTENT:** \nThe intent of regref is to register an arbitratry piece of data about a particular DAC.\n ####Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later."
+        },
+        {
+            "name": "setowner",
+            "type": "setowner",
+            "ricardian_contract": "## ACTION: setowner\n**PARAMETERS:**\n* __dac_name__ is an eosio account name uniquely identifying the DAC.\n* __account__ is an eosio account name to used as the owner of the DAC\n\n**INTENT:** The intent of setowner change the owner account for a DAC.\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
+        },
+        {
+            "name": "setstatus",
+            "type": "setstatus",
+            "ricardian_contract": "## ACTION: setstatus\n**PARAMETERS:**\n* __dac_name__ is an eosio account name uniquely identifying the DAC. \n* __value__ a number representing value to set for the status value of the DAC\n\n**INTENT:** The intent of setstatus is to set the DAC status value eg. INACTIVE = 0, ACTIVE = 1.\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
+        },
+        {
+            "name": "unregaccount",
+            "type": "unregaccount",
+            "ricardian_contract": "## ACTION: unregaccount\n**PARAMETERS:**\n* __dac_name__ is an eosio account name uniquely identifying the DAC. \n* __type__ a number representing type of the association with the DAC\n\n**INTENT:** The intent of unregaccount is remove a relationship between an account and a DAC.\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
+        },
+        {
+            "name": "unregdac",
+            "type": "unregdac",
+            "ricardian_contract": "## ACTION: unregdac\n**PARAMETERS:**\n* __dac_name__ is an eosio account name uniquely identifying the DAC. \n\n**INTENT:** \nThe intent of unregdac is to unregister the DAC from the directory."
+        },
+        {
+            "name": "unregref",
+            "type": "unregref",
+            "ricardian_contract": "## ACTION: unregref\n**PARAMETERS:**\n* __dac_name__ is an eosio account name uniquely identifying the DAC. \n* __type__ a number representing type of the association with the DAC\n\n**INTENT:** The intent of unregref is remove a remove a reference from the DAC data.\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
+        }
+    ],
+    "tables": [
+        {
+            "name": "dacs",
+            "type": "dac",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        }
+    ],
+    "ricardian_clauses": [
+        {
+            "id": "ENTIRE AGREEMENT",
+            "body": "This contract contains the entire agreement of the parties, for all described actions, and there are no other promises or conditions in any other agreement whether oral or written concerning the subject matter of this Contract. This contract supersedes any prior written or oral agreements between the parties."
+        },
+        {
+            "id": "BINDING CONSTITUTION",
+            "body": "All the the action descibed in this contract are subject to the EOSDAC consitution as held at http://eosdac.io. This includes, but is not limited to membership terms and conditions, dispute resolution and severability."
+        }
+    ],
+    "variants": []
+}

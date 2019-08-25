@@ -10,7 +10,7 @@ createprop
 * __arbitrator__ is an eosio account name for a nominated arbitrator on the proposal.
 * __pay_amount__ is an eosio asset amount representing the requested pay amount for the worker proposal.
 * __id__ is an uint64 to represent the a unique identifer for a new proposal.
-* __dac_scope__ is an eosio name the proposal to a specific dac.
+* __dac_id__ is an eosio name the proposal to a specific dac.
 * __category__ is integer to categorise a proposal.
 * __content_hash__ is a string that provides a hash of the details of the proposal.
 
@@ -52,7 +52,7 @@ The intent of delegatevote is to delegate an active custodian's vote to another 
 * __custodian__ is an eosio account name.
 * __category__ is an integer id for an existing category for the custodian to delgate voting power for.
 * __dalegatee_custodian__ is an eosio account name for a custodian to delegate worker proposal votes to.
-* __dac_scope__ is an account name representing the DAC for this action
+* __dac_id__ is an account name representing the DAC for this action
 
 **INTENT:** 
 The intent of delegatecat is to delegate an active custodian's vote to another custodian because they trust their opinion over their own for all proposals in a particular category. This will be overriden by a delegation for a specific proposal which would be overriden by a proposal specific vote.
@@ -65,7 +65,7 @@ The intent of delegatecat is to delegate an active custodian's vote to another c
 **PARAMETERS:**
 * __custodian__ is an eosio account name.
 * __category__ is an integer id for an existing category for the custodian to undelgate voting power for.
-* __dac_scope__ is an account name representing the DAC for this action
+* __dac_id__ is an account name representing the DAC for this action
 
 **INTENT:** 
 The intent of undelegateca is to remove delegation an active custodian's vote to another custodian for a particular category.
@@ -77,7 +77,7 @@ The intent of undelegateca is to remove delegation an active custodian's vote to
 ## ACTION: clearexpprop
 **PARAMETERS:**
 * __proposal_id__ is an integer representing the id for particular proposal.
-* __dac_scope__ is an account name representing the DAC for this action
+* __dac_id__ is an account name representing the DAC for this action
 
 **INTENT:** 
 The intent of clearexpprop is to remove an expired proposal. This is only allowed if the proposal has expired.s
@@ -89,7 +89,7 @@ The intent of clearexpprop is to remove an expired proposal. This is only allowe
 ## ACTION: updpropvotes
 **PARAMETERS:**
 * __proposal_id__ is an integer representing the id for particular proposal.
-* __dac_scope__ is an account name representing the DAC for this action
+* __dac_id__ is an account name representing the DAC for this action
 
 **INTENT:** 
 The intent of updpropvotes is to update the state on the proposal to indicate if there are enough votes to approve the start of a proposal (status code 3), the finalizing vote of a proposal (status code 4) or if it has expired (status code 5).
@@ -100,7 +100,7 @@ The intent of updpropvotes is to update the state on the proposal to indicate if
 
 ## ACTION: updallprops
 **PARAMETERS:**
-* __dac_scope__ is an account name representing the DAC for this action
+* __dac_id__ is an account name representing the DAC for this action
 
 **INTENT:** 
 The intent of updallprops is to iterate through all the proposals for a given scope and call the `updpropvotes` action as deferred transactions for each.
