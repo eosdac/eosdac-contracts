@@ -325,7 +325,7 @@ namespace eosdac {
     ACTION eosdactokens::migrate(uint16_t batch_size) {
         
         { // regmembers
-            regmembers source(get_self(), get_self().value);
+            regmembers source(get_self(), OLD_SCOPE.value);
             regmembers destination(get_self(), NEW_SCOPE.value);
 
             name begin_account = name(0);
@@ -351,7 +351,7 @@ namespace eosdac {
 
         { // memterms
             // quantity in memberterms should always be less than the batch size
-            memterms source(get_self(), get_self().value);
+            memterms source(get_self(), OLD_SCOPE.value);
             memterms destination(get_self(), NEW_SCOPE.value);
 
             name begin_account = name(0);
@@ -371,13 +371,13 @@ namespace eosdac {
             }
         }
         {
-            oldconfigscontainer(_self, _self.value).remove();
+            oldconfigscontainer(_self, OLD_SCOPE.value).remove();
         }
     }
 
     ACTION eosdactokens::clearold(uint16_t batch_size) {
         require_auth(_self);
-        cleanTable<regmembers>(_self, _self.value, batch_size);
-        cleanTable<memterms>(_self, _self.value, batch_size);
+        cleanTable<regmembers>(_self, OLD_SCOPE.value, batch_size);
+        cleanTable<memterms>(_self, OLD_SCOPE.value, batch_size);
     }
 }
