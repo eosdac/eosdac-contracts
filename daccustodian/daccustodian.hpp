@@ -209,6 +209,11 @@ namespace eosdac {
         ACTION migrate(uint16_t batch_size);
         ACTION clearold(uint16_t batch_size);
 
+        // Temporary actions for old pay processing
+        ACTION claimoldpaye(uint64_t payid, name dac_id);
+        ACTION removeoldpay(uint64_t payid, name dac_id);
+        ACTION rejectoldpay(uint64_t payid, name dac_id);
+        // end Temporary code for old payments processing
 
         /**
      * This action is used to register a custom permission that will be used in the multisig instead of active.

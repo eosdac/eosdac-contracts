@@ -66,6 +66,20 @@
             ]
         },
         {
+            "name": "claimoldpaye",
+            "base": "",
+            "fields": [
+                {
+                    "name": "payid",
+                    "type": "uint64"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "claimpay",
             "base": "",
             "fields": [
@@ -396,7 +410,35 @@
             ]
         },
         {
+            "name": "rejectoldpay",
+            "base": "",
+            "fields": [
+                {
+                    "name": "payid",
+                    "type": "uint64"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "removecuspay",
+            "base": "",
+            "fields": [
+                {
+                    "name": "payid",
+                    "type": "uint64"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "removeoldpay",
             "base": "",
             "fields": [
                 {
@@ -731,6 +773,11 @@
             "ricardian_contract": "## ACTION: capturestake\n**PARAMETERS:**\n* __from__ is an eosio account name for the source of the transaction. \n* __quantity__ is eos asset. \n* __dac_id__ is an eosio account name to determine which DAC the transaction is associated with. \n\n**INTENT** The intent of capturestake is to record an amount transferred to this contract for pending stake for a registering candidate. \n#### Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later so therefore should only store a unidentifiable hash of content rather than human readable content."
         },
         {
+            "name": "claimoldpaye",
+            "type": "claimoldpaye",
+            "ricardian_contract": ""
+        },
+        {
             "name": "claimpay",
             "type": "claimpay",
             "ricardian_contract": "## ACTION: claimpay\n**PARAMETERS:**\n* __claimer__ account claiming the pay. This account must match the destination account for which the claim is for.\n\n**INTENT:** The intent of {{ claimpay }} is to allow an account to claim pending payment amounts due to the account. The pay claim they are claiming needs to be visible in the `pendingpay` table. transfers to the claimer via an inline transfer on the eosdactoken contract and then removes the pending payment record from the `pending_pay` table. The active auth of this claimer is required to complete this action.\n\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
@@ -801,8 +848,18 @@
             "ricardian_contract": "## ACTION: rejectcuspay\n**PARAMETERS:**\n* __payid__ the pay id for the arrange payment.\n\n**INTENT:** The intent of {{ rejectcuspay }} is to allow an account to reject a claim for pending payment amounts due to that account. The pay claim they are claiming needs to be visible in the `pendingpay` table and is then removed from the `pending_pay` table. The active auth of the intended claimer for the payment is required to complete this action.\n\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
         },
         {
+            "name": "rejectoldpay",
+            "type": "rejectoldpay",
+            "ricardian_contract": ""
+        },
+        {
             "name": "removecuspay",
             "type": "removecuspay",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "removeoldpay",
+            "type": "removeoldpay",
             "ricardian_contract": ""
         },
         {
