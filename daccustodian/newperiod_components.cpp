@@ -32,30 +32,51 @@
 
 void daccustodian::distributeMeanPay(name dac_id) {
     custodians_table custodians(get_self(), dac_id.value);
-    pending_pay_table pending_pay(get_self(), get_self().value);
+    pending_pay_table pending_pay(get_self(), dac_id.value);
     contr_config configs = contr_config::get_current_configs(get_self(), dac_id);
     name auth_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::AUTH);
 
     //Find the mean pay using a temporary vector to hold the requestedpay amounts.
-    asset total = asset{0, configs.requested_pay_max.quantity.symbol};
+    extended_asset total = configs.requested_pay_max - configs.requested_pay_max;
     int64_t count = 0;
     for (auto cust: custodians) {
-        total += cust.requestedpay;
-        count += 1;
-        // print_f("cust % with amount %\n", cust.cust_name, cust.requestedpay);
+        if (total.get_extended_symbol().get_symbol() == cust.requestedpay.symbol) {
+            total += extended_asset(cust.requestedpay, total.contract);
+            count += 1;
+        }
     }
 
-    asset meanAsset = count == 0 ? total : total / count;
+    print("count during mean pay: ", count, " total: ", total);
 
-    // print_f("Calclulated mean is: %", meanAsset);
+    asset meanAsset = count == 0 ? total.quantity : total.quantity / count;
+
+    print("mean asset for pay: ", meanAsset);
+
+    auto pendingPayReceiverSymbolIndex = pending_pay.get_index<"receiversym"_n>();
+
     if (meanAsset.amount > 0) {
         for (auto cust: custodians) {
-            pending_pay.emplace(auth_account, [&](pay &p) {
-                p.key = pending_pay.available_primary_key();
-                p.receiver = cust.cust_name;
-                p.quantity = meanAsset;
-                p.memo = "Custodian pay. Thank you.";
-            });
+            print("\nLooping through custodians : ", cust.cust_name);
+
+            checksum256 idx = pay::getIndex(cust.cust_name, total.get_extended_symbol());
+            print("\ncreated a joint index : ", idx);
+            auto itrr = pendingPayReceiverSymbolIndex.find(idx);
+            if (itrr != pendingPayReceiverSymbolIndex.end() && itrr->receiver == cust.cust_name && itrr->quantity.get_extended_symbol() == total.get_extended_symbol() && !(itrr->due_date))
+            {
+                pendingPayReceiverSymbolIndex.modify(itrr, same_payer, [&](pay &p) {
+                    print("\nAdding to existing amount with : ", extended_asset(meanAsset, total.contract));
+
+                    p.quantity += extended_asset(meanAsset, total.contract);
+                });
+            } else {
+                print("\n Creating to pending pay amount with : ", extended_asset(meanAsset, total.contract));
+
+                pending_pay.emplace(auth_account, [&](pay &p) {
+                    p.key = pending_pay.available_primary_key();
+                    p.receiver = cust.cust_name;
+                    p.quantity = extended_asset(meanAsset, total.contract);
+                });
+            }
         }
     }
 
@@ -239,8 +260,9 @@ void daccustodian::runnewperiod(string message, name dac_id) {
     // Get the token supply of the lockup asset token (eg. EOSDAC)
     auto tokenStats = stats(
             found_dac.symbol.get_contract(),
-            found_dac.symbol.get_symbol().raw()
+            found_dac.symbol.get_symbol().code().raw()
     ).begin();
+    eosio::print("\n\nstats: ", tokenStats->supply, " contract: ", found_dac.symbol.get_contract(), " symbol: ", found_dac.symbol.get_symbol());
     uint64_t token_current_supply = tokenStats->supply.amount;
 
     double percent_of_current_voter_engagement =
