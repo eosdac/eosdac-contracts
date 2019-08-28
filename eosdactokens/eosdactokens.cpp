@@ -127,13 +127,17 @@ namespace eosdac {
 
             } else {
                 //Send to notify of transfer
+                vector<account_weight_delta> account_weights;
+                account_weights.push_back(account_weight_delta{from, -quantity.amount});
+                account_weights.push_back(account_weight_delta{to, quantity.amount});
+
                 eosio::action(
                     eosio::permission_level{ get_self(), "notify"_n },
-                    custodian_contract, "transferobsv"_n,
-                    make_tuple(from, to, quantity, dac.dac_id)
+                    custodian_contract, "weightobsv"_n,
+                    make_tuple(account_weights, dac.dac_id)
                 ).send();
 
-                print("notifying transfer transaction.");
+                print("notifying weight change.");
             }
         }
 

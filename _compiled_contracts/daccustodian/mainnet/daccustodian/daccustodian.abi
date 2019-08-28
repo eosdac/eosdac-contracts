@@ -4,6 +4,20 @@
     "types": [],
     "structs": [
         {
+            "name": "account_weight_delta",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account",
+                    "type": "name"
+                },
+                {
+                    "name": "weight_delta",
+                    "type": "int64"
+                }
+            ]
+        },
+        {
             "name": "candidate",
             "base": "",
             "fields": [
@@ -678,6 +692,20 @@
             ]
         },
         {
+            "name": "weightobsv",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account_weight_deltas",
+                    "type": "account_weight_delta[]"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "withdrawcand",
             "base": "",
             "fields": [
@@ -867,6 +895,11 @@
             "name": "votecuste",
             "type": "votecuste",
             "ricardian_contract": "## ACTION: votecuste\n**PARAMETERS:**\n* __voter__ is an eosio account_name parameter for the voting member.\n* __newvotes__ is an array of nominated candidates account names that the voter intends to vote for with a maximum number of votes as configured by the contract.\n\n**INTENT:** The intent of votecuste is to allow a member of the DAC to vote for candidates that are eligible become custodians after the next call to {{ newperiod }}. The action ensures the user has agreed to the latest terms and conditions and has the correct authorization of the account: {{ voter }} to place or change an active vote. Upon success this action will either update an existing vote with a new set of candidates or create a new active vote for the {{ voter }} for candidates eligible for election. This action will replace an existing vote for a proxy for {{ voter }} if one exists. \n\n**TERM:** The action changes the preferred custodians for an account until superseded by another action."
+        },
+        {
+            "name": "weightobsv",
+            "type": "weightobsv",
+            "ricardian_contract": ""
         },
         {
             "name": "withdrawcand",
