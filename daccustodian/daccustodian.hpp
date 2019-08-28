@@ -209,12 +209,6 @@ namespace eosdac {
         ACTION migrate(uint16_t batch_size);
         ACTION clearold(uint16_t batch_size);
 
-        // Temporary actions for old pay processing
-        ACTION claimoldpaye(uint64_t payid, name dac_id);
-        ACTION removeoldpay(uint64_t payid, name dac_id);
-        ACTION rejectoldpay(uint64_t payid, name dac_id);
-        // end Temporary code for old payments processing
-
         /**
      * This action is used to register a custom permission that will be used in the multisig instead of active.
      *
@@ -249,5 +243,11 @@ namespace eosdac {
                                                 
         permission_level getCandidatePermission(name account, name internal_dac_id);
         void validateUnstake(name code, name cand, name dac_id);
+
+        // Temporary actions for old pay processing
+        bool claimoldpaye_if_found(uint64_t payid, name dac_id);
+        bool removeoldpay_if_found(uint64_t payid, name dac_id);
+        bool rejectoldpay_if_found(uint64_t payid, name dac_id);
+        // end Temporary code for old payments processing
     };
 };
