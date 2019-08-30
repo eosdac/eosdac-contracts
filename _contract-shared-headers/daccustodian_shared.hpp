@@ -48,6 +48,18 @@ namespace eosdac {
             indexed_by<"byvotesrank"_n, const_mem_fun<candidate, uint64_t, &candidate::by_votes_rank> >,
             indexed_by<"byreqpay"_n, const_mem_fun<candidate, uint64_t, &candidate::by_requested_pay> >
     > candidates_table;
+
+
+
+    // From DAO token
+
+    struct [[eosio::table, eosio::contract("daotoken")]] vote_weight {
+        name     voter;
+        uint64_t weight;
+
+        uint64_t primary_key()const { return voter.value; }
+    };
+    typedef eosio::multi_index< "weights"_n, vote_weight > weights;
 }
 
 #endif
