@@ -179,6 +179,8 @@ namespace eosdac {
         ACTION clearstake(name cand, asset new_value, name dac_id);
         ACTION migrate(uint16_t batch_size);
         ACTION clearold(uint16_t batch_size);
+        ACTION regnotify(name type, name contract, name action, name dac_id);
+        ACTION unregnotify(uint64_t key, name dac_id);
 
 
         /**
@@ -215,5 +217,8 @@ namespace eosdac {
                                                 
         permission_level getCandidatePermission(name account, name internal_dac_id);
         void validateUnstake(name code, name cand, name dac_id);
+        void notifyListeners(name type, vector<char> notify_bytes, name dac_id);
+        void notifyListeners(newperiod_notify &n, name dac_id);
+        void notifyListeners(vote_notify &n, name dac_id);
     };
 };

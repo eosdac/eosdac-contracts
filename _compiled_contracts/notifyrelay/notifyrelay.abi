@@ -1,0 +1,35 @@
+{
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT ",
+    "version": "eosio::abi/1.1",
+    "types": [],
+    "structs": [
+        {
+            "name": "notify",
+            "base": "",
+            "fields": [
+                {
+                    "name": "type",
+                    "type": "name"
+                },
+                {
+                    "name": "data",
+                    "type": "bytes"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        }
+    ],
+    "actions": [
+        {
+            "name": "notify",
+            "type": "notify",
+            "ricardian_contract": ""
+        }
+    ],
+    "tables": [],
+    "ricardian_clauses": [],
+    "variants": []
+}

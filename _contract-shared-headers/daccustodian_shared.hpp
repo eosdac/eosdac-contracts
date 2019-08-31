@@ -1,10 +1,42 @@
 #ifndef DACCUSTODIAN_SHARED_H
 #define DACCUSTODIAN_SHARED_H
 
+#include <eosio/eosio.hpp>
+#include <eosio/multi_index.hpp>
+#include <eosio/time.hpp>
+#include <eosio/asset.hpp>
+
+
 namespace eosdac {
 
-    #include <eosio/eosio.hpp>
-    #include <eosio/multi_index.hpp>
+
+    struct newperiod_notify {
+        std::string                msg;
+        eosio::time_point_sec last_time;
+        eosio::time_point_sec current_time;
+    };
+    struct vote_notify {
+        eosio::name         voter;
+        std::vector<eosio::name> new_votes;
+        std::vector<eosio::name> old_votes;
+    };
+
+    struct [[eosio::table("notifys"), eosio::contract("daccustodian")]] notify_item {
+        uint64_t          key;      // unique identifier
+        eosio::name       type;     // The action received (newperiod, vote etc)
+        eosio::name       contract; // the contract to notify
+        eosio::name       action;   // the action to notify
+
+        uint64_t primary_key() const { return key; }
+
+        uint64_t by_type() const { return action.value; }
+    };
+
+    typedef eosio::multi_index<"notifys"_n, notify_item,
+            eosio::indexed_by<"bytype"_n, eosio::const_mem_fun<notify_item, uint64_t, &notify_item::by_type> >
+    > notifys_table;
+
+
 
     struct [[eosio::table("custodians"), eosio::contract("daccustodian")]] custodian {
         eosio::name cust_name;
@@ -38,10 +70,10 @@ namespace eosdac {
     };
 
     typedef eosio::multi_index<"candidates"_n, candidate,
-            indexed_by<"bycandidate"_n, const_mem_fun<candidate, uint64_t, &candidate::primary_key> >,
-            indexed_by<"byvotes"_n, const_mem_fun<candidate, uint64_t, &candidate::by_number_votes> >,
-            indexed_by<"byvotesrank"_n, const_mem_fun<candidate, uint64_t, &candidate::by_votes_rank> >,
-            indexed_by<"byreqpay"_n, const_mem_fun<candidate, uint64_t, &candidate::by_requested_pay> >
+            eosio::indexed_by<"bycandidate"_n, eosio::const_mem_fun<candidate, uint64_t, &candidate::primary_key> >,
+            eosio::indexed_by<"byvotes"_n, eosio::const_mem_fun<candidate, uint64_t, &candidate::by_number_votes> >,
+            eosio::indexed_by<"byvotesrank"_n, eosio::const_mem_fun<candidate, uint64_t, &candidate::by_votes_rank> >,
+            eosio::indexed_by<"byreqpay"_n, eosio::const_mem_fun<candidate, uint64_t, &candidate::by_requested_pay> >
     > candidates_table;
 }
 

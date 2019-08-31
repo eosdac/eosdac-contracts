@@ -18,6 +18,7 @@ namespace eosdac {
             SERVICE = 5,
             PROPOSALS = 6,
             ESCROW = 7,
+            NOTIFY_RELAY = 8,
             EXTERNAL = 254,
             OTHER = 255
         };

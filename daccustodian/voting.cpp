@@ -21,9 +21,12 @@ void daccustodian::votecuste(name voter, vector<name> newvotes, name dac_id) {
     }
 
     // Find a vote that has been cast by this voter previously.
+    vector<name> oldvotes;
     votes_table votes_cast_by_members(_self, dac_id.value);
     auto existingVote = votes_cast_by_members.find(voter.value);
     if (existingVote != votes_cast_by_members.end()) {
+        oldvotes = existingVote->candidates;
+
         modifyVoteWeights(voter, existingVote->candidates, newvotes, dac_id);
 
         if (newvotes.size() == 0) {
@@ -44,6 +47,14 @@ void daccustodian::votecuste(name voter, vector<name> newvotes, name dac_id) {
             v.candidates = newvotes;
         });
     }
+
+
+    // Send notification
+    vote_notify n;
+    n.voter = voter;
+    n.new_votes = newvotes;
+    n.old_votes = oldvotes;
+    notifyListeners(n, dac_id);
 }
 
 //void daccustodian::voteproxy(name voter, name proxy) {

@@ -271,8 +271,16 @@ void daccustodian::runnewperiod(string message, name dac_id) {
     // Set the auths on the dacauthority account
     setCustodianAuths(dac_id);
 
+    eosio::time_point_sec prev_time = currentState.lastperiodtime;
+
     currentState.lastperiodtime = current_block_time();
     currentState.save(get_self(), dac_id);
+
+    // Send notification
+    newperiod_notify n;
+    n.last_time = prev_time;
+    n.current_time = currentState.lastperiodtime;
+    notifyListeners(n, dac_id);
 
 
 //        Schedule the the next election cycle at the end of the period.

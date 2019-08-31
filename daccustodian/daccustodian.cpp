@@ -17,6 +17,7 @@
 #include "external_observable_actions.cpp"
 #include "config.cpp"
 #include "migration.cpp"
+#include "notifications.cpp"
 
 using namespace eosio;
 using namespace std;
