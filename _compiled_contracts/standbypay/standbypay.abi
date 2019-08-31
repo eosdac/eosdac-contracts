@@ -1,0 +1,136 @@
+{
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT ",
+    "version": "eosio::abi/1.1",
+    "types": [],
+    "structs": [
+        {
+            "name": "claimpay",
+            "base": "",
+            "fields": [
+                {
+                    "name": "payid",
+                    "type": "uint64"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "newperiod",
+            "base": "",
+            "fields": [
+                {
+                    "name": "nn",
+                    "type": "newperiod_notify"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "newperiod_notify",
+            "base": "",
+            "fields": [
+                {
+                    "name": "msg",
+                    "type": "string"
+                },
+                {
+                    "name": "last_time",
+                    "type": "time_point_sec"
+                },
+                {
+                    "name": "current_time",
+                    "type": "time_point_sec"
+                }
+            ]
+        },
+        {
+            "name": "pay",
+            "base": "",
+            "fields": [
+                {
+                    "name": "key",
+                    "type": "uint64"
+                },
+                {
+                    "name": "receiver",
+                    "type": "name"
+                },
+                {
+                    "name": "quantity",
+                    "type": "extended_asset"
+                },
+                {
+                    "name": "memo",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "rejectpay",
+            "base": "",
+            "fields": [
+                {
+                    "name": "payid",
+                    "type": "uint64"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "removepay",
+            "base": "",
+            "fields": [
+                {
+                    "name": "payid",
+                    "type": "uint64"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        }
+    ],
+    "actions": [
+        {
+            "name": "claimpay",
+            "type": "claimpay",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "newperiod",
+            "type": "newperiod",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "rejectpay",
+            "type": "rejectpay",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "removepay",
+            "type": "removepay",
+            "ricardian_contract": ""
+        }
+    ],
+    "tables": [
+        {
+            "name": "pendingpay",
+            "type": "pay",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        }
+    ],
+    "ricardian_clauses": [],
+    "variants": []
+}
