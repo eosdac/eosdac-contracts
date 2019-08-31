@@ -31,7 +31,7 @@ void standbypay::newperiod( newperiod_notify nn, name dac_id ) {
     auto by_votes = candidates.get_index<"byvotesrank"_n>();
     auto cand = by_votes.begin();
     while (cand != by_votes.end() && standbys_list.size() < number_standbys){
-        if (std::find(custodians_list.begin(), custodians_list.end(), cand->candidate_name) != custodians_list.end()){
+        if (std::find(custodians_list.begin(), custodians_list.end(), cand->candidate_name) == custodians_list.end()){
             standbys_list.push_back(cand->candidate_name);
         }
 
