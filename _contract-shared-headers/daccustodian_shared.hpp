@@ -51,9 +51,7 @@ namespace eosdac {
 
 
 
-    // From DAO token
-
-    struct [[eosio::table, eosio::contract("daotoken")]] vote_weight {
+    struct [[eosio::table]] vote_weight {
         eosio::name     voter;
         uint64_t weight;
 
