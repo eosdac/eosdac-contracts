@@ -74,7 +74,9 @@ permission_level daccustodian::getCandidatePermission(name account, name dac_id)
 }
 
 /*
- * TODO : replace with the native function once cdt 1.6.2 is released
+ * TODO : replace with the native function once cdt 1.7.0 is released
+ *
+ * https://github.com/EOSIO/eosio.contracts/pull/257
  */
 bool
 daccustodian::_check_transaction_authorization( const char* trx_data,     uint32_t trx_size,
