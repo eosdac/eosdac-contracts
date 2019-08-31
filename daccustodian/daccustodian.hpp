@@ -144,7 +144,7 @@ namespace eosdac {
                             name to,
                             asset quantity,
                             name dac_id);
-        ACTION weightobsv(vector<account_weight_delta> account_weight_deltas, name dac_id);
+        ACTION balanceobsv(vector<account_balance_delta> account_balance_deltas, name dac_id);
         ACTION nominatecand(name cand, eosio::asset requestedpay);
         ACTION nominatecane(name cand, eosio::asset requestedpay, name dac_id);
         ACTION withdrawcand(name cand);

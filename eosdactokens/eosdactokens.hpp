@@ -5,6 +5,9 @@
 #include <eosio/multi_index.hpp>
 #include <eosio/singleton.hpp>
 
+#include "../_contract-shared-headers/daccustodian_shared.hpp"
+#include "../_contract-shared-headers/dacdirectory_shared.hpp"
+
 namespace eosiosystem {
     class system_contract;
 }
@@ -73,7 +76,7 @@ namespace eosdac {
         inline asset get_supply(symbol_code sym) const;
         inline asset get_balance(name owner, symbol_code sym) const;
 
-    public:
+    private:
 
         TABLE account {
             asset balance;
@@ -95,6 +98,8 @@ namespace eosdac {
 
         void sub_balance(name owner, asset value);
         void add_balance(name owner, asset value, name payer);
+
+        void send_balance_notification(vector<account_balance_delta> account_weights, dacdir::dac dac);
 
     };
 

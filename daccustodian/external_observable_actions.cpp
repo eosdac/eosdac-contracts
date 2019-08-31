@@ -39,7 +39,9 @@ void daccustodian::transferobsv(name from,
                                 name to,
                                 asset quantity,
                                 name dac_id) {
-    
+
+    // Only for compatibility during contract update, can be safely removed
+
     eosio::print("\n > transfer from : ", from, " to: ", to, " quantity: ", quantity);
 
     auto dac = dacdir::dac_for_id(dac_id);
@@ -66,7 +68,7 @@ void daccustodian::transferobsv(name from,
 }
 
 
-void daccustodian::weightobsv(vector<account_weight_delta> account_weight_deltas, name dac_id) {
+void daccustodian::balanceobsv(vector<account_balance_delta> account_balance_deltas, name dac_id) {
     auto dac = dacdir::dac_for_id(dac_id);
     auto token_contract = dac.symbol.get_contract();
     require_auth(token_contract);
@@ -74,11 +76,11 @@ void daccustodian::weightobsv(vector<account_weight_delta> account_weight_deltas
     votes_table votes_cast_by_members(_self, dac_id.value);
     contr_state currentState = contr_state::get_current_state(_self, dac_id);
 
-    for (account_weight_delta awd : account_weight_deltas) {
-        auto existingVote = votes_cast_by_members.find(awd.account.value);
+    for (account_balance_delta abd : account_balance_deltas) {
+        auto existingVote = votes_cast_by_members.find(abd.account.value);
         if (existingVote != votes_cast_by_members.end()) {
-            updateVoteWeights(existingVote->candidates, awd.weight_delta, dac_id, currentState);
-            currentState.total_weight_of_votes += awd.weight_delta;
+            updateVoteWeights(existingVote->candidates, abd.balance_delta.amount, dac_id, currentState);
+            currentState.total_weight_of_votes += abd.balance_delta.amount;
         }
     }
 }
