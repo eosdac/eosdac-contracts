@@ -18,6 +18,20 @@
             ]
         },
         {
+            "name": "account_weight_delta",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account",
+                    "type": "name"
+                },
+                {
+                    "name": "weight_delta",
+                    "type": "int64"
+                }
+            ]
+        },
+        {
             "name": "balanceobsv",
             "base": "",
             "fields": [
@@ -416,6 +430,30 @@
             ]
         },
         {
+            "name": "resetcands",
+            "base": "",
+            "fields": [
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "resetvotes",
+            "base": "",
+            "fields": [
+                {
+                    "name": "voter",
+                    "type": "name"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "resigncust",
             "base": "",
             "fields": [
@@ -706,6 +744,20 @@
             ]
         },
         {
+            "name": "weightobsv",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account_weight_deltas",
+                    "type": "account_weight_delta[]"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "withdrawcand",
             "base": "",
             "fields": [
@@ -817,6 +869,16 @@
             "ricardian_contract": ""
         },
         {
+            "name": "resetcands",
+            "type": "resetcands",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "resetvotes",
+            "type": "resetvotes",
+            "ricardian_contract": ""
+        },
+        {
             "name": "resigncust",
             "type": "resigncust",
             "ricardian_contract": "## ACTION: resigncuste\n**PARAMETERS:**\n* __cust__ is an eosio account name.\n\n**INTENT:** The intent of resigncust is to remove an elected custodian. This action must be run by the resigning custodian and the outcome should remove the elected custodian and lock up their tokens until the delay period has passed so the tokens can be claimed with the unstake action.\n**TERM:** This action lasts for the duration of the time taken to process the transaction."
@@ -900,6 +962,11 @@
             "name": "votecuste",
             "type": "votecuste",
             "ricardian_contract": "## ACTION: votecuste\n**PARAMETERS:**\n* __voter__ is an eosio account_name parameter for the voting member.\n* __newvotes__ is an array of nominated candidates account names that the voter intends to vote for with a maximum number of votes as configured by the contract.\n\n**INTENT:** The intent of votecuste is to allow a member of the DAC to vote for candidates that are eligible become custodians after the next call to {{ newperiod }}. The action ensures the user has agreed to the latest terms and conditions and has the correct authorization of the account: {{ voter }} to place or change an active vote. Upon success this action will either update an existing vote with a new set of candidates or create a new active vote for the {{ voter }} for candidates eligible for election. This action will replace an existing vote for a proxy for {{ voter }} if one exists. \n\n**TERM:** The action changes the preferred custodians for an account until superseded by another action."
+        },
+        {
+            "name": "weightobsv",
+            "type": "weightobsv",
+            "ricardian_contract": ""
         },
         {
             "name": "withdrawcand",
