@@ -141,22 +141,31 @@ def configure_dac_accounts_and_permissions
     # cleos set account permission eosdacthedac active '{"threshold": 1,"keys": [{"key": "#{CONTRACT_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p eosdacthedac@owner)
     run? %(cleos set account permission dacproposals active '{"threshold": 1,"keys": [{"key": "#{CONTRACT_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"dacproposals","permission":"eosio.code"},"weight":1}]}' owner -p dacproposals@owner)
     run? %(cleos set account permission daccustodian xfer '{"threshold": 1,"keys": [{"key": "#{CONTRACT_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' active -p daccustodian@active)
+    run? %(cleos set account permission daccustodian pay '{"threshold": 1,"keys": [{"key": "#{CONTRACT_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' active -p daccustodian@active)
     # run? %(cleos set account permission daccustodian one '{"threshold": 1,"keys": [{"key": "#{CONTRACT_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' low -p daccustodian@active)
     run? %(cleos push action eosio.token issue '["eosdacthedac", "100000.0000 EOS", "Initial EOS amount."]' -p eosio)
     run? %(cleos push action eosio.token issue '["dacproposals", "100000.0000 EOS", "Initial EOS amount."]' -p eosio)
     run? %(cleos set action permission eosdacthedac eosdactokens transfer xfer)
     run? %(cleos set action permission eosdacthedac eosio.token transfer xfer)
     run? %(cleos set action permission daccustodian eosdactokens transfer xfer)
+    run? %(cleos set action permission daccustodian eosio.token transfer xfer)
+    run? %(cleos set action permission dacocoiogmbh eosio.token transfer xfer)
+    run? %(cleos set action permission daccustodian daccustodian removecuspay pay)
     
     # Configure accounts permissions hierarchy
       run? %(cleos set account permission dacauthority high #{CONTRACT_PUBLIC_KEY} active -p dacauthority )
     run? %(cleos set account permission dacauthority med #{CONTRACT_PUBLIC_KEY} high -p dacauthority )
     run? %(cleos set account permission dacauthority low #{CONTRACT_PUBLIC_KEY} med -p dacauthority )
     run? %(cleos set account permission dacauthority one #{CONTRACT_PUBLIC_KEY} low -p dacauthority  )
-    run? %(cleos set account permission eosdactokens active '{"threshold": 1,"keys": [{"key": "#{CONTRACT_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"eosdactokens","permission":"eosio.code"},"weight":1}]}' owner -p eosdactokens)
+    run? %(cleos set account permission eosdactokens active '{"threshold": 1,"keys": [],"accounts": [{"permission":{"actor":"dacauthority","permission":"active"},"weight":1}]}' owner -p eosdactokens)
+    run? %(cleos set account permission eosdactokens owner '{"threshold": 1,"keys": [],"accounts": [{"permission":{"actor":"dacauthority","permission":"active"},"weight":1}]}' '' -p eosdactokens@owner)
     run? %(cleos set account permission daccustodian active '{"threshold": 1,"keys": [{"key": "#{CONTRACT_PUBLIC_KEY}","weight": 1}],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1}]}' owner -p daccustodian)
     run? %(cleos set account permission eosdacthedac xfer '{"threshold": 1,"keys": [],"accounts": [{"permission":{"actor":"daccustodian","permission":"eosio.code"},"weight":1},{"permission":{"actor":"dacproposals","permission":"eosio.code"},"weight":1}]}' active -p eosdacthedac@active)
     run? %(cleos set account permission eosdacthedac active '{"threshold": 1,"keys": [],"accounts": [{"permission":{"actor":"dacproposals","permission":"eosio.code"},"weight":1}]}' owner -p eosdacthedac@owner)
+    run? %(cleos set account permission eosdactokens notify '{"threshold": 1,"keys": [],"accounts": [{"permission":{"actor":"eosdactokens","permission":"eosio.code"},"weight":1}]}' active -p eosdactokens )
+
+    run %(cleos set action permission eosdactokens daccustodian transferobsv notify)
+    run %(cleos set action permission eosdactokens daccustodian capturestake notify)
 
     # Set action permission for the voteprop
     run? %(cleos set action permission dacauthority dacproposals voteprop one)
