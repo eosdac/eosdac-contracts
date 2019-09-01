@@ -82,6 +82,7 @@ void daccustodian::balanceobsv(vector<account_balance_delta> account_balance_del
     for (account_balance_delta abd : account_balance_deltas) {
         auto existingVote = votes_cast_by_members.find(abd.account.value);
         if (existingVote != votes_cast_by_members.end()) {
+            check(dac.symbol.get_symbol() == abd.balance_delta.symbol, "ERR::INCORRECT_SYMBOL_DELTA::Incorrect symbol in balance_delta");
             updateVoteWeights(existingVote->candidates, abd.balance_delta.amount, dac_id, currentState);
             currentState.total_weight_of_votes += abd.balance_delta.amount;
         }
