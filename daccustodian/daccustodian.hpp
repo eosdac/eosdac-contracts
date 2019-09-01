@@ -95,7 +95,9 @@ namespace eosdac {
             indexed_by<"byproxy"_n, const_mem_fun<vote, uint64_t, &vote::by_proxy> >
     > votes_table;
 
-    struct [[eosio::table("pendingpay"), eosio::contract("daccustodian")]] pay {
+    // Old table start
+
+    struct [[eosio::table("pendingpay"), eosio::contract("daccustodian")]] payold {
         uint64_t key;
         name receiver;
         asset quantity;
@@ -105,9 +107,36 @@ namespace eosdac {
         uint64_t byreceiver() const { return receiver.value; }
     };
 
-    typedef multi_index<"pendingpay"_n, pay,
-            indexed_by<"byreceiver"_n, const_mem_fun<pay, uint64_t, &pay::byreceiver> >
-    > pending_pay_table;
+    typedef multi_index<"pendingpay"_n, payold,
+                        indexed_by<"byreceiver"_n, const_mem_fun<payold, uint64_t, &payold::byreceiver>>>
+        pending_pay_table_old;
+
+    //old table end
+
+    struct [[ eosio::table("pendingpay2"), eosio::contract("daccustodian") ]] pay
+    {
+        uint64_t key;
+        name receiver;
+        extended_asset quantity;
+        time_point_sec due_date; // If there is a value here that indicates that a deferred transaction has been scheduled and that other new amounts should be added to this record.
+
+        static checksum256 getIndex(const name &receiver, const extended_symbol &symbol)
+        {
+            return combine_ids(receiver.value, symbol.get_contract().value, symbol.get_symbol().code().raw(), 0);
+        }
+
+        uint64_t primary_key() const { return key; }
+        uint64_t byreceiver() const { return receiver.value; }
+        checksum256 byreceiver_and_symbol() const { return getIndex(receiver, quantity.get_extended_symbol()); }
+
+        EOSLIB_SERIALIZE(pay, (key)(receiver)(quantity)(due_date))
+
+    };
+
+    typedef multi_index<"pendingpay2"_n, pay,
+                        indexed_by<"byreceiver"_n, const_mem_fun<pay, uint64_t, &pay::byreceiver>>,
+                        indexed_by<"receiversym"_n, const_mem_fun<pay, checksum256, &pay::byreceiver_and_symbol>>>
+        pending_pay_table;
 
     struct [[eosio::table("pendingstake"), eosio::contract("daccustodian")]] tempstake {
         name sender;
@@ -221,5 +250,11 @@ namespace eosdac {
                                                 
         permission_level getCandidatePermission(name account, name internal_dac_id);
         void validateUnstake(name code, name cand, name dac_id);
+
+        // Temporary actions for old pay processing
+        bool claimoldpaye_if_found(uint64_t payid, name dac_id);
+        bool removeoldpay_if_found(uint64_t payid, name dac_id);
+        bool rejectoldpay_if_found(uint64_t payid, name dac_id);
+        // end Temporary code for old payments processing
     };
 };

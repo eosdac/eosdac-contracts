@@ -393,6 +393,28 @@
                 },
                 {
                     "name": "quantity",
+                    "type": "extended_asset"
+                },
+                {
+                    "name": "due_date",
+                    "type": "time_point_sec"
+                }
+            ]
+        },
+        {
+            "name": "payold",
+            "base": "",
+            "fields": [
+                {
+                    "name": "key",
+                    "type": "uint64"
+                },
+                {
+                    "name": "receiver",
+                    "type": "name"
+                },
+                {
+                    "name": "quantity",
                     "type": "asset"
                 },
                 {
@@ -1010,6 +1032,13 @@
         },
         {
             "name": "pendingpay",
+            "type": "payold",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "pendingpay2",
             "type": "pay",
             "index_type": "i64",
             "key_names": [],
