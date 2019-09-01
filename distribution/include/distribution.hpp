@@ -1,8 +1,8 @@
-#include <eosiolib/eosio.hpp>
-#include <eosiolib/multi_index.hpp>
-#include <eosiolib/print.hpp>
-#include <eosiolib/asset.hpp>
-#include <eosiolib/symbol.hpp>
+#include <eosio/eosio.hpp>
+#include <eosio/multi_index.hpp>
+#include <eosio/print.hpp>
+#include <eosio/asset.hpp>
+#include <eosio/symbol.hpp>
 
 using namespace eosio;
 using namespace std;
