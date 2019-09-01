@@ -34,7 +34,7 @@ void daccustodian::modifyVoteWeights(name voter, vector<name> oldVotes, vector<n
 
     dacdir::dac found_dac = dacdir::dac_for_id(dac_id);
     name token_contract = found_dac.symbol.get_contract();
-    name vote_contract = found_dac.account_for_type(dacdir::VOTE);
+    name vote_contract = found_dac.account_for_type(dacdir::VOTE_WEIGHT);
 
     int64_t vote_weight = 0;
 

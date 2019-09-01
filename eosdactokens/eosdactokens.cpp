@@ -181,7 +181,7 @@ namespace eosdac {
     void eosdactokens::send_balance_notification(vector<account_balance_delta> account_weights, dacdir::dac dac){
 
         eosio::name custodian_contract = dac.account_for_type(dacdir::CUSTODIAN);
-        eosio::name vote_contract = dac.account_for_type(dacdir::VOTE);
+        eosio::name vote_contract = dac.account_for_type(dacdir::VOTE_WEIGHT);
 
         eosio::name balance_obsv_contract = custodian_contract;
         if (vote_contract && is_account(vote_contract)){
