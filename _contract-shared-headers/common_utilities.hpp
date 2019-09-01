@@ -20,9 +20,22 @@ namespace eosdac {
         return (uint128_t{x} << 64) | y;
     }
 
-    static const __uint128_t raw_from_extended_symbol(const extended_symbol &symbol) {
+    static const checksum256 combine_ids(const uint64_t &w, const uint64_t &x, const uint64_t &y, const uint64_t &z)
+    {
+        uint8_t arr[32];
+
+        std::memcpy(arr, &w, 8);
+        std::memcpy(arr + 8, &x, 8);
+        std::memcpy(arr + 16, &y, 8);
+        std::memcpy(arr + 24, &z, 8);
+        
+        return checksum256(arr);
+    }
+
+        static const __uint128_t
+        raw_from_extended_symbol(const extended_symbol &symbol)
+    {
         return (uint128_t{symbol.get_contract().value} << 64) | symbol.get_symbol().code().raw();
     }
 }
-
 #endif

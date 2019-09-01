@@ -20,6 +20,47 @@ namespace eosdac {
 #define TRANSFER_DELAY 60*60
 #endif
 
+    struct contr_config;
+    typedef eosio::singleton<"config2"_n, contr_config> configscontainer;
+
+    struct [[eosio::table("config2"), eosio::contract("daccustodian")]] contr_config {
+    //    The amount of assets that are locked up by each candidate applying for election.
+        eosio::extended_asset lockupasset;
+    //    The maximum number of votes that each member can make for a candidate.
+        uint8_t maxvotes = 5;
+    //    Number of custodians to be elected for each election count.
+        uint8_t numelected = 3;
+    //    Length of a period in seconds.
+    //     - used for pay calculations if an eary election is called and to trigger deferred `newperiod` calls.
+        uint32_t periodlength = 7 * 24 * 60 * 60;
+
+        // The contract will direct all payments via the service provider.
+        bool should_pay_via_service_provider;
+
+        // Amount of token value in votes required to trigger the initial set of custodians
+        uint32_t initial_vote_quorum_percent;
+
+        // Amount of token value in votes required to trigger the allow a new set of custodians to be set after the initial threshold has been achieved.
+        uint32_t vote_quorum_percent;
+
+        // required number of custodians required to approve different levels of authenticated actions.
+        uint8_t auth_threshold_high;
+        uint8_t auth_threshold_mid;
+        uint8_t auth_threshold_low;
+
+        // The time before locked up stake can be released back to the candidate using the unstake action
+        uint32_t lockup_release_time_delay;
+
+        eosio::extended_asset requested_pay_max;
+
+        static contr_config get_current_configs(eosio::name account, eosio::name scope) {
+            return configscontainer(account, scope.value).get_or_default(contr_config());
+        }
+        
+        void save(eosio::name account, eosio::name scope, eosio::name payer = same_payer) {
+            configscontainer(account, scope.value).set(*this, payer);
+        }
+    };
 
     struct contr_state;
     typedef eosio::singleton<"state"_n, contr_state> statecontainer;
@@ -54,7 +95,9 @@ namespace eosdac {
             indexed_by<"byproxy"_n, const_mem_fun<vote, uint64_t, &vote::by_proxy> >
     > votes_table;
 
-    struct [[eosio::table("pendingpay"), eosio::contract("daccustodian")]] pay {
+    // Old table start
+
+    struct [[eosio::table("pendingpay"), eosio::contract("daccustodian")]] payold {
         uint64_t key;
         name receiver;
         asset quantity;
@@ -64,9 +107,36 @@ namespace eosdac {
         uint64_t byreceiver() const { return receiver.value; }
     };
 
-    typedef multi_index<"pendingpay"_n, pay,
-            indexed_by<"byreceiver"_n, const_mem_fun<pay, uint64_t, &pay::byreceiver> >
-    > pending_pay_table;
+    typedef multi_index<"pendingpay"_n, payold,
+                        indexed_by<"byreceiver"_n, const_mem_fun<payold, uint64_t, &payold::byreceiver>>>
+        pending_pay_table_old;
+
+    //old table end
+
+    struct [[ eosio::table("pendingpay2"), eosio::contract("daccustodian") ]] pay
+    {
+        uint64_t key;
+        name receiver;
+        extended_asset quantity;
+        time_point_sec due_date; // If there is a value here that indicates that a deferred transaction has been scheduled and that other new amounts should be added to this record.
+
+        static checksum256 getIndex(const name &receiver, const extended_symbol &symbol)
+        {
+            return combine_ids(receiver.value, symbol.get_contract().value, symbol.get_symbol().code().raw(), 0);
+        }
+
+        uint64_t primary_key() const { return key; }
+        uint64_t byreceiver() const { return receiver.value; }
+        checksum256 byreceiver_and_symbol() const { return getIndex(receiver, quantity.get_extended_symbol()); }
+
+        EOSLIB_SERIALIZE(pay, (key)(receiver)(quantity)(due_date))
+
+    };
+
+    typedef multi_index<"pendingpay2"_n, pay,
+                        indexed_by<"byreceiver"_n, const_mem_fun<pay, uint64_t, &pay::byreceiver>>,
+                        indexed_by<"receiversym"_n, const_mem_fun<pay, checksum256, &pay::byreceiver_and_symbol>>>
+        pending_pay_table;
 
     struct [[eosio::table("pendingstake"), eosio::contract("daccustodian")]] tempstake {
         name sender;
@@ -141,7 +211,6 @@ namespace eosdac {
         ACTION regnotify(name type, name contract, name action, name dac_id);
         ACTION unregnotify(uint64_t key, name dac_id);
 
-
         /**
      * This action is used to register a custom permission that will be used in the multisig instead of active.
      *
@@ -179,5 +248,11 @@ namespace eosdac {
         void notifyListeners(name type, vector<char> notify_bytes, name dac_id);
         void notifyListeners(newperiod_notify &n, name dac_id);
         void notifyListeners(vote_notify &n, name dac_id);
+
+        // Temporary actions for old pay processing
+        bool claimoldpaye_if_found(uint64_t payid, name dac_id);
+        bool removeoldpay_if_found(uint64_t payid, name dac_id);
+        bool rejectoldpay_if_found(uint64_t payid, name dac_id);
+        // end Temporary code for old payments processing
     };
 };
