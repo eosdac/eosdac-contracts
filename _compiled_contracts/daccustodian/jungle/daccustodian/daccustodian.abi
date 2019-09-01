@@ -355,7 +355,7 @@
                 },
                 {
                     "name": "due_date",
-                    "type": "time_point_sec?"
+                    "type": "time_point_sec"
                 }
             ]
         },

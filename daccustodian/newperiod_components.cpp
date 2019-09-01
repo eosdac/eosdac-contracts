@@ -61,7 +61,7 @@ void daccustodian::distributeMeanPay(name dac_id) {
             checksum256 idx = pay::getIndex(cust.cust_name, total.get_extended_symbol());
             print("\ncreated a joint index : ", idx);
             auto itrr = pendingPayReceiverSymbolIndex.find(idx);
-            if (itrr != pendingPayReceiverSymbolIndex.end() && itrr->receiver == cust.cust_name && itrr->quantity.get_extended_symbol() == total.get_extended_symbol() && !(itrr->due_date))
+            if (itrr != pendingPayReceiverSymbolIndex.end() && itrr->receiver == cust.cust_name && itrr->quantity.get_extended_symbol() == total.get_extended_symbol() && itrr->due_date == time_point_sec{0})
             {
                 pendingPayReceiverSymbolIndex.modify(itrr, same_payer, [&](pay &p) {
                     print("\nAdding to existing amount with : ", extended_asset(meanAsset, total.contract));
@@ -69,12 +69,13 @@ void daccustodian::distributeMeanPay(name dac_id) {
                     p.quantity += extended_asset(meanAsset, total.contract);
                 });
             } else {
-                print("\n Creating to pending pay amount with : ", extended_asset(meanAsset, total.contract));
+                print("\n Creating pending pay amount with : ", extended_asset(meanAsset, total.contract));
 
                 pending_pay.emplace(auth_account, [&](pay &p) {
                     p.key = pending_pay.available_primary_key();
                     p.receiver = cust.cust_name;
                     p.quantity = extended_asset(meanAsset, total.contract);
+                    p.due_date = time_point_sec{0};
                 });
             }
         }

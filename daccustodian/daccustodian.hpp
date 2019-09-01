@@ -118,7 +118,7 @@ namespace eosdac {
         uint64_t key;
         name receiver;
         extended_asset quantity;
-        optional<time_point_sec> due_date; // If there is a value here that indicates that a deferred transaction has been scheduled and that other new amounts should be added to this record.
+        time_point_sec due_date; // If there is a value here that indicates that a deferred transaction has been scheduled and that other new amounts should be added to this record.
 
         static checksum256 getIndex(const name &receiver, const extended_symbol &symbol)
         {
