@@ -43,7 +43,7 @@ void daccustodian::claimpaye(uint64_t payid, name dac_id) {
             action(permission_level{token_holder, "xfer"_n},
                    configs.requested_pay_max.contract,
                    "transfer"_n,
-                   std::make_tuple(token_holder, payment_destination, payClaim.quantity, memo)
+                   std::make_tuple(token_holder, payment_destination, payClaim.quantity.quantity, memo)
             ));
 
     deferredTrans.actions.emplace_back(
