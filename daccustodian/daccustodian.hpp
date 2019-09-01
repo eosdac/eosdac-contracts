@@ -180,7 +180,10 @@ namespace eosdac {
         ACTION clearstake(name cand, asset new_value, name dac_id);
         ACTION migrate(uint16_t batch_size);
         ACTION clearold(uint16_t batch_size);
-
+#ifdef DEBUG
+        ACTION resetvotes(name voter, name dac_id);
+        ACTION resetcands(name dac_id);
+#endif
 
         /**
      * This action is used to register a custom permission that will be used in the multisig instead of active.
