@@ -71,7 +71,10 @@ void daccustodian::transferobsv(name from,
 void daccustodian::balanceobsv(vector<account_balance_delta> account_balance_deltas, name dac_id) {
     auto dac = dacdir::dac_for_id(dac_id);
     auto token_contract = dac.symbol.get_contract();
-    require_auth(token_contract);
+
+    auto vote_account = dac.account_for_type(dacdir::VOTE);
+
+    check(has_auth(token_contract) || has_auth(vote_account), "Must have auth of token or vote contract to call balanceobsv");
 
     votes_table votes_cast_by_members(_self, dac_id.value);
     contr_state currentState = contr_state::get_current_state(_self, dac_id);
