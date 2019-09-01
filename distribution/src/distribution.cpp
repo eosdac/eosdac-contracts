@@ -1,6 +1,6 @@
 #include <distribution.hpp>
 
-ACTION distribution::regdistri(name distri_id, name dac_id, name owner, name approver_account, extended_asset total_amount, uint8_t distri_type, string memo){
+void distribution::regdistri(name distri_id, name dac_id, name owner, name approver_account, extended_asset total_amount, uint8_t distri_type, string memo){
   
   require_auth(owner);
   check(distri_type < INVALID, "Distribution type out of bound. Use 0 = claim; 1 = send tokens");
@@ -26,7 +26,7 @@ ACTION distribution::regdistri(name distri_id, name dac_id, name owner, name app
   });
 }
 
-ACTION distribution::deldistrconf(name distri_id){
+void distribution::deldistrconf(name distri_id){
  
   districonf_table districonf_t(get_self(), get_self().value);
   auto districonf = districonf_t.find(distri_id.value);
@@ -39,7 +39,7 @@ ACTION distribution::deldistrconf(name distri_id){
   districonf_t.erase(districonf);
 }
 
-ACTION distribution::approve(name distri_id){
+void distribution::approve(name distri_id){
   
   districonf_table districonf_t(get_self(), get_self().value);
   auto districonf = districonf_t.find(distri_id.value);
@@ -57,7 +57,7 @@ ACTION distribution::approve(name distri_id){
   
 }
 
-ACTION distribution::populate(name distri_id, vector <dropdata> data, bool allow_modify){
+void distribution::populate(name distri_id, vector <dropdata> data, bool allow_modify){
   
   districonf_table districonf_t(get_self(), get_self().value);
   auto existing_distri = districonf_t.find(distri_id.value);
@@ -121,7 +121,7 @@ ACTION distribution::populate(name distri_id, vector <dropdata> data, bool allow
   }
 }
 
-ACTION distribution::empty(name distri_id, uint8_t batch_size){
+void distribution::empty(name distri_id, uint8_t batch_size){
   
   districonf_table districonf_t(get_self(), get_self().value);
   auto existing_distri = districonf_t.find(distri_id.value);
@@ -141,7 +141,7 @@ ACTION distribution::empty(name distri_id, uint8_t batch_size){
 
 }
 
-ACTION distribution::sendtokens(name distri_id, uint8_t batch_size){
+void distribution::sendtokens(name distri_id, uint8_t batch_size){
   
   districonf_table districonf_t(get_self(), get_self().value);
   auto existing_distri = districonf_t.find(distri_id.value);
@@ -177,7 +177,7 @@ ACTION distribution::sendtokens(name distri_id, uint8_t batch_size){
 
 }
 
-ACTION distribution::claim(name distri_id, name receiver){
+void distribution::claim(name distri_id, name receiver){
   require_auth(receiver);
   districonf_table districonf_t(get_self(), get_self().value);
   auto existing_distri = districonf_t.find(distri_id.value);
