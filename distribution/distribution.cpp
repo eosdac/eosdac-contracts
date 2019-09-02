@@ -1,5 +1,28 @@
 #include <distribution.hpp>
 
+void distribution::receive(name from, name to, asset quantity, string memo){
+    if (to != _self || from == "eosio"_n || from == "eosio.ram"_n || from == "eosio.stake"_n){
+        return;
+    }
+
+    check(memo.length() > 0 && memo.length() <= 12, "Invalid or missing distribution ID in memo");
+
+    name distri_id = name(memo);
+    districonf_table districonf_t(get_self(), get_self().value);
+    auto existing_distri = districonf_t.find(distri_id.value);
+    check(existing_distri != districonf_t.end(), "Distribution not found");
+
+    name receiving = get_first_receiver();
+    check(receiving == existing_distri->total_amount.contract, "Wrong contract");
+    check(quantity.symbol == existing_distri->total_amount.quantity.symbol, "Wrong symbol");
+
+    check(quantity + existing_distri->total_received <= existing_distri->total_amount.quantity, "Contribution is more than the total of the distribution");
+
+    districonf_t.modify(existing_distri, same_payer, [&](auto& d) {
+        d.total_received += quantity;
+    });
+}
+
 void distribution::regdistri(name distri_id, name dac_id, name owner, name approver_account, extended_asset total_amount, uint8_t distri_type, string memo){
   
     require_auth(owner);
@@ -21,12 +44,13 @@ void distribution::regdistri(name distri_id, name dac_id, name owner, name appro
         n.approved = 0;
         n.approver_account = approver_account;
         n.distri_type = distri_type;
+        n.total_received = asset( 0, total_amount.quantity.symbol );
         n.total_sent = asset( 0, total_amount.quantity.symbol );
         n.memo = memo;
     });
 }
 
-void distribution::deldistrconf(name distri_id){
+void distribution::unregdistri(name distri_id){
 
     districonf_table districonf_t(get_self(), get_self().value);
     auto districonf = districonf_t.find(distri_id.value);
@@ -114,13 +138,15 @@ void distribution::empty(name distri_id, uint8_t batch_size){
 
 }
 
-void distribution::sendtokens(name distri_id, uint8_t batch_size){
+void distribution::send(name distri_id, uint8_t batch_size){
 
     districonf_table districonf_t(get_self(), get_self().value);
     auto existing_distri = districonf_t.find(distri_id.value);
+
     check(existing_distri != districonf_t.end(), "Distribution config with this id doesn't exists.");
     check(existing_distri->approved == 1, "Distribution must be approved first.");
     check(existing_distri->distri_type == SENDABLE, "distri_type must be of type SENDABLE.");
+    check(existing_distri->total_received == existing_distri->total_amount.quantity, "Distribution has not been funded.");
 
     distri_table distri_t(get_self(), distri_id.value);
     check(distri_t.begin() != distri_t.end(), "Sending tokens completed, no more entries.");
@@ -153,9 +179,11 @@ void distribution::claim(name distri_id, name receiver){
     require_auth(receiver);
     districonf_table districonf_t(get_self(), get_self().value);
     auto existing_distri = districonf_t.find(distri_id.value);
+
     check(existing_distri != districonf_t.end(), "Distribution config with this id doesn't exists.");
     check(existing_distri->approved == 1, "Distribution must be approved first.");
     check(existing_distri->distri_type == CLAIMABLE, "distri_type must be of type CLAIMABLE.");
+    check(existing_distri->total_received == existing_distri->total_amount.quantity, "Distribution has not been funded.");
 
     distri_table distri_t(get_self(), distri_id.value);
     auto claim_entry = distri_t.find(receiver.value);

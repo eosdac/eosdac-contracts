@@ -28,16 +28,6 @@
             ]
         },
         {
-            "name": "deldistrconf",
-            "base": "",
-            "fields": [
-                {
-                    "name": "distri_id",
-                    "type": "name"
-                }
-            ]
-        },
-        {
             "name": "distri",
             "base": "",
             "fields": [
@@ -85,6 +75,10 @@
                 },
                 {
                     "name": "total_sent",
+                    "type": "asset"
+                },
+                {
+                    "name": "total_received",
                     "type": "asset"
                 },
                 {
@@ -174,7 +168,7 @@
             ]
         },
         {
-            "name": "sendtokens",
+            "name": "send",
             "base": "",
             "fields": [
                 {
@@ -184,6 +178,16 @@
                 {
                     "name": "batch_size",
                     "type": "uint8"
+                }
+            ]
+        },
+        {
+            "name": "unregdistri",
+            "base": "",
+            "fields": [
+                {
+                    "name": "distri_id",
+                    "type": "name"
                 }
             ]
         }
@@ -200,11 +204,6 @@
             "ricardian_contract": ""
         },
         {
-            "name": "deldistrconf",
-            "type": "deldistrconf",
-            "ricardian_contract": ""
-        },
-        {
             "name": "empty",
             "type": "empty",
             "ricardian_contract": ""
@@ -217,11 +216,16 @@
         {
             "name": "regdistri",
             "type": "regdistri",
+            "ricardian_contract": "## ACTION: regdistri\n**PARAMETERS:**\n* __distri_id__ A uniue name for this distribution.\n* __dac_id__ The dac id, as registered in the directory contract.\n* __owner__ The owner of the distribution.\n* __approver_account__ The account which is required to approve the distribution.\n* __total_amount__ The total amount of the distribution.\n* __distri_type__ The type of distribution, either claim (0) or send (1)\n* __memo__ The memo to be sent with the distribution.\n\n`regdistri` will register a new distribution"
+        },
+        {
+            "name": "send",
+            "type": "send",
             "ricardian_contract": ""
         },
         {
-            "name": "sendtokens",
-            "type": "sendtokens",
+            "name": "unregdistri",
+            "type": "unregdistri",
             "ricardian_contract": ""
         }
     ],

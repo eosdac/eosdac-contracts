@@ -24,28 +24,31 @@ CONTRACT distribution : public contract {
         };
 
          ACTION regdistri(name distri_id, name dac_id, name owner, name approver_account, extended_asset total_amount, uint8_t distri_type, string memo);
-         ACTION deldistrconf(name distri_id);
+         ACTION unregdistri(name distri_id);
          ACTION approve(name distri_id);
 
          ACTION populate(name distri_id, vector <dropdata> data, bool allow_modify);
          ACTION empty(name distri_id, uint8_t batch_size);
-         ACTION sendtokens(name distri_id, uint8_t batch_size);
+         ACTION send(name distri_id, uint8_t batch_size);
          ACTION claim(name distri_id, name receiver);
+
+         [[eosio::on_notify("eosio.token::transfer")]]
+         void receive(name from, name to, asset quantity, string memo);
 
     private:
 
         //table to hold distribution configs/state
         TABLE districonf {
-
-            name distri_id;
-            name dac_id;
-            name owner;
-            bool approved; //default false
-            uint8_t distri_type;
-            name approver_account;
-            extended_asset total_amount;
-            asset total_sent;//update by each claim/sendtokens
-            string memo;
+            name            distri_id;
+            name            dac_id;
+            name            owner;
+            bool            approved; //default false
+            uint8_t         distri_type;
+            name            approver_account;
+            extended_asset  total_amount;
+            asset           total_sent;       // update by each claim/sendtokens
+            asset           total_received;   // updated when tokens are sent to the contract
+            string          memo;
 
             uint64_t primary_key() const { return distri_id.value; }
             uint64_t by_dac_id() const { return dac_id.value; }
