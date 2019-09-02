@@ -57,68 +57,41 @@ void distribution::approve(name distri_id){
   
 }
 
-void distribution::populate(name distri_id, vector <dropdata> data, bool allow_modify){
-  
-  districonf_table districonf_t(get_self(), get_self().value);
-  auto existing_distri = districonf_t.find(distri_id.value);
-  check(existing_distri != districonf_t.end(), "Distribution config with this id doesn't exists.");
-  require_auth(existing_distri->owner);
-  check(existing_distri->approved == 0, "Can't populate an already approved distribution list.");
-  
-  distri_table distri_t(get_self(), distri_id.value);
+void distribution::populate(name distri_id, vector<dropdata> data, bool allow_modify){
+
+    districonf_table districonf_t(get_self(), get_self().value);
+    auto existing_distri = districonf_t.find(distri_id.value);
+
+    check(existing_distri != districonf_t.end(), "Distribution config with this id doesn't exist.");
+    check(existing_distri->approved == 0, "Can't populate an already approved distribution list.");
+
+    require_auth(existing_distri->owner);
+
+    distri_table distri_t(get_self(), distri_id.value);
 
 
-  name rampayer = existing_distri->owner;
+    name rampayer = existing_distri->owner;
   
-  for (dropdata dropitem: data) {
-      check(dropitem.amount.amount > 0, "Amount must be greater then zero.");
-      check(dropitem.amount.symbol == existing_distri->total_amount.quantity.symbol, "Symbol doesn't match the distribution config.");
-  
-      if(allow_modify){
+    for (dropdata dropitem: data) {
+        check(dropitem.amount.amount > 0, "Amount must be greater then zero.");
+        check(dropitem.amount.symbol == existing_distri->total_amount.quantity.symbol, "Symbol doesn't match the distribution config.");
+
         auto existing_entry = distri_t.find(dropitem.receiver.value);
-        
-        if(existing_entry == distri_t.end() ){
-          //new entry
-          distri_t.emplace(rampayer, [&](auto& n) {
-            n.receiver = dropitem.receiver;
-            n.amount = dropitem.amount;
-          });
+        if (existing_entry == distri_t.end()){
+            //new entry - always allowed
+            distri_t.emplace(rampayer, [&](auto& n) {
+                n.receiver = dropitem.receiver;
+                n.amount = dropitem.amount;
+            });
         }
-        else{
-          //existing entry
-          distri_t.modify(existing_entry, same_payer, [&](auto& n) {
-            n.amount = dropitem.amount;
-          });
-          
+        else if (allow_modify){
+            //existing entry and allowed to modify
+            distri_t.modify(existing_entry, same_payer, [&](auto& n) {
+                n.amount = dropitem.amount;
+            });
         }
-      }
-      else{
-  
-        distri_t.emplace(rampayer, [&](auto& n) {
-          n.receiver = dropitem.receiver;
-          n.amount = dropitem.amount;
-        });
-      }
-  
-      auto existing_entry = distri_t.find(dropitem.receiver.value);
 
-      if(existing_entry == distri_t.end() ){
-        //new entry
-        distri_t.emplace(rampayer, [&](auto& n) {
-          n.receiver = dropitem.receiver;
-          n.amount = dropitem.amount;
-        });
-      }
-      else{
-        //existing entry
-        check(allow_modify, "Modify existing entry not allowed.");
-        
-        distri_t.modify(existing_entry, same_payer, [&](auto& n) {
-          n.amount = dropitem.amount;
-        });
-        
-      }
-  }
+    }
 }
 
 void distribution::empty(name distri_id, uint8_t batch_size){
