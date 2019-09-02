@@ -11,7 +11,7 @@
 
 namespace eosdac {
 
-    ACTION dacproposals::createprop(name proposer, string title, string summary, name arbitrator, extended_asset pay_amount, string content_hash, uint64_t id, uint16_t category, name dac_id){
+    ACTION dacproposals::createprop(name proposer, string title, string summary, name arbitrator, extended_asset pay_amount, string content_hash, uint64_t id, uint16_t category, uint32_t job_duration, uint32_t approval_duration, name dac_id){
         require_auth(proposer);
         assertValidMember(proposer, dac_id);
         proposal_table proposals(_self, dac_id.value);
@@ -37,7 +37,8 @@ namespace eosdac {
             p.pay_amount = pay_amount;
             p.state = ProposalStatePending_approval;
             p.category = category;
-            p.expiry = time_point_sec(current_time_point().sec_since_epoch()) + current_configs(dac_id).approval_expiry;   
+            p.job_duration = job_duration;
+            p.expiry = time_point_sec(current_time_point().sec_since_epoch()) + approval_duration;
         });
     }
 
@@ -205,7 +206,7 @@ namespace eosdac {
         check(is_account(treasury), "ERR::TREASURY_ACCOUNT_NOT_FOUND::Treasury account not found");
         check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
         
-        auto inittuple = make_tuple(treasury, prop.proposer, prop.arbitrator, time_now + configs.escrow_expiry, memo, proposal_id, 0);
+        auto inittuple = make_tuple(treasury, prop.proposer, prop.arbitrator, time_now + prop.job_duration, memo, proposal_id, 0);
 
         eosio::action(
                 eosio::permission_level{ treasury, "escrow"_n },
