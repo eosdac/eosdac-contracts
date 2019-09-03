@@ -366,7 +366,8 @@ uint8_t referendum::calculateStatus(uint64_t referendum_id, name dac_id) {
         // check we have made quorum
         if ((ref->type == count_type::COUNT_TOKEN && total_tokens >= quorum_token) || (ref->type == count_type::COUNT_ACCOUNT && total_accounts >= quorum_account)){
             // quorum has been reached, check we have passed
-            print("quorum reached ");
+            status = referendum_status::STATUS_ATTENTION;
+
             yes_percentage = uint64_t((double(current_yes) / double(current_all)) * 10000.0); // multiply by 10000 to get integer with 2 dp
             if (yes_percentage >= pass_rate){
                 status = referendum_status::STATUS_PASSING;

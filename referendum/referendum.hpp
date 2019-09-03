@@ -43,7 +43,8 @@ CONTRACT referendum : public contract {
             STATUS_OPEN = 0,
             STATUS_PASSING = 1,
             STATUS_EXPIRED = 2,
-            STATUS_INVALID = 3
+            STATUS_ATTENTION = 3,
+            STATUS_INVALID = 4
         };
 
 
