@@ -100,6 +100,7 @@ void referendum::propose(
     checksum256 trx_id = sha256(buffer, read);
 
     // Save to database
+    uint64_t referendum_id = nextID(trx_id);
     referenda_table referenda(get_self(), dac_id.value);
     referenda.emplace(proposer, [&](referendum_data& r){
         std::map<uint8_t, uint64_t> token_votes = {
@@ -113,7 +114,7 @@ void referendum::propose(
                 {vote_choice::VOTE_ABSTAIN, 0}
         };
 
-        r.referendum_id = referenda.available_primary_key();
+        r.referendum_id = referendum_id;
         r.proposer =      proposer;
         r.type =          type;
         r.voting_type =   voting_type;
@@ -433,4 +434,14 @@ void referendum::proposeMsig(referendum_data ref, name dac_id){
             make_tuple( auth_account, proposal_name, metadata, dac_id )
     ).send();
 
+}
+
+uint64_t referendum::nextID(checksum256 trxid){
+    uint64_t id = 0;
+
+    uint32_t time_now = current_time_point().sec_since_epoch();
+    id |= uint64_t{time_now} << 32;
+    id |= static_cast<uint32_t>(trxid.data()[0]);
+
+    return id;
 }
