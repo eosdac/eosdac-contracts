@@ -253,8 +253,14 @@ void referendum::exec(uint64_t referendum_id, name dac_id){
     check(ref->acts.size(), "ERR::NO_ACTION::No action to execute");
     check(ref->status == referendum_status::STATUS_PASSING, "ERR:REFERENDUM_NOT_PASSED::Referendum has not passed required number of yes votes");
 
-    for (auto a: ref->acts) {
-        a.send();
+
+    if (ref->type == vote_type::TYPE_BINDING){
+        for (auto a: ref->acts) {
+            a.send();
+        }
+    }
+    else if (ref->type == vote_type::TYPE_SEMI_BINDING){
+        proposeMsig(*ref, dac_id);
     }
 
     referenda.erase(ref);
@@ -385,3 +391,46 @@ uint8_t referendum::calculateStatus(uint64_t referendum_id, name dac_id) {
     return status;
 }
 
+
+void referendum::proposeMsig(referendum_data ref, name dac_id){
+    auto dac = dacdir::dac_for_id(dac_id);
+    auto custodian_contract = dac.account_for_type(dacdir::CUSTODIAN);
+    auto msig_contract = dac.account_for_type(dacdir::MSIGS);
+    auto auth_account = dac.account_for_type(dacdir::AUTH);
+
+    transaction trx;
+    trx.actions = ref.acts;
+
+    // Get required auths
+    candidates_table candidates(custodian_contract, dac_id.value);
+    auto cand_idx = candidates.get_index<"byvotesrank"_n>();
+    auto cand_itr = cand_idx.begin();
+
+    name proposal_name = name{ref.referendum_id};
+
+    vector<permission_level> reqd_perms;
+
+    uint8_t count = 0;
+    uint8_t num_reqs = 24;// TODO : read config to get number of custodians * 2
+    while (count < num_reqs && cand_itr != cand_idx.end()){
+        reqd_perms.push_back(permission_level{cand_itr->candidate_name, "active"_n}); // TODO : Read custom permission
+//        print(" Adding ", cand_itr->candidate_name);
+
+        cand_itr++;
+        count++;
+    }
+
+    action(
+            permission_level{auth_account, "referendum"_n},
+            "eosiomsigold"_n, "propose"_n,
+            make_tuple( auth_account, proposal_name, reqd_perms, trx )
+    ).send();
+
+    string metadata = "{\"title\":\"REFERENDUM: " + ref.title + "\", \"description\":\"Automated submission of passing referendum number " + to_string(ref.referendum_id) + "\"}";
+    action(
+            permission_level{auth_account, "admin"_n},
+            msig_contract, "proposede"_n,
+            make_tuple( auth_account, proposal_name, metadata, dac_id )
+    ).send();
+
+}

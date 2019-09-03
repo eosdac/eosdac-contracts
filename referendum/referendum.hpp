@@ -12,6 +12,7 @@
 
 #include "../_contract-shared-headers/eosdactokens_shared.hpp"
 #include "../_contract-shared-headers/dacdirectory_shared.hpp"
+#include "../_contract-shared-headers/daccustodian_shared.hpp"
 
 using namespace eosio;
 using namespace eosdac;
@@ -55,8 +56,8 @@ CONTRACT referendum : public contract {
 
 
         struct config_item;
-        typedef eosio::singleton<"config"_n, config_item> config_container;
-        struct [[eosio::table("config"), eosio::contract("referendum")]] config_item {
+        typedef eosio::singleton<"config3"_n, config_item> config_container;
+        struct [[eosio::table("config3"), eosio::contract("referendum")]] config_item {
             // Key for all the maps is vote_type
             map<uint8_t, extended_asset> fee;
             map<uint8_t, uint16_t> pass; // Percentage with 2 decimal places, eg. 1001 == 10.01%
@@ -74,7 +75,7 @@ CONTRACT referendum : public contract {
         };
 
 
-        struct [[eosio::table("referenda"), eosio::contract("referendum")]] referendum_data {
+        struct [[eosio::table("referenda5"), eosio::contract("referendum")]] referendum_data {
             uint64_t                    referendum_id;
             name                        proposer;
             uint8_t                     type;
@@ -93,7 +94,7 @@ CONTRACT referendum : public contract {
         /* Have to use EOSLIB_SERIALIZE to work around problems with boost deserialization */
         EOSLIB_SERIALIZE(referendum_data, (referendum_id) (proposer) (type) (voting_type) (status)
                                           (title) (content_ref) (token_votes) (account_votes) (expires) (acts));
-        typedef eosio::multi_index<"referenda"_n, referendum_data,
+        typedef eosio::multi_index<"referenda5"_n, referendum_data,
                 indexed_by<"byproposer"_n, const_mem_fun<referendum_data, uint64_t, &referendum_data::by_proposer> >
         > referenda_table;
 
@@ -110,14 +111,14 @@ CONTRACT referendum : public contract {
 
 
 
-        struct [[eosio::table("deposits"), eosio::contract("referendum")]] deposit_info {
+        struct [[eosio::table("deposits2"), eosio::contract("referendum")]] deposit_info {
             name           account;
             extended_asset deposit;
 
             uint64_t primary_key() const { return account.value; }
             uint128_t by_sym() const { return (uint128_t{deposit.contract.value} << 64) | deposit.get_extended_symbol().get_symbol().raw(); };
         };
-        typedef eosio::multi_index<"deposits"_n, deposit_info,
+        typedef eosio::multi_index<"deposits2"_n, deposit_info,
                 indexed_by<"bysym"_n, const_mem_fun<deposit_info, uint128_t, &deposit_info::by_sym> >
         > deposits_table;
 
@@ -138,6 +139,7 @@ CONTRACT referendum : public contract {
         }
         bool hasAuth(vector<action> acts);
         uint8_t calculateStatus(uint64_t referendum_id, name dac_id);
+        void proposeMsig(referendum_data ref, name dac_id);
 
 
     public:
