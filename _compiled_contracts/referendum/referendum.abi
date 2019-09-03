@@ -427,21 +427,21 @@
     ],
     "tables": [
         {
-            "name": "config3",
+            "name": "config",
             "type": "config_item",
             "index_type": "i64",
             "key_names": [],
             "key_types": []
         },
         {
-            "name": "deposits2",
+            "name": "deposits",
             "type": "deposit_info",
             "index_type": "i64",
             "key_names": [],
             "key_types": []
         },
         {
-            "name": "referenda5",
+            "name": "referenda",
             "type": "referendum_data",
             "index_type": "i64",
             "key_names": [],
