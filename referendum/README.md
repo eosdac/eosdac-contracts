@@ -45,10 +45,19 @@ A fee is configurable for each type of referendum, this must be sent to the refe
 
 When executing actions directly, the referendum contract must must satisfy those permissions by itself.
 
-When submitting a multisig for approval to the custodians, the contract will use the permission `[custodian]@admin`.  This is a permission that must be added under `@one` and be linked to `eosio.msig::propose` and `[dacmsig]::proposede`.
+When submitting a multisig for approval to the custodians, the contract will use the permission `[authority]@admin`.  This is a permission that must be added under `@one` and be linked to `[dacmsig]::proposede`.
+
+`cleos set account permission --add-code [custodian] admin [this contract] one`
 
 The authority account have the premission `@referendum` which is satisfied by this contract and is linked to `eosio.msig::propose`.
 
-This account must also have a `@referendum` permission which is linked to `[dacmsig]::proposede`.
+This account must also have a `@referendum` permission which is linked to `eosio.msig::propose`.
+
+`cleos set account permission --add-code [this account] referendum [this account] active`
+`cleos set action permission [this account] eosio.msig propose referendum`
 
 For all other actions which could be proposed in a semi-binding constitution, you must make sure that they can be satisfied by the contract `@eosio.code` permission.
+
+The `@active` permission of this contract should be satisfyable by `@eosio.code`
+
+`cleos set account permission --add-code [this account] active [this account] owner`
