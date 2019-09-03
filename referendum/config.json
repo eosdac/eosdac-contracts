@@ -2,8 +2,8 @@
   [
     [
       {"key": 0, "value": {"contract": "eosio.token", "quantity": "100.0000 EOS"}},
-      {"key": 0, "value": {"contract": "eosio.token", "quantity": "10.0000 EOS"}},
-      {"key": 0, "value": {"contract": "eosio.token", "quantity": "0.0000 EOS"}}
+      {"key": 1, "value": {"contract": "eosio.token", "quantity": "10.0000 EOS"}},
+      {"key": 2, "value": {"contract": "eosio.token", "quantity": "0.0000 EOS"}}
     ],
     [
       {"key": 0, "value": 6000},
