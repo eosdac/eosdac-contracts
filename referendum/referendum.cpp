@@ -447,7 +447,10 @@ uint64_t referendum::nextID(checksum256 trxid){
 
     uint32_t time_now = current_time_point().sec_since_epoch();
     id |= uint64_t{time_now} << 32;
-    id |= static_cast<uint32_t>(trxid.data()[0]);
+    id |= static_cast<uint32_t>(trxid.data()[0]) << 24;
+    id |= static_cast<uint32_t>(trxid.data()[1]) << 16;
+    id |= static_cast<uint32_t>(trxid.data()[2]) << 8;
+    id |= static_cast<uint32_t>(trxid.data()[3]);
 
     return id;
 }
