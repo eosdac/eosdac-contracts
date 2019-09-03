@@ -411,8 +411,10 @@ void referendum::proposeMsig(referendum_data ref, name dac_id){
 
     vector<permission_level> reqd_perms;
 
+    contr_config custodian_config = contr_config::get_current_configs(custodian_contract, dac_id);
+
     uint8_t count = 0;
-    uint8_t num_reqs = 24;// TODO : read config to get number of custodians * 2
+    uint8_t num_reqs = custodian_config.numelected * 2;
     while (count < num_reqs && cand_itr != cand_idx.end()){
         reqd_perms.push_back(permission_level{cand_itr->candidate_name, "active"_n}); // TODO : Read custom permission
 //        print(" Adding ", cand_itr->candidate_name);
