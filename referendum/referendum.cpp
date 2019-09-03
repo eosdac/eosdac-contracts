@@ -425,7 +425,7 @@ void referendum::proposeMsig(referendum_data ref, name dac_id){
 
     action(
             permission_level{get_self(), "referendum"_n},
-            "eosiomsigold"_n, "propose"_n,
+            name(SYSTEM_MSIG_CONTRACT), "propose"_n,
             make_tuple( get_self(), proposal_name, reqd_perms, trx )
     ).send();
 

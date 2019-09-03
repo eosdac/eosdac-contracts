@@ -14,6 +14,8 @@
 #include "../_contract-shared-headers/dacdirectory_shared.hpp"
 #include "../_contract-shared-headers/daccustodian_shared.hpp"
 
+#define SYSTEM_MSIG_CONTRACT "eosiomsigold"
+
 using namespace eosio;
 using namespace eosdac;
 using namespace std;
