@@ -402,6 +402,10 @@ void referendum::proposeMsig(referendum_data ref, name dac_id){
     transaction trx;
     trx.actions = ref.acts;
 
+    // Calculate expiry as 30 days
+    uint32_t time_now = current_time_point().sec_since_epoch();
+    trx.expiration = time_point_sec(time_now + (60 * 60 * 24 * 60));
+
     // Get required auths
     candidates_table candidates(custodian_contract, dac_id.value);
     auto cand_idx = candidates.get_index<"byvotesrank"_n>();
