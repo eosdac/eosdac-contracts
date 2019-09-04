@@ -288,7 +288,7 @@ void referendum::stakeobsv(vector<account_stake_delta> stake_deltas, name dac_id
 
                 if (ref != referenda.end()){
                     referenda.modify(ref, same_payer, [&](referendum_data& r){
-                        r.token_votes[v.second] -= asd.stake_delta.amount;
+                        r.token_votes[v.second] += asd.stake_delta.amount;
                     });
                 }
             }
