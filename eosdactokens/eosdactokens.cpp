@@ -1,9 +1,4 @@
 #include "eosdactokens.hpp"
-#include "../_contract-shared-headers/daccustodian_shared.hpp"
-#include "../_contract-shared-headers/dacdirectory_shared.hpp"
-#include "../_contract-shared-headers/migration_helpers.hpp"
-#include <eosio/eosio.hpp>
-
 
 #include <algorithm>
 
@@ -141,6 +136,14 @@ namespace eosdac {
         check(quantity.amount > 0, "ERR::TRANSFER_NON_POSITIVE_QTY::must transfer positive quantity");
         check(quantity.symbol == st.supply.symbol, "ERR::TRANSFER_SYMBOL_MISMATCH::symbol precision mismatch");
         check(memo.size() <= 256, "ERR::TRANSFER_MEMO_TOO_LONG::memo has more than 256 bytes");
+
+        // Check transfer doesnt exceed stake
+        stake_config stakeconfig = stake_config::get_current_configs(get_self(), dac.dac_id);
+        if (stakeconfig.enabled){
+            asset liquid = get_liquid(from, quantity.symbol.code());
+
+            check(quantity <= liquid, "ERR::BALANCE_STAKED::Attempt to transfer more than liquid balance, unstake first");
+        }
 
         auto payer = has_auth( to ) ? to : from;
 
@@ -293,6 +296,239 @@ namespace eosdac {
         check( it->balance.amount == 0, "ERR::CLOSE_NON_ZERO_BALANCE::Cannot close because the balance is not zero." );
         acnts.erase( it );
     }
+
+
+
+    void eosdactokens::stake(name account, asset quantity){
+        require_auth(account);
+        dacdir::dac dac = dacdir::dac_for_symbol(extended_symbol{quantity.symbol, get_self()});
+        eosio::name custodian_contract = dac.account_for_type(dacdir::CUSTODIAN);
+
+        stake_config config = stake_config::get_current_configs(get_self(), dac.dac_id);
+        check(config.enabled, "ERR::STAKING_NOT_ENABLED::Staking is not enabled for this token");
+
+        check(quantity.is_valid(), "ERR::STAKE_INVALID_QTY::Invalid quantity supplied");
+        check(quantity.amount > 0, "ERR::STAKE_NON_POSITIVE_QTY::Stake amount must be greater than 0");
+
+        stakes_table stakes(get_self(), dac.dac_id.value);
+        unstakes_table unstakes(get_self(), dac.dac_id.value);
+        auto existing_stake = stakes.find(account.value);
+        auto unstakes_idx = unstakes.get_index<"byaccount"_n>();
+
+        asset liquid = get_liquid(account, quantity.symbol.code());
+
+        check(liquid >= quantity, "ERR::STAKE_MORE_LIQUID::Attempting to stake more than your liquid balance");
+
+        add_stake(account, quantity, dac.dac_id);
+
+        // notify of stake delta
+        notify_stake_delta(account, quantity, dac);
+    }
+
+    void eosdactokens::unstake(name account, asset quantity){
+        require_auth(account);
+
+        dacdir::dac dac = dacdir::dac_for_symbol(extended_symbol{quantity.symbol, get_self()});
+        stakes_table stakes(get_self(), dac.dac_id.value);
+        unstakes_table unstakes(get_self(), dac.dac_id.value);
+        stake_config config = stake_config::get_current_configs(get_self(), dac.dac_id);
+
+        check(config.enabled, "ERR::STAKING_NOT_ENABLED::Staking is not enabled for this token");
+        check(quantity.is_valid(), "ERR::STAKE_INVALID_QTY::Invalid quantity supplied");
+        check(quantity.amount > 0, "ERR::UNSTAKE_NON_POSITIVE_QTY::Unstake amount must be greater than 0");
+
+        auto existing_stake = stakes.find(account.value);
+        check(existing_stake != stakes.end(), "ERR:NO_STAKE_FOUND::No stake found");
+        check(existing_stake->stake >= quantity, "ERR::UNSTAKE_OVER::Quantity to unstake is more than staked amount");
+
+        uint32_t unstake_delay = config.min_stake_time;
+        staketimes_table staketimes(get_self(), dac.dac_id.value);
+        auto existing_staketime = staketimes.find(account.value);
+        if (existing_staketime != staketimes.end()){
+            unstake_delay = existing_staketime->delay;
+        }
+        uint32_t release_time = current_time_point().sec_since_epoch() + unstake_delay;
+
+        uint64_t next_id = unstakes.available_primary_key();
+        unstakes.emplace(account, [&](unstake_info& u){
+            u.key = next_id;
+            u.account = account;
+            u.stake = quantity;
+            u.release_time = time_point_sec(release_time);
+        });
+
+        // notify of stake delta
+        notify_stake_delta(account, -quantity, dac);
+
+        // Remove from stake
+        sub_stake(account, quantity, dac.dac_id);
+
+        // deferred transaction to refund
+        transaction trx;
+        trx.actions.push_back(
+            action(
+                permission_level{get_self(), "notify"_n},
+                get_self(), "refund"_n,
+                make_tuple( next_id, quantity.symbol )
+            )
+        );
+        trx.delay_sec = unstake_delay;
+        trx.send(uint128_t(next_id) << 64 | time_point_sec(current_time_point()).sec_since_epoch(), get_self());
+    }
+
+    void eosdactokens::staketime(name account, uint32_t unstake_time, symbol token_symbol){
+        require_auth(account);
+
+        dacdir::dac dac = dacdir::dac_for_symbol(extended_symbol{token_symbol, get_self()});
+        stake_config config = stake_config::get_current_configs(get_self(), dac.dac_id);
+        check(config.enabled, "ERR::STAKING_NOT_ENABLED::Staking is not enabled for this token");
+        staketimes_table staketimes(get_self(), dac.dac_id.value);
+        stakes_table stakes(get_self(), dac.dac_id.value);
+        unstakes_table unstakes(get_self(), dac.dac_id.value);
+        auto unstakes_idx = unstakes.get_index<"byaccount"_n>();
+
+        check(unstake_time <= config.max_stake_time, "ERR::TIME_GREATER_MAX::Unstake time is greater than the maximum");
+        check(unstake_time >= config.min_stake_time, "ERR::TIME_LESS_MIN::Unstake time is less than the minimum");
+
+        auto existing_stake = stakes.find(account.value);
+        auto existing_unstake = unstakes_idx.find(account.value);
+        auto existing_time = staketimes.find(account.value);
+        if ((existing_stake != stakes.end() || existing_unstake != unstakes_idx.end()) && existing_time != staketimes.end()){
+            check(existing_time->delay <= unstake_time,
+                    "ERR::CANNOT_REDUCE_STAKE_TIME::You cannot reduce the stake time if you have tokens staked or in the process of unstaking");
+        }
+
+        if (existing_time == staketimes.end()){
+            staketimes.emplace(account, [&](staketime_info& s){
+                s.account = account;
+                s.delay = unstake_time;
+            });
+        }
+        else {
+            staketimes.modify(*existing_time, account, [&](staketime_info& s){
+                s.delay = unstake_time;
+            });
+        }
+    }
+
+    void eosdactokens::stakeconfig(stake_config config, symbol token_symbol){
+        dacdir::dac dac = dacdir::dac_for_symbol(extended_symbol{token_symbol, get_self()});
+        eosio::name auth_account = dac.account_for_type(dacdir::AUTH);
+        require_auth(auth_account);
+
+        config.save(get_self(), dac.dac_id, get_self());
+    }
+
+    void eosdactokens::refund(uint64_t unstake_id, symbol token_symbol){
+        dacdir::dac dac = dacdir::dac_for_symbol(extended_symbol{token_symbol, get_self()});
+        unstakes_table unstakes(get_self(), dac.dac_id.value);
+        stakes_table stakes(get_self(), dac.dac_id.value);
+
+        auto us = unstakes.find(unstake_id);
+        check(us != unstakes.end(), "ERR::UNSTAKE_NOT_FOUND::Unstake not found");
+
+        uint32_t time_now = current_time_point().sec_since_epoch();
+        check(time_now >= us->release_time.sec_since_epoch(), "ERR::REFUND_NOT_DUE::Refund is not due yet");
+
+        // just removing the unstake will change the liquid balance, stake was removed at time of unstake
+        unstakes.erase(us);
+    }
+
+    void eosdactokens::cancel(uint64_t unstake_id, symbol token_symbol){
+        dacdir::dac dac = dacdir::dac_for_symbol(extended_symbol{token_symbol, get_self()});
+        unstakes_table unstakes(get_self(), dac.dac_id.value);
+
+        auto us = unstakes.find(unstake_id);
+        check(us != unstakes.end(), "ERR::UNSTAKE_NOT_FOUND::Unstake not found");
+
+        require_auth(us->account);
+
+        // Add stake back and delete the unstake so the liquid balance is correct
+        add_stake(us->account, us->stake, dac.dac_id);
+
+        notify_stake_delta(us->account, us->stake, dac);
+
+        unstakes.erase(us);
+    }
+
+    void eosdactokens::sub_stake(name account, asset value, name dac_id){
+        stakes_table stakes(get_self(), dac_id.value);
+        auto existing_stake = stakes.find(account.value);
+
+        if (existing_stake != stakes.end()){
+            if (existing_stake->stake == value){
+                stakes.erase(existing_stake);
+            }
+            else {
+                stakes.modify(*existing_stake, account, [&](stake_info& s){
+                    s.stake -= value;
+                });
+            }
+        }
+        else {
+            stakes.emplace(account, [&](stake_info& s){
+                s.account = account;
+                s.stake = value;
+            });
+        }
+    }
+
+    void eosdactokens::add_stake(name account, asset value, name dac_id){
+        stakes_table stakes(get_self(), dac_id.value);
+        auto existing_stake = stakes.find(account.value);
+
+        if (existing_stake != stakes.end()){
+            stakes.modify(*existing_stake, account, [&](stake_info& s){
+                s.stake += value;
+            });
+        }
+        else {
+            stakes.emplace(account, [&](stake_info& s){
+                s.account = account;
+                s.stake = value;
+            });
+        }
+    }
+
+    void eosdactokens::notify_stake_delta(name account, asset stake, dacdir::dac dac_inst){
+//        name custodian_contract = dac_inst.account_for_type(dacdir::CUSTODIAN);
+//        name vote_contract = dac_inst.account_for_type(8); //dacdir::VOTE_WEIGHT);
+//        name notify_contract = (vote_contract)?vote_contract:custodian_contract;
+//
+//        vector<account_stake_delta> stake_deltas = {
+//                {account, stake}
+//        };
+//        action(
+//                permission_level{get_self(), "notify"_n},
+//                notify_contract, "stakeobsv"_n,
+//                make_tuple( stake_deltas, dac_inst.dac_id )
+//        ).send();
+    }
+
+    asset eosdactokens::get_liquid(name owner, symbol_code sym) const {
+        dacdir::dac dac = dacdir::dac_for_symbol(extended_symbol{symbol{sym, 4}, get_self()});
+
+        stakes_table stakes(get_self(), dac.dac_id.value);
+        unstakes_table unstakes(get_self(), dac.dac_id.value);
+        auto unstakes_idx = unstakes.get_index<"byaccount"_n>();
+
+        asset liquid = get_balance(owner, sym);
+
+        auto existing_stake = stakes.find(owner.value);
+        if (existing_stake != stakes.end()){
+            liquid -= existing_stake->stake;
+        }
+        auto unstakes_itr = unstakes_idx.find(owner.value);
+        while (unstakes_itr != unstakes_idx.end()){
+            liquid -= unstakes_itr->stake;
+
+            unstakes_itr++;
+        }
+
+        return liquid;
+    }
+
+
 
     ACTION eosdactokens::migrate(uint16_t batch_size) {}
 
