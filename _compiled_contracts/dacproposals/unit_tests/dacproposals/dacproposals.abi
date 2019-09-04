@@ -100,14 +100,6 @@
                 {
                     "name": "finalize_threshold",
                     "type": "uint16"
-                },
-                {
-                    "name": "escrow_expiry",
-                    "type": "uint32"
-                },
-                {
-                    "name": "approval_expiry",
-                    "type": "uint32"
                 }
             ]
         },
@@ -146,6 +138,14 @@
                 {
                     "name": "category",
                     "type": "uint16"
+                },
+                {
+                    "name": "job_duration",
+                    "type": "uint32"
+                },
+                {
+                    "name": "approval_duration",
+                    "type": "uint32"
                 },
                 {
                     "name": "dac_id",
@@ -242,6 +242,10 @@
                 {
                     "name": "expiry",
                     "type": "time_point_sec"
+                },
+                {
+                    "name": "job_duration",
+                    "type": "uint32"
                 },
                 {
                     "name": "category",

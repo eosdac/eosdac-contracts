@@ -49,6 +49,7 @@ namespace eosdac {
                 extended_asset pay_amount;
                 uint8_t state;
                 time_point_sec expiry;
+                uint32_t job_duration; // job duration in seconds
                 uint16_t category;
 
                 uint64_t primary_key() const { return key; }
@@ -71,8 +72,8 @@ namespace eosdac {
         TABLE config {
                 uint16_t proposal_threshold = 4;
                 uint16_t finalize_threshold = 1;
-                uint32_t escrow_expiry = 30 * 24 * 60 * 60;
-                uint32_t approval_expiry = 30 * 24 * 60 * 60;
+                // uint32_t escrow_expiry = 30 * 24 * 60 * 60;
+                // uint32_t approval_expiry = 30 * 24 * 60 * 60;
         };
 
         typedef eosio::singleton<"config"_n, config> configs_table;
@@ -81,7 +82,7 @@ namespace eosdac {
         dacproposals( name receiver, name code, datastream<const char*> ds )
             : contract(receiver, code, ds) {}
 
-        ACTION createprop(name proposer, string title, string summary, name arbitrator, extended_asset pay_amount, string content_hash, uint64_t id, uint16_t category, name dac_id);
+        ACTION createprop(name proposer, string title, string summary, name arbitrator, extended_asset pay_amount, string content_hash, uint64_t id, uint16_t category, uint32_t job_duration, uint32_t approval_duration, name dac_id);
         ACTION voteprop(name custodian, uint64_t proposal_id, uint8_t vote, name dac_id);
         ACTION delegatevote(name custodian, uint64_t proposal_id, name delegatee_custodian, name dac_id);
         ACTION delegatecat(name custodian, uint64_t category, name delegatee_custodian, name dac_id);
