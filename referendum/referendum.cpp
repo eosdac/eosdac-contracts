@@ -47,6 +47,7 @@ void referendum::propose(
         vector<action> acts){
 
     require_auth(proposer);
+    assertValidMember(proposer, dac_id);
 
     auto config = config_item::get_current_configs(get_self(), dac_id);
 
@@ -129,6 +130,9 @@ void referendum::propose(
 }
 
 void referendum::vote(name voter, uint64_t referendum_id, uint8_t vote, name dac_id){
+
+    assertValidMember(voter, dac_id);
+
     referenda_table referenda(get_self(), dac_id.value);
     auto ref = referenda.get(referendum_id, "ERR::REFERENDUM_NOT_FOUND::Referendum not found");
     check(ref.status != referendum_status::STATUS_EXPIRED, "ERR::REFERENDUM_EXPIRED::Referendum has expired");
