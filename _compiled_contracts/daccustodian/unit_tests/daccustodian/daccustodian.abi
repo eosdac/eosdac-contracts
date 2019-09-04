@@ -18,6 +18,20 @@
             ]
         },
         {
+            "name": "account_stake_delta",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account",
+                    "type": "name"
+                },
+                {
+                    "name": "stake_delta",
+                    "type": "asset"
+                }
+            ]
+        },
+        {
             "name": "account_weight_delta",
             "base": "",
             "fields": [
@@ -508,6 +522,20 @@
             ]
         },
         {
+            "name": "stakeobsv",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account_stake_deltas",
+                    "type": "account_stake_delta[]"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "stprofile",
             "base": "",
             "fields": [
@@ -885,6 +913,11 @@
             "name": "setperm",
             "type": "setperm",
             "ricardian_contract": "## ACTION: setperm\n**PARAMETERS:**\n* __cand__ The account registering a new permission, must be registered as a candidate.\n* __permission__ The permission name that will be used in the multisig.\n\n**INTENT:** The intent of {{ setperm }} is to allow an account to set a permission name which will be used in the DAC multisig in place of the active permission.  This allows an account to set up a permission specifically for administering the DAC.  Setting the entry to active will delete the entry in the database and free RAM.\n\n**TERM:** This action lasts until the user sets the permission back to active."
+        },
+        {
+            "name": "stakeobsv",
+            "type": "stakeobsv",
+            "ricardian_contract": ""
         },
         {
             "name": "stprofile",

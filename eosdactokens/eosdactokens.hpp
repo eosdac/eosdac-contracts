@@ -11,6 +11,7 @@ using namespace std;
 
 #include "../_contract-shared-headers/daccustodian_shared.hpp"
 #include "../_contract-shared-headers/dacdirectory_shared.hpp"
+#include "../_contract-shared-headers/eosdactokens_shared.hpp"
 #include "../_contract-shared-headers/migration_helpers.hpp"
 
 namespace eosiosystem {
@@ -56,10 +57,6 @@ namespace eosdac {
 
 
 
-        struct account_stake_delta {
-            name  account;
-            asset stake_delta;
-        };
 
         TABLE stake_info {
             name  account;
@@ -138,9 +135,8 @@ namespace eosdac {
 
         friend eosiosystem::system_contract;
 
-        inline asset get_supply(symbol_code sym) const;
-        inline asset get_balance(name owner, symbol_code sym) const;
-        asset get_liquid(name owner, symbol_code sym) const;
+//        inline asset get_supply(symbol_code sym) const;
+//        inline asset get_balance(name owner, symbol_code sym) const;
 
     public:
 
@@ -172,15 +168,4 @@ namespace eosdac {
 
     };
 
-    asset eosdactokens::get_supply(symbol_code sym) const {
-        stats statstable(_self, sym.raw());
-        const auto &st = statstable.get(sym.raw());
-        return st.supply;
-    }
-
-    asset eosdactokens::get_balance(name owner, symbol_code sym) const {
-        accounts accountstable(_self, owner.value);
-        const auto &ac = accountstable.get(sym.raw());
-        return ac.balance;
-    }
 }

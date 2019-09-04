@@ -145,7 +145,7 @@ namespace eosdac {
         // Check transfer doesnt exceed stake
         stake_config stakeconfig = stake_config::get_current_configs(get_self(), dac.dac_id);
         if (stakeconfig.enabled){
-            asset liquid = get_liquid(from, quantity.symbol.code());
+            asset liquid = eosdac::get_liquid(from, get_self(), quantity.symbol.code());
 
             check(quantity <= liquid, "ERR::BALANCE_STAKED::Attempt to transfer more than liquid balance, unstake first");
         }
@@ -340,7 +340,7 @@ namespace eosdac {
         auto existing_stake = stakes.find(account.value);
         auto unstakes_idx = unstakes.get_index<"byaccount"_n>();
 
-        asset liquid = get_liquid(account, quantity.symbol.code());
+        asset liquid = eosdac::get_liquid(account, get_self(), quantity.symbol.code());
 
         check(liquid >= quantity, "ERR::STAKE_MORE_LIQUID::Attempting to stake more than your liquid balance");
 
@@ -516,42 +516,20 @@ namespace eosdac {
     }
 
     void eosdactokens::notify_stake_delta(name account, asset stake, dacdir::dac dac_inst){
-//        name custodian_contract = dac_inst.account_for_type(dacdir::CUSTODIAN);
-//        name vote_contract = dac_inst.account_for_type(8); //dacdir::VOTE_WEIGHT);
-//        name notify_contract = (vote_contract)?vote_contract:custodian_contract;
-//
-//        vector<account_stake_delta> stake_deltas = {
-//                {account, stake}
-//        };
-//        action(
-//                permission_level{get_self(), "notify"_n},
-//                notify_contract, "stakeobsv"_n,
-//                make_tuple( stake_deltas, dac_inst.dac_id )
-//        ).send();
+        name custodian_contract = dac_inst.account_for_type(dacdir::CUSTODIAN);
+        name vote_contract = dac_inst.account_for_type(8); //dacdir::VOTE_WEIGHT);
+        name notify_contract = (vote_contract)?vote_contract:custodian_contract;
+
+        vector<account_stake_delta> stake_deltas = {
+                {account, stake}
+        };
+        action(
+                permission_level{get_self(), "notify"_n},
+                notify_contract, "stakeobsv"_n,
+                make_tuple( stake_deltas, dac_inst.dac_id )
+        ).send();
     }
 
-    asset eosdactokens::get_liquid(name owner, symbol_code sym) const {
-        dacdir::dac dac = dacdir::dac_for_symbol(extended_symbol{symbol{sym, 4}, get_self()});
-
-        stakes_table stakes(get_self(), dac.dac_id.value);
-        unstakes_table unstakes(get_self(), dac.dac_id.value);
-        auto unstakes_idx = unstakes.get_index<"byaccount"_n>();
-
-        asset liquid = get_balance(owner, sym);
-
-        auto existing_stake = stakes.find(owner.value);
-        if (existing_stake != stakes.end()){
-            liquid -= existing_stake->stake;
-        }
-        auto unstakes_itr = unstakes_idx.find(owner.value);
-        while (unstakes_itr != unstakes_idx.end()){
-            liquid -= unstakes_itr->stake;
-
-            unstakes_itr++;
-        }
-
-        return liquid;
-    }
 
 
 

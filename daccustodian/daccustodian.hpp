@@ -174,6 +174,7 @@ namespace eosdac {
                             asset quantity,
                             name dac_id);
         ACTION balanceobsv(vector<account_balance_delta> account_balance_deltas, name dac_id);
+        ACTION stakeobsv(vector<account_stake_delta> account_stake_deltas, name dac_id);
         ACTION weightobsv(vector<account_weight_delta> account_weight_deltas, name dac_id);
 
         ACTION nominatecand(name cand, eosio::asset requestedpay);
@@ -250,6 +251,7 @@ namespace eosdac {
                                                 
         permission_level getCandidatePermission(name account, name internal_dac_id);
         void validateUnstake(name code, name cand, name dac_id);
+        void validateUnstakeAmount(name code, name cand, asset unstake_amount, name dac_id);
 
         // Temporary actions for old pay processing
         bool claimoldpaye_if_found(uint64_t payid, name dac_id);
