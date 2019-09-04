@@ -253,10 +253,13 @@ void referendum::exec(uint64_t referendum_id, name dac_id){
     referenda_table referenda(get_self(), dac_id.value);
     auto ref = referenda.find(referendum_id);
 
+    uint8_t calculated_status = calculateStatus(referendum_id, dac_id);
+
     check(ref != referenda.end(), "ERR:REFERENDUM_NOT_FOUND::Referendum not found");
     check(ref->type < vote_type::TYPE_OPINION, "ERR::CANNOT_EXEC::Cannot exec this type of referendum");
     check(ref->acts.size(), "ERR::NO_ACTION::No action to execute");
     check(ref->status == referendum_status::STATUS_PASSING, "ERR:REFERENDUM_NOT_PASSED::Referendum has not passed required number of yes votes");
+    check(calculated_status == referendum_status::STATUS_PASSING, "ERR:REFERENDUM_NOT_PASSED::Referendum has not passed required number of yes votes");
 
 
     if (ref->type == vote_type::TYPE_BINDING){
