@@ -13,6 +13,13 @@ void daccustodian::updateVoteWeight(name custodian, int64_t weight, name dac_id)
         return; // trying to avoid throwing errors from here since it's unrelated to a transfer action.?!?!?!?!
     }
 
+    if (weight < 0){
+        check((candItr->total_votes + weight) < candItr->total_votes, "Underflow in updateVoteWeight");
+    }
+    else {
+        check((candItr->total_votes + weight) >= candItr->total_votes, "Overflow in updateVoteWeight");
+    }
+
     registered_candidates.modify(candItr, same_payer, [&](auto &c) {
         c.total_votes += weight;
         eosio::print("\nchanging vote weight: ", custodian, " by ", weight);
@@ -64,10 +71,12 @@ void daccustodian::modifyVoteWeights(name voter, vector<name> oldVotes, vector<n
     contr_state currentState = contr_state::get_current_state(get_self(), dac_id);
 
     // New voter -> Add the tokens to the total weight.
+    check((currentState.total_weight_of_votes + vote_weight) >= currentState.total_weight_of_votes, "Overflow in total_weight_of_votes");
     if (oldVotes.size() == 0)
         currentState.total_weight_of_votes += vote_weight;
 
     // Leaving voter -> Remove the tokens to the total weight.
+    check((currentState.total_weight_of_votes - vote_weight) <= currentState.total_weight_of_votes, "Underflow in total_weight_of_votes");
     if (newVotes.size() == 0)
         currentState.total_weight_of_votes -= vote_weight;
 
