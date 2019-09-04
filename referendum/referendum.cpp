@@ -415,6 +415,7 @@ void referendum::proposeMsig(referendum_data ref, name dac_id){
 
     // Get required auths
     candidates_table candidates(custodian_contract, dac_id.value);
+    candperms_table  candperms(custodian_contract, dac_id.value);
     auto cand_idx = candidates.get_index<"byvotesrank"_n>();
     auto cand_itr = cand_idx.begin();
 
@@ -427,7 +428,12 @@ void referendum::proposeMsig(referendum_data ref, name dac_id){
     uint8_t count = 0;
     uint8_t num_reqs = custodian_config.numelected * 2;
     while (count < num_reqs && cand_itr != cand_idx.end()){
-        reqd_perms.push_back(permission_level{cand_itr->candidate_name, "active"_n}); // TODO : Read custom permission
+        name perm_name = "active"_n;
+        auto custom_perm = candperms.find(cand_itr->candidate_name.value);
+        if (custom_perm != candperms.end()){
+            perm_name = custom_perm->permission;
+        }
+        reqd_perms.push_back(permission_level{cand_itr->candidate_name, perm_name});
 //        print(" Adding ", cand_itr->candidate_name);
 
         cand_itr++;
