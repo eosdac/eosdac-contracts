@@ -181,26 +181,6 @@ namespace eosdac {
         }
     }
 
-    void eosdactokens::send_balance_notification(vector<account_balance_delta> account_weights, dacdir::dac dac){
-
-        eosio::name custodian_contract = dac.account_for_type(dacdir::CUSTODIAN);
-        eosio::name vote_contract = dac.account_for_type(dacdir::VOTE_WEIGHT);
-
-        eosio::name balance_obsv_contract = custodian_contract;
-        if (vote_contract && is_account(vote_contract)){
-            balance_obsv_contract = vote_contract;
-        }
-
-        eosio::action(
-                eosio::permission_level{ get_self(), "notify"_n },
-                balance_obsv_contract, "balanceobsv"_n,
-                make_tuple(account_weights, dac.dac_id)
-        ).send();
-
-        print("notifying balance change to ", balance_obsv_contract, "::balanceobsv");
-
-    }
-
     void eosdactokens::newmemterms(string terms, string hash) {
         check(false, "This action is deprecated. Call `newmemtermse` instead.");
     }
@@ -347,7 +327,7 @@ namespace eosdac {
         add_stake(account, quantity, dac.dac_id);
 
         // notify of stake delta
-        notify_stake_delta(account, quantity, dac);
+        send_stake_notification(account, quantity, dac);
     }
 
     void eosdactokens::unstake(name account, asset quantity){
@@ -383,7 +363,7 @@ namespace eosdac {
         });
 
         // notify of stake delta
-        notify_stake_delta(account, -quantity, dac);
+        send_stake_notification(account, -quantity, dac);
 
         // Remove from stake
         sub_stake(account, quantity, dac.dac_id);
@@ -471,7 +451,7 @@ namespace eosdac {
         // Add stake back and delete the unstake so the liquid balance is correct
         add_stake(us->account, us->stake, dac.dac_id);
 
-        notify_stake_delta(us->account, us->stake, dac);
+        send_stake_notification(us->account, us->stake, dac);
 
         unstakes.erase(us);
     }
@@ -515,7 +495,7 @@ namespace eosdac {
         }
     }
 
-    void eosdactokens::notify_stake_delta(name account, asset stake, dacdir::dac dac_inst){
+    void eosdactokens::send_stake_notification(name account, asset stake, dacdir::dac dac_inst){
         name custodian_contract = dac_inst.account_for_type(dacdir::CUSTODIAN);
         name vote_contract = dac_inst.account_for_type(8); //dacdir::VOTE_WEIGHT);
         name notify_contract = (vote_contract)?vote_contract:custodian_contract;
@@ -528,6 +508,26 @@ namespace eosdac {
                 notify_contract, "stakeobsv"_n,
                 make_tuple( stake_deltas, dac_inst.dac_id )
         ).send();
+    }
+
+    void eosdactokens::send_balance_notification(vector<account_balance_delta> account_weights, dacdir::dac dac_inst){
+
+        eosio::name custodian_contract = dac_inst.account_for_type(dacdir::CUSTODIAN);
+        eosio::name vote_contract = dac_inst.account_for_type(dacdir::VOTE_WEIGHT);
+
+        eosio::name balance_obsv_contract = custodian_contract;
+        if (vote_contract && is_account(vote_contract)){
+            balance_obsv_contract = vote_contract;
+        }
+
+        eosio::action(
+                eosio::permission_level{ get_self(), "notify"_n },
+                balance_obsv_contract, "balanceobsv"_n,
+                make_tuple(account_weights, dac_inst.dac_id)
+        ).send();
+
+        print("notifying balance change to ", balance_obsv_contract, "::balanceobsv");
+
     }
 
 

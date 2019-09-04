@@ -162,9 +162,9 @@ namespace eosdac {
         void add_balance(name owner, asset value, name payer);
         void sub_stake(name owner, asset value, name dac_id);
         void add_stake(name owner, asset value, name dac_id);
-        void notify_stake_delta(name account, asset stake, dacdir::dac dac_inst);
 
-        void send_balance_notification(vector<account_balance_delta> account_weights, dacdir::dac dac);
+        void send_stake_notification(name account, asset stake, dacdir::dac dac_inst);
+        void send_balance_notification(vector<account_balance_delta> account_weights, dacdir::dac dac_inst);
 
     };
 
