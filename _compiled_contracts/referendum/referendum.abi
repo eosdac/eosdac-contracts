@@ -1,0 +1,469 @@
+{
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT ",
+    "version": "eosio::abi/1.1",
+    "types": [],
+    "structs": [
+        {
+            "name": "account_stake_delta",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account",
+                    "type": "name"
+                },
+                {
+                    "name": "stake_delta",
+                    "type": "asset"
+                }
+            ]
+        },
+        {
+            "name": "action",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account",
+                    "type": "name"
+                },
+                {
+                    "name": "name",
+                    "type": "name"
+                },
+                {
+                    "name": "authorization",
+                    "type": "permission_level[]"
+                },
+                {
+                    "name": "data",
+                    "type": "bytes"
+                }
+            ]
+        },
+        {
+            "name": "cancel",
+            "base": "",
+            "fields": [
+                {
+                    "name": "referendum_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "clean",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account",
+                    "type": "name"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "config_item",
+            "base": "",
+            "fields": [
+                {
+                    "name": "fee",
+                    "type": "pair_uint8_extended_asset[]"
+                },
+                {
+                    "name": "pass",
+                    "type": "pair_uint8_uint16[]"
+                },
+                {
+                    "name": "quorum_token",
+                    "type": "pair_uint8_uint64[]"
+                },
+                {
+                    "name": "quorum_account",
+                    "type": "pair_uint8_uint64[]"
+                },
+                {
+                    "name": "allow_per_account_voting",
+                    "type": "pair_uint8_uint8[]"
+                }
+            ]
+        },
+        {
+            "name": "deposit_info",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account",
+                    "type": "name"
+                },
+                {
+                    "name": "deposit",
+                    "type": "extended_asset"
+                }
+            ]
+        },
+        {
+            "name": "exec",
+            "base": "",
+            "fields": [
+                {
+                    "name": "referendum_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "pair_uint64_uint8",
+            "base": "",
+            "fields": [
+                {
+                    "name": "key",
+                    "type": "uint64"
+                },
+                {
+                    "name": "value",
+                    "type": "uint8"
+                }
+            ]
+        },
+        {
+            "name": "pair_uint8_extended_asset",
+            "base": "",
+            "fields": [
+                {
+                    "name": "key",
+                    "type": "uint8"
+                },
+                {
+                    "name": "value",
+                    "type": "extended_asset"
+                }
+            ]
+        },
+        {
+            "name": "pair_uint8_uint16",
+            "base": "",
+            "fields": [
+                {
+                    "name": "key",
+                    "type": "uint8"
+                },
+                {
+                    "name": "value",
+                    "type": "uint16"
+                }
+            ]
+        },
+        {
+            "name": "pair_uint8_uint64",
+            "base": "",
+            "fields": [
+                {
+                    "name": "key",
+                    "type": "uint8"
+                },
+                {
+                    "name": "value",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "pair_uint8_uint8",
+            "base": "",
+            "fields": [
+                {
+                    "name": "key",
+                    "type": "uint8"
+                },
+                {
+                    "name": "value",
+                    "type": "uint8"
+                }
+            ]
+        },
+        {
+            "name": "permission_level",
+            "base": "",
+            "fields": [
+                {
+                    "name": "actor",
+                    "type": "name"
+                },
+                {
+                    "name": "permission",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "propose",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposer",
+                    "type": "name"
+                },
+                {
+                    "name": "type",
+                    "type": "uint8"
+                },
+                {
+                    "name": "voting_type",
+                    "type": "uint8"
+                },
+                {
+                    "name": "title",
+                    "type": "string"
+                },
+                {
+                    "name": "content",
+                    "type": "string"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                },
+                {
+                    "name": "acts",
+                    "type": "action[]"
+                }
+            ]
+        },
+        {
+            "name": "referendum_data",
+            "base": "",
+            "fields": [
+                {
+                    "name": "referendum_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "proposer",
+                    "type": "name"
+                },
+                {
+                    "name": "type",
+                    "type": "uint8"
+                },
+                {
+                    "name": "voting_type",
+                    "type": "uint8"
+                },
+                {
+                    "name": "status",
+                    "type": "uint8"
+                },
+                {
+                    "name": "title",
+                    "type": "string"
+                },
+                {
+                    "name": "content_ref",
+                    "type": "checksum256"
+                },
+                {
+                    "name": "token_votes",
+                    "type": "pair_uint8_uint64[]"
+                },
+                {
+                    "name": "account_votes",
+                    "type": "pair_uint8_uint64[]"
+                },
+                {
+                    "name": "expires",
+                    "type": "time_point_sec"
+                },
+                {
+                    "name": "acts",
+                    "type": "action[]"
+                }
+            ]
+        },
+        {
+            "name": "refund",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "stakeobsv",
+            "base": "",
+            "fields": [
+                {
+                    "name": "stake_deltas",
+                    "type": "account_stake_delta[]"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "updateconfig",
+            "base": "",
+            "fields": [
+                {
+                    "name": "config",
+                    "type": "config_item"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "updatestatus",
+            "base": "",
+            "fields": [
+                {
+                    "name": "referendum_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "vote",
+            "base": "",
+            "fields": [
+                {
+                    "name": "voter",
+                    "type": "name"
+                },
+                {
+                    "name": "referendum_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "vote",
+                    "type": "uint8"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "vote_info",
+            "base": "",
+            "fields": [
+                {
+                    "name": "voter",
+                    "type": "name"
+                },
+                {
+                    "name": "votes",
+                    "type": "pair_uint64_uint8[]"
+                }
+            ]
+        }
+    ],
+    "actions": [
+        {
+            "name": "cancel",
+            "type": "cancel",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "clean",
+            "type": "clean",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "exec",
+            "type": "exec",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "propose",
+            "type": "propose",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "refund",
+            "type": "refund",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "stakeobsv",
+            "type": "stakeobsv",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "updateconfig",
+            "type": "updateconfig",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "updatestatus",
+            "type": "updatestatus",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "vote",
+            "type": "vote",
+            "ricardian_contract": ""
+        }
+    ],
+    "tables": [
+        {
+            "name": "config",
+            "type": "config_item",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "deposits",
+            "type": "deposit_info",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "referenda",
+            "type": "referendum_data",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "votes",
+            "type": "vote_info",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        }
+    ],
+    "ricardian_clauses": [
+        {
+            "id": "ENTIRE AGREEMENT",
+            "body": "This contract contains the entire agreement of the parties, for all described actions, and there are no other promises or conditions in any other agreement whether oral or written concerning the subject matter of this Contract. This contract supersedes any prior written or oral agreements between the parties."
+        },
+        {
+            "id": "BINDING CONSTITUTION",
+            "body": "All the the action descibed in this contract are subject to the EOSDAC consitution as held at http://eosdac.io. This includes, but is not limited to membership terms and conditions, dispute resolution and severability."
+        }
+    ],
+    "variants": []
+}
