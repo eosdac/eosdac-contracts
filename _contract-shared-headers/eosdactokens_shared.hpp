@@ -96,6 +96,7 @@ namespace eosdac {
     }
 
     asset get_liquid(name owner, name code, symbol_code sym) {
+        // Hardcoding a precision of 4, it doesnt matter because the index ignores precision
         dacdir::dac dac = dacdir::dac_for_symbol(extended_symbol{symbol{sym, 4}, code});
 
         stakes_table stakes(code, dac.dac_id.value);
@@ -119,6 +120,7 @@ namespace eosdac {
     }
 
     asset get_staked(name owner, name code, symbol_code sym) {
+        // Hardcoding a precision of 4, it doesnt matter because the index ignores precision
         dacdir::dac dac = dacdir::dac_for_symbol(extended_symbol{symbol{sym, 4}, code});
 
         stakes_table stakes(code, dac.dac_id.value);
