@@ -52,7 +52,7 @@ void referendum::propose(
     auto config = config_item::get_current_configs(get_self(), dac_id);
 
     check(type < vote_type::TYPE_INVALID, "ERR::TYPE_INVALID::Referendum type is invalid");
-    check(voting_type < count_type::COUNT_INVALID, "ERR::TYPE_INVALID::Referendum type is invalid");
+    check(voting_type < count_type::COUNT_INVALID, "ERR::COUNT_TYPE_INVALID::Referendum vote counting type is invalid");
 
     // Do checks if it is account based voting
     if (voting_type == count_type::COUNT_ACCOUNT){
