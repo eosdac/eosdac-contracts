@@ -106,6 +106,7 @@ void daccustodian::weightobsv(vector<account_weight_delta> account_weight_deltas
         if (existingVote != votes_cast_by_members.end()) {
             updateVoteWeights(existingVote->candidates, awd.weight_delta, dac_id, currentState);
             currentState.total_weight_of_votes += awd.weight_delta;
+            currentState.save();
         }
     }
 }
