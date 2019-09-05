@@ -454,21 +454,14 @@ namespace eosdac {
     void eosdactokens::sub_stake(name account, asset value, name dac_id){
         stakes_table stakes(get_self(), dac_id.value);
         auto existing_stake = stakes.find(account.value);
+        check(existing_stake != stakes.end(), "ERR::NO_STAKE_OBJECT::No stake found when attempting to subtract stake");
 
-        if (existing_stake != stakes.end()){
-            if (existing_stake->stake == value){
-                stakes.erase(existing_stake);
-            }
-            else {
-                stakes.modify(*existing_stake, account, [&](stake_info& s){
-                    s.stake -= value;
-                });
-            }
+        if (existing_stake->stake == value){
+            stakes.erase(existing_stake);
         }
         else {
-            stakes.emplace(account, [&](stake_info& s){
-                s.account = account;
-                s.stake = value;
+            stakes.modify(*existing_stake, account, [&](stake_info& s){
+                s.stake -= value;
             });
         }
     }
