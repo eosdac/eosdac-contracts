@@ -51,6 +51,16 @@ void referendum::propose(
 
     auto config = config_item::get_current_configs(get_self(), dac_id);
 
+    // Get transaction hash for content_ref and next id
+    auto size = transaction_size();
+    char* buffer = (char*)( 512 < size ? malloc(size) : alloca(size) );
+    uint32_t read = read_transaction( buffer, size );
+    check( size == read, "ERR::READ_TRANSACTION_FAILED::read_transaction failed");
+    checksum256 trx_id = sha256(buffer, read);
+
+    // Calculate a referendum id
+    uint64_t referendum_id = nextID(trx_id);
+
     check(type < vote_type::TYPE_INVALID, "ERR::TYPE_INVALID::Referendum type is invalid");
     check(voting_type < count_type::COUNT_INVALID, "ERR::COUNT_TYPE_INVALID::Referendum vote counting type is invalid");
 
@@ -86,6 +96,16 @@ void referendum::propose(
                 d.deposit -= fee_required;
             });
         }
+
+        // transfer fee to treasury account
+        auto dac = dacdir::dac_for_id(dac_id);
+        auto treasury_account = dac.account_for_type(dacdir::TREASURY);
+        string fee_memo = "Fee for referendum id " + to_string(referendum_id);
+        eosio::action(
+                eosio::permission_level{ get_self(), "active"_n },
+                fee_required.contract, "transfer"_n,
+                make_tuple(get_self(), treasury_account, fee_required.quantity, fee_memo)
+        ).send();
     }
 
 
@@ -93,15 +113,8 @@ void referendum::propose(
     uint32_t time_now = current_time_point().sec_since_epoch();
     uint32_t expiry_time = time_now + (60 * 60 * 24 * 30);
 
-    // Get transaction hash for content_ref
-    auto size = transaction_size();
-    char* buffer = (char*)( 512 < size ? malloc(size) : alloca(size) );
-    uint32_t read = read_transaction( buffer, size );
-    check( size == read, "ERR::READ_TRANSACTION_FAILED::read_transaction failed");
-    checksum256 trx_id = sha256(buffer, read);
 
     // Save to database
-    uint64_t referendum_id = nextID(trx_id);
     referenda_table referenda(get_self(), dac_id.value);
     referenda.emplace(proposer, [&](referendum_data& r){
         std::map<uint8_t, uint64_t> token_votes = {
