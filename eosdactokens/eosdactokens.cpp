@@ -315,11 +315,6 @@ namespace eosdac {
         check(quantity.is_valid(), "ERR::STAKE_INVALID_QTY::Invalid quantity supplied");
         check(quantity.amount > 0, "ERR::STAKE_NON_POSITIVE_QTY::Stake amount must be greater than 0");
 
-        stakes_table stakes(get_self(), dac.dac_id.value);
-        unstakes_table unstakes(get_self(), dac.dac_id.value);
-        auto existing_stake = stakes.find(account.value);
-        auto unstakes_idx = unstakes.get_index<"byaccount"_n>();
-
         asset liquid = eosdac::get_liquid(account, get_self(), quantity.symbol.code());
 
         check(liquid >= quantity, "ERR::STAKE_MORE_LIQUID::Attempting to stake more than your liquid balance");
