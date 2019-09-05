@@ -441,20 +441,20 @@ void referendum::proposeMsig(referendum_data ref, name dac_id){
     }
 
     action(
-            permission_level{get_self(), "referendum"_n},
+            permission_level{auth_account, "referendum"_n},
             name(SYSTEM_MSIG_CONTRACT), "propose"_n,
-            make_tuple( get_self(), proposal_name, reqd_perms, trx )
+            make_tuple( auth_account, proposal_name, reqd_perms, trx )
     ).send();
 
     string metadata = "{\"title\":\"REFERENDUM: " + ref.title + "\", \"description\":\"Automated submission of passing referendum number " + to_string(ref.referendum_id) + "\"}";
     vector<permission_level> perms = {
             permission_level{auth_account, "admin"_n},
-            permission_level{get_self(), "referendum"_n}
+            permission_level{auth_account, "referendum"_n}
     };
     action(
             perms,
             msig_contract, "proposede"_n,
-            make_tuple( get_self(), proposal_name, metadata, dac_id )
+            make_tuple( auth_account, proposal_name, metadata, dac_id )
     ).send();
 
 }

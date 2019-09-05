@@ -51,10 +51,9 @@ When submitting a multisig for approval to the custodians, the contract will use
 
 The authority account have the premission `@referendum` which is satisfied by this contract and is linked to `eosio.msig::propose`.
 
-This account must also have a `@referendum` permission which is linked to `eosio.msig::propose`.
+`cleos set account permission --add-code [authority] referendum [this account] active`
 
-`cleos set account permission --add-code [this account] referendum [this account] active`
-`cleos set action permission [this account] eosio.msig propose referendum`
+`cleos set action permission [authority] eosio.msig propose referendum`
 
 For all other actions which could be proposed in a semi-binding constitution, you must make sure that they can be satisfied by the contract `@eosio.code` permission.
 
