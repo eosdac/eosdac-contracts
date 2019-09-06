@@ -385,13 +385,17 @@ uint8_t referendum::calculateStatus(uint64_t referendum_id, name dac_id) {
         }
 
         // Only count yes votes for now
-        current_yes = (ref->voting_type == count_type::COUNT_TOKEN)?token_votes.at(vote_choice::VOTE_YES):account_votes.at(vote_choice::VOTE_YES);
-        current_no = (ref->voting_type == count_type::COUNT_TOKEN)?token_votes.at(vote_choice::VOTE_NO):account_votes.at(vote_choice::VOTE_NO);
-        current_abstain = (ref->voting_type == count_type::COUNT_TOKEN)?token_votes.at(vote_choice::VOTE_ABSTAIN):account_votes.at(vote_choice::VOTE_ABSTAIN);
+        auto counted_votes = (ref->voting_type == count_type::COUNT_TOKEN)?token_votes:account_votes;
+
+        current_yes = counted_votes.at(vote_choice::VOTE_YES);
+        current_no = counted_votes.at(vote_choice::VOTE_NO);
+        current_abstain = counted_votes.at(vote_choice::VOTE_ABSTAIN);
         current_all = current_yes + current_no + current_abstain;
 
         // check we have made quorum
-        if ((ref->type == count_type::COUNT_TOKEN && total_tokens >= quorum_token) || (ref->type == count_type::COUNT_ACCOUNT && total_accounts >= quorum_account)){
+        if ((ref->type == count_type::COUNT_TOKEN && total_tokens >= quorum_token) ||
+            (ref->type == count_type::COUNT_ACCOUNT && total_accounts >= quorum_account)){
+
             // quorum has been reached, check we have passed
             status = referendum_status::STATUS_ATTENTION;
 
