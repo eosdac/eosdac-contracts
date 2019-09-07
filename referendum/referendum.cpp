@@ -361,51 +361,48 @@ uint8_t referendum::calculateStatus(uint64_t referendum_id, name dac_id) {
     check(ref != referenda.end(), "ERR:REFERENDUM_NOT_FOUND::Referendum not found");
 
     config_item config = config_item::get_current_configs(get_self(), dac_id);
-    uint64_t quorum_token = 0, quorum_account = 0, current_yes = 0, current_no = 0, current_abstain = 0, current_all = 0;
+    uint64_t quorum = 0, current_yes = 0, current_no = 0, current_abstain = 0, current_all = 0;
     uint16_t pass_rate = 10000; // 100%
     uint8_t status = referendum_status::STATUS_OPEN;
     uint32_t time_now = current_time_point().sec_since_epoch();
     uint64_t yes_percentage = 0;
 
-    if (ref->expires.sec_since_epoch() >= time_now){
-        quorum_token = config.quorum_token[ref->type];
-        quorum_account = config.quorum_account[ref->type];
-        pass_rate = config.pass[ref->type];
+    map<uint8_t, uint64_t> votes;
 
-        auto token_votes = ref->token_votes;
-        auto account_votes = ref->account_votes;
-
-        uint64_t total_tokens = 0;
-        for (auto tv: token_votes){
-            total_tokens += tv.second;
-        }
-        uint64_t total_accounts = 0;
-        for (auto tv: account_votes){
-            total_accounts += tv.second;
+    if (ref->expires.sec_since_epoch() >= time_now)
+    {
+        if (ref->voting_type == count_type::COUNT_TOKEN) {
+            quorum = config.quorum_token[ref->type];
+            votes = ref->token_votes;
+        } else {
+            quorum = config.quorum_account[ref->type];
+            votes = ref->account_votes;
         }
 
-        // Only count yes votes for now
-        auto counted_votes = (ref->voting_type == count_type::COUNT_TOKEN)?token_votes:account_votes;
+        uint64_t total = 0;
+        for (auto v : votes)
+        {
+            total += v.second;
+        }
 
-        current_yes = counted_votes.at(vote_choice::VOTE_YES);
-        current_no = counted_votes.at(vote_choice::VOTE_NO);
-        current_abstain = counted_votes.at(vote_choice::VOTE_ABSTAIN);
+        current_yes = votes.at(vote_choice::VOTE_YES);
+        current_no = votes.at(vote_choice::VOTE_NO);
+        current_abstain = votes.at(vote_choice::VOTE_ABSTAIN);
         current_all = current_yes + current_no + current_abstain;
 
         // check we have made quorum
-        if ((ref->type == count_type::COUNT_TOKEN && total_tokens >= quorum_token) ||
-            (ref->type == count_type::COUNT_ACCOUNT && total_accounts >= quorum_account)){
-
+        if (total >= quorum){
             // quorum has been reached, check we have passed
             status = referendum_status::STATUS_ATTENTION;
 
-            yes_percentage = uint64_t((double(current_yes) / double(current_all)) * 10000.0); // multiply by 10000 to get integer with 2 dp
+            uint64_t yes_percentage = uint64_t((double(current_yes) / double(current_all)) * 10000.0); // multiply by 10000 to get integer with 2 dp
+            pass_rate = config.pass[ref->type];
             if (yes_percentage >= pass_rate){
                 status = referendum_status::STATUS_PASSING;
             }
         }
 
-        print("referendum id : ", referendum_id, ", dac id : ", dac_id, ", quorum_token : ", quorum_token, ", pass rate : ", pass_rate, ", current rate : ", current_all, ", total tokens : ", total_tokens, ", yes : ", current_yes, ", yes% : ", yes_percentage);
+        print("referendum id : ", referendum_id, ", dac id : ", dac_id, ", quorum : ", quorum, ", pass rate : ", pass_rate, ", current rate : ", current_all, ", total : ", total, ", yes : ", current_yes, ", yes% : ", yes_percentage);
     }
     else {
         // Expired
@@ -443,10 +440,8 @@ void referendum::proposeMsig(referendum_data ref, name dac_id){
     contr_config custodian_config = contr_config::get_current_configs(custodian_contract, dac_id);
 
     uint8_t count = 0;
-    uint8_t num_reqs = 255;
-    if (custodian_config.numelected <= 127){
-        num_reqs = custodian_config.numelected * 2;
-    }
+    uint8_t num_reqs = min(255, custodian_config.numelected * 2);
+
     while (count < num_reqs && cand_itr != cand_idx.end()){
         name perm_name = "active"_n;
         auto custom_perm = candperms.find(cand_itr->candidate_name.value);
