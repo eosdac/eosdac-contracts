@@ -382,7 +382,7 @@
         {
             "name": "cancel",
             "type": "cancel",
-            "ricardian_contract": ""
+            "ricardian_contract": "---\nspec_version: \"0.2.0\"\ntitle: Cancel a Referendum\nsummary: 'Cancel a referendum for DAC ID {{ nowrap dac_id }} with ID \"{{ referendum_id }}\"'\nicon: https://eosdac.io/assets/contracts/generic.png#00da1afc6464028359b3a02ffbdb59e1ea79fa261b5523ce7ac174cc0ef27bbd\n---\n\nCancel an existing referendum, this will cancel an existing referendum with ID {{ referendum_id }}.  The RAM used will be returned."
         },
         {
             "name": "clean",
@@ -392,17 +392,17 @@
         {
             "name": "exec",
             "type": "exec",
-            "ricardian_contract": ""
+            "ricardian_contract": "---\nspec_version: \"0.2.0\"\ntitle: Execute a Referendum\nsummary: 'Execute a referendum for DAC ID {{ nowrap dac_id }} with ID \"{{ referendum_id }}\"'\nicon: https://eosdac.io/assets/contracts/generic.png#00da1afc6464028359b3a02ffbdb59e1ea79fa261b5523ce7ac174cc0ef27bbd\n---\n\nOnce a referendum has passed the threshold for acceptance, this action will execute it.\n\nDepending on the type of the referendium, this will have a different action.\n\n**Binding** : This will execute the action provided in the referendum.\n\n**Semi-binding** : This will propose a multisig for the custodians to review.\n\n**Opinion** : Nothing will be done."
         },
         {
             "name": "propose",
             "type": "propose",
-            "ricardian_contract": ""
+            "ricardian_contract": "---\nspec_version: \"0.2.0\"\ntitle: Propose a Referendum\nsummary: 'Propose a referendum for DAC ID {{ nowrap dac_id }} with title \"{{ title }}\"'\nicon: https://eosdac.io/assets/contracts/generic.png#00da1afc6464028359b3a02ffbdb59e1ea79fa261b5523ce7ac174cc0ef27bbd\n---\n\nThis will propose a referendum with title \"{{ title }}\", there may be a fee to pay for this, depending on the configuration of the DAC."
         },
         {
             "name": "refund",
             "type": "refund",
-            "ricardian_contract": ""
+            "ricardian_contract": "---\nspec_version: \"0.2.0\"\ntitle: Refund Referendum Deposit\nsummary: 'Refund referendum deposit for {{ nowrap account }}'\nicon: https://eosdac.io/assets/contracts/generic.png#00da1afc6464028359b3a02ffbdb59e1ea79fa261b5523ce7ac174cc0ef27bbd\n---\n\nAccount {{ account }} will be refunded any existing referendum deposit which is in the contract."
         },
         {
             "name": "stakeobsv",
@@ -412,7 +412,7 @@
         {
             "name": "updateconfig",
             "type": "updateconfig",
-            "ricardian_contract": ""
+            "ricardian_contract": "---\nspec_version: \"0.2.0\"\ntitle: Update Referendum Configuration\nsummary: 'Update referendum configuration for DAC ID {{ nowrap dac_id }}'\nicon: https://eosdac.io/assets/contracts/generic.png#00da1afc6464028359b3a02ffbdb59e1ea79fa261b5523ce7ac174cc0ef27bbd\n---\n\nUpdate the referendum configuration for DAC ID {{ nowrap dac_id }} using the provided values."
         },
         {
             "name": "updatestatus",
@@ -422,7 +422,7 @@
         {
             "name": "vote",
             "type": "vote",
-            "ricardian_contract": ""
+            "ricardian_contract": "---\nspec_version: \"0.2.0\"\ntitle: Vote in Referendum\nsummary: 'Vote in referendum for DAC ID {{ nowrap dac_id }} with ID \"{{ referendum_id }}\"'\nicon: https://eosdac.io/assets/contracts/generic.png#00da1afc6464028359b3a02ffbdb59e1ea79fa261b5523ce7ac174cc0ef27bbd\n---\n\n{{ nowrap voter }} will update their vote for referendum {{ referendum_id }}."
         }
     ],
     "tables": [
