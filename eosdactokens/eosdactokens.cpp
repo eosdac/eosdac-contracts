@@ -485,7 +485,7 @@ namespace eosdac {
 
     void eosdactokens::send_stake_notification(name account, asset stake, dacdir::dac dac_inst){
         name custodian_contract = dac_inst.account_for_type(dacdir::CUSTODIAN);
-        name vote_contract = dac_inst.account_for_type(8); //dacdir::VOTE_WEIGHT);
+        name vote_contract = dac_inst.account_for_type(dacdir::ROUTER);
         name notify_contract = (vote_contract)?vote_contract:custodian_contract;
 
         vector<account_stake_delta> stake_deltas = {
@@ -501,7 +501,7 @@ namespace eosdac {
     void eosdactokens::send_balance_notification(vector<account_balance_delta> account_weights, dacdir::dac dac_inst){
 
         eosio::name custodian_contract = dac_inst.account_for_type(dacdir::CUSTODIAN);
-        eosio::name vote_contract = dac_inst.account_for_type(dacdir::VOTE_WEIGHT);
+        eosio::name vote_contract = dac_inst.account_for_type(dacdir::ROUTER);
 
         eosio::name balance_obsv_contract = custodian_contract;
         if (vote_contract && is_account(vote_contract)){
