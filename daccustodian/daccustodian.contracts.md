@@ -1,324 +1,139 @@
-<h1 class="contract">
-stprofile
-</h1>
-
-## ACTION: stprofile
-**PARAMETERS:**
-* __cand__ is an eosio account name. 
-* __profile__ is a string that provides a hash of the details of the candidate.
-
-**INTENT** The intent of stprofile is to record an update the user's profile. 
-#### Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later so therefore should only store a unidentifiable hash of content rather than human readable content. 
-
-<h1 class="contract">
-    stprofileuns
-</h1>
-
-## ACTION: stprofileuns
-**PARAMETERS:**
-* __cand__ is an eosio account name. 
-* __profile__ is a string that provides a hash of the details of the candidate.
-
-**INTENT:** 
-The intent of stprofileuns is to record an update the user's profile.  ##Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later.
-
-<h1 class="contract">
-updatebio
-</h1>
-
-## ACTION: updatebio
-**PARAMETERS:**
-* __cand__ is an eosio account name. 
-* __profile__ is a string that provides a hash of the details of the candidate.
-
-**INTENT:** 
-The intent of updatebio is to record an update the user's bio. Unlike `stprofileuns` this action does not require auth of the cand to execute.
- ####Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later. 
- 
- <h1 class="contract">
-updatebioe
-</h1>
-
-## ACTION: updatebioe
-**PARAMETERS:**
-* __cand__ is an eosio account name. 
-* __profile__ is a string that provides a hash of the details of the candidate.
-
-**INTENT:** 
-The intent of updatebio is to record an update the user's bio. Unlike `stprofileuns` this action does not require auth of the cand to execute.
- ####Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later. 
- 
-
-<h1 class="contract">
- firecust
-</h1>
-
-## ACTION: firecust
-**PARAMETERS:**
-* __cand__ is an eosio account name.
-
-**INTENT:** The intent of firecust is to allow elected custodians to (where quorum and configured majorities are met) to remove a fellow custodian and lock up their tokens until the configured delay period has passed.
-**TERM:** This action lasts for the duration of the time taken to process the transaction.
- 
- <h1 class="contract">
- firecuste
-</h1>
-
-## ACTION: firecuste
-**PARAMETERS:**
-* __cand__ is an eosio account name.
-
-**INTENT:** The intent of firecust is to allow elected custodians to (where quorum and configured majorities are met) to remove a fellow custodian and lock up their tokens until the configured delay period has passed.
-**TERM:** This action lasts for the duration of the time taken to process the transaction.
- 
-
-<h1 class="contract">
-  resigncust
-</h1>
- ## ACTION: resigncuste
-**PARAMETERS:**
-* __cust__ is an eosio account name.
-
-**INTENT:** The intent of resigncust is to remove an elected custodian. This action must be run by the resigning custodian and the outcome should remove the elected custodian and lock up their tokens until the delay period has passed so the tokens can be claimed with the unstake action.
-**TERM:** This action lasts for the duration of the time taken to process the transaction.
-
-<h1 class="contract">
-  resigncuste
-</h1>
- ## ACTION: resigncuste
-**PARAMETERS:**
-* __cust__ is an eosio account name.
-
-**INTENT:** The intent of resigncust is to remove an elected custodian. This action must be run by the resigning custodian and the outcome should remove the elected custodian and lock up their tokens until the delay period has passed so the tokens can be claimed with the unstake action.
-**TERM:** This action lasts for the duration of the time taken to process the transaction.
-
-<h1 class="contract">
-  firecand
-</h1>
-
-## ACTION: firecand
-**PARAMETERS:**
-* __cand__ is an eosio account name. 
-* __lockupStake__ is an indicator to show whether stake is being locked up or not
-
-**INTENT:** 
-The intent of forehand is to set a candidate to a state of inactive so they will be excluded from the next election round. This action may only be run by the by elected custodians (where quorum and configured majorities are met). There is an option to lock up the candidate's tokens until a delay period has passed based on the delay set in the config after which the tokens can be claimed with the unstake action. If the option passed is false and there is an existing lockup delay on the tokens then this lockup will continue to be active until the lock up time has passed.
-
-**TERM:** This action lasts for the duration of the time taken to process the transaction.
-
-<h1 class="contract">
-  firecande
-</h1>
-
-## ACTION: firecande
-**PARAMETERS:**
-* __cand__ is an eosio account name. 
-* __lockupStake__ is an indicator to show whether stake is being locked up or not
-
-**INTENT:** 
-The intent of forehand is to set a candidate to a state of inactive so they will be excluded from the next election round. This action may only be run by the by elected custodians (where quorum and configured majorities are met). There is an option to lock up the candidate's tokens until a delay period has passed based on the delay set in the config after which the tokens can be claimed with the unstake action. If the option passed is false and there is an existing lockup delay on the tokens then this lockup will continue to be active until the lock up time has passed.
-
-**TERM:** This action lasts for the duration of the time taken to process the transaction.
-
-<h1 class="contract">
-  unstake
-</h1>
-
-## ACTION: unstake
-**PARAMETERS:**
-* __cand__ is an eosio account name.
-
-**INTENT** The intent of unstake is to return staked tokens back to the candidate if the user is no longer an active candidate and there is no delay set on the candidate the staked tokens will be returned to the candidate.
-**TERM:** This action lasts for the duration of the time taken to process the transaction.
-
-<h1 class="contract">
-  unstakee
-</h1>
+<h1 class="contract">stprofile</h1>
 
-## ACTION: unstakee
-**PARAMETERS:**
-* __cand__ is an eosio account name.
+---
+spec_version: "0.2.0"
+title: Update Profile
+summary: 'Update profile for account {{ nowrap cand }} for DAC ID {{ nowrap dac_id }}'
+icon: https://eosdac.io/assets/contracts/generic.png#00da1afc6464028359b3a02ffbdb59e1ea79fa261b5523ce7ac174cc0ef27bbd
+---
 
-**INTENT** The intent of unstake is to return staked tokens back to the candidate if the user is no longer an active candidate and there is no delay set on the candidate the staked tokens will be returned to the candidate.
-**TERM:** This action lasts for the duration of the time taken to process the transaction.
+Register a profile on the account {{ cand }}, all data submitted will be visible on the blockchain.
 
-<h1 class="contract">
-  updateconfig
-</h1>
+DO NOT SUBMIT PERSONAL DATA HERE
 
- ## ACTION: updateconfig
-**PARAMETERS:**
-* __lockupasset__ is an asset to be locked up as part of the nominating process for a custodian passed to the action in the format: \"10.0000 EOSDAC\". default value: \"10.0000 EOSDAC\"
-* __maxvotes__ is a integer to configure the maximum number of allowed votes for a nominated member in any single voting action. The default value is 5.
-* __numelected__ is a integer to configure the number of candidates that will be elected as custodians of the DAC. default value is 12.
-* __periodlength__ the length of office of a custodian vote (in seconds) before a new period . Default to 7 days. 
-* __authaccount__ The authorised account to change the contract which should be protected via a multisig of custodians, 
-* __tokenholder__ The account that controls the funds for the DAC. 
-* __initial_vote_quorum_percent__ The percent of voters required to activate the DAC for the first election period. 
-* __auth_threshold_high__ percentage of votes of custodians required to approve highest level actions. 
-* __auth_threshold_mid__ percentage of votes of custodians required to approve medium level actions.
-* __auth_threshold_low__ percentage of votes of custodians required to approve lowest level actions.
-* __lockup_release_time_delay__ The time before locked up stake can be released back to the candidate using the unstake action.
-* __asset requested_pay_max__ 
 
-**INTENT:** The intent of {{ updateconfig }} is update the configuration for the running contract of selected parameters without needing change the source code. This requires a privileged account.
-**TERM:** The action sets the configuration until it is set by a subsequent updateconfig action.
+<h1 class="contract">firecuste</h1>
 
-<h1 class="contract">
-  updateconfige
-</h1>
+---
+spec_version: "0.2.0"
+title: Fire Custodian
+summary: 'Fire custodian {{ nowrap cand }} for DAC ID {{ nowrap dac_id }}'
+icon: https://eosdac.io/assets/contracts/generic.png#00da1afc6464028359b3a02ffbdb59e1ea79fa261b5523ce7ac174cc0ef27bbd
+---
 
- ## ACTION: updateconfige
-**PARAMETERS:**
-* __lockupasset__ is an asset to be locked up as part of the nominating process for a custodian passed to the action in the format: \"10.0000 EOSDAC\". default value: \"10.0000 EOSDAC\"
-* __maxvotes__ is a integer to configure the maximum number of allowed votes for a nominated member in any single voting action. The default value is 5.
-* __numelected__ is a integer to configure the number of candidates that will be elected as custodians of the DAC. default value is 12.
-* __periodlength__ the length of office of a custodian vote (in seconds) before a new period . Default to 7 days. 
-* __authaccount__ The authorised account to change the contract which should be protected via a multisig of custodians, 
-* __tokenholder__ The account that controls the funds for the DAC. 
-* __initial_vote_quorum_percent__ The percent of voters required to activate the DAC for the first election period. 
-* __auth_threshold_high__ percentage of votes of custodians required to approve highest level actions. 
-* __auth_threshold_mid__ percentage of votes of custodians required to approve medium level actions.
-* __auth_threshold_low__ percentage of votes of custodians required to approve lowest level actions.
-* __lockup_release_time_delay__ The time before locked up stake can be released back to the candidate using the unstake action.
-* __asset requested_pay_max__ 
+This action will fire the custodian {{ cand }} and remove them from the list of candidates.
 
-**INTENT:** The intent of {{ updateconfig }} is update the configuration for the running contract of selected parameters without needing change the source code. This requires a privileged account.
-**TERM:** The action sets the configuration until it is set by a subsequent updateconfig action.
+<h1 class="contract">resigncuste</h1>
 
-<h1 class="contract">
-  nominatecand
-</h1>
+---
+spec_version: "0.2.0"
+title: Resign as a Custodian
+summary: 'Resign custodian {{ nowrap cand }} for DAC ID {{ nowrap dac_id }}'
+icon: https://eosdac.io/assets/contracts/generic.png#00da1afc6464028359b3a02ffbdb59e1ea79fa261b5523ce7ac174cc0ef27bbd
+---
 
-## ACTION: nominatecand
-**PARAMETERS:**
-* __cand__ is an account_name parameter for the nominating candidate.
-* __requestedpay__ is an asset requested by the candidate as pay for being an elected custodian. It should be passed to the action in the format: \"10.0000 EOSDAC\".
+This action will resign the custodian account {{ cand }}.  This account will be removed from the list of candidates.
 
-**INTENT:** The intent of {{ nominatecand }} is to nominates a candidate to custodian election, Accounts must nominate as a candidate before they can be voted for. The candidate must lock a configurable number of tokens before trying to nominate (configurable via {{ updateconfig }} in the parameter lockupasset which will be sent from the token contract as defined and set in the code of the contract. If a user previously been a candidate they may have enough staked tokens to not require further staking but will otherwise need to transfer the difference to meet the required stake. 
 
-**TERM:** A candidate remains a candidate until they are removed from candidate status by a subsequent transaction.
+<h1 class="contract">firecande</h1>
 
-<h1 class="contract">
-  nominatecane
-</h1>
+---
+spec_version: "0.2.0"
+title: Remove Candidate
+summary: 'Remove candidate {{ nowrap cand }} for DAC ID {{ nowrap dac_id }}'
+icon: https://eosdac.io/assets/contracts/generic.png#00da1afc6464028359b3a02ffbdb59e1ea79fa261b5523ce7ac174cc0ef27bbd
+---
 
-## ACTION: nominatecane
-**PARAMETERS:**
-* __cand__ is an account_name parameter for the nominating candidate.
-* __requestedpay__ is an asset requested by the candidate as pay for being an elected custodian. It should be passed to the action in the format: \"10.0000 EOSDAC\".
+This action will remove the custodian account {{ cand }}.  This account will be removed from the list of candidates.
 
-**INTENT:** The intent of {{ nominatecand }} is to nominates a candidate to custodian election, Accounts must nominate as a candidate before they can be voted for. The candidate must lock a configurable number of tokens before trying to nominate (configurable via {{ updateconfig }} in the parameter lockupasset which will be sent from the token contract as defined and set in the code of the contract. If a user previously been a candidate they may have enough staked tokens to not require further staking but will otherwise need to transfer the difference to meet the required stake. 
+{{#if lockupStake}}Lockup stake will be eligible to be withdrawn.{{/if}}
 
-**TERM:** A candidate remains a candidate until they are removed from candidate status by a subsequent transaction.
+<h1 class="contract">unstakee</h1>
 
-<h1 class="contract">
-  withdrawcand
-</h1>
+---
+spec_version: "0.2.0"
+title: Unstake Candidate Deposit
+summary: 'Unstake {{ nowrap cand }} for DAC ID {{ nowrap dac_id }}'
+icon: https://eosdac.io/assets/contracts/generic.png#00da1afc6464028359b3a02ffbdb59e1ea79fa261b5523ce7ac174cc0ef27bbd
+---
 
-## ACTION: withdrawcand
-**PARAMETERS:**
-* __cand__ is an account_name parameter for the nominating candidate.
+Unstake custodian stake.
 
-**INTENT:** The intent of withdrawcand is to withdraw a candidate for becoming an elected custodian. The action ensures the {{ cand }} account is currently nominated. On success the amount of tokens that was locked up via the {{ nominatecand }} action will be added to a list of pending transactions to transfer back to the {{ cand }} account. The actual transfer would be performed by a separate action due to the auth requirement for sending funds from the contract's account.
+Custodian stake will be returned after calling this action, subject to the candidate having passed the lockup period.
 
-**TERM:** The account will no longer be a candidate unless they it is nominated again.
+<h1 class="contract">updateconfige</h1>
 
-<h1 class="contract">
-  withdrawcane
-</h1>
+---
+spec_version: "0.2.0"
+title: Update DAC Config
+summary: 'Update config for DAC ID {{ nowrap dac_id }}'
+icon: https://eosdac.io/assets/contracts/generic.png#00da1afc6464028359b3a02ffbdb59e1ea79fa261b5523ce7ac174cc0ef27bbd
+---
 
-## ACTION: withdrawcane
-**PARAMETERS:**
-* __cand__ is an account_name parameter for the nominating candidate.
+Update the DAC config for {{ dac_id }} to the provided configuration.
 
-**INTENT:** The intent of withdrawcane is to withdraw a candidate for becoming an elected custodian. The action ensures the {{ cand }} account is currently nominated. On success the amount of tokens that was locked up via the {{ nominatecand }} action will be added to a list of pending transactions to transfer back to the {{ cand }} account. The actual transfer would be performed by a separate action due to the auth requirement for sending funds from the contract's account.
+<h1 class="contract">nominatecane</h1>
 
-**TERM:** The account will no longer be a candidate unless they it is nominated again.
+---
+spec_version: "0.2.0"
+title: Register as a Candidate
+summary: 'Register {{ nowrap cand }} as a candidate for DAC ID {{ nowrap dac_id }}'
+icon: https://eosdac.io/assets/contracts/generic.png#00da1afc6464028359b3a02ffbdb59e1ea79fa261b5523ce7ac174cc0ef27bbd
+---
 
-## ACTION: updatebio
-**PARAMETERS:**
-* __cand__ is an account_name parameter for the nominating candidate.
-* __bio__ is a string representing a bio for candidate. This should be a hash or a link where data is under the control of the individual.
+Register {{ nowrap cand }} as a candidate for {{ dac_id }}, I request to be paid {{ nowrap requestedpay }}
 
-**INTENT:** The intent of updatebio is to allow a candidate update their bio information after they have nominated. The action ensures the user has agreed to the latest terms and conditions, has the correct authorization of the {{ cand }} to perform the action and is already nominated as a candidate. Then the bio information for the candidate will be updated leaving all other data of the candidate unchanged.
 
-**WARNING:** The action records information on the blockchain and hence should not include directly entered personally identifiable information. Instead hashes or links under the control of the individual should be used.
+<h1 class="contract">withdrawcane</h1>
 
-<h1 class="contract">
-  updatereqpay
-</h1>
+---
+spec_version: "0.2.0"
+title: Unregister as a Candidate
+summary: 'Unregister {{ nowrap cand }} as a candidate for DAC ID {{ nowrap dac_id }}'
+icon: https://eosdac.io/assets/contracts/generic.png#00da1afc6464028359b3a02ffbdb59e1ea79fa261b5523ce7ac174cc0ef27bbd
+---
 
-## ACTION: updatereqpay
-**PARAMETERS:**
-* __cand__ is an account_name parameter for the nominating candidate.
-* __requestedpay__ is an asset requested by the candidate as pay for being an elected custodian. It should be passed to the action in the format: \"10.0000 EOSDAC\".
+Unregister {{ nowrap cand }} as a candidate for {{ dac_id }}.  {{ nowrap cand }} will be removed from the list of active candidates.
 
-**INTENT:** The intent of updatereqpay is to allow a candidate update their requested pay after they have nominated. The action ensures the user has agreed to the latest terms and conditions, has the correct authorization of the {{ cand }} to perform the action and is already nominated as a candidate.  All other data of the candidate will remain unchanged. If the custodian is elected, this requested pay is used along with other elected custodians requested pay to determine the level of pay for custodians
 
-**TERM:** The action changes the values until superseded by another action.
+<h1 class="contract">updatereqpae</h1>
 
-<h1 class="contract">
-  updatereqpae
-</h1>
+---
+spec_version: "0.2.0"
+title: Update Requested Pay
+summary: 'Update requested pay for {{ nowrap cand }} to {{ nowrap requestedpay }}'
+icon: https://eosdac.io/assets/contracts/generic.png#00da1afc6464028359b3a02ffbdb59e1ea79fa261b5523ce7ac174cc0ef27bbd
+---
 
-## ACTION: updatereqpae
-**PARAMETERS:**
-* __cand__ is an account_name parameter for the nominating candidate.
-* __requestedpay__ is an asset requested by the candidate as pay for being an elected custodian. It should be passed to the action in the format: \"10.0000 EOSDAC\".
+Change requested pay for {{ nowrap cand }} to {{ nowrap requestedpay }}, this change will be part of the calculation at the next election period.
 
-**INTENT:** The intent of updatereqpae is to allow a candidate update their requested pay after they have nominated. The action ensures the user has agreed to the latest terms and conditions, has the correct authorization of the {{ cand }} to perform the action and is already nominated as a candidate.  All other data of the candidate will remain unchanged. If the custodian is elected, this requested pay is used along with other elected custodians requested pay to determine the level of pay for custodians
+<h1 class="contract">votecuste</h1>
 
-**TERM:** The action changes the values until superseded by another action.
+---
+spec_version: "0.2.0"
+title: Vote for Custodian
+summary: 'Vote for custodians with account {{ nowrap voter }} to {{ nowrap requestedpay }} for DAC ID {{ nowrap dac_id }}'
+icon: https://eosdac.io/assets/contracts/generic.png#00da1afc6464028359b3a02ffbdb59e1ea79fa261b5523ce7ac174cc0ef27bbd
+---
 
-<h1 class="contract">
-  votecust
-</h1>
+This action is casting a vote for the following candidates:
 
-## ACTION: votecust
-**PARAMETERS:**
-* __voter__ is an eosio account_name parameter for the voting member.
-* __newvotes__ is an array of nominated candidates account names that the voter intends to vote for with a maximum number of votes as configured by the contract.
+{{#each newvotes}}
+**{{ this }}**
+{{/each}}
 
-**INTENT:** The intent of votecust is to allow a member of the DAC to vote for candidates that are eligible become custodians after the next call to {{ newperiod }}. The action ensures the user has agreed to the latest terms and conditions and has the correct authorization of the account: {{ voter }} to place or change an active vote. Upon success this action will either update an existing vote with a new set of candidates or create a new active vote for the {{ voter }} for candidates eligible for election. This action will replace an existing vote for a proxy for {{ voter }} if one exists. 
+Any previous votes will be removed by these
 
-**TERM:** The action changes the preferred custodians for an account until superseded by another action.
+<h1 class="contract">newperiode</h1>
 
-<h1 class="contract">
-  votecuste
-</h1>
+---
+spec_version: "0.2.0"
+title: New Period
+summary: 'Start a new election period for DAC ID {{ nowrap dac_id }}'
+icon: https://eosdac.io/assets/contracts/generic.png#00da1afc6464028359b3a02ffbdb59e1ea79fa261b5523ce7ac174cc0ef27bbd
+---
 
-## ACTION: votecuste
-**PARAMETERS:**
-* __voter__ is an eosio account_name parameter for the voting member.
-* __newvotes__ is an array of nominated candidates account names that the voter intends to vote for with a maximum number of votes as configured by the contract.
-
-**INTENT:** The intent of votecuste is to allow a member of the DAC to vote for candidates that are eligible become custodians after the next call to {{ newperiod }}. The action ensures the user has agreed to the latest terms and conditions and has the correct authorization of the account: {{ voter }} to place or change an active vote. Upon success this action will either update an existing vote with a new set of candidates or create a new active vote for the {{ voter }} for candidates eligible for election. This action will replace an existing vote for a proxy for {{ voter }} if one exists. 
-
-**TERM:** The action changes the preferred custodians for an account until superseded by another action.
-
-<h1 class="contract">
-  voteproxy
-</h1>
-
-## ACTION: voteproxy
-**PARAMETERS:**
-* __voter__ is an eosio account_name .
-* __proxy__ is an account name that the voter intends to vote for with a maximum number of votes as configured by the contract.
-
-**INTENT:** The intent of voteproxy is to vote another single voter account that may vote with {{ voter }} weight for custodians as a proxy. The action ensures the {{ voter }} has agreed to the latest terms and conditions and has the correct authorization of the {{ voter }} to place or change an active vote. Upon success this action will either update an existing {{ proxy }} vote or create a new active vote for {{ proxy }}. This action will replace an existing vote for a custodians as created by the votecust action if one exists. This action will fail if {{ voter }} attempts to vote for a user who is already voting for a proxy or if they attempt to proxy vote for themselves.
-
-**TERM:** The action changes the proxy until superseded by another action.
-
-<h1 class="contract">
-  newperiod
-</h1>
-
-## ACTION: newperiod
-**PARAMETERS:**
-* __message__ is string used only for logging in the blockchain history and serves no purpose in the action contract logic.
-
-**INTENT:** The intent of {{ newperiod }} is to signal the end of one election period and commence the next. It performs several actions after the following conditions are met:
+The intent of this action is to signal the end of one election period and commence the next. It performs several actions after the following conditions are met:
  * The action is not called before the period should have ended
  * Enough voter value has participated to trigger the initial running of the DAC
  * After the Dac has started enough voter value has continued engagement with the dac voting process. 
@@ -328,100 +143,28 @@ The intent of forehand is to set a candidate to a state of inactive so they will
 4. Set the permissions for the elected custodians so they have sufficient permission to run the dac according to the constitution and technical permissions design.
 5. Set the time for the beginning of the next period to mark the reset anniversary for the dac. 
 
-**TERM:** The action changes the relevant contract data until a subsequent newperiod is called.
+{{#if message}}A message of "{{ message }}" will be recorded on the blockchain.{{/if}}
 
-<h1 class="contract">
-  newperiode
-</h1>
+<h1 class="contract">claimpaye</h1>
 
-## ACTION: newperiode
-**PARAMETERS:**
-* __message__ is string used only for logging in the blockchain history and serves no purpose in the action contract logic.
+---
+spec_version: "0.2.0"
+title: Claim Custodian Pay
+summary: 'Claim custodian pay with ID {{ payid }} for DAC {{ dac_id }}'
+icon: https://eosdac.io/assets/contracts/generic.png#00da1afc6464028359b3a02ffbdb59e1ea79fa261b5523ce7ac174cc0ef27bbd
+---
 
-**INTENT:** The intent of {{ newperiode }} is to signal the end of one election period and commence the next. It performs several actions after the following conditions are met:
- * The action is not called before the period should have ended
- * Enough voter value has participated to trigger the initial running of the DAC
- * After the Dac has started enough voter value has continued engagement with the dac voting process. 
-1. Calculate the mean `requestedpay` of all the currently elected custodians.
-2. Distribute the median pay amount to all the currently elected custodians. This is achieved by adding a record to the `pendingpay` table with the custodian and the amount payable in preparation for an authorised action to `claimpay`.
-3. Captures the highest voted candidates to set them as the custodians for the next period based on the accumulated vote weight.
-4. Set the permissions for the elected custodians so they have sufficient permission to run the dac according to the constitution and technical permissions design.
-5. Set the time for the beginning of the next period to mark the reset anniversary for the dac. 
+Claim custodian pay with ID {{ payid }}, the account calling this action must be the same account that the pay claim is for.
 
-**TERM:** The action changes the relevant contract data until a subsequent newperiode is called.
+Payment will be delayed based on the configuration of the DAC.
 
-<h1 class="contract">
-  claimpay
-</h1>
+<h1 class="contract">rejectcuspay</h1>
 
-## ACTION: claimpay
-**PARAMETERS:**
-* __claimer__ account claiming the pay. This account must match the destination account for which the claim is for.
-
-**INTENT:** The intent of {{ claimpay }} is to allow an account to claim pending payment amounts due to the account. The pay claim they are claiming needs to be visible in the `pendingpay` table. transfers to the claimer via an inline transfer on the eosdactoken contract and then removes the pending payment record from the `pending_pay` table. The active auth of this claimer is required to complete this action.
-
-**TERM:** This action lasts for the duration of the time taken to process the transaction.
-
-<h1 class="contract">
-  claimpaye
-</h1>
-
-## ACTION: claimpaye
-**PARAMETERS:**
-* __claimer__ account claiming the pay. This account must match the destination account for which the claim is for.
-
-**INTENT:** The intent of {{ claimpaye }} is to allow an account to claim pending payment amounts due to the account. The pay claim they are claiming needs to be visible in the `pendingpay` table. transfers to the claimer via an inline transfer on the eosdactoken contract and then removes the pending payment record from the `pending_pay` table. The active auth of this claimer is required to complete this action.
-
-**TERM:** This action lasts for the duration of the time taken to process the transaction.
-
-<h1 class="contract">
-  rejectcuspay
-</h1>
-
-## ACTION: rejectcuspay
-**PARAMETERS:**
-* __payid__ the pay id for the arrange payment.
-
-**INTENT:** The intent of {{ rejectcuspay }} is to allow an account to reject a claim for pending payment amounts due to that account. The pay claim they are claiming needs to be visible in the `pendingpay` table and is then removed from the `pending_pay` table. The active auth of the intended claimer for the payment is required to complete this action.
-
-**TERM:** This action lasts for the duration of the time taken to process the transaction.
-
-<h1 class="contract">
-transferobsv
-</h1>
-
-## ACTION: transferobsv
-**PARAMETERS:**
-* __from__ is an eosio account name for the source of the transaction. 
-* __to__ is an eosio account name for the destination of the transaction. 
-* __quantity__ is eos asset. 
-* __dac_id__ is an eosio account name to determine which DAC the transaction is associated with. 
-
-**INTENT** The intent of transferobsv is to monitor an asset transaction to update current vote strengths. 
-#### Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later so therefore should only store a unidentifiable hash of content rather than human readable content. 
-
-<h1 class="contract">
-capturestake
-</h1>
-
-## ACTION: capturestake
-**PARAMETERS:**
-* __from__ is an eosio account name for the source of the transaction. 
-* __quantity__ is eos asset. 
-* __dac_id__ is an eosio account name to determine which DAC the transaction is associated with. 
-
-**INTENT** The intent of capturestake is to record an amount transferred to this contract for pending stake for a registering candidate. 
-#### Warning: This action will store the content on the chain in the history logs and the data cannot be deleted later so therefore should only store a unidentifiable hash of content rather than human readable content. 
-
-<h1 class="contract">
-  setperm
-</h1>
-
-## ACTION: setperm
-**PARAMETERS:**
-* __cand__ The account registering a new permission, must be registered as a candidate.
-* __permission__ The permission name that will be used in the multisig.
-
-**INTENT:** The intent of {{ setperm }} is to allow an account to set a permission name which will be used in the DAC multisig in place of the active permission.  This allows an account to set up a permission specifically for administering the DAC.  Setting the entry to active will delete the entry in the database and free RAM.
-
-**TERM:** This action lasts until the user sets the permission back to active.
+---
+spec_version: "0.2.0"
+title: Reject Custodian Pay
+summary: 'Reject custodian pay with ID {{ payid }} for DAC {{ dac_id }}'
+icon: https://eosdac.io/assets/contracts/generic.png#00da1afc6464028359b3a02ffbdb59e1ea79fa261b5523ce7ac174cc0ef27bbd
+---
+ 
+This action will REJECT the pay claim with ID {{ payid }} for DAC {{ dac_id }}.
