@@ -15,6 +15,12 @@
 #include "../_contract-shared-headers/daccustodian_shared.hpp"
 
 #define SYSTEM_MSIG_CONTRACT "eosiomsigold"
+// WARNING : Do not use ENABLE_BINDING_VOTE if this will be a shared contract (ie RESTRICT_DAC should be set if ENABLE_BINDING_VOTE==1)
+#ifndef ENABLE_BINDING_VOTE
+#define ENABLE_BINDING_VOTE 1
+#endif
+// Remove this to enable multiple dacs
+#define RESTRICT_DAC "eos.dac"
 
 using namespace eosio;
 using namespace eosdac;
@@ -182,6 +188,7 @@ CONTRACT referendum : public contract {
         uint8_t calculateStatus(uint64_t referendum_id, name dac_id);
         void proposeMsig(referendum_data ref, name dac_id);
         uint64_t nextID(checksum256 trxid);
+        void checkDAC(name dac_id);
 
 
     public:
