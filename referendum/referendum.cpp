@@ -289,7 +289,7 @@ void referendum::exec(uint64_t referendum_id, name dac_id){
 
 void referendum::stakeobsv(vector<account_stake_delta> stake_deltas, name dac_id){
     auto dac = dacdir::dac_for_id(dac_id);
-    auto vote_account = dac.account_for_type(dacdir::VOTE_WEIGHT);
+    auto vote_account = dac.account_for_type(dacdir::ROUTER);
     require_auth(vote_account);
 
     referenda_table referenda(get_self(), dac_id.value);
