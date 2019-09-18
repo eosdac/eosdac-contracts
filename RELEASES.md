@@ -1,7 +1,7 @@
 Date: 2019-09-11
 Contract: eosdactokens
 Hash: 8ef7aedfefa876438ec0931e40a2fbf03b22bd9d3e9c550689976e386403ee82
-CDT: 1.6.1
+CDT: 1.6.2
 Git Commit: 32cb5e1b901362758974f5cca4815bbf6177906a
 
 Date: 2019-09-11
