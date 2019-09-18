@@ -4,6 +4,20 @@
     "types": [],
     "structs": [
         {
+            "name": "appointcust",
+            "base": "",
+            "fields": [
+                {
+                    "name": "cust",
+                    "type": "name[]"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "candidate",
             "base": "",
             "fields": [
@@ -725,6 +739,11 @@
         }
     ],
     "actions": [
+        {
+            "name": "appointcust",
+            "type": "appointcust",
+            "ricardian_contract": ""
+        },
         {
             "name": "capturestake",
             "type": "capturestake",
