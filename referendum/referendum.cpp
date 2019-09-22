@@ -33,6 +33,7 @@ void referendum::refund(name account){
 }
 
 void referendum::updateconfig(config_item config, name dac_id){
+    checkDAC(dac_id);
     require_auth(get_self());
     config.save(get_self(), dac_id, get_self());
 }
@@ -46,8 +47,12 @@ void referendum::propose(
         name dac_id,
         vector<action> acts){
 
+    checkDAC(dac_id);
     require_auth(proposer);
     assertValidMember(proposer, dac_id);
+#if ENABLE_BINDING_VOTE == 0
+    check(type != vote_type::TYPE_BINDING, "ERR::CONTRACT_NOT_COMPILED::Contract was not compiled to allow binding votes");
+#endif
 
     auto config = config_item::get_current_configs(get_self(), dac_id);
 
@@ -144,6 +149,7 @@ void referendum::propose(
 
 void referendum::vote(name voter, uint64_t referendum_id, uint8_t vote, name dac_id){
 
+    checkDAC(dac_id);
     assertValidMember(voter, dac_id);
 
     referenda_table referenda(get_self(), dac_id.value);
@@ -241,6 +247,7 @@ void referendum::vote(name voter, uint64_t referendum_id, uint8_t vote, name dac
 
 
 void referendum::updatestatus(uint64_t referendum_id, name dac_id){
+    checkDAC(dac_id);
     referenda_table referenda(get_self(), dac_id.value);
 
     uint8_t new_status = calculateStatus(referendum_id, dac_id);
@@ -254,6 +261,7 @@ void referendum::updatestatus(uint64_t referendum_id, name dac_id){
 
 
 void referendum::cancel(uint64_t referendum_id, name dac_id){
+    checkDAC(dac_id);
     referenda_table referenda(get_self(), dac_id.value);
     auto ref = referenda.get(referendum_id, "ERR::REFERENDUM_NOT_FOUND::Referendum not found");
 
@@ -263,6 +271,7 @@ void referendum::cancel(uint64_t referendum_id, name dac_id){
 }
 
 void referendum::exec(uint64_t referendum_id, name dac_id){
+    checkDAC(dac_id);
     referenda_table referenda(get_self(), dac_id.value);
     auto ref = referenda.find(referendum_id);
 
@@ -288,9 +297,10 @@ void referendum::exec(uint64_t referendum_id, name dac_id){
 }
 
 void referendum::stakeobsv(vector<account_stake_delta> stake_deltas, name dac_id){
+    checkDAC(dac_id);
     auto dac = dacdir::dac_for_id(dac_id);
-    auto vote_account = dac.account_for_type(dacdir::ROUTER);
-    require_auth(vote_account);
+    auto router_account = dac.account_for_type(dacdir::ROUTER);
+    require_auth(router_account);
 
     referenda_table referenda(get_self(), dac_id.value);
 
@@ -313,6 +323,7 @@ void referendum::stakeobsv(vector<account_stake_delta> stake_deltas, name dac_id
 }
 
 void referendum::clean(name account, name dac_id){
+    checkDAC(dac_id);
     require_auth(account);
 
     referenda_table referenda(get_self(), dac_id.value);
@@ -353,6 +364,12 @@ bool referendum::hasAuth(vector<action> acts){
     bool res = referendum::_check_transaction_authorization(packed_trx.data(), packed_trx.size(), (const char*)0, 0, packed_perms.data(), packed_perms.size());
 
     return res;
+}
+
+void referendum::checkDAC(name dac_id){
+#ifdef RESTRICT_DAC
+    check(dac_id == name(RESTRICT_DAC), "DAC not permitted");
+#endif
 }
 
 uint8_t referendum::calculateStatus(uint64_t referendum_id, name dac_id) {
