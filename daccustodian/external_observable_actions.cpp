@@ -82,7 +82,7 @@ void daccustodian::balanceobsv(vector<account_balance_delta> account_balance_del
     auto dac = dacdir::dac_for_id(dac_id);
     auto token_contract = dac.symbol.get_contract();
 
-    auto router_account = dac.account_for_type(dacdir::ROUTER);
+    auto router_account = dac.account_for_type(dacdir::VOTE_WEIGHT);
 
     check(has_auth(token_contract) || has_auth(router_account), "Must have auth of token or router contract to call balanceobsv");
 
@@ -112,7 +112,7 @@ void daccustodian::weightobsv(vector<account_weight_delta> account_weight_deltas
     auto dac = dacdir::dac_for_id(dac_id);
     auto token_contract = dac.symbol.get_contract();
 
-    auto router_account = dac.account_for_type(dacdir::ROUTER);
+    auto router_account = dac.account_for_type(dacdir::VOTE_WEIGHT);
 
     check(has_auth(token_contract) || has_auth(router_account), "Must have auth of token or router contract to call weightobsv");
 
@@ -140,7 +140,7 @@ void daccustodian::stakeobsv(vector<account_stake_delta> account_stake_deltas, n
     auto dac = dacdir::dac_for_id(dac_id);
     auto token_contract = dac.symbol.get_contract();
 
-    auto router_account = dac.account_for_type(dacdir::ROUTER);
+    auto router_account = dac.account_for_type(dacdir::VOTE_WEIGHT);
 
     check(has_auth(token_contract) || has_auth(router_account), "Must have auth of token or router contract to call stakeobsv");
 

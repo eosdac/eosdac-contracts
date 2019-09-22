@@ -256,35 +256,49 @@ void daccustodian::runnewperiod(string message, name dac_id) {
     assertPeriodTime(configs, currentState);
 
     dacdir::dac found_dac = dacdir::dac_for_id(dac_id);
+    name activation_account = found_dac.account_for_type(dacdir::ACTIVATION);
 
-    // Get the token supply of the lockup asset token (eg. EOSDAC)
-    auto statsTable = stats(
-            found_dac.symbol.get_contract(),
-            found_dac.symbol.get_symbol().code().raw()
-    );
-    auto tokenStats = statsTable.begin();
-    check(tokenStats != statsTable.end(), "ERR::STATS_NOT_FOUND::Stats table not found");
-    eosio::print("\n\nstats: ", tokenStats->supply, " contract: ", found_dac.symbol.get_contract(), " symbol: ", found_dac.symbol.get_symbol());
-    uint64_t token_current_supply = tokenStats->supply.amount;
+    if (activation_account){
+        print("\n\nSending notification to ", activation_account, "::assertunlock");
 
-    double percent_of_current_voter_engagement =
-            double(currentState.total_weight_of_votes) / double(token_current_supply) * 100.0;
+        action(
+                permission_level{activation_account, "notify"_n},
+                activation_account, "assertunlock"_n,
+                std::make_tuple(dac_id)
+        ).send();
+    }
+    else {
+        // Get the token supply of the lockup asset token (eg. EOSDAC)
+        auto statsTable = stats(
+                found_dac.symbol.get_contract(),
+                found_dac.symbol.get_symbol().code().raw()
+        );
+        auto tokenStats = statsTable.begin();
+        check(tokenStats != statsTable.end(), "ERR::STATS_NOT_FOUND::Stats table not found");
+        print("\n\nstats: ", tokenStats->supply, " contract: ", found_dac.symbol.get_contract(), " symbol: ", found_dac.symbol.get_symbol());
 
-    eosio::print("\n\nToken current supply as decimal units: ", token_current_supply, " total votes so far: ", currentState.total_weight_of_votes);
-    eosio::print("\n\nNeed inital engagement of: ", configs.initial_vote_quorum_percent, "% to start the DAC.");
-    eosio::print("\n\nToken supply: ", token_current_supply * 0.0001, " total votes so far: ", currentState.total_weight_of_votes * 0.0001);
-    eosio::print("\n\nNeed initial engagement of: ", configs.initial_vote_quorum_percent, "% to start the DAC.");
-    eosio::print("\n\nNeed ongoing engagement of: ", configs.vote_quorum_percent,
-                 "% to allow new periods to trigger after initial activation.");
-    eosio::print("\n\nPercent of current voter engagement: ", percent_of_current_voter_engagement, "\n\n");
+        uint64_t token_current_supply = tokenStats->supply.amount;
 
-    check(currentState.met_initial_votes_threshold == true ||
-          percent_of_current_voter_engagement > configs.initial_vote_quorum_percent,
-          "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_ACTIVATE::Voter engagement is insufficient to activate the DAC.");
+        double percent_of_current_voter_engagement =
+                double(currentState.total_weight_of_votes) / double(token_current_supply) * 100.0;
+
+        print("\n\nToken current supply as decimal units: ", token_current_supply, " total votes so far: ", currentState.total_weight_of_votes);
+        print("\n\nNeed inital engagement of: ", configs.initial_vote_quorum_percent, "% to start the DAC.");
+        print("\n\nToken supply: ", token_current_supply * 0.0001, " total votes so far: ", currentState.total_weight_of_votes * 0.0001);
+        print("\n\nNeed initial engagement of: ", configs.initial_vote_quorum_percent, "% to start the DAC.");
+        print("\n\nNeed ongoing engagement of: ", configs.vote_quorum_percent,
+                     "% to allow new periods to trigger after initial activation.");
+        print("\n\nPercent of current voter engagement: ", percent_of_current_voter_engagement, "\n\n");
+
+        check(currentState.met_initial_votes_threshold == true ||
+              percent_of_current_voter_engagement > configs.initial_vote_quorum_percent,
+              "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_ACTIVATE::Voter engagement is insufficient to activate the DAC.");
+
+        check(percent_of_current_voter_engagement > configs.vote_quorum_percent,
+              "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_PROCESS::Voter engagement is insufficient to process a new period");
+    }
+
     currentState.met_initial_votes_threshold = true;
-
-    check(percent_of_current_voter_engagement > configs.vote_quorum_percent,
-          "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_PROCESS::Voter engagement is insufficient to process a new period");
 
     // Distribute pay to the current custodians.
     distributeMeanPay(dac_id);

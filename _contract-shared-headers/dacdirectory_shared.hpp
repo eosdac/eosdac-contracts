@@ -18,7 +18,8 @@ namespace eosdac {
             SERVICE = 5,
             PROPOSALS = 6,
             ESCROW = 7,
-            ROUTER = 8,
+            VOTE_WEIGHT = 8,
+            ACTIVATION = 9,
             EXTERNAL = 254,
             OTHER = 255
         };
