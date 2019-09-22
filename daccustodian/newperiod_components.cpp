@@ -257,12 +257,13 @@ void daccustodian::runnewperiod(string message, name dac_id) {
 
     dacdir::dac found_dac = dacdir::dac_for_id(dac_id);
 
-
     // Get the token supply of the lockup asset token (eg. EOSDAC)
-    auto tokenStats = stats(
+    auto statsTable = stats(
             found_dac.symbol.get_contract(),
             found_dac.symbol.get_symbol().code().raw()
-    ).begin();
+    );
+    auto tokenStats = statsTable.begin();
+    check(tokenStats != statsTable.end(), "ERR::STATS_NOT_FOUND::Stats table not found");
     eosio::print("\n\nstats: ", tokenStats->supply, " contract: ", found_dac.symbol.get_contract(), " symbol: ", found_dac.symbol.get_symbol());
     uint64_t token_current_supply = tokenStats->supply.amount;
 
