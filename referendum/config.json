@@ -1,0 +1,29 @@
+[
+  [
+    [
+      {"key": 0, "value": {"contract": "eosio.token", "quantity": "100.0000 EOS"}},
+      {"key": 1, "value": {"contract": "eosio.token", "quantity": "10.0000 EOS"}},
+      {"key": 2, "value": {"contract": "eosio.token", "quantity": "0.0000 EOS"}}
+    ],
+    [
+      {"key": 0, "value": 6000},
+      {"key": 1, "value": 5000}
+    ],
+    [
+      {"key": 0, "value": 100000},
+      {"key": 1, "value": 50000},
+      {"key": 2, "value": 10000}
+    ],
+    [
+      {"key": 0, "value": 5},
+      {"key": 1, "value": 2},
+      {"key": 2, "value": 2}
+    ],
+    [
+      {"key": 0, "value": 0},
+      {"key": 1, "value": 0},
+      {"key": 2, "value": 0}
+    ]
+  ]
+  , "eos.dac"
+]

@@ -40,15 +40,35 @@ void daccustodian::modifyVoteWeights(name voter, vector<name> oldVotes, vector<n
     eosio::print("Modify vote weights: ", voter, "\n");
 
     dacdir::dac found_dac = dacdir::dac_for_id(dac_id);
-    accounts accountstable(found_dac.symbol.get_contract(), voter.value);
+    name token_contract = found_dac.symbol.get_contract();
+    name vote_contract = found_dac.account_for_type(dacdir::VOTE_WEIGHT);
 
-    const auto ac = accountstable.find(found_dac.symbol.get_symbol().code().raw());
-    if (ac == accountstable.end()) {
-        print("Voter has no balance therefore no need to update vote weights");
+    int64_t vote_weight = 0;
+
+    if (vote_contract){
+        weights weights_table(vote_contract, dac_id.value);
+        auto weight_itr = weights_table.find(voter.value);
+        if (weight_itr != weights_table.end()){
+            vote_weight = weight_itr->weight;
+        }
+    }
+    else {
+        accounts accountstable(found_dac.symbol.get_contract(), voter.value);
+
+        const auto ac = accountstable.find(found_dac.symbol.get_symbol().code().raw());
+        if (ac != accountstable.end()) {
+            vote_weight = ac->balance.amount;
+        }
+    }
+
+    weights weights_table(token_contract, token_contract.value);
+
+    const auto ac = weights_table.find(voter.value);
+    if (vote_weight == 0) {
+        print("Voter has no weight therefore no need to update vote weights");
         return;
     }
-    int64_t vote_weight = ac->balance.amount;
-    contr_state currentState = contr_state::get_current_state(_self, dac_id);
+    contr_state currentState = contr_state::get_current_state(get_self(), dac_id);
 
     // New voter -> Add the tokens to the total weight.
     check((currentState.total_weight_of_votes + vote_weight) >= currentState.total_weight_of_votes, "Overflow in total_weight_of_votes");
@@ -62,7 +82,7 @@ void daccustodian::modifyVoteWeights(name voter, vector<name> oldVotes, vector<n
 
     updateVoteWeights(oldVotes, -vote_weight, dac_id, currentState);
     updateVoteWeights(newVotes, vote_weight, dac_id, currentState);
-    currentState.save(_self, dac_id);
+    currentState.save(get_self(), dac_id);
 }
 
 permission_level daccustodian::getCandidatePermission(name account, name dac_id){

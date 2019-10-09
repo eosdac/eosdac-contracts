@@ -18,6 +18,8 @@ namespace eosdac {
             SERVICE = 5,
             PROPOSALS = 6,
             ESCROW = 7,
+            VOTE_WEIGHT = 8,
+            ACTIVATION = 9,
             EXTERNAL = 254,
             OTHER = 255
         };
@@ -29,7 +31,10 @@ namespace eosdac {
             LOGO_NOTEXT_URL = 3,
             BACKGROUND_URL = 4,
             COLORS = 5,
-            CLIENT_EXTENSION = 6
+            CLIENT_EXTENSION = 6,
+            FAVICON_URL = 7,
+            DAC_CURRENCY_URL = 8,
+            SYSTEM_CURRENCY_URL = 9,
         };
 
         enum dac_state_type: uint8_t {
