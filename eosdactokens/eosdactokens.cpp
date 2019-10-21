@@ -125,7 +125,6 @@ namespace eosdac {
                     make_tuple(from, quantity, dac.dac_id)
                 ).send();
 
-                print("notifying staking transaction.");
 
             } else {
                 //Send to notify of balance change

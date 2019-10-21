@@ -1,4 +1,16 @@
-import { Account, AccountManager, ContractDeployer, nextBlock, sleep, EOSManager, generateTypes } from 'lamington';
+import {
+  Account,
+  AccountManager,
+  ContractDeployer,
+  nextBlock,
+  sleep,
+  EOSManager,
+  generateTypes,
+  Contract,
+} from 'lamington';
+import * as ecc from 'eosjs-ecc';
+
+import { factory } from './LoggingConfig';
 
 import { EosioToken } from './external_contracts/eosio.token/eosio.token';
 
@@ -13,6 +25,8 @@ import { Eosdactokens } from './eosdactokens/eosdactokens';
 import * as fs from 'fs';
 import * as path from 'path';
 
+const log = factory.getLogger('TestHelper');
+
 // Shared Instances to use between tests.
 let shared: SharedTestObjects;
 
@@ -20,17 +34,12 @@ let _regmembers: Account[];
 let _candidates: Account[];
 
 export interface SharedTestObjects {
-  readonly dac_token_account: Account;
   readonly auth_account: Account;
-  readonly daccustodian_account: Account;
-  readonly directory_account: Account;
   readonly treasury_account: Account;
-  readonly eosio_token_account: Account;
   // === Dac Contracts
   readonly dacdirectory_contract: Dacdirectory;
   readonly daccustodian_contract: Daccustodian;
   readonly dac_token_contract: Eosdactokens;
-  readonly eosio_token_contract: EosioToken;
   // === Shared Values
   readonly dac_owner: Account;
   readonly configured_dac_id: string;
@@ -38,48 +47,86 @@ export interface SharedTestObjects {
   // readonly regmembers: Array<Account>;
 }
 
-let sharedTestObjectsSemaphore = false;
+let shouldAllowCreateTestObjects = true;
 export async function initAndGetSharedObjects(): Promise<SharedTestObjects> {
-  if (!shared && !sharedTestObjectsSemaphore) {
-    sharedTestObjectsSemaphore = true;
-    await EOSManager.initWithDefaults();
-    await sleep(1500);
-    let token_account = await new_account('eodactoken');
-    let auth_account = await new_account('eosdacauth');
-    let custodian_account = await new_account('daccustodian');
-    let directory_account = await new_account('dacdirectory');
-    let treasury_account = await new_account('treasury');
-    let eosio_token_account = await new_account('eosio.token');
+  log.info('Called initAndGetSharedObjects');
+  if (shouldAllowCreateTestObjects) {
+    shouldAllowCreateTestObjects = false;
 
-    shared = {
-      dac_token_account: token_account,
+    // log.info('Getting passed the if block');
+    await sleep(1500);
+    EOSManager.initWithDefaults();
+    // await sleep(2000);
+    // await sleep(4500);
+    // let token_account = await new_account('eodactoken');
+    let auth_account = await new_account('eosdacauth');
+
+    log.info('auth_account: ' + JSON.stringify(auth_account, null, 4));
+    // let custodian_account = await new_account('daccustodian');
+    // let directory_account = await new_account('dacdirectory');
+    let treasury_account = await new_account('treasury');
+    // let eosio_token_account = await new_account('eosio.token');
+
+    let dacdirectory: Dacdirectory = await ContractDeployer.deployWithName(
+      'dacdirectory/dacdirectory',
+      'dacdirectory'
+    );
+    let daccustodian: Daccustodian = await ContractDeployer.deployWithName(
+      'daccustodian/daccustodian',
+      'daccustodian'
+    );
+    let token: Eosdactokens = await ContractDeployer.deployWithName(
+      'eosdactokens/eosdactokens',
+      'eosdactokens'
+    );
+    let dacowner = await AccountManager.createAccount();
+    log.info(
+      'building shared details: ' +
+        [
+          auth_account,
+          treasury_account,
+          dacdirectory,
+          daccustodian,
+          token,
+          dacowner,
+        ]
+          .map(v => {
+            return JSON.stringify(v);
+          })
+          .join('\n')
+    );
+
+    let tempSharedObjects: SharedTestObjects = {
       auth_account: auth_account,
-      daccustodian_account: custodian_account,
-      directory_account: directory_account,
+
       treasury_account: treasury_account,
-      eosio_token_account: eosio_token_account,
       // Configure Dac contracts
-      dacdirectory_contract: await ContractDeployer.deployToAccount('dacdirectory/dacdirectory', directory_account),
-      daccustodian_contract: await ContractDeployer.deployToAccount('daccustodian/daccustodian', custodian_account),
-      dac_token_contract: await ContractDeployer.deployToAccount('eosdactokens/eosdactokens', token_account),
-      eosio_token_contract: await ContractDeployer.deployToAccount('external_contracts/eosio.token/eosio.token', eosio_token_account),
+      dacdirectory_contract: dacdirectory,
+      daccustodian_contract: daccustodian,
+      dac_token_contract: token,
       // Other objects
-      dac_owner: await AccountManager.createAccount(),
+      dac_owner: dacowner,
       configured_dac_id: 'eosdacio',
-      configured_dac_memberterms: 'AgreedMemberTermsHashValue'
+      configured_dac_memberterms: 'AgreedMemberTermsHashValue',
     };
     // Further setup after the inital singleton object have been created.
-    // nextBlock();
-    await setup_tokens();
-    await add_token_contract_permissions();
-    await register_dac_with_directory();
-    await setup_dac_memberterms();
+    await setup_tokens(tempSharedObjects);
+    await add_token_contract_permissions(tempSharedObjects);
+    await register_dac_with_directory(tempSharedObjects);
+    await setup_dac_memberterms(tempSharedObjects);
+    log.info('returning new shared');
+    shared = tempSharedObjects;
+    return shared;
+  } else if (shared) {
+    log.info('returning existing shared');
+    return shared;
   }
-  return shared;
 }
 
 export async function regmembers(): Promise<Account[]> {
-  return _regmembers || (_regmembers = await getRegMembers(5)) ? _regmembers : Promise.reject('Error occurred!!!');
+  return _regmembers || (_regmembers = await getRegMembers(5))
+    ? _regmembers
+    : Promise.reject('Error occurred!!!');
 }
 
 async function getRegMembers(count: number): Promise<Account[]> {
@@ -108,7 +155,9 @@ async function getRegMembers(count: number): Promise<Account[]> {
 }
 
 export async function candidates(): Promise<Account[]> {
-  return _candidates || (_candidates = await getCandidates(6)) ? _candidates : Promise.reject('Error occurred!!!');
+  return _candidates || (_candidates = await getCandidates(6))
+    ? _candidates
+    : Promise.reject('Error occurred!!!');
 }
 
 async function getCandidates(count: number): Promise<Account[]> {
@@ -124,36 +173,50 @@ async function getCandidates(count: number): Promise<Account[]> {
   return newCandidates;
 }
 
-async function setup_tokens() {
-  await shared.eosio_token_contract.create(shared.eosio_token_account.name, '10000000000.0000 EOS', { from: shared.eosio_token_account });
-  await shared.eosio_token_contract.issue(shared.eosio_token_account.name, '100000000.0000 EOS', 'Initial Token holder', { from: shared.eosio_token_account });
-
-  await shared.dac_token_contract.create(shared.dac_token_account.name, '10000000000.0000 EOSDAC', false, { from: shared.dac_token_account });
-  await shared.dac_token_contract.issue(shared.dac_token_account.name, '100000000.0000 EOSDAC', 'Initial Token holder', { from: shared.dac_token_account });
-  // await shared.dac_token_contract.accountsTable({ scope: shared.dac_token_account.name }).then(value => {
-  //   console.log('dac token balance : ' + JSON.stringify(value));
-  // });
+async function setup_tokens(tempSharedObjects: SharedTestObjects) {
+  await tempSharedObjects.dac_token_contract.create(
+    tempSharedObjects.dac_token_contract.account.name,
+    '10000000000.0000 EOSDAC',
+    false,
+    { from: tempSharedObjects.dac_token_contract.account }
+  );
+  await tempSharedObjects.dac_token_contract.issue(
+    tempSharedObjects.dac_token_contract.account.name,
+    '100000000.0000 EOSDAC',
+    'Initial Token holder',
+    { from: tempSharedObjects.dac_token_contract.account }
+  );
 }
 
 // Not used for now but could be useful later
 async function setup_external(name: string) {
-  const compiled_dir = path.normalize(`${__dirname}/../.lamington/compiled_contracts/${name}`);
+  const compiled_dir = path.normalize(
+    `${__dirname}/../.lamington/compiled_contracts/${name}`
+  );
 
   if (!fs.existsSync(compiled_dir)) {
     fs.mkdirSync(compiled_dir);
   }
 
-  fs.copyFileSync(`${__dirname}/external_contracts/${name}.wasm`, `${compiled_dir}/${name}.wasm`);
-  fs.copyFileSync(`${__dirname}/external_contracts/${name}.abi`, `${compiled_dir}/${name}.abi`);
+  fs.copyFileSync(
+    `${__dirname}/external_contracts/${name}.wasm`,
+    `${compiled_dir}/${name}.wasm`
+  );
+  fs.copyFileSync(
+    `${__dirname}/external_contracts/${name}.abi`,
+    `${compiled_dir}/${name}.abi`
+  );
 
   await generateTypes(`contracts/external_contracts/${name}/${name}`);
 }
 
-export async function new_account(name: string) {
-  const act = new Account(name, '5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3');
-  await AccountManager.setupAccount(act);
-  await EOSManager.addSigningAccountIfMissing(act);
-  return act;
+export async function new_account(name: string): Promise<Account> {
+  log.info('About to create account: ' + name);
+  const privateKey = await ecc.unsafeRandomKey();
+
+  const account = new Account(name, privateKey);
+  await AccountManager.setupAccount(account);
+  return account;
 }
 
 export function eosio_dot_code_perm(account: Account): any {
@@ -162,163 +225,201 @@ export function eosio_dot_code_perm(account: Account): any {
     accounts: [
       {
         permission: { actor: account.name, permission: 'eosio.code' },
-        weight: 1
-      }
+        weight: 1,
+      },
     ],
     keys: [],
-    waits: []
+    waits: [],
   };
 }
 
-async function register_dac_with_directory() {
-  await shared.dacdirectory_contract.regdac(
-    shared.auth_account.name,
-    shared.configured_dac_id,
-    { contract: shared.dac_token_account.name, symbol: '4,EOSDAC' },
+async function register_dac_with_directory(
+  tempSharedObjects: SharedTestObjects
+) {
+  await tempSharedObjects.dacdirectory_contract.regdac(
+    tempSharedObjects.auth_account.name,
+    tempSharedObjects.configured_dac_id,
+    {
+      contract: tempSharedObjects.dac_token_contract.account.name,
+      symbol: '4,EOSDAC',
+    },
     'dac_title',
     [],
-    [{ key: Account_type.AUTH, value: shared.auth_account.name }, { key: Account_type.CUSTODIAN, value: shared.daccustodian_account.name }],
+    [
+      { key: Account_type.AUTH, value: tempSharedObjects.auth_account.name },
+      {
+        key: Account_type.CUSTODIAN,
+        value: tempSharedObjects.daccustodian_contract.account.name,
+      },
+    ],
     {
-      auths: [{ actor: shared.auth_account.name, permission: 'active' }]
+      auths: [
+        { actor: tempSharedObjects.auth_account.name, permission: 'active' },
+      ],
     }
   );
 }
 
-async function add_token_contract_permissions() {
+async function add_token_contract_permissions(
+  tempSharedObjects: SharedTestObjects
+) {
   // Construct the update actions
   const actions: any = [
     // Add the issue permission as a child of active to dac_token
     {
       account: 'eosio',
       name: 'updateauth',
-      authorization: shared.dac_token_account.active,
+      authorization: tempSharedObjects.dac_token_contract.account.active,
       data: {
-        account: shared.dac_token_account.name,
+        account: tempSharedObjects.dac_token_contract.account.name,
         permission: 'issue',
         parent: 'active',
-        auth: eosio_dot_code_perm(shared.dac_token_account)
-      }
+        auth: eosio_dot_code_perm(tempSharedObjects.dac_token_contract.account),
+      },
     },
     // Add the notify permission as a child of active to dac_token
     {
       account: 'eosio',
       name: 'updateauth',
-      authorization: shared.dac_token_account.active,
+      authorization: tempSharedObjects.dac_token_contract.account.active,
       data: {
-        account: shared.dac_token_account.name,
+        account: tempSharedObjects.dac_token_contract.account.name,
         permission: 'notify',
         parent: 'active',
-        auth: eosio_dot_code_perm(shared.dac_token_account)
-      }
+        auth: eosio_dot_code_perm(tempSharedObjects.dac_token_contract.account),
+      },
     },
     // Add the xfer permission as a child of active to provided account
     {
       account: 'eosio',
       name: 'updateauth',
-      authorization: shared.dac_token_account.active,
+      authorization: tempSharedObjects.dac_token_contract.account.active,
       data: {
-        account: shared.dac_token_account.name,
+        account: tempSharedObjects.dac_token_contract.account.name,
         permission: 'xfer',
         parent: 'active',
-        auth: eosio_dot_code_perm(shared.dac_token_account)
-      }
-    }
+        auth: eosio_dot_code_perm(tempSharedObjects.dac_token_contract.account),
+      },
+    },
   ];
   const link_actions: any = [
     // Link issue permission of account to the issue action of account.
     {
       account: 'eosio',
       name: 'linkauth',
-      authorization: shared.dac_token_account.active,
+      authorization: tempSharedObjects.dac_token_contract.account.active,
       data: {
-        account: shared.dac_token_account.name,
-        code: shared.dac_token_account.name,
+        account: tempSharedObjects.dac_token_contract.account.name,
+        code: tempSharedObjects.dac_token_contract.account.name,
         type: 'issue',
-        requirement: 'issue'
-      }
+        requirement: 'issue',
+      },
     },
     // Link the notify permission of account to the weightobsv action of custodian
     {
       account: 'eosio',
       name: 'linkauth',
-      authorization: shared.dac_token_account.active,
+      authorization: tempSharedObjects.dac_token_contract.account.active,
       data: {
-        account: shared.dac_token_account.name,
-        code: shared.daccustodian_account.name,
+        account: tempSharedObjects.dac_token_contract.account.name,
+        code: tempSharedObjects.daccustodian_contract.account.name,
         type: 'weightobsv',
-        requirement: 'notify'
-      }
+        requirement: 'notify',
+      },
     },
     // Link the notify permission of account to the stakeobsv action of custodian
     {
       account: 'eosio',
       name: 'linkauth',
-      authorization: shared.dac_token_account.active,
+      authorization: tempSharedObjects.dac_token_contract.account.active,
       data: {
-        account: shared.dac_token_account.name,
-        code: shared.daccustodian_account.name,
+        account: tempSharedObjects.dac_token_contract.account.name,
+        code: tempSharedObjects.daccustodian_contract.account.name,
         type: 'stakeobsv',
-        requirement: 'notify'
-      }
+        requirement: 'notify',
+      },
     },
     // Link the notify permission of account to the refund action of dac token
     {
       account: 'eosio',
       name: 'linkauth',
-      authorization: shared.dac_token_account.active,
+      authorization: tempSharedObjects.dac_token_contract.account.active,
       data: {
-        account: shared.dac_token_account.name,
-        code: shared.dac_token_account.name,
+        account: tempSharedObjects.dac_token_contract.account.name,
+        code: tempSharedObjects.dac_token_contract.account.name,
         type: 'refund',
-        requirement: 'notify'
-      }
+        requirement: 'notify',
+      },
     },
     // Link the notify permission of dac_token to the balanceobsv action of voting.
     {
       account: 'eosio',
       name: 'linkauth',
-      authorization: shared.dac_token_account.active,
+      authorization: tempSharedObjects.dac_token_contract.account.active,
       data: {
-        account: shared.dac_token_account.name,
-        code: shared.daccustodian_account.name, // or should be voting account
+        account: tempSharedObjects.dac_token_contract.account.name,
+        code: tempSharedObjects.daccustodian_contract.account.name, // or should be voting account
         type: 'balanceobsv',
-        requirement: 'notify'
-      }
+        requirement: 'notify',
+      },
     },
     {
       account: 'eosio',
       name: 'linkauth',
-      authorization: shared.dac_token_account.active,
+      authorization: tempSharedObjects.dac_token_contract.account.active,
       data: {
-        account: shared.dac_token_account.name,
-        code: shared.daccustodian_account.name, // or should be voting account
+        account: tempSharedObjects.dac_token_contract.account.name,
+        code: tempSharedObjects.daccustodian_contract.account.name, // or should be voting account
         type: 'capturestake',
-        requirement: 'notify'
-      }
+        requirement: 'notify',
+      },
     },
     // Link the xfer permission of account to the transfer action of account.
     {
       account: 'eosio',
       name: 'linkauth',
-      authorization: shared.dac_token_account.active,
+      authorization: tempSharedObjects.dac_token_contract.account.active,
       data: {
-        account: shared.dac_token_account.name,
-        code: shared.dac_token_account.name,
+        account: tempSharedObjects.dac_token_contract.account.name,
+        code: tempSharedObjects.dac_token_contract.account.name,
         type: 'transfer',
-        requirement: 'xfer'
-      }
-    }
+        requirement: 'xfer',
+      },
+    },
   ];
   // Execute the transaction actions
-  await EOSManager.transact({ actions });
-  await EOSManager.transact({ actions: link_actions });
+  await EOSManager.transact({ actions })
+    .then(value => {
+      log.info('Add auth actions: ' + JSON.stringify(value, null, 4));
+      return value;
+    })
+    .catch(error => {
+      log.error('Add auth actions: ', error);
+      return error;
+    });
+  await EOSManager.transact({ actions: link_actions })
+    .then(value => {
+      log.info('Linking actions: ' + JSON.stringify(value, null, 4));
+      return value;
+    })
+    .catch(error => {
+      log.error('Error while linking actions: ', error);
+      return error;
+    });
   nextBlock();
 }
 
-async function setup_dac_memberterms() {
-  await shared.dac_token_contract.newmemtermse('teermsstring', shared.configured_dac_memberterms, shared.configured_dac_id, { from: shared.auth_account }).then(value => {
-    console.log('setting member terms: ' + JSON.stringify(value));
-  });
+async function setup_dac_memberterms(tempSharedObjects: SharedTestObjects) {
+  await tempSharedObjects.dac_token_contract
+    .newmemtermse(
+      'teermsstring',
+      tempSharedObjects.configured_dac_memberterms,
+      tempSharedObjects.configured_dac_id,
+      { from: tempSharedObjects.auth_account }
+    )
+    .then(value => {
+      log.info('setting member terms: ' + JSON.stringify(value, null, 4));
+    });
 }
 
 export enum Account_type {
@@ -331,7 +432,7 @@ export enum Account_type {
   ESCROW = 7,
   VOTING = 8,
   EXTERNAL = 254,
-  OTHER = 255
+  OTHER = 255,
 }
 
 enum ref_type {
@@ -341,10 +442,10 @@ enum ref_type {
   LOGO_NOTEXT_URL = 3,
   BACKGROUND_URL = 4,
   COLORS = 5,
-  CLIENT_EXTENSION = 6
+  CLIENT_EXTENSION = 6,
 }
 
 enum dac_state_type {
   dac_state_typeINACTIVE = 0,
-  dac_state_typeACTIVE = 1
+  dac_state_typeACTIVE = 1,
 }
