@@ -29,7 +29,7 @@ CONTRACT distribution : public contract {
 
          ACTION populate(name distri_id, vector <dropdata> data, bool allow_modify);
          ACTION empty(name distri_id, uint8_t batch_size);
-         ACTION send(name distri_id, uint8_t batch_size);
+         ACTION send(name distri_id, uint8_t batch_size, uint64_t nonce);
          ACTION claim(name distri_id, name receiver);
 
          [[eosio::on_notify("eosio.token::transfer")]]

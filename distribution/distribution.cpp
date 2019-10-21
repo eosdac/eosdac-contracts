@@ -138,7 +138,8 @@ void distribution::empty(name distri_id, uint8_t batch_size){
 
 }
 
-void distribution::send(name distri_id, uint8_t batch_size){
+void distribution::send(name distri_id, uint8_t batch_size, uint64_t nonce){
+    //the nonce is for counteracting the "duplicate transaction" error when calling the action in a loop. uint64 is choosen for flexibility.
 
     districonf_table districonf_t(get_self(), get_self().value);
     auto existing_distri = districonf_t.find(distri_id.value);
