@@ -133,7 +133,12 @@ async function getRegMembers(count: number): Promise<Account[]> {
   let newMembers = await AccountManager.createAccounts(count);
   for (const account of newMembers) {
     await shared.dac_token_contract
-      .memberrege(account.name, shared.configured_dac_memberterms, shared.configured_dac_id, { from: account })
+      .memberrege(
+        account.name,
+        shared.configured_dac_memberterms,
+        shared.configured_dac_id,
+        { from: account }
+      )
       // .then(value => {
       //   console.log('memberrege in getRegMembers : ' + value);
       // })
@@ -142,7 +147,13 @@ async function getRegMembers(count: number): Promise<Account[]> {
       });
 
     await shared.dac_token_contract
-      .transfer(shared.dac_token_account.name, account.name, '2000.0000 EOSDAC', '', { from: shared.dac_token_account })
+      .transfer(
+        shared.dac_token_contract.account.name,
+        account.name,
+        '2000.0000 EOSDAC',
+        '',
+        { from: shared.dac_token_contract.account }
+      )
       // .then(value => {
       //   console.log('transfer 2000 to member : ' + JSON.stringify(value));
       // })
@@ -163,12 +174,24 @@ export async function candidates(): Promise<Account[]> {
 async function getCandidates(count: number): Promise<Account[]> {
   let newCandidates = await getRegMembers(count);
   for (let candidate of newCandidates) {
-    await shared.dac_token_contract.transfer(candidate.name, shared.daccustodian_account.name, '12.0000 EOSDAC', '', { from: candidate }).catch(rejectedReason => {
-      console.error('candidate failed to transfer: ', rejectedReason);
-    });
-    await shared.daccustodian_contract.nominatecane(candidate.name, '25.0000 EOS', shared.configured_dac_id, { from: candidate }).catch(rejectedReason => {
-      console.error('candidate failed to nominate: ', rejectedReason);
-    });
+    await shared.dac_token_contract
+      .transfer(
+        candidate.name,
+        shared.daccustodian_contract.account.name,
+        '12.0000 EOSDAC',
+        '',
+        { from: candidate }
+      )
+      .catch(rejectedReason => {
+        console.error('candidate failed to transfer: ', rejectedReason);
+      });
+    await shared.daccustodian_contract
+      .nominatecane(candidate.name, '25.0000 EOS', shared.configured_dac_id, {
+        from: candidate,
+      })
+      .catch(rejectedReason => {
+        console.error('candidate failed to nominate: ', rejectedReason);
+      });
   }
   return newCandidates;
 }
