@@ -131,37 +131,29 @@ export async function regmembers(): Promise<Account[]> {
 
 async function getRegMembers(count: number): Promise<Account[]> {
   let newMembers = await AccountManager.createAccounts(count);
-  for (const account of newMembers) {
-    await shared.dac_token_contract
-      .memberrege(
+
+  let termsPromises = newMembers
+    .map(account => {
+      return shared.dac_token_contract.memberrege(
         account.name,
         shared.configured_dac_memberterms,
         shared.configured_dac_id,
         { from: account }
-      )
-      // .then(value => {
-      //   console.log('memberrege in getRegMembers : ' + value);
-      // })
-      .catch(rejectedReason => {
-        console.error('memberrege in getRegMembers failed: ', rejectedReason);
-      });
+      );
+    })
+    .concat(
+      newMembers.map(account => {
+        return shared.dac_token_contract.transfer(
+          shared.dac_token_contract.account.name,
+          account.name,
+          '2000.0000 EOSDAC',
+          '',
+          { from: shared.dac_token_contract.account }
+        );
+      })
+    );
 
-    await shared.dac_token_contract
-      .transfer(
-        shared.dac_token_contract.account.name,
-        account.name,
-        '2000.0000 EOSDAC',
-        '',
-        { from: shared.dac_token_contract.account }
-      )
-      // .then(value => {
-      //   console.log('transfer 2000 to member : ' + JSON.stringify(value));
-      // })
-      .catch(rejectedReason => {
-        console.error('newMember failed druing transfer: ', rejectedReason);
-      });
-  }
-
+  await Promise.all(termsPromises);
   return newMembers;
 }
 
