@@ -5,6 +5,7 @@ import {
   initAndGetSharedObjects,
   candidates,
   regmembers,
+  debugPromise,
 } from '../TestHelpers';
 import * as chai from 'chai';
 import { factory } from '../LoggingConfig';
@@ -16,15 +17,10 @@ describe('Daccustodian', () => {
   let newUser1: l.Account;
 
   before(async () => {
-    shared = await initAndGetSharedObjects()
-      .then(value => {
-        log.info('created shared objects: ' + value);
-        return value;
-      })
-      .catch(err => {
-        log.info('erro occured while getting chared objects: ' + err, err);
-        return err;
-      });
+    shared = await debugPromise(
+      initAndGetSharedObjects(),
+      'init and get shared objects'
+    );
   });
 
   context('updateconfige', async () => {
@@ -205,32 +201,20 @@ describe('Daccustodian', () => {
   });
   context('Capture stake for a new member', async () => {
     before(async () => {
-      newUser1 = await l.AccountManager.createAccount()
-        .then(value => {
-          log.info('created user : ' + JSON.stringify(value));
-          return value;
-        })
-        .catch(error => {
-          log.error('while creating user: ', error);
-          return error;
-        });
-      l.nextBlock();
-      await shared.dac_token_contract
-        .transfer(
+      newUser1 = await debugPromise(
+        l.AccountManager.createAccount(),
+        'create account for capture stake'
+      );
+      await debugPromise(
+        shared.dac_token_contract.transfer(
           shared.dac_token_contract.account.name,
           newUser1.name,
           '1000.0000 EOSDAC',
           '',
           { from: shared.dac_token_contract.account }
-        )
-        .then(value => {
-          log.info('transfer : ' + JSON.stringify(value));
-          return value;
-        })
-        .catch(error => {
-          log.error('while transferring to user: ', error);
-          return error;
-        });
+        ),
+        'transfer for capture stake'
+      );
     });
     context('before the sender is a candidate', async () => {
       it('pending stake is inserted or has amount appended', async () => {
@@ -345,14 +329,16 @@ describe('Daccustodian', () => {
 
   context('candidates', async () => {
     let cands: l.Account[];
-    before(async () => {});
     context('with no votes', async () => {
-      it('candidates should have 0 for total_votes', async () => {
+      let currentCandidates: l.TableRowsResult<DaccustodianCandidate>;
+      before(async () => {
         cands = await candidates();
-        await l.nextBlock();
-        let currentCandidates = await shared.daccustodian_contract.candidatesTable(
-          { scope: shared.configured_dac_id, limit: 10 }
-        );
+        currentCandidates = await shared.daccustodian_contract.candidatesTable({
+          scope: shared.configured_dac_id,
+          limit: 10,
+        });
+      });
+      it('candidates should have 0 for total_votes', async () => {
         chai.expect(currentCandidates.rows.length).to.equal(7);
         for (const cand of currentCandidates.rows) {
           // console.log('cand: ' + JSON.stringify(cand));
@@ -449,7 +435,17 @@ describe('Daccustodian', () => {
       });
     });
     context('after transfer', async () => {
+      var initialVoteValue: Number;
+      var votedCandidateResult: l.TableRowsResult<DaccustodianCandidate>;
       before(async () => {
+        votedCandidateResult = await shared.daccustodian_contract.candidatesTable(
+          {
+            scope: shared.configured_dac_id,
+            limit: 2,
+            lowerBound: cands[0].name,
+          }
+        );
+        initialVoteValue = votedCandidateResult.rows[0].total_votes;
         let members = await regmembers();
         await shared.dac_token_contract.transfer(
           members[0].name,
@@ -460,18 +456,18 @@ describe('Daccustodian', () => {
         );
       });
       it('vote values for existing custodians should reduce', async () => {
-        let votedCandidateResult = await shared.daccustodian_contract.candidatesTable(
+        votedCandidateResult = await shared.daccustodian_contract.candidatesTable(
           {
             scope: shared.configured_dac_id,
             limit: 2,
             lowerBound: cands[0].name,
           }
         );
-        chai.expect(votedCandidateResult.rows[0]).to.include({
-          total_votes: 37000000,
-        });
+        chai.expect(
+          votedCandidateResult.rows[0].total_votes < initialVoteValue
+        );
       });
-      it('state shoild have updated for the total_weight_of_votes', async () => {
+      it('state should have updated for the total_weight_of_votes', async () => {
         let votedCandidateResult = await shared.daccustodian_contract.stateTable(
           { scope: shared.configured_dac_id }
         );

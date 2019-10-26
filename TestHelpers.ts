@@ -27,6 +27,27 @@ import * as path from 'path';
 
 const log = factory.getLogger('TestHelper');
 
+export async function debugPromise<T>(
+  promise: Promise<T>,
+  successMessage: string,
+  errorMessage?: string
+) {
+  let successString = 'debugPromise - ' + successMessage + ': ';
+
+  let errorString = errorMessage
+    ? 'debugPromise - ' + errorMessage + ': '
+    : 'debugPromise - error - ' + successMessage + ': ';
+
+  return promise
+    .then(value => {
+      log.info(successString + JSON.stringify(value, null, 4));
+      return value;
+    })
+    .catch(err => {
+      log.error(errorString + err);
+      return err;
+    });
+}
 // Shared Instances to use between tests.
 let shared: SharedTestObjects;
 
@@ -56,16 +77,11 @@ export async function initAndGetSharedObjects(): Promise<SharedTestObjects> {
     // log.info('Getting passed the if block');
     await sleep(1500);
     EOSManager.initWithDefaults();
-    // await sleep(2000);
-    // await sleep(4500);
-    // let token_account = await new_account('eodactoken');
     let auth_account = await new_account('eosdacauth');
 
     log.info('auth_account: ' + JSON.stringify(auth_account, null, 4));
-    // let custodian_account = await new_account('daccustodian');
-    // let directory_account = await new_account('dacdirectory');
+
     let treasury_account = await new_account('treasury');
-    // let eosio_token_account = await new_account('eosio.token');
 
     let dacdirectory: Dacdirectory = await ContractDeployer.deployWithName(
       'dacdirectory/dacdirectory',
@@ -80,21 +96,6 @@ export async function initAndGetSharedObjects(): Promise<SharedTestObjects> {
       'eosdactokens'
     );
     let dacowner = await AccountManager.createAccount();
-    log.info(
-      'building shared details: ' +
-        [
-          auth_account,
-          treasury_account,
-          dacdirectory,
-          daccustodian,
-          token,
-          dacowner,
-        ]
-          .map(v => {
-            return JSON.stringify(v);
-          })
-          .join('\n')
-    );
 
     let tempSharedObjects: SharedTestObjects = {
       auth_account: auth_account,
@@ -403,38 +404,27 @@ async function add_token_contract_permissions(
     },
   ];
   // Execute the transaction actions
-  await EOSManager.transact({ actions })
-    .then(value => {
-      log.info('Add auth actions: ' + JSON.stringify(value, null, 4));
-      return value;
-    })
-    .catch(error => {
-      log.error('Add auth actions: ', error);
-      return error;
-    });
-  await EOSManager.transact({ actions: link_actions })
-    .then(value => {
-      log.info('Linking actions: ' + JSON.stringify(value, null, 4));
-      return value;
-    })
-    .catch(error => {
-      log.error('Error while linking actions: ', error);
-      return error;
-    });
-  nextBlock();
+  await debugPromise(
+    EOSManager.transact({ actions }),
+    'Add auth actions',
+    'Add auth actions'
+  );
+  await debugPromise(
+    EOSManager.transact({ actions: link_actions }),
+    'Linking actions'
+  );
 }
 
 async function setup_dac_memberterms(tempSharedObjects: SharedTestObjects) {
-  await tempSharedObjects.dac_token_contract
-    .newmemtermse(
+  await debugPromise(
+    tempSharedObjects.dac_token_contract.newmemtermse(
       'teermsstring',
       tempSharedObjects.configured_dac_memberterms,
       tempSharedObjects.configured_dac_id,
       { from: tempSharedObjects.auth_account }
-    )
-    .then(value => {
-      log.info('setting member terms: ' + JSON.stringify(value, null, 4));
-    });
+    ),
+    'setting member terms'
+  );
 }
 
 export enum Account_type {
