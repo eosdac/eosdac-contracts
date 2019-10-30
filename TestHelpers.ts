@@ -27,6 +27,9 @@ import * as path from 'path';
 
 const log = factory.getLogger('TestHelper');
 
+export var NUMBER_OF_REG_MEMBERS = 16;
+export var NUMBER_OF_CANDIDATES = 14;
+
 export async function debugPromise<T>(
   promise: Promise<T>,
   successMessage: string,
@@ -125,7 +128,8 @@ export async function initAndGetSharedObjects(): Promise<SharedTestObjects> {
 }
 
 export async function regmembers(): Promise<Account[]> {
-  return _regmembers || (_regmembers = await getRegMembers(5))
+  return _regmembers ||
+    (_regmembers = await getRegMembers(NUMBER_OF_REG_MEMBERS))
     ? _regmembers
     : Promise.reject('Error occurred!!!');
 }
@@ -159,7 +163,8 @@ async function getRegMembers(count: number): Promise<Account[]> {
 }
 
 export async function candidates(): Promise<Account[]> {
-  return _candidates || (_candidates = await getCandidates(6))
+  return _candidates ||
+    (_candidates = await getCandidates(NUMBER_OF_CANDIDATES))
     ? _candidates
     : Promise.reject('Error occurred!!!');
 }
@@ -167,24 +172,28 @@ export async function candidates(): Promise<Account[]> {
 async function getCandidates(count: number): Promise<Account[]> {
   let newCandidates = await getRegMembers(count);
   for (let candidate of newCandidates) {
-    await shared.dac_token_contract
-      .transfer(
+    await debugPromise(
+      shared.dac_token_contract.transfer(
         candidate.name,
         shared.daccustodian_contract.account.name,
         '12.0000 EOSDAC',
         '',
         { from: candidate }
-      )
-      .catch(rejectedReason => {
-        console.error('candidate failed to transfer: ', rejectedReason);
-      });
-    await shared.daccustodian_contract
-      .nominatecane(candidate.name, '25.0000 EOS', shared.configured_dac_id, {
-        from: candidate,
-      })
-      .catch(rejectedReason => {
-        console.error('candidate failed to nominate: ', rejectedReason);
-      });
+      ),
+      'sending candidate funds for staking'
+    );
+
+    await debugPromise(
+      shared.daccustodian_contract.nominatecane(
+        candidate.name,
+        '25.0000 EOS',
+        shared.configured_dac_id,
+        {
+          from: candidate,
+        }
+      ),
+      'nominate candidate'
+    );
   }
   return newCandidates;
 }

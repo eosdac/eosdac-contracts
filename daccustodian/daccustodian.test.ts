@@ -6,6 +6,7 @@ import {
   candidates,
   regmembers,
   debugPromise,
+  NUMBER_OF_CANDIDATES,
 } from '../TestHelpers';
 import * as chai from 'chai';
 import { factory } from '../LoggingConfig';
@@ -335,11 +336,13 @@ describe('Daccustodian', () => {
         cands = await candidates();
         currentCandidates = await shared.daccustodian_contract.candidatesTable({
           scope: shared.configured_dac_id,
-          limit: 10,
+          limit: 20,
         });
       });
       it('candidates should have 0 for total_votes', async () => {
-        chai.expect(currentCandidates.rows.length).to.equal(7);
+        chai
+          .expect(currentCandidates.rows.length)
+          .to.equal(NUMBER_OF_CANDIDATES + 1);
         for (const cand of currentCandidates.rows) {
           // console.log('cand: ' + JSON.stringify(cand));
           chai.expect(cand).to.include({
@@ -354,10 +357,10 @@ describe('Daccustodian', () => {
         }
       });
       it('state should have 0 the total_weight_of_votes', async () => {
-        let votedCandidateResult = await shared.daccustodian_contract.stateTable(
-          { scope: shared.configured_dac_id }
-        );
-        chai.expect(votedCandidateResult.rows[0]).to.include({
+        let dacState = await shared.daccustodian_contract.stateTable({
+          scope: shared.configured_dac_id,
+        });
+        chai.expect(dacState.rows[0]).to.include({
           total_weight_of_votes: 0,
         });
       });
@@ -366,16 +369,16 @@ describe('Daccustodian', () => {
       before(async () => {
         // Place votes for even number candidates and leave odd number without votes.
         let members = await regmembers();
-        // console.log('members:: ' + JSON.stringify(members));
         // Only vote with the first 2 members
         for (const member of members.slice(0, 2)) {
-          // console.log('voting:: ' + JSON.stringify(member));
-
-          await shared.daccustodian_contract.votecuste(
-            member.name,
-            [cands[0].name, cands[2].name, cands[4].name],
-            shared.configured_dac_id,
-            { from: member }
+          await debugPromise(
+            shared.daccustodian_contract.votecuste(
+              member.name,
+              [cands[0].name, cands[2].name],
+              shared.configured_dac_id,
+              { from: member }
+            ),
+            'voting custodian'
           );
         }
       });
@@ -386,12 +389,16 @@ describe('Daccustodian', () => {
         });
         await l.assertRowsEqual(votedCandidateResult, [
           {
-            candidates: [cands[0].name, cands[2].name, cands[4].name],
+            candidates: [cands[0].name, cands[2].name],
             proxy: '',
             voter: members[0].name,
           },
           {
-            candidates: [cands[0].name, cands[2].name, cands[4].name],
+            candidates: [
+              cands[0].name,
+              cands[2].name,
+              // cands[4].name
+            ],
             proxy: '',
             voter: members[1].name,
           },
@@ -402,21 +409,21 @@ describe('Daccustodian', () => {
           {
             scope: shared.configured_dac_id,
             limit: 1,
-            lowerBound: cands[0].name,
+            lowerBound: cands[1].name,
           }
         );
         chai.expect(votedCandidateResult.rows[0]).to.include({
-          total_votes: 40000000,
+          total_votes: 0,
         });
         let unvotedCandidateResult = await shared.daccustodian_contract.candidatesTable(
           {
             scope: shared.configured_dac_id,
             limit: 1,
-            lowerBound: cands[1].name,
+            lowerBound: cands[0].name,
           }
         );
         chai.expect(unvotedCandidateResult.rows[0]).to.include({
-          total_votes: 0,
+          total_votes: 40_000_000,
         });
         await l.assertRowCount(
           shared.daccustodian_contract.votesTable({
@@ -426,56 +433,77 @@ describe('Daccustodian', () => {
         );
       });
       it('state should have increased the total_weight_of_votes', async () => {
-        let votedCandidateResult = await shared.daccustodian_contract.stateTable(
-          { scope: shared.configured_dac_id }
-        );
-        chai.expect(votedCandidateResult.rows[0]).to.include({
-          total_weight_of_votes: 40000000,
+        let dacState = await shared.daccustodian_contract.stateTable({
+          scope: shared.configured_dac_id,
+        });
+        chai.expect(dacState.rows[0]).to.include({
+          total_weight_of_votes: 40_000_000,
         });
       });
     });
-    context('after transfer', async () => {
-      var initialVoteValue: Number;
-      var votedCandidateResult: l.TableRowsResult<DaccustodianCandidate>;
-      before(async () => {
-        votedCandidateResult = await shared.daccustodian_contract.candidatesTable(
+    context('vote values after transfers', async () => {
+      it('assert preconditions for vote values for custodians', async () => {
+        let votedCandidateResult = await shared.daccustodian_contract.candidatesTable(
           {
             scope: shared.configured_dac_id,
-            limit: 2,
+            limit: 20,
             lowerBound: cands[0].name,
           }
         );
-        initialVoteValue = votedCandidateResult.rows[0].total_votes;
+        let initialVoteValue = votedCandidateResult.rows[0].total_votes;
+        chai.expect(initialVoteValue).to.equal(40_000_000);
+      });
+      it('assert preconditions for total vote values on state', async () => {
+        let dacState = await shared.daccustodian_contract.stateTable({
+          scope: shared.configured_dac_id,
+        });
+        chai.expect(dacState.rows[0]).to.include({
+          total_weight_of_votes: 40_000_000,
+        });
+      });
+      it('after transfer to non-voter values should reduce for candidates and total values', async () => {
         let members = await regmembers();
         await shared.dac_token_contract.transfer(
-          members[0].name,
-          members[3].name,
+          members[1].name,
+          members[4].name,
           '300.0000 EOSDAC',
           '',
-          { from: members[0] }
+          { from: members[1] }
         );
-      });
-      it('vote values for existing custodians should reduce', async () => {
-        votedCandidateResult = await shared.daccustodian_contract.candidatesTable(
+        let votedCandidateResult = await shared.daccustodian_contract.candidatesTable(
           {
             scope: shared.configured_dac_id,
-            limit: 2,
+            limit: 20,
             lowerBound: cands[0].name,
           }
         );
-        chai.expect(
-          votedCandidateResult.rows[0].total_votes < initialVoteValue
-        );
+        let updatedCandVoteValue = votedCandidateResult.rows[0].total_votes;
+        chai.expect(updatedCandVoteValue).to.equal(37_000_000);
       });
-      it('state should have updated for the total_weight_of_votes', async () => {
-        let votedCandidateResult = await shared.daccustodian_contract.stateTable(
-          { scope: shared.configured_dac_id }
-        );
-        chai.expect(votedCandidateResult.rows[0]).to.include({
-          total_weight_of_votes: 37000000,
+      it('total vote values on state should have changed', async () => {
+        let dacState = await shared.daccustodian_contract.stateTable({
+          scope: shared.configured_dac_id,
+        });
+        chai.expect(dacState.rows[0]).to.include({
+          total_weight_of_votes: 37_000_000,
         });
       });
     });
   });
-  context('when stakeobsv is called', async () => {});
+  context('stakeobsv', async () => {
+    context(
+      'with candidate in a registered candidate locked time',
+      async () => {
+        context('with less than the locked up quantity staked', async () => {
+          it('should fail to unstake', async () => {});
+        });
+        context('with more than the locked up quantity staked', async () => {
+          it('should allow unstaking of funds', async () => {});
+        });
+      }
+    );
+    context('with some staked amounts', async () => {
+      it('should allow unstaking of funds', async () => {});
+    });
+  });
 });
