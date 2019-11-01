@@ -1,3 +1,27 @@
+Date: 2019-09-11
+Contract: eosdactokens
+Hash: 8ef7aedfefa876438ec0931e40a2fbf03b22bd9d3e9c550689976e386403ee82
+CDT: 1.6.2
+Git Commit: 32cb5e1b901362758974f5cca4815bbf6177906a
+
+Date: 2019-09-11
+Contract: daccustodian
+Hash: 46038b73434350d80c25949bf62f825de91ccd19958bbbb2596185e7baeecf90
+CDT: 1.6.3
+Git Commit: b338557b1618b108234f48457e6b579b55c57002
+
+Date: 2019-09-11
+Contract: dacmultisigs
+Hash: 524621b39fbdd75ce0e0e900e98fa7ba872d1afa30f846b059ac5005356071d5
+CDT: 1.6.1
+Git Commit: b338557b1618b108234f48457e6b579b55c57002
+
+Date: 2019-08-12
+Contract: dacdirectory
+Hash: 3fde6d63a34dae23ab7a2a6f4003991c128b27914bbaf8539238759bb3d7997c
+CDT: 1.6.1
+Git Commit: 016f40cceabe7000ecd3290c46d2b2e5f89df5a2
+
 Date: 2019-05-10
 Contract: daccustodian
 Hash: 4d1f18f471339b3acd50925555337272af46f674ff5c4a213141018d019e22b9
