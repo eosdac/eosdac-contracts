@@ -123,10 +123,8 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
     for (auto itr = custodians.begin(); itr != custodians.end(); itr++) { ++currentCustodianCount; }
 
     while (currentCustodianCount < electcount) {
-        if (cand_itr == byvotes.end() || cand_itr->total_votes == 0) {
-            eosio::print("The pool of eligible candidates has been exhausted");
-            return;
-        }
+    check(cand_itr != byvotes.end() && cand_itr->total_votes > 0,
+        "ERR::NEWPERIOD_NOT_ENOUGH_CANDIDATES::There are not enough eligible candidates to run new period without causing potential lock out permission structures for this DAC.");
 
         //  If the candidate is inactive or is already a custodian skip to the next one.
         if (!cand_itr->is_active || custodians.find(cand_itr->candidate_name.value) != custodians.end()) {
