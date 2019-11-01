@@ -65,7 +65,6 @@ export interface SharedTestObjects {
   readonly daccustodian_contract: Daccustodian;
   readonly dac_token_contract: Eosdactokens;
   // === Shared Values
-  readonly dac_owner: Account;
   readonly configured_dac_id: string;
   readonly configured_dac_memberterms: string;
   // readonly regmembers: Array<Account>;
@@ -109,7 +108,6 @@ export async function initAndGetSharedObjects(): Promise<SharedTestObjects> {
       daccustodian_contract: daccustodian,
       dac_token_contract: token,
       // Other objects
-      dac_owner: dacowner,
       configured_dac_id: 'eosdacio',
       configured_dac_memberterms: 'AgreedMemberTermsHashValue',
     };
@@ -158,7 +156,13 @@ async function getRegMembers(count: number): Promise<Account[]> {
       })
     );
 
-  await Promise.all(termsPromises);
+  await debugPromise(
+    Promise.all(termsPromises),
+    'running `getRegMembers`: ' + count
+  );
+  newMembers.forEach(member => {
+    log.info('created member: ' + member.name);
+  });
   return newMembers;
 }
 
@@ -201,13 +205,13 @@ async function getCandidates(count: number): Promise<Account[]> {
 async function setup_tokens(tempSharedObjects: SharedTestObjects) {
   await tempSharedObjects.dac_token_contract.create(
     tempSharedObjects.dac_token_contract.account.name,
-    '10000000000.0000 EOSDAC',
+    '100000.0000 EOSDAC',
     false,
     { from: tempSharedObjects.dac_token_contract.account }
   );
   await tempSharedObjects.dac_token_contract.issue(
     tempSharedObjects.dac_token_contract.account.name,
-    '100000000.0000 EOSDAC',
+    '100000.0000 EOSDAC',
     'Initial Token holder',
     { from: tempSharedObjects.dac_token_contract.account }
   );
@@ -245,11 +249,15 @@ export async function new_account(name: string): Promise<Account> {
 }
 
 export function eosio_dot_code_perm(account: Account): any {
+  return customAuthority(account, 'eosio.code');
+}
+
+export function customAuthority(account: Account, permission: string): any {
   return {
     threshold: 1,
     accounts: [
       {
-        permission: { actor: account.name, permission: 'eosio.code' },
+        permission: { actor: account.name, permission: permission },
         weight: 1,
       },
     ],
@@ -324,6 +332,19 @@ async function add_token_contract_permissions(
         permission: 'xfer',
         parent: 'active',
         auth: eosio_dot_code_perm(tempSharedObjects.dac_token_contract.account),
+      },
+    },
+    {
+      account: 'eosio',
+      name: 'updateauth',
+      authorization: tempSharedObjects.auth_account.owner,
+      data: {
+        account: tempSharedObjects.auth_account.name,
+        permission: 'owner',
+        parent: '',
+        auth: eosio_dot_code_perm(
+          tempSharedObjects.daccustodian_contract.account
+        ),
       },
     },
   ];
@@ -413,11 +434,94 @@ async function add_token_contract_permissions(
     },
   ];
   // Execute the transaction actions
-  await debugPromise(
-    EOSManager.transact({ actions }),
-    'Add auth actions',
-    'Add auth actions'
-  );
+  await debugPromise(EOSManager.transact({ actions }), 'Add auth actions');
+
+  await EOSManager.transact({
+    actions: [
+      {
+        account: 'eosio',
+        name: 'updateauth',
+        authorization: tempSharedObjects.auth_account.active,
+        data: {
+          account: tempSharedObjects.auth_account.name,
+          permission: 'high',
+          parent: 'active',
+          auth: eosio_dot_code_perm(
+            tempSharedObjects.daccustodian_contract.account
+          ),
+        },
+      },
+    ],
+  });
+  await EOSManager.transact({
+    actions: [
+      {
+        account: 'eosio',
+        name: 'updateauth',
+        authorization: tempSharedObjects.auth_account.active,
+        data: {
+          account: tempSharedObjects.auth_account.name,
+          permission: 'med',
+          parent: 'high',
+          auth: eosio_dot_code_perm(
+            tempSharedObjects.daccustodian_contract.account
+          ),
+        },
+      },
+    ],
+  });
+  await EOSManager.transact({
+    actions: [
+      {
+        account: 'eosio',
+        name: 'updateauth',
+        authorization: tempSharedObjects.auth_account.active,
+        data: {
+          account: tempSharedObjects.auth_account.name,
+          permission: 'low',
+          parent: 'med',
+          auth: eosio_dot_code_perm(
+            tempSharedObjects.daccustodian_contract.account
+          ),
+        },
+      },
+    ],
+  });
+  await EOSManager.transact({
+    actions: [
+      {
+        account: 'eosio',
+        name: 'updateauth',
+        authorization: tempSharedObjects.auth_account.active,
+        data: {
+          account: tempSharedObjects.auth_account.name,
+          permission: 'one',
+          parent: 'low',
+          auth: eosio_dot_code_perm(
+            tempSharedObjects.daccustodian_contract.account
+          ),
+        },
+      },
+    ],
+  });
+  await EOSManager.transact({
+    actions: [
+      {
+        account: 'eosio',
+        name: 'updateauth',
+        authorization: tempSharedObjects.auth_account.active,
+        data: {
+          account: tempSharedObjects.auth_account.name,
+          permission: 'admin',
+          parent: 'one',
+          auth: eosio_dot_code_perm(
+            tempSharedObjects.daccustodian_contract.account
+          ),
+        },
+      },
+    ],
+  });
+
   await debugPromise(
     EOSManager.transact({ actions: link_actions }),
     'Linking actions'

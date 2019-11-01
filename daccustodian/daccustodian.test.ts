@@ -34,7 +34,7 @@ describe('Daccustodian', () => {
             auth_threshold_mid: 6,
             requested_pay_max: { contract: 'sdfsdf', quantity: '12.0000 EOS' },
             periodlength: 37500,
-            initial_vote_quorum_percent: 34,
+            initial_vote_quorum_percent: 31,
             vote_quorum_percent: 12,
             auth_threshold_high: 4,
             auth_threshold_low: 3,
@@ -43,7 +43,7 @@ describe('Daccustodian', () => {
             lockup_release_time_delay: 1233,
           },
           'unknowndac',
-          { from: shared.dac_owner }
+          { from: shared.auth_account }
         ),
         'ERR::DAC_NOT_FOUND'
       );
@@ -63,7 +63,7 @@ describe('Daccustodian', () => {
             maxvotes: 5,
             requested_pay_max: { contract: 'sdfsdf', quantity: '12.0000 EOS' },
             periodlength: 37500,
-            initial_vote_quorum_percent: 34,
+            initial_vote_quorum_percent: 31,
             vote_quorum_percent: 12,
             auth_threshold_high: 5,
             auth_threshold_mid: 6,
@@ -93,7 +93,7 @@ describe('Daccustodian', () => {
             maxvotes: 5,
             requested_pay_max: { contract: 'sdfsdf', quantity: '12.0000 EOS' },
             periodlength: 37500,
-            initial_vote_quorum_percent: 34,
+            initial_vote_quorum_percent: 31,
             vote_quorum_percent: 12,
             auth_threshold_high: 9,
             auth_threshold_mid: 10,
@@ -123,7 +123,7 @@ describe('Daccustodian', () => {
             maxvotes: 5,
             requested_pay_max: { contract: 'sdfsdf', quantity: '12.0000 EOS' },
             periodlength: 37500,
-            initial_vote_quorum_percent: 34,
+            initial_vote_quorum_percent: 31,
             vote_quorum_percent: 12,
             auth_threshold_high: 9,
             auth_threshold_mid: 7,
@@ -155,7 +155,7 @@ describe('Daccustodian', () => {
             quantity: '30.0000 EOS',
           },
           periodlength: 37500,
-          initial_vote_quorum_percent: 34,
+          initial_vote_quorum_percent: 31,
           vote_quorum_percent: 12,
           auth_threshold_high: 4,
           auth_threshold_mid: 3,
@@ -184,7 +184,7 @@ describe('Daccustodian', () => {
               quantity: '30.0000 EOS',
             },
             periodlength: 37500,
-            initial_vote_quorum_percent: 34,
+            initial_vote_quorum_percent: 31,
             vote_quorum_percent: 12,
             auth_threshold_high: 4,
             auth_threshold_mid: 3,
@@ -488,6 +488,71 @@ describe('Daccustodian', () => {
           total_weight_of_votes: 37_000_000,
         });
       });
+    });
+  });
+  context('New Period Elections', async () => {
+    context('without an activation account', async () => {
+      context('before a dac has commenced periods', async () => {
+        context('without enough INITIAL candidate value voting', async () => {
+          it('should fail with voter engagement too low error', async () => {
+            await l.assertEOSErrorIncludesMessage(
+              shared.daccustodian_contract.newperiode(
+                'initial new period',
+                shared.configured_dac_id,
+                {
+                  auths: [
+                    {
+                      actor: shared.daccustodian_contract.account.name,
+                      permission: 'owner',
+                    },
+                  ],
+                }
+              ),
+              'NEWPERIOD_VOTER_ENGAGEMENT_LOW_ACTIVATE'
+            );
+          });
+        });
+        context('with enough INITIAL candidate value voting', async () => {
+          let members: l.Account[];
+          let cands: l.Account[];
+          before(async () => {
+            members = await regmembers();
+            cands = await candidates();
+
+            for (const member of members) {
+              await debugPromise(
+                shared.daccustodian_contract.votecuste(
+                  member.name,
+                  [cands[0].name, cands[2].name],
+                  shared.configured_dac_id,
+                  { from: member }
+                ),
+                'voting custodian for new period'
+              );
+            }
+          });
+          it('should fail with some error with not enough candidates error', async () => {
+            await l.assertEOSErrorIncludesMessage(
+              shared.daccustodian_contract.newperiode(
+                'initial new period',
+                shared.configured_dac_id,
+                {
+                  auths: [
+                    {
+                      actor: shared.daccustodian_contract.account.name,
+                      permission: 'owner',
+                    },
+                  ],
+                }
+              ),
+              'NEWPERIOD_NOT_ENOUGH_CANDIDATES'
+            );
+          });
+        });
+      });
+    });
+    context('with an activation account', async () => {
+      it('should fail with ');
     });
   });
   context('stakeobsv', async () => {
