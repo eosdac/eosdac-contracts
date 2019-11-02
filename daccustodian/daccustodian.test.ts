@@ -553,75 +553,147 @@ describe('Daccustodian', () => {
               });
             }
           );
-        });
-        context('with enough candidates to fill the configs', async () => {
-          let members: l.Account[];
-          let cands: l.Account[];
-          before(async () => {
-            members = await regmembers();
-            cands = await candidates();
+          context('with enough candidates to fill the configs', async () => {
+            let members: l.Account[];
+            let cands: l.Account[];
+            before(async () => {
+              members = await regmembers();
+              cands = await candidates();
 
-            var index = 0;
-            let candidateSize = cands.length;
-            function nextCandIndex(): number {
-              let nextIdx = ++index % candidateSize;
-              return nextIdx;
-            }
+              var index = 0;
+              let candidateSize = cands.length;
+              function nextCandIndex(): number {
+                let nextIdx = ++index % candidateSize;
+                return nextIdx;
+              }
 
-            for (const member of members) {
-              await debugPromise(
-                shared.daccustodian_contract.votecuste(
-                  member.name,
-                  [cands[nextCandIndex()].name, cands[nextCandIndex()].name],
-                  shared.configured_dac_id,
-                  { from: member }
-                ),
-                'voting custodian for new period'
+              for (const member of members) {
+                await debugPromise(
+                  shared.daccustodian_contract.votecuste(
+                    member.name,
+                    [cands[nextCandIndex()].name, cands[nextCandIndex()].name],
+                    shared.configured_dac_id,
+                    { from: member }
+                  ),
+                  'voting custodian for new period'
+                );
+              }
+            });
+            it('should succeed with custodians populated', async () => {
+              await shared.daccustodian_contract.newperiode(
+                'initial new period',
+                shared.configured_dac_id,
+                {
+                  from: members[0],
+                }
               );
-            }
-          });
-          it('should succeed with custodians populated', async () => {
-            await shared.daccustodian_contract.newperiode(
-              'initial new period',
-              shared.configured_dac_id,
-              {
-                from: members[0],
-              }
-            );
 
-            await l.assertRowCount(
-              shared.daccustodian_contract.custodiansTable({
-                scope: shared.configured_dac_id,
-                limit: 12,
-              }),
-              5
-            );
-          });
+              await l.assertRowCount(
+                shared.daccustodian_contract.custodiansTable({
+                  scope: shared.configured_dac_id,
+                  limit: 12,
+                }),
+                5
+              );
+            });
+            it('Should have highest ranked votes in custodians', async () => {
+              let rowsResult = await shared.daccustodian_contract.custodiansTable(
+                {
+                  scope: shared.configured_dac_id,
+                  limit: 14,
+                  indexPosition: 3,
+                  keyType: 'i64',
+                }
+              );
+              let rows = rowsResult.rows;
+              rows
+                .sort((a, b) => {
+                  return a.total_votes < b.total_votes
+                    ? -1
+                    : a.total_votes == b.total_votes
+                    ? 0
+                    : 1;
+                })
+                .reverse();
+              chai.expect(rows[0].total_votes).to.equal(60_000_000);
+              chai.expect(rows[1].total_votes).to.equal(60_000_000);
+              chai.expect(rows[2].total_votes).to.equal(57_000_000);
+              chai.expect(rows[3].total_votes).to.equal(57_000_000);
+              chai.expect(rows[4].total_votes).to.equal(43_000_000);
+            });
+            it('Custodians should not yet be paid', async () => {
+              await l.assertRowCount(
+                shared.daccustodian_contract.pendingpay2Table({
+                  scope: shared.configured_dac_id,
+                  limit: 12,
+                }),
+                0
+              );
+            });
+            it('should set the auths', async () => {
+              let account = await debugPromise(
+                l.EOSManager.rpc.get_account(shared.auth_account.name),
+                'get account info'
+              );
+              let permissions = account.permissions.sort((a, b) =>
+                a.perm_name.localeCompare(b.perm_name)
+              );
 
-          it('Should have highest ranked votes', async () => {
-            let rowsResult = await shared.daccustodian_contract.custodiansTable(
-              {
-                scope: shared.configured_dac_id,
-                limit: 14,
-                indexPosition: 3,
-                keyType: 'i64',
-              }
-            );
-            let rows = rowsResult.rows;
-            rows
-              .sort((a, b) => {
-                return a.total_votes < b.total_votes
-                  ? -1
-                  : a.total_votes == b.total_votes
-                  ? 0
-                  : 1;
-              })
-              .reverse();
-            chai.expect(rows[0].total_votes).to.equal(60_000_000);
-            chai.expect(rows[1].total_votes).to.equal(60_000_000);
-            chai.expect(rows[2].total_votes).to.equal(57_000_000);
-            chai.expect(rows[3].total_votes).to.equal(57_000_000);
-            chai.expect(rows[4].total_votes).to.equal(43_000_000);
+              let ownerPermission = permissions[0];
+              let ownerRequiredAuth = ownerPermission.required_auth;
+              chai.expect(ownerPermission.parent).to.eq('owner');
+              chai.expect(ownerPermission.perm_name).to.eq('active');
+              chai.expect(ownerRequiredAuth.threshold).to.eq(1);
+
+              let adminPermission = permissions[1];
+              let adminRequiredAuth = adminPermission.required_auth;
+              chai.expect(adminPermission.parent).to.eq('one');
+              chai.expect(adminPermission.perm_name).to.eq('admin');
+              chai.expect(adminRequiredAuth.threshold).to.eq(1);
+
+              let highPermission = permissions[2];
+              let highRequiredAuth = highPermission.required_auth;
+              chai.expect(highPermission.parent).to.eq('active');
+              chai.expect(highPermission.perm_name).to.eq('high');
+              chai.expect(highRequiredAuth.threshold).to.eq(4);
+
+              let highAccounts = highRequiredAuth.accounts;
+              chai.expect(highAccounts.length).to.eq(5);
+              chai.expect(highAccounts[0].weight).to.eq(1);
+
+              let lowPermission = permissions[3];
+              let lowRequiredAuth = lowPermission.required_auth;
+
+              chai.expect(lowPermission.parent).to.eq('med');
+              chai.expect(lowPermission.perm_name).to.eq('low');
+              chai.expect(lowRequiredAuth.threshold).to.eq(2);
+
+              let lowAccounts = lowRequiredAuth.accounts;
+              chai.expect(lowAccounts.length).to.eq(5);
+              chai.expect(lowAccounts[0].weight).to.eq(1);
+
+              let medPermission = permissions[4];
+              let medRequiredAuth = medPermission.required_auth;
+
+              chai.expect(medPermission.parent).to.eq('high');
+              chai.expect(medPermission.perm_name).to.eq('med');
+              chai.expect(medRequiredAuth.threshold).to.eq(3);
+
+              let medAccounts = medRequiredAuth.accounts;
+              chai.expect(medAccounts.length).to.eq(5);
+              chai.expect(medAccounts[0].weight).to.eq(1);
+
+              let onePermission = account.permissions[5];
+              let oneRequiredAuth = onePermission.required_auth;
+
+              chai.expect(onePermission.parent).to.eq('low');
+              chai.expect(onePermission.perm_name).to.eq('one');
+              chai.expect(oneRequiredAuth.threshold).to.eq(1);
+
+              let oneAccounts = oneRequiredAuth.accounts;
+              chai.expect(oneAccounts.length).to.eq(5);
+              chai.expect(oneAccounts[0].weight).to.eq(1);
+            });
           });
         });
       });

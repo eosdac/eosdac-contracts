@@ -18,7 +18,6 @@ import { EosioToken } from './external_contracts/eosio.token/eosio.token';
 import { Dacdirectory } from './dacdirectory/dacdirectory';
 import { Daccustodian } from './daccustodian/daccustodian';
 import { Eosdactokens } from './eosdactokens/eosdactokens';
-// import { Dacescrow } from "./dacescrow/dacescrow";
 // import { Dacmultisigs } from "./dacmultisigs/dacmultisigs";
 // import { Dacproposals } from "./dacproposals/dacproposals";
 
@@ -68,6 +67,7 @@ export interface SharedTestObjects {
   // === Shared Values
   readonly configured_dac_id: string;
   readonly configured_dac_memberterms: string;
+  readonly eosiotoken_contract: EosioToken;
   // readonly regmembers: Array<Account>;
 }
 
@@ -80,37 +80,30 @@ export async function initAndGetSharedObjects(): Promise<SharedTestObjects> {
     // log.info('Getting passed the if block');
     await sleep(1500);
     EOSManager.initWithDefaults();
-    let auth_account = await new_account('eosdacauth');
-
-    log.info('auth_account: ' + JSON.stringify(auth_account, null, 4));
-
-    let treasury_account = await new_account('treasury');
-
-    let dacdirectory: Dacdirectory = await ContractDeployer.deployWithName(
-      'dacdirectory/dacdirectory',
-      'dacdirectory'
-    );
-    let daccustodian: Daccustodian = await ContractDeployer.deployWithName(
-      'daccustodian/daccustodian',
-      'daccustodian'
-    );
-    let token: Eosdactokens = await ContractDeployer.deployWithName(
-      'eosdactokens/eosdactokens',
-      'eosdactokens'
-    );
-    let dacowner = await AccountManager.createAccount();
-
     let tempSharedObjects: SharedTestObjects = {
-      auth_account: auth_account,
+      auth_account: await new_account('eosdacauth'),
 
-      treasury_account: treasury_account,
+      treasury_account: await new_account('treasury'),
       // Configure Dac contracts
-      dacdirectory_contract: dacdirectory,
-      daccustodian_contract: daccustodian,
-      dac_token_contract: token,
+      dacdirectory_contract: await ContractDeployer.deployWithName(
+        'dacdirectory/dacdirectory',
+        'dacdirectory'
+      ),
+      daccustodian_contract: await ContractDeployer.deployWithName(
+        'daccustodian/daccustodian',
+        'daccustodian'
+      ),
+      dac_token_contract: await ContractDeployer.deployWithName(
+        'eosdactokens/eosdactokens',
+        'eosdactokens'
+      ),
       // Other objects
       configured_dac_id: 'eosdacio',
       configured_dac_memberterms: 'AgreedMemberTermsHashValue',
+      eosiotoken_contract: await ContractDeployer.deployWithName(
+        './external_contracts/eosio.token/eosio.token',
+        'eosio.token'
+      ),
     };
     // Further setup after the inital singleton object have been created.
     await setup_tokens(tempSharedObjects);
@@ -237,7 +230,10 @@ async function setup_external(name: string) {
     `${compiled_dir}/${name}.abi`
   );
 
-  await generateTypes(`contracts/external_contracts/${name}/${name}`);
+  await debugPromise(
+    generateTypes(`contracts/external_contracts/${name}/${name}`),
+    'generating types for external contract: ' + name
+  );
 }
 
 export async function new_account(name: string): Promise<Account> {
