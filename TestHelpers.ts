@@ -35,11 +35,12 @@ export async function debugPromise<T>(
   successMessage: string,
   errorMessage?: string
 ) {
-  let successString = 'debugPromise - ' + successMessage + ': ';
+  let debugPrefix = 'debugPromise - ';
+  let successString = debugPrefix + successMessage + ': ';
 
   let errorString = errorMessage
-    ? 'debugPromise - ' + errorMessage + ': '
-    : 'debugPromise - error - ' + successMessage + ': ';
+    ? debugPrefix + errorMessage + ': '
+    : debugPrefix + 'error - ' + successMessage + ': ';
 
   return promise
     .then(value => {
