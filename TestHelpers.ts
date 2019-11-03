@@ -169,22 +169,35 @@ export async function candidates(): Promise<Account[]> {
 
 async function getCandidates(count: number): Promise<Account[]> {
   let newCandidates = await getRegMembers(count);
-  for (let candidate of newCandidates) {
+  for (let { candidate, index } of newCandidates.map((candidate, index) => ({
+    candidate,
+    index,
+  }))) {
     await debugPromise(
       shared.dac_token_contract.transfer(
         candidate.name,
         shared.daccustodian_contract.account.name,
         '12.0000 EOSDAC',
         '',
-        { from: candidate }
+        {
+          from: candidate,
+        }
       ),
       'sending candidate funds for staking'
     );
-
+    let indexOption = index % 3;
+    let payAmount = '';
+    if (indexOption == 0) {
+      payAmount = '15.0000 EOS';
+    } else if (indexOption == 1) {
+      payAmount = '20.0000 EOS';
+    } else {
+      payAmount = '25.0000 EOS';
+    }
     await debugPromise(
       shared.daccustodian_contract.nominatecane(
         candidate.name,
-        '25.0000 EOS',
+        payAmount,
         shared.configured_dac_id,
         {
           from: candidate,

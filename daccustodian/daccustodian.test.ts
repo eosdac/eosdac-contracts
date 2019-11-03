@@ -9,6 +9,10 @@ import {
   NUMBER_OF_CANDIDATES,
 } from '../TestHelpers';
 import * as chai from 'chai';
+
+import * as chaiAsPromised from 'chai-as-promised';
+
+chai.use(chaiAsPromised);
 import { factory } from '../LoggingConfig';
 
 const log = factory.getLogger('Custodian Tests');
@@ -122,7 +126,7 @@ describe('Daccustodian', () => {
             numelected: 12,
             maxvotes: 5,
             requested_pay_max: { contract: 'sdfsdf', quantity: '12.0000 EOS' },
-            periodlength: 37500,
+            periodlength: 5,
             initial_vote_quorum_percent: 31,
             vote_quorum_percent: 12,
             auth_threshold_high: 9,
@@ -154,7 +158,7 @@ describe('Daccustodian', () => {
             contract: 'eosio.token',
             quantity: '30.0000 EOS',
           },
-          periodlength: 37500,
+          periodlength: 5,
           initial_vote_quorum_percent: 31,
           vote_quorum_percent: 12,
           auth_threshold_high: 4,
@@ -183,7 +187,7 @@ describe('Daccustodian', () => {
               contract: 'eosio.token',
               quantity: '30.0000 EOS',
             },
-            periodlength: 37500,
+            periodlength: 5,
             initial_vote_quorum_percent: 31,
             vote_quorum_percent: 12,
             auth_threshold_high: 4,
@@ -344,14 +348,18 @@ describe('Daccustodian', () => {
           .expect(currentCandidates.rows.length)
           .to.equal(NUMBER_OF_CANDIDATES + 1);
         for (const cand of currentCandidates.rows) {
-          // console.log('cand: ' + JSON.stringify(cand));
           chai.expect(cand).to.include({
             // custodian_end_time_stamp: new Date(0),
             is_active: 1,
             locked_tokens: '12.0000 EOSDAC',
-            requestedpay: '25.0000 EOS',
             total_votes: 0,
           });
+
+          chai.expect(
+            cand.requestedpay == '15.0000 EOS' ||
+              cand.requestedpay == '20.0000 EOS' ||
+              cand.requestedpay == '25.0000 EOS'
+          ).to.be.true;
           chai.expect(cand.custodian_end_time_stamp).to.equalDate(new Date(0));
           chai.expect(cand).has.property('candidate_name');
         }
@@ -698,6 +706,74 @@ describe('Daccustodian', () => {
         });
       });
     });
+    context('Calling newperiode before the next period is due', async () => {
+      it('should fail with too calling newperiod too early error', async () => {
+        await l.assertEOSErrorIncludesMessage(
+          shared.daccustodian_contract.newperiode(
+            'initial new period',
+            shared.configured_dac_id,
+            {
+              from: newUser1,
+            }
+          ),
+          'ERR::NEWPERIOD_EARLY'
+        );
+      });
+    });
+    context(
+      'Calling new period after the period time has expired',
+      async () => {
+        before(async () => {
+          await l.sleep(4_000);
+        });
+        it('should succeed', async () => {
+          await chai.expect(
+            shared.daccustodian_contract.newperiode(
+              'initial new period',
+              shared.configured_dac_id,
+              {
+                from: newUser1,
+              }
+            )
+          ).to.eventually.be.fulfilled;
+        });
+        it('custodians should have been paid', async () => {
+          await l.assertRowCount(
+            shared.daccustodian_contract.pendingpay2Table({
+              scope: shared.configured_dac_id,
+              limit: 12,
+            }),
+            5
+          );
+        });
+        it('custodians should the mean pay', async () => {
+          let custodianRows = await shared.daccustodian_contract.custodiansTable(
+            {
+              scope: shared.configured_dac_id,
+              limit: 12,
+            }
+          );
+          let pays = custodianRows.rows.map(cand => {
+            return Number(cand.requestedpay.split(' ')[0]);
+          });
+          let expectedAverage =
+            pays.reduce((a, b) => {
+              return a + b;
+            }) / pays.length;
+
+          let payRows = await shared.daccustodian_contract.pendingpay2Table({
+            scope: shared.configured_dac_id,
+            limit: 12,
+          });
+
+          let actualPaidAverage = Number(
+            payRows.rows[0].quantity.quantity.split(' ')[0]
+          );
+
+          chai.expect(actualPaidAverage).to.equal(expectedAverage);
+        });
+      }
+    );
     context('with an activation account', async () => {
       it('should fail with ');
     });
