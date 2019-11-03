@@ -39,7 +39,7 @@ describe('Daccustodian', () => {
             requested_pay_max: { contract: 'sdfsdf', quantity: '12.0000 EOS' },
             periodlength: 37500,
             initial_vote_quorum_percent: 31,
-            vote_quorum_percent: 12,
+            vote_quorum_percent: 15,
             auth_threshold_high: 4,
             auth_threshold_low: 3,
             lockupasset: { contract: 'sdfsdf', quantity: '12.0000 EOS' },
@@ -68,7 +68,7 @@ describe('Daccustodian', () => {
             requested_pay_max: { contract: 'sdfsdf', quantity: '12.0000 EOS' },
             periodlength: 37500,
             initial_vote_quorum_percent: 31,
-            vote_quorum_percent: 12,
+            vote_quorum_percent: 15,
             auth_threshold_high: 5,
             auth_threshold_mid: 6,
             auth_threshold_low: 3,
@@ -98,7 +98,7 @@ describe('Daccustodian', () => {
             requested_pay_max: { contract: 'sdfsdf', quantity: '12.0000 EOS' },
             periodlength: 37500,
             initial_vote_quorum_percent: 31,
-            vote_quorum_percent: 12,
+            vote_quorum_percent: 15,
             auth_threshold_high: 9,
             auth_threshold_mid: 10,
             auth_threshold_low: 4,
@@ -128,7 +128,7 @@ describe('Daccustodian', () => {
             requested_pay_max: { contract: 'sdfsdf', quantity: '12.0000 EOS' },
             periodlength: 5,
             initial_vote_quorum_percent: 31,
-            vote_quorum_percent: 12,
+            vote_quorum_percent: 15,
             auth_threshold_high: 9,
             auth_threshold_mid: 7,
             auth_threshold_low: 8,
@@ -160,7 +160,7 @@ describe('Daccustodian', () => {
           },
           periodlength: 5,
           initial_vote_quorum_percent: 31,
-          vote_quorum_percent: 12,
+          vote_quorum_percent: 15,
           auth_threshold_high: 4,
           auth_threshold_mid: 3,
           auth_threshold_low: 2,
@@ -189,7 +189,7 @@ describe('Daccustodian', () => {
             },
             periodlength: 5,
             initial_vote_quorum_percent: 31,
-            vote_quorum_percent: 12,
+            vote_quorum_percent: 15,
             auth_threshold_high: 4,
             auth_threshold_mid: 3,
             auth_threshold_low: 2,
@@ -431,7 +431,7 @@ describe('Daccustodian', () => {
           }
         );
         chai.expect(unvotedCandidateResult.rows[0]).to.include({
-          total_votes: 40_000_000,
+          total_votes: 20_000_000,
         });
         await l.assertRowCount(
           shared.daccustodian_contract.votesTable({
@@ -445,7 +445,7 @@ describe('Daccustodian', () => {
           scope: shared.configured_dac_id,
         });
         chai.expect(dacState.rows[0]).to.include({
-          total_weight_of_votes: 40_000_000,
+          total_weight_of_votes: 20_000_000,
         });
       });
     });
@@ -459,14 +459,14 @@ describe('Daccustodian', () => {
           }
         );
         let initialVoteValue = votedCandidateResult.rows[0].total_votes;
-        chai.expect(initialVoteValue).to.equal(40_000_000);
+        chai.expect(initialVoteValue).to.equal(20_000_000);
       });
       it('assert preconditions for total vote values on state', async () => {
         let dacState = await shared.daccustodian_contract.stateTable({
           scope: shared.configured_dac_id,
         });
         chai.expect(dacState.rows[0]).to.include({
-          total_weight_of_votes: 40_000_000,
+          total_weight_of_votes: 20_000_000,
         });
       });
       it('after transfer to non-voter values should reduce for candidates and total values', async () => {
@@ -486,14 +486,14 @@ describe('Daccustodian', () => {
           }
         );
         let updatedCandVoteValue = votedCandidateResult.rows[0].total_votes;
-        chai.expect(updatedCandVoteValue).to.equal(37_000_000);
+        chai.expect(updatedCandVoteValue).to.equal(17_000_000);
       });
       it('total vote values on state should have changed', async () => {
         let dacState = await shared.daccustodian_contract.stateTable({
           scope: shared.configured_dac_id,
         });
         chai.expect(dacState.rows[0]).to.include({
-          total_weight_of_votes: 37_000_000,
+          total_weight_of_votes: 17_000_000,
         });
       });
     });
@@ -526,6 +526,22 @@ describe('Daccustodian', () => {
           before(async () => {
             members = await regmembers();
             cands = await candidates();
+
+            // Transfer an additional 1000 EODAC to member to get over the initial voting threshold
+            let transfers = members.map(member => {
+              return shared.dac_token_contract.transfer(
+                shared.dac_token_contract.account.name,
+                member.name,
+                '1000.0000 EOSDAC',
+                'additional EOSDAC',
+                { from: shared.dac_token_contract.account }
+              );
+            });
+
+            await debugPromise(
+              Promise.all(transfers),
+              'transferring an additonal 1000 EOSDAC for voting threshold'
+            );
 
             for (const member of members) {
               await debugPromise(
@@ -724,6 +740,24 @@ describe('Daccustodian', () => {
       'Calling new period after the period time has expired',
       async () => {
         before(async () => {
+          let members = await regmembers();
+
+          // Removing 1000 EOSDAC from each member to get under the initial voting threshold
+          // but still above the ongoing voting threshold to check the newperiode still succeeds.
+          let transfers = members.map(member => {
+            return shared.dac_token_contract.transfer(
+              member.name,
+              shared.dac_token_contract.account.name,
+              '1000.0000 EOSDAC',
+              'removing EOSDAC',
+              { from: member }
+            );
+          });
+
+          await debugPromise(
+            Promise.all(transfers),
+            'transferring 1000 EOSDAC away for voting threshold'
+          );
           await l.sleep(4_000);
         });
         it('should succeed', async () => {

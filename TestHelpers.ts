@@ -143,7 +143,7 @@ async function getRegMembers(count: number): Promise<Account[]> {
         return shared.dac_token_contract.transfer(
           shared.dac_token_contract.account.name,
           account.name,
-          '2000.0000 EOSDAC',
+          '1000.0000 EOSDAC',
           '',
           { from: shared.dac_token_contract.account }
         );
