@@ -27,7 +27,7 @@ import * as path from 'path';
 const log = factory.getLogger('TestHelper');
 
 export var NUMBER_OF_REG_MEMBERS = 16;
-export var NUMBER_OF_CANDIDATES = 14;
+export var NUMBER_OF_CANDIDATES = 7;
 
 export async function debugPromise<T>(
   promise: Promise<T>,
@@ -355,6 +355,28 @@ async function add_token_contract_permissions(
         auth: eosio_dot_code_perm(
           tempSharedObjects.daccustodian_contract.account
         ),
+      },
+    },
+    {
+      account: 'eosio',
+      name: 'updateauth',
+      authorization: tempSharedObjects.daccustodian_contract.account.owner,
+      data: {
+        account: tempSharedObjects.daccustodian_contract.account.name,
+        permission: 'owner',
+        parent: '',
+        auth: customAuthority(tempSharedObjects.auth_account, 'active'),
+      },
+    },
+    {
+      account: 'eosio',
+      name: 'updateauth',
+      authorization: tempSharedObjects.daccustodian_contract.account.owner,
+      data: {
+        account: tempSharedObjects.daccustodian_contract.account.name,
+        permission: 'active',
+        parent: 'owner',
+        auth: customAuthority(tempSharedObjects.auth_account, 'active'),
       },
     },
   ];

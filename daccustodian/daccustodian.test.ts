@@ -584,20 +584,22 @@ describe('Daccustodian', () => {
               members = await regmembers();
               cands = await candidates();
 
-              var index = 0;
-              let candidateSize = cands.length;
-              function nextCandIndex(): number {
-                let nextIdx = ++index % candidateSize;
-                return nextIdx;
-              }
-
-              for (const member of members) {
+              for (const { mbr, idx } of members.map((mbr, idx) => {
+                return { mbr, idx };
+              })) {
+                //To get 5 candidates voted for there needs to be a way to spread the 4 votes per voter over 5 candidates
+                let candidateOffset = idx % 3;
                 await debugPromise(
                   shared.daccustodian_contract.votecuste(
-                    member.name,
-                    [cands[nextCandIndex()].name, cands[nextCandIndex()].name],
+                    mbr.name,
+                    [
+                      cands[0 + candidateOffset].name,
+                      cands[1 + candidateOffset].name,
+                      cands[2 + candidateOffset].name,
+                      cands[3 + candidateOffset].name,
+                    ],
                     shared.configured_dac_id,
-                    { from: member }
+                    { from: mbr }
                   ),
                   'voting custodian for new period'
                 );
@@ -629,21 +631,19 @@ describe('Daccustodian', () => {
                   keyType: 'i64',
                 }
               );
-              let rows = rowsResult.rows;
-              rows
-                .sort((a, b) => {
-                  return a.total_votes < b.total_votes
-                    ? -1
-                    : a.total_votes == b.total_votes
-                    ? 0
-                    : 1;
-                })
-                .reverse();
-              chai.expect(rows[0].total_votes).to.equal(60_000_000);
-              chai.expect(rows[1].total_votes).to.equal(60_000_000);
-              chai.expect(rows[2].total_votes).to.equal(57_000_000);
-              chai.expect(rows[3].total_votes).to.equal(57_000_000);
-              chai.expect(rows[4].total_votes).to.equal(43_000_000);
+              let rs = rowsResult.rows;
+              rs.sort((a, b) => {
+                return a.total_votes < b.total_votes
+                  ? -1
+                  : a.total_votes == b.total_votes
+                  ? 0
+                  : 1;
+              }).reverse();
+              chai.expect(rs[0].total_votes).to.equal(320_000_000);
+              chai.expect(rs[1].total_votes).to.equal(320_000_000);
+              chai.expect(rs[2].total_votes).to.equal(220_000_000);
+              chai.expect(rs[3].total_votes).to.equal(200_000_000);
+              chai.expect(rs[4].total_votes).to.equal(120_000_000);
             });
             it('Custodians should not yet be paid', async () => {
               await l.assertRowCount(
@@ -810,6 +810,146 @@ describe('Daccustodian', () => {
     );
     context('with an activation account', async () => {
       it('should fail with ');
+    });
+  });
+  context('resign custodian', () => {
+    var existing_candidates: l.Account[];
+    let unelectedCandidateToResign: l.Account;
+    let electedCandidateToResign: l.Account;
+
+    before(async () => {
+      existing_candidates = await candidates();
+      unelectedCandidateToResign = existing_candidates[6];
+      electedCandidateToResign = existing_candidates[0];
+    });
+    it('should fail with incorrect auth returning auth error', async () => {
+      await l.assertMissingAuthority(
+        shared.daccustodian_contract.resigncuste(
+          unelectedCandidateToResign.name,
+          shared.configured_dac_id,
+          { from: existing_candidates[0] }
+        )
+      );
+    });
+    context('with correct auth', async () => {
+      context('for a currently elected custodian', async () => {
+        xit('should succeed with lockup of stake', async () => {
+          await shared.daccustodian_contract.resigncuste(
+            electedCandidateToResign.name,
+            shared.configured_dac_id,
+            { from: electedCandidateToResign }
+          );
+          let candidates = await shared.daccustodian_contract.candidatesTable({
+            scope: shared.configured_dac_id,
+            limit: 20,
+            lowerBound: electedCandidateToResign.name,
+            upperBound: electedCandidateToResign.name,
+          });
+          chai
+            .expect(candidates.rows[0].custodian_end_time_stamp)
+            .to.be.greaterThan(Date.now());
+        });
+      });
+      context('for an unelected candidate', async () => {
+        it('should fail with not current custodian error', async () => {
+          await l.assertEOSErrorIncludesMessage(
+            shared.daccustodian_contract.resigncuste(
+              unelectedCandidateToResign.name,
+              shared.configured_dac_id,
+              { from: unelectedCandidateToResign }
+            ),
+            'ERR::REMOVECUSTODIAN_NOT_CURRENT_CUSTODIAN'
+          );
+        });
+      });
+    });
+  });
+  context('withdraw candidate', () => {
+    var existing_candidates: l.Account[];
+    let unelectedCandidateToResign: l.Account;
+    let electedCandidateToResign: l.Account;
+    let unregisteredCandidate: l.Account;
+
+    before(async () => {
+      let currentMembers = await regmembers();
+      unregisteredCandidate = currentMembers[0];
+
+      existing_candidates = await candidates();
+      unelectedCandidateToResign = existing_candidates[6];
+      electedCandidateToResign = existing_candidates[0];
+    });
+    it('should fail for unregistered candidate with not current candidate error', async () => {
+      await l.assertEOSErrorIncludesMessage(
+        shared.daccustodian_contract.withdrawcane(
+          unregisteredCandidate.name,
+          shared.configured_dac_id,
+          { from: unregisteredCandidate }
+        ),
+        'REMOVECANDIDATE_NOT_CURRENT_CANDIDATE'
+      );
+    });
+    it('should fail with incorrect auth returning auth error', async () => {
+      await l.assertMissingAuthority(
+        shared.daccustodian_contract.withdrawcane(
+          unregisteredCandidate.name,
+          shared.configured_dac_id,
+          { from: existing_candidates[0] }
+        )
+      );
+    });
+    context('with correct auth', async () => {
+      context('for a currently elected custodian', async () => {
+        it('should succeed with lockup of stake active from previous election', async () => {
+          await shared.daccustodian_contract.withdrawcane(
+            electedCandidateToResign.name,
+            shared.configured_dac_id,
+            { from: electedCandidateToResign }
+          );
+          let candidates = await shared.daccustodian_contract.candidatesTable({
+            scope: shared.configured_dac_id,
+            limit: 20,
+            lowerBound: electedCandidateToResign.name,
+            upperBound: electedCandidateToResign.name,
+          });
+          chai
+            .expect(candidates.rows[0].custodian_end_time_stamp)
+            .to.be.afterTime(new Date(Date.now()));
+        });
+      });
+      context('for an unelected candidate', async () => {
+        it('should succeed', async () => {
+          let beforeState = await shared.daccustodian_contract.stateTable({
+            scope: shared.configured_dac_id,
+            limit: 1,
+          });
+
+          var numberActiveCandidatesBefore =
+            beforeState.rows[0].number_active_candidates;
+
+          await shared.daccustodian_contract.withdrawcane(
+            unelectedCandidateToResign.name,
+            shared.configured_dac_id,
+            { from: unelectedCandidateToResign }
+          );
+          let candidates = await shared.daccustodian_contract.candidatesTable({
+            scope: shared.configured_dac_id,
+            limit: 20,
+            lowerBound: unelectedCandidateToResign.name,
+            upperBound: unelectedCandidateToResign.name,
+          });
+          chai
+            .expect(candidates.rows[0].custodian_end_time_stamp)
+            .to.be.equalDate(new Date(0));
+          chai.expect(candidates.rows[0].is_active).to.be.equal(0);
+          let afterState = await shared.daccustodian_contract.stateTable({
+            scope: shared.configured_dac_id,
+            limit: 1,
+          });
+          chai
+            .expect(afterState.rows[0].number_active_candidates)
+            .to.be.equal(numberActiveCandidatesBefore - 1);
+        });
+      });
     });
   });
   context('stakeobsv', async () => {
