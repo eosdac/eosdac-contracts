@@ -952,6 +952,150 @@ describe('Daccustodian', () => {
       });
     });
   });
+  context('fire candidate', () => {
+    var existing_candidates: l.Account[];
+    let unelectedCandidateToFire: l.Account;
+    let electedCandidateToFire: l.Account;
+    let unregisteredCandidate: l.Account;
+
+    before(async () => {
+      let currentMembers = await regmembers();
+      unregisteredCandidate = currentMembers[1];
+
+      existing_candidates = await candidates();
+      unelectedCandidateToFire = existing_candidates[6];
+      electedCandidateToFire = existing_candidates[0];
+    });
+    it('should fail for unregistered candidate with not current candidate error', async () => {
+      await l.assertEOSErrorIncludesMessage(
+        shared.daccustodian_contract.firecande(
+          unregisteredCandidate.name,
+          true,
+          shared.configured_dac_id,
+          { from: shared.auth_account }
+        ),
+        'REMOVECANDIDATE_NOT_CURRENT_CANDIDATE'
+      );
+    });
+    it('should fail with incorrect auth returning auth error', async () => {
+      await l.assertMissingAuthority(
+        shared.daccustodian_contract.firecande(
+          unregisteredCandidate.name,
+          true,
+          shared.configured_dac_id,
+          { from: existing_candidates[0] }
+        )
+      );
+    });
+    context('with correct auth', async () => {
+      context('for a currently elected custodian', async () => {
+        it('should succeed with lockup of stake active from previous election', async () => {
+          await shared.daccustodian_contract.firecande(
+            electedCandidateToFire.name,
+            true,
+            shared.configured_dac_id,
+            { from: shared.auth_account }
+          );
+          let candidates = await shared.daccustodian_contract.candidatesTable({
+            scope: shared.configured_dac_id,
+            limit: 20,
+            lowerBound: electedCandidateToFire.name,
+            upperBound: electedCandidateToFire.name,
+          });
+          chai
+            .expect(candidates.rows[0].custodian_end_time_stamp)
+            .to.be.afterTime(new Date(Date.now()));
+        });
+      });
+      context('for an unelected candidate', async () => {
+        it('should succeed', async () => {
+          let beforeState = await shared.daccustodian_contract.stateTable({
+            scope: shared.configured_dac_id,
+            limit: 1,
+          });
+
+          var numberActiveCandidatesBefore =
+            beforeState.rows[0].number_active_candidates;
+
+          await shared.daccustodian_contract.firecande(
+            unelectedCandidateToFire.name,
+            true,
+            shared.configured_dac_id,
+            { from: shared.auth_account }
+          );
+          let candidates = await shared.daccustodian_contract.candidatesTable({
+            scope: shared.configured_dac_id,
+            limit: 20,
+            lowerBound: unelectedCandidateToFire.name,
+            upperBound: unelectedCandidateToFire.name,
+          });
+          chai
+            .expect(candidates.rows[0].custodian_end_time_stamp)
+            .to.be.afterDate(new Date(0));
+          chai.expect(candidates.rows[0].is_active).to.be.equal(0);
+          let afterState = await shared.daccustodian_contract.stateTable({
+            scope: shared.configured_dac_id,
+            limit: 1,
+          });
+          chai
+            .expect(afterState.rows[0].number_active_candidates)
+            .to.be.equal(numberActiveCandidatesBefore - 1);
+        });
+      });
+    });
+  });
+  context('fire custodian', () => {
+    var existing_candidates: l.Account[];
+    let unelectedCandidateToFire: l.Account;
+    let electedCandidateToFire: l.Account;
+
+    before(async () => {
+      existing_candidates = await candidates();
+      unelectedCandidateToFire = existing_candidates[6];
+      electedCandidateToFire = existing_candidates[1];
+    });
+    it('should fail with incorrect auth returning auth error', async () => {
+      await l.assertMissingAuthority(
+        shared.daccustodian_contract.firecuste(
+          unelectedCandidateToFire.name,
+          shared.configured_dac_id,
+          { from: existing_candidates[0] }
+        )
+      );
+    });
+    context('with correct auth', async () => {
+      context('for a currently elected custodian', async () => {
+        it('should succeed with lockup of stake', async () => {
+          await shared.daccustodian_contract.firecuste(
+            electedCandidateToFire.name,
+            shared.configured_dac_id,
+            { from: shared.auth_account }
+          );
+          let candidates = await shared.daccustodian_contract.candidatesTable({
+            scope: shared.configured_dac_id,
+            limit: 20,
+            lowerBound: electedCandidateToFire.name,
+            upperBound: electedCandidateToFire.name,
+          });
+          chai
+            .expect(candidates.rows[0].custodian_end_time_stamp)
+            .to.be.afterTime(new Date(Date.now()));
+        });
+      });
+      context('for an unelected candidate', async () => {
+        it('should fail with not current custodian error', async () => {
+          await l.assertEOSErrorIncludesMessage(
+            shared.daccustodian_contract.firecuste(
+              unelectedCandidateToFire.name,
+              shared.configured_dac_id,
+              { from: shared.auth_account }
+            ),
+            'ERR::REMOVECUSTODIAN_NOT_CURRENT_CUSTODIAN'
+          );
+        });
+      });
+    });
+  });
   context('stakeobsv', async () => {
     context(
       'with candidate in a registered candidate locked time',
