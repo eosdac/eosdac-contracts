@@ -259,18 +259,35 @@ export async function new_account(name: string): Promise<Account> {
 }
 
 export function eosio_dot_code_perm(account: Account): any {
-  return customAuthority(account, 'eosio.code');
+  return singleAuthority(account, 'eosio.code');
+}
+export interface PermissionLevelWeight {
+  name: string;
+  permission: string;
+  weight: number;
 }
 
-export function customAuthority(account: Account, permission: string): any {
+export function singleAuthority(account: Account, permission: string): any {
+  return authorities([
+    { name: account.name, permission: permission, weight: 1 },
+  ]);
+}
+
+export function authorities(
+  permissionLevelWeights: PermissionLevelWeight[],
+  threshold: number = 1
+): any {
   return {
-    threshold: 1,
-    accounts: [
-      {
-        permission: { actor: account.name, permission: permission },
-        weight: 1,
-      },
-    ],
+    threshold: threshold,
+    accounts: permissionLevelWeights.map(permLevelWeight => {
+      return {
+        permission: {
+          actor: permLevelWeight.name,
+          permission: permLevelWeight.permission,
+        },
+        weight: permLevelWeight.weight,
+      };
+    }),
     keys: [],
     waits: [],
   };
@@ -347,6 +364,19 @@ async function add_token_contract_permissions(
     {
       account: 'eosio',
       name: 'updateauth',
+      authorization: tempSharedObjects.daccustodian_contract.account.active,
+      data: {
+        account: tempSharedObjects.daccustodian_contract.account.name,
+        permission: 'pay',
+        parent: 'active',
+        auth: eosio_dot_code_perm(
+          tempSharedObjects.daccustodian_contract.account
+        ),
+      },
+    },
+    {
+      account: 'eosio',
+      name: 'updateauth',
       authorization: tempSharedObjects.auth_account.owner,
       data: {
         account: tempSharedObjects.auth_account.name,
@@ -365,7 +395,7 @@ async function add_token_contract_permissions(
         account: tempSharedObjects.daccustodian_contract.account.name,
         permission: 'owner',
         parent: '',
-        auth: customAuthority(tempSharedObjects.auth_account, 'active'),
+        auth: singleAuthority(tempSharedObjects.auth_account, 'active'),
       },
     },
     {
@@ -376,7 +406,7 @@ async function add_token_contract_permissions(
         account: tempSharedObjects.daccustodian_contract.account.name,
         permission: 'active',
         parent: 'owner',
-        auth: customAuthority(tempSharedObjects.auth_account, 'active'),
+        auth: singleAuthority(tempSharedObjects.auth_account, 'active'),
       },
     },
   ];
@@ -464,6 +494,29 @@ async function add_token_contract_permissions(
         requirement: 'xfer',
       },
     },
+    // Link the xfer permission of account to the transfer action of account.
+    {
+      account: 'eosio',
+      name: 'linkauth',
+      authorization: tempSharedObjects.daccustodian_contract.account.active,
+      data: {
+        account: tempSharedObjects.daccustodian_contract.account.name,
+        code: tempSharedObjects.dac_token_contract.account.name,
+        type: 'transfer',
+        requirement: 'xfer',
+      },
+    },
+    {
+      account: 'eosio',
+      name: 'linkauth',
+      authorization: tempSharedObjects.daccustodian_contract.account.active,
+      data: {
+        account: tempSharedObjects.daccustodian_contract.account.name,
+        code: tempSharedObjects.daccustodian_contract.account.name,
+        type: 'clearstake',
+        requirement: 'pay',
+      },
+    },
   ];
   // Execute the transaction actions
   await debugPromise(EOSManager.transact({ actions }), 'Add auth actions');
@@ -548,6 +601,35 @@ async function add_token_contract_permissions(
           parent: 'one',
           auth: eosio_dot_code_perm(
             tempSharedObjects.daccustodian_contract.account
+          ),
+        },
+      },
+    ],
+  });
+  await EOSManager.transact({
+    actions: [
+      {
+        account: 'eosio',
+        name: 'updateauth',
+        authorization: tempSharedObjects.daccustodian_contract.account.active,
+        data: {
+          account: tempSharedObjects.daccustodian_contract.account.name,
+          permission: 'xfer',
+          parent: 'active',
+          auth: authorities(
+            [
+              {
+                name: tempSharedObjects.daccustodian_contract.account.name,
+                permission: 'eosio.code',
+                weight: 1,
+              },
+              {
+                name: tempSharedObjects.auth_account.name,
+                permission: 'med',
+                weight: 1,
+              },
+            ],
+            2
           ),
         },
       },

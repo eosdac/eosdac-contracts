@@ -204,7 +204,7 @@ describe('Daccustodian', () => {
       );
     });
   });
-  context('Capture stake for a new member', async () => {
+  context('Capturestake for a new member', async () => {
     before(async () => {
       newUser1 = await debugPromise(
         l.AccountManager.createAccount(),
@@ -888,6 +888,16 @@ describe('Daccustodian', () => {
         'REMOVECANDIDATE_NOT_CURRENT_CANDIDATE'
       );
     });
+    it('should prevent unstaking for a unregistered candidate', async () => {
+      await l.assertEOSErrorIncludesMessage(
+        shared.daccustodian_contract.unstakee(
+          unregisteredCandidate.name,
+          shared.configured_dac_id,
+          { from: unregisteredCandidate }
+        ),
+        'UNSTAKE_CAND_NOT_REGISTERED'
+      );
+    });
     it('should fail with incorrect auth returning auth error', async () => {
       await l.assertMissingAuthority(
         shared.daccustodian_contract.withdrawcane(
@@ -915,8 +925,28 @@ describe('Daccustodian', () => {
             .expect(candidates.rows[0].custodian_end_time_stamp)
             .to.be.afterTime(new Date(Date.now()));
         });
+        it('should prevent unstaking with timelock error', async () => {
+          l.assertEOSErrorIncludesMessage(
+            shared.daccustodian_contract.unstakee(
+              electedCandidateToResign.name,
+              shared.configured_dac_id,
+              { from: electedCandidateToResign }
+            ),
+            'UNSTAKE_CANNOT_UNSTAKE_UNDER_TIME_LOCK'
+          );
+        });
       });
       context('for an unelected candidate', async () => {
+        it('should prevent unstaking for an active candidate with active candidate error', async () => {
+          await l.assertEOSErrorIncludesMessage(
+            shared.daccustodian_contract.unstakee(
+              unelectedCandidateToResign.name,
+              shared.configured_dac_id,
+              { from: unelectedCandidateToResign }
+            ),
+            'UNSTAKE_CANNOT_UNSTAKE_FROM_ACTIVE_CAND'
+          );
+        });
         it('should succeed', async () => {
           let beforeState = await shared.daccustodian_contract.stateTable({
             scope: shared.configured_dac_id,
@@ -948,6 +978,17 @@ describe('Daccustodian', () => {
           chai
             .expect(afterState.rows[0].number_active_candidates)
             .to.be.equal(numberActiveCandidatesBefore - 1);
+        });
+        // test is failing due to timelock error. Need to look further into this to understand why.
+        // error is: "Error: transaction declares authority '{"actor":"daccustodian","permission":"xfer"}', but does not have signatures for it under a provided delay of 3600000 ms, provided permissions [{"actor":"daccustodian","permission":"eosio.code"}], provided keys [], and a delay max limit of 3888000000 ms"
+        xit('should allow unstaking without a timelock error', async () => {
+          chai.assert.isFulfilled(
+            await shared.daccustodian_contract.unstakee(
+              unelectedCandidateToResign.name,
+              shared.configured_dac_id,
+              { from: unelectedCandidateToResign }
+            )
+          );
         });
       });
     });
