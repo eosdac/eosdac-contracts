@@ -1138,19 +1138,59 @@ describe('Daccustodian', () => {
     });
   });
   context('stakeobsv', async () => {
+    var existing_candidates: l.Account[];
+    let lockedCandidateToUnstake: l.Account;
+
+    before(async () => {
+      existing_candidates = await candidates();
+      lockedCandidateToUnstake = existing_candidates[2];
+      await shared.dac_token_contract.stakeconfig(
+        { enabled: true, min_stake_time: 5, max_stake_time: 20 },
+        '4,EOSDAC',
+        { from: shared.auth_account }
+      );
+    });
     context(
       'with candidate in a registered candidate locked time',
       async () => {
         context('with less than the locked up quantity staked', async () => {
-          it('should fail to unstake', async () => {});
+          before(async () => {
+            await shared.dac_token_contract.stake(
+              lockedCandidateToUnstake.name,
+              '10.0000 EOSDAC',
+              { from: lockedCandidateToUnstake }
+            );
+          });
+          it('should fail to unstake', async () => {
+            await l.assertEOSErrorIncludesMessage(
+              shared.dac_token_contract.unstake(
+                lockedCandidateToUnstake.name,
+                '10.0000 EOSDAC',
+                { from: lockedCandidateToUnstake }
+              ),
+              'CANNOT_UNSTAKE'
+            );
+          });
         });
         context('with more than the locked up quantity staked', async () => {
-          it('should allow unstaking of funds', async () => {});
+          before(async () => {
+            await shared.dac_token_contract.stake(
+              lockedCandidateToUnstake.name,
+              '15.0000 EOSDAC',
+              { from: lockedCandidateToUnstake }
+            );
+          });
+          it('should allow unstaking of some of the surplus of funds', async () => {
+            await chai.expect(
+              shared.dac_token_contract.unstake(
+                lockedCandidateToUnstake.name,
+                '11.0000 EOSDAC',
+                { from: lockedCandidateToUnstake }
+              )
+            ).to.eventually.be.fulfilled;
+          });
         });
       }
     );
-    context('with some staked amounts', async () => {
-      it('should allow unstaking of funds', async () => {});
-    });
   });
 });
