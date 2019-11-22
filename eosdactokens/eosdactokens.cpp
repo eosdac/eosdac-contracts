@@ -10,6 +10,8 @@ namespace eosdac {
                              asset maximum_supply,
                              bool transfer_locked) {
 
+        require_auth( get_self() );
+
         auto sym = maximum_supply.symbol;
         check(sym.is_valid(), "ERR::CREATE_INVALID_SYMBOL::invalid symbol name");
         check(maximum_supply.is_valid(), "ERR::CREATE_INVALID_SUPPLY::invalid supply");
