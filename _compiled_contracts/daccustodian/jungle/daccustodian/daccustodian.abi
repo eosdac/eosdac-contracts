@@ -46,6 +46,20 @@
             ]
         },
         {
+            "name": "appointcust",
+            "base": "",
+            "fields": [
+                {
+                    "name": "cust",
+                    "type": "name[]"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "balanceobsv",
             "base": "",
             "fields": [
@@ -833,6 +847,11 @@
         }
     ],
     "actions": [
+        {
+            "name": "appointcust",
+            "type": "appointcust",
+            "ricardian_contract": ""
+        },
         {
             "name": "balanceobsv",
             "type": "balanceobsv",
