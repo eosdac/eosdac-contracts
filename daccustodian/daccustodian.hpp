@@ -187,6 +187,7 @@ namespace eosdac {
         ACTION resigncuste(name cust, name dac_id);
         ACTION firecust(name cust);
         ACTION firecuste(name cust, name dac_id);
+        ACTION appointcust(vector<name> cust, name dac_id);
         ACTION updatebio(name cand, std::string bio);
         ACTION updatebioe(name cand, std::string bio, name dac_id);
 

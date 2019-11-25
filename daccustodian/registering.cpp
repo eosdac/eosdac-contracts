@@ -245,3 +245,41 @@ void daccustodian::removeCandidate(name cand, bool lockupStake, name dac_id) {
         }
     });
 }
+
+void daccustodian::appointcust(vector<name> custs, name dac_id){
+    dacdir::dac dac = dacdir::dac_for_id(dac_id);
+    name auth_account = dac.account_for_type(dacdir::AUTH);
+    require_auth(auth_account);
+
+    contr_config configs = contr_config::get_current_configs(_self, dac_id);
+    custodians_table custodians(_self, dac_id.value);
+    check(custodians.begin() == custodians.end(), "ERR:CUSTODIANS_NOT_EMPTY::Custodians table is not empty");
+    candidates_table candidates(_self, dac_id.value);
+
+    extended_asset lockup = configs.lockupasset;
+    extended_asset req_pay = configs.requested_pay_max;
+    lockup.quantity.amount = 0;
+    req_pay.quantity.amount = 0;
+
+    for (auto cust: custs){
+        auto cand = candidates.find(cust.value);
+        if (cand == candidates.end()){
+            candidates.emplace(auth_account, [&](candidate& c){
+                c.candidate_name = cust;
+                c.requestedpay = req_pay.quantity;
+                c.locked_tokens = lockup.quantity;
+                c.total_votes = 0;
+                c.is_active = 1;
+                c.custodian_end_time_stamp = time_point_sec(0);
+            });
+        }
+
+        custodians.emplace(auth_account, [&](custodian& c){
+            c.cust_name = cust;
+            c.requestedpay = req_pay.quantity;
+            c.total_votes = 0;
+        });
+    }
+
+
+}
