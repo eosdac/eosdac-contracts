@@ -4,12 +4,54 @@
     "types": [],
     "structs": [
         {
-            "name": "appointcust",
+            "name": "account_balance_delta",
             "base": "",
             "fields": [
                 {
-                    "name": "cust",
-                    "type": "name[]"
+                    "name": "account",
+                    "type": "name"
+                },
+                {
+                    "name": "balance_delta",
+                    "type": "asset"
+                }
+            ]
+        },
+        {
+            "name": "account_stake_delta",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account",
+                    "type": "name"
+                },
+                {
+                    "name": "stake_delta",
+                    "type": "asset"
+                }
+            ]
+        },
+        {
+            "name": "account_weight_delta",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account",
+                    "type": "name"
+                },
+                {
+                    "name": "weight_delta",
+                    "type": "int64"
+                }
+            ]
+        },
+        {
+            "name": "balanceobsv",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account_balance_deltas",
+                    "type": "account_balance_delta[]"
                 },
                 {
                     "name": "dac_id",
@@ -424,6 +466,30 @@
             ]
         },
         {
+            "name": "resetcands",
+            "base": "",
+            "fields": [
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "resetvotes",
+            "base": "",
+            "fields": [
+                {
+                    "name": "voter",
+                    "type": "name"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "resigncust",
             "base": "",
             "fields": [
@@ -472,6 +538,20 @@
                 {
                     "name": "permission",
                     "type": "name"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "stakeobsv",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account_stake_deltas",
+                    "type": "account_stake_delta[]"
                 },
                 {
                     "name": "dac_id",
@@ -714,6 +794,20 @@
             ]
         },
         {
+            "name": "weightobsv",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account_weight_deltas",
+                    "type": "account_weight_delta[]"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "withdrawcand",
             "base": "",
             "fields": [
@@ -740,8 +834,8 @@
     ],
     "actions": [
         {
-            "name": "appointcust",
-            "type": "appointcust",
+            "name": "balanceobsv",
+            "type": "balanceobsv",
             "ricardian_contract": ""
         },
         {
@@ -825,6 +919,16 @@
             "ricardian_contract": ""
         },
         {
+            "name": "resetcands",
+            "type": "resetcands",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "resetvotes",
+            "type": "resetvotes",
+            "ricardian_contract": ""
+        },
+        {
             "name": "resigncust",
             "type": "resigncust",
             "ricardian_contract": ""
@@ -842,6 +946,11 @@
         {
             "name": "setperm",
             "type": "setperm",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "stakeobsv",
+            "type": "stakeobsv",
             "ricardian_contract": ""
         },
         {
@@ -908,6 +1017,11 @@
             "name": "votecuste",
             "type": "votecuste",
             "ricardian_contract": "---\nspec_version: \"0.2.0\"\ntitle: Vote for Custodian\nsummary: 'Vote for custodians with account {{ nowrap voter }} to {{ nowrap requestedpay }} for DAC ID {{ nowrap dac_id }}'\nicon: https://eosdac.io/assets/contracts/generic.png#00da1afc6464028359b3a02ffbdb59e1ea79fa261b5523ce7ac174cc0ef27bbd\n---\n\nThis action is casting a vote for the following candidates:\n\n{{#each newvotes}}\n**{{ this }}**\n{{/each}}\n\nAny previous votes will be removed by these"
+        },
+        {
+            "name": "weightobsv",
+            "type": "weightobsv",
+            "ricardian_contract": ""
         },
         {
             "name": "withdrawcand",

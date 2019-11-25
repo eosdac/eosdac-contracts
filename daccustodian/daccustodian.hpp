@@ -173,6 +173,10 @@ namespace eosdac {
                             name to,
                             asset quantity,
                             name dac_id);
+        ACTION balanceobsv(vector<account_balance_delta> account_balance_deltas, name dac_id);
+        ACTION stakeobsv(vector<account_stake_delta> account_stake_deltas, name dac_id);
+        ACTION weightobsv(vector<account_weight_delta> account_weight_deltas, name dac_id);
+
         ACTION nominatecand(name cand, eosio::asset requestedpay);
         ACTION nominatecane(name cand, eosio::asset requestedpay, name dac_id);
         ACTION withdrawcand(name cand);
@@ -209,6 +213,10 @@ namespace eosdac {
         ACTION clearstake(name cand, asset new_value, name dac_id);
         ACTION migrate(uint16_t batch_size);
         ACTION clearold(uint16_t batch_size);
+#ifdef DEBUG
+        ACTION resetvotes(name voter, name dac_id);
+        ACTION resetcands(name dac_id);
+#endif
 
         /**
      * This action is used to register a custom permission that will be used in the multisig instead of active.
@@ -244,6 +252,7 @@ namespace eosdac {
                                                 
         permission_level getCandidatePermission(name account, name internal_dac_id);
         void validateUnstake(name code, name cand, name dac_id);
+        void validateUnstakeAmount(name code, name cand, asset unstake_amount, name dac_id);
 
         // Temporary actions for old pay processing
         bool claimoldpaye_if_found(uint64_t payid, name dac_id);

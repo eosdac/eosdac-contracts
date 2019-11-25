@@ -6,6 +6,16 @@ namespace eosdac {
     #include <eosio/eosio.hpp>
     #include <eosio/multi_index.hpp>
 
+    struct account_balance_delta {
+        eosio::name    account;
+        eosio::asset   balance_delta;
+    };
+
+    struct account_weight_delta {
+        eosio::name    account;
+        int64_t        weight_delta;
+    };
+
     struct [[eosio::table("custodians"), eosio::contract("daccustodian")]] custodian {
         eosio::name cust_name;
         eosio::asset requestedpay;
@@ -38,11 +48,21 @@ namespace eosdac {
     };
 
     typedef eosio::multi_index<"candidates"_n, candidate,
-            indexed_by<"bycandidate"_n, const_mem_fun<candidate, uint64_t, &candidate::primary_key> >,
-            indexed_by<"byvotes"_n, const_mem_fun<candidate, uint64_t, &candidate::by_number_votes> >,
-            indexed_by<"byvotesrank"_n, const_mem_fun<candidate, uint64_t, &candidate::by_votes_rank> >,
-            indexed_by<"byreqpay"_n, const_mem_fun<candidate, uint64_t, &candidate::by_requested_pay> >
+            eosio::indexed_by<"bycandidate"_n, eosio::const_mem_fun<candidate, uint64_t, &candidate::primary_key> >,
+            eosio::indexed_by<"byvotes"_n, eosio::const_mem_fun<candidate, uint64_t, &candidate::by_number_votes> >,
+            eosio::indexed_by<"byvotesrank"_n, eosio::const_mem_fun<candidate, uint64_t, &candidate::by_votes_rank> >,
+            eosio::indexed_by<"byreqpay"_n, eosio::const_mem_fun<candidate, uint64_t, &candidate::by_requested_pay> >
     > candidates_table;
+
+
+
+    struct [[eosio::table]] vote_weight {
+        eosio::name     voter;
+        uint64_t weight;
+
+        uint64_t primary_key()const { return voter.value; }
+    };
+    typedef eosio::multi_index< "weights"_n, vote_weight > weights;
 }
 
 #endif

@@ -1,3 +1,5 @@
 .idea
 .vscode
 *.code-workspace
+node_modules
+*.js

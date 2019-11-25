@@ -38,19 +38,33 @@ void daccustodian::nominatecane(name cand, asset requestedpay, name dac_id) {
             check(c.locked_tokens >= configs.lockupasset.quantity, "ERR::NOMINATECAND_INSUFFICIENT_FUNDS_TO_STAKE::Insufficient funds have been staked.");
         });
     } else {
-        check(pending != pendingstake.end() &&
-                     pending->quantity >= configs.lockupasset.quantity,
-                     "ERR::NOMINATECAND_STAKING_FUNDS_INCOMPLETE::A registering candidate must transfer sufficient tokens to the contract for staking.");
+        extended_asset actual_stake = configs.lockupasset;
+        extended_asset required_stake = configs.lockupasset;
+
+        if (pending == pendingstake.end() ){
+            actual_stake.quantity.amount = 0;
+
+        }
+        else {
+            actual_stake.quantity = pending->quantity;
+
+        }
+
+        check(actual_stake.quantity >= required_stake.quantity,
+              "ERR::NOMINATECAND_STAKING_FUNDS_INCOMPLETE::A registering candidate must transfer sufficient tokens to the contract for staking.");
+
 
         registered_candidates.emplace(cand, [&](candidate &c) {
             c.candidate_name = cand;
             c.requestedpay = requestedpay;
-            c.locked_tokens = pending->quantity;
+            c.locked_tokens = actual_stake.quantity;
             c.total_votes = 0;
             c.is_active = 1;
         });
 
-        pendingstake.erase(pending);
+        if (pending != pendingstake.end() ) {
+            pendingstake.erase(pending);
+        }
     }
 }
 

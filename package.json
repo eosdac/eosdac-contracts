@@ -1,0 +1,36 @@
+{
+    "name": "eosdac_contracts",
+    "version": "1.0.0",
+    "description": "[eosDAC Smart Contracts Explained](https://eosdac.io/tools/smart-contracts-explained/)",
+    "main": "index.js",
+    "scripts": {
+        "build": "lamington build",
+        "test": "lamington test",
+        "start": "lamington start eos",
+        "stop": "lamington stop eos"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/eosdac/eosdac_contracts.git"
+    },
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/eosdac/eosdac_contracts/issues"
+    },
+    "homepage": "https://github.com/eosdac/eosdac_contracts#readme",
+    "devDependencies": {
+        "@types/mocha": "^5.2.7",
+        "chai": "^4.2.0",
+        "eosjs": "^20.0.0",
+        "eosjs-ecc": "^4.0.4",
+        "lamington": "^1.0.0-alpha.3",
+        "typescript": "^3.6.3"
+    },
+    "dependencies": {
+        "@types/chai": "^4.2.3",
+        "@types/chai-datetime": "0.0.33",
+        "chai-datetime": "^1.5.0",
+        "typescript-logging": "^0.6.3"
+    }
+}

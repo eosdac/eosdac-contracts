@@ -18,5 +18,9 @@
 #include "config.cpp"
 #include "migration.cpp"
 
+#ifdef DEBUG
+#include "debug.cpp"
+#endif
+
 using namespace eosio;
 using namespace std;
