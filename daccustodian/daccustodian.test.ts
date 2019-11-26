@@ -7,6 +7,7 @@ import {
   regmembers,
   debugPromise,
   NUMBER_OF_CANDIDATES,
+  Account_type,
 } from '../TestHelpers';
 import * as chai from 'chai';
 
@@ -1192,5 +1193,124 @@ describe('Daccustodian', () => {
         });
       }
     );
+  });
+  context('allocate custodian', async () => {
+    let appDacOwner: l.Account;
+    let otherAccount: l.Account;
+    let accountsToRegister: l.Account[];
+    let dacId = 'appointdac';
+    before(async () => {
+      appDacOwner = await l.AccountManager.createAccount();
+      otherAccount = await l.AccountManager.createAccount();
+      accountsToRegister = await l.AccountManager.createAccounts(5);
+      await debugPromise(
+        shared.dacdirectory_contract.regdac(
+          appDacOwner.name,
+          dacId,
+          { contract: shared.dac_token_contract.account.name, symbol: '4,APP' },
+          'appointdactitle',
+          [],
+          [
+            {
+              key: Account_type.AUTH,
+              value: appDacOwner.name,
+            },
+            {
+              key: Account_type.CUSTODIAN,
+              value: shared.daccustodian_contract.account.name,
+            },
+          ],
+          {
+            from: appDacOwner,
+          }
+        ),
+        'successfully registered dac',
+        'failed to register dac'
+      );
+      await debugPromise(
+        shared.daccustodian_contract.updateconfige(
+          {
+            numelected: 5,
+            maxvotes: 4,
+            requested_pay_max: {
+              contract: 'eosio.token',
+              quantity: '30.0000 EOS',
+            },
+            periodlength: 5,
+            initial_vote_quorum_percent: 31,
+            vote_quorum_percent: 15,
+            auth_threshold_high: 4,
+            auth_threshold_mid: 3,
+            auth_threshold_low: 2,
+            lockupasset: {
+              contract: shared.dac_token_contract.account.name,
+              quantity: '12.0000 APP',
+            },
+            should_pay_via_service_provider: true,
+            lockup_release_time_delay: 1233,
+          },
+          dacId,
+          { from: appDacOwner }
+        ),
+        'successfully updated configs for appointdac',
+        'failed to update configs for appointdac'
+      );
+    });
+    it('should fail without correct auth', async () => {
+      l.assertMissingAuthority(
+        shared.daccustodian_contract.appointcust(
+          accountsToRegister.map(account => {
+            return account.name;
+          }),
+          dacId,
+          { from: otherAccount }
+        )
+      );
+    });
+    it('should succeed with correct auth', async () => {
+      await chai.expect(
+        shared.daccustodian_contract.appointcust(
+          accountsToRegister.map(account => {
+            return account.name;
+          }),
+          dacId,
+          { from: appDacOwner }
+        )
+      ).to.eventually.be.fulfilled;
+      let candidates = await shared.daccustodian_contract.candidatesTable({
+        scope: dacId,
+        limit: 20,
+      });
+      chai.expect(candidates.rows.length).equals(5);
+      chai
+        .expect(candidates.rows[0].custodian_end_time_stamp)
+        .to.be.equalDate(new Date(0));
+
+      chai.expect(candidates.rows[0].requestedpay).to.equal('0.0000 EOS');
+      chai.expect(candidates.rows[0].locked_tokens).to.equal('0.0000 APP');
+      chai.expect(candidates.rows[0].total_votes).to.equal(0);
+      chai.expect(candidates.rows[0].is_active).to.equal(1);
+
+      let custodians = await shared.daccustodian_contract.custodiansTable({
+        scope: dacId,
+        limit: 20,
+      });
+      chai.expect(custodians.rows.length).equals(5);
+
+      chai.expect(custodians.rows[0].requestedpay).to.equal('0.0000 EOS');
+      chai.expect(custodians.rows[0].total_votes).to.equal(0);
+    });
+    it('should fail with existing custodians appointed', async () => {
+      await l.assertEOSErrorIncludesMessage(
+        shared.daccustodian_contract.appointcust(
+          accountsToRegister.map(account => {
+            return account.name;
+          }),
+          dacId,
+          { from: appDacOwner }
+        ),
+        'ERR:CUSTODIANS_NOT_EMPTY'
+      );
+    });
   });
 });
