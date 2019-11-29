@@ -1194,7 +1194,7 @@ describe('Daccustodian', () => {
       }
     );
   });
-  context('allocate custodian', async () => {
+  context('appoint custodian', async () => {
     let appDacOwner: l.Account;
     let otherAccount: l.Account;
     let accountsToRegister: l.Account[];
@@ -1311,6 +1311,9 @@ describe('Daccustodian', () => {
         ),
         'ERR:CUSTODIANS_NOT_EMPTY'
       );
+    });
+    xit('change custodians', async () => {
+      // How do new custodians get appointed if there are already some appointed?
     });
   });
 });
