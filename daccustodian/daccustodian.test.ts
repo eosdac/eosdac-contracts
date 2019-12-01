@@ -2,9 +2,6 @@ import * as l from 'lamington';
 
 import {
   SharedTestObjects,
-  initAndGetSharedObjects,
-  candidates,
-  regmembers,
   debugPromise,
   NUMBER_OF_CANDIDATES,
   Account_type,
@@ -23,10 +20,7 @@ describe('Daccustodian', () => {
   let newUser1: l.Account;
 
   before(async () => {
-    shared = await debugPromise(
-      initAndGetSharedObjects(),
-      'init and get shared objects'
-    );
+    shared = await SharedTestObjects.getInstance();
   });
 
   context('updateconfige', async () => {
@@ -338,7 +332,7 @@ describe('Daccustodian', () => {
     context('with no votes', async () => {
       let currentCandidates: l.TableRowsResult<DaccustodianCandidate>;
       before(async () => {
-        cands = await candidates();
+        cands = await shared.candidates();
         currentCandidates = await shared.daccustodian_contract.candidatesTable({
           scope: shared.configured_dac_id,
           limit: 20,
@@ -377,7 +371,7 @@ describe('Daccustodian', () => {
     context('After voting', async () => {
       before(async () => {
         // Place votes for even number candidates and leave odd number without votes.
-        let members = await regmembers();
+        let members = await shared.regMembers();
         // Only vote with the first 2 members
         for (const member of members.slice(0, 2)) {
           await debugPromise(
@@ -392,7 +386,7 @@ describe('Daccustodian', () => {
         }
       });
       it('votes table should have rows', async () => {
-        let members = await regmembers();
+        let members = await shared.regMembers();
         let votedCandidateResult = shared.daccustodian_contract.votesTable({
           scope: shared.configured_dac_id,
         });
@@ -471,7 +465,7 @@ describe('Daccustodian', () => {
         });
       });
       it('after transfer to non-voter values should reduce for candidates and total values', async () => {
-        let members = await regmembers();
+        let members = await shared.regMembers();
         await shared.dac_token_contract.transfer(
           members[1].name,
           members[4].name,
@@ -525,8 +519,8 @@ describe('Daccustodian', () => {
           let members: l.Account[];
           let cands: l.Account[];
           before(async () => {
-            members = await regmembers();
-            cands = await candidates();
+            members = await shared.regMembers();
+            cands = await shared.candidates();
 
             // Transfer an additional 1000 EODAC to member to get over the initial voting threshold
             let transfers = members.map(member => {
@@ -582,8 +576,8 @@ describe('Daccustodian', () => {
             let members: l.Account[];
             let cands: l.Account[];
             before(async () => {
-              members = await regmembers();
-              cands = await candidates();
+              members = await shared.regMembers();
+              cands = await shared.candidates();
 
               for (const { mbr, idx } of members.map((mbr, idx) => {
                 return { mbr, idx };
@@ -741,7 +735,7 @@ describe('Daccustodian', () => {
       'Calling new period after the period time has expired',
       async () => {
         before(async () => {
-          let members = await regmembers();
+          let members = await shared.regMembers();
 
           // Removing 1000 EOSDAC from each member to get under the initial voting threshold
           // but still above the ongoing voting threshold to check the newperiode still succeeds.
@@ -819,7 +813,7 @@ describe('Daccustodian', () => {
     let electedCandidateToResign: l.Account;
 
     before(async () => {
-      existing_candidates = await candidates();
+      existing_candidates = await shared.candidates();
       unelectedCandidateToResign = existing_candidates[6];
       electedCandidateToResign = existing_candidates[0];
     });
@@ -872,10 +866,10 @@ describe('Daccustodian', () => {
     let unregisteredCandidate: l.Account;
 
     before(async () => {
-      let currentMembers = await regmembers();
+      let currentMembers = await shared.regMembers();
       unregisteredCandidate = currentMembers[0];
 
-      existing_candidates = await candidates();
+      existing_candidates = await shared.candidates();
       unelectedCandidateToResign = existing_candidates[6];
       electedCandidateToResign = existing_candidates[0];
     });
@@ -1001,10 +995,10 @@ describe('Daccustodian', () => {
     let unregisteredCandidate: l.Account;
 
     before(async () => {
-      let currentMembers = await regmembers();
+      let currentMembers = await shared.regMembers();
       unregisteredCandidate = currentMembers[1];
 
-      existing_candidates = await candidates();
+      existing_candidates = await shared.candidates();
       unelectedCandidateToFire = existing_candidates[6];
       electedCandidateToFire = existing_candidates[0];
     });
@@ -1092,7 +1086,7 @@ describe('Daccustodian', () => {
     let electedCandidateToFire: l.Account;
 
     before(async () => {
-      existing_candidates = await candidates();
+      existing_candidates = await shared.candidates();
       unelectedCandidateToFire = existing_candidates[6];
       electedCandidateToFire = existing_candidates[1];
     });
@@ -1143,7 +1137,7 @@ describe('Daccustodian', () => {
     let lockedCandidateToUnstake: l.Account;
 
     before(async () => {
-      existing_candidates = await candidates();
+      existing_candidates = await shared.candidates();
       lockedCandidateToUnstake = existing_candidates[2];
       await shared.dac_token_contract.stakeconfig(
         { enabled: true, min_stake_time: 5, max_stake_time: 20 },

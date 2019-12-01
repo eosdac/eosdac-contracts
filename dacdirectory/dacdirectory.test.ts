@@ -1,13 +1,13 @@
 import * as l from 'lamington';
 
-import { SharedTestObjects, initAndGetSharedObjects } from '../TestHelpers';
+import { SharedTestObjects } from '../TestHelpers';
 
 describe('Dacdirectory', () => {
   let shared: SharedTestObjects;
   let legaldacid = 'legaldacid';
 
   before(async () => {
-    shared = await initAndGetSharedObjects();
+    shared = await SharedTestObjects.getInstance();
   });
 
   context('regdac', async () => {

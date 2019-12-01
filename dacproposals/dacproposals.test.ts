@@ -2,9 +2,6 @@ import * as l from 'lamington';
 
 import {
   SharedTestObjects,
-  initAndGetSharedObjects,
-  candidates,
-  regmembers,
   debugPromise,
   NUMBER_OF_CANDIDATES,
   Account_type,
@@ -19,6 +16,27 @@ import { sleep } from 'lamington';
 
 const log = factory.getLogger('Custodian Tests');
 
+enum VoteType {
+  none = 0,
+  // a vote type to indicate a custodian's approval of a worker proposal.
+  proposal_approve,
+  // a vote type to indicate a custodian's denial of a worker proposal.
+  proposal_deny,
+  // a vote type to indicate a custodian's acceptance of a worker proposal as completed.
+  finalize_approve,
+  // a vote type to indicate a custodian's rejection of a worker proposal as completed.
+  finalize_deny,
+}
+
+enum ProposalState {
+  ProposalStatePending_approval = 0,
+  ProposalStateWork_in_progress,
+  ProposalStatePending_finalize,
+  ProposalStateHas_enough_approvals_votes,
+  ProposalStateHas_enough_finalize_votes,
+  ProposalStateExpired,
+}
+
 describe.only('Dacproposals', () => {
   let shared: SharedTestObjects;
   let propDacOwner: l.Account;
@@ -26,10 +44,7 @@ describe.only('Dacproposals', () => {
   let dacId = 'propdac';
 
   before(async () => {
-    shared = await debugPromise(
-      initAndGetSharedObjects(),
-      'init and get shared objects'
-    );
+    shared = await SharedTestObjects.getInstance();
   });
 
   context('allocate custodian', async () => {
