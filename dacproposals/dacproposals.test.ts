@@ -37,130 +37,463 @@ enum ProposalState {
   ProposalStateExpired,
 }
 
-describe.only('Dacproposals', () => {
+describe('Dacproposals', () => {
   let shared: SharedTestObjects;
-  let propDacOwner: l.Account;
-  let propDacCustodians: l.Account[];
-  let dacId = 'propdac';
+  // let propDacOwner: l.Account;
+  let otherAccount: l.Account;
+  let proposer1Account: l.Account;
+  let proposer2Account: l.Account;
+  let arbitrator: l.Account;
+  let propDacCustodians: string[];
+  let members: l.Account[];
+  let dacId: string;
 
   before(async () => {
     shared = await SharedTestObjects.getInstance();
+    dacId = shared.configured_dac_id;
   });
 
   context('allocate custodian', async () => {
     before(async () => {
-      propDacOwner = await l.AccountManager.createAccount();
-      propDacCustodians = await l.AccountManager.createAccounts(12);
-      await debugPromise(
-        shared.dacdirectory_contract.regdac(
-          propDacOwner.name,
-          dacId,
-          {
-            contract: shared.dac_token_contract.account.name,
-            symbol: '4,PROP',
-          },
-          'appointdactitle',
-          [],
-          [
-            {
-              key: Account_type.AUTH,
-              value: propDacOwner.name,
-            },
-            {
-              key: Account_type.CUSTODIAN,
-              value: shared.daccustodian_contract.account.name,
-            },
-          ],
-          {
-            from: propDacOwner,
-          }
-        ),
-        'successfully registered dac',
-        'failed to register dac'
+      members = await shared.regMembers();
+      otherAccount = members[1];
+      arbitrator = members[2];
+      proposer1Account = members[3];
+      proposer2Account = members[4];
+
+      let propDacCustodiansRaw = await shared.daccustodian_contract.custodiansTable(
+        {
+          scope: shared.configured_dac_id,
+        }
       );
-      await debugPromise(
-        shared.daccustodian_contract.updateconfige(
-          {
-            numelected: 5,
-            maxvotes: 4,
-            requested_pay_max: {
-              contract: 'eosio.token',
-              quantity: '30.0000 EOS',
-            },
-            periodlength: 5,
-            initial_vote_quorum_percent: 31,
-            vote_quorum_percent: 15,
-            auth_threshold_high: 4,
-            auth_threshold_mid: 3,
-            auth_threshold_low: 2,
-            lockupasset: {
-              contract: shared.dac_token_contract.account.name,
-              quantity: '12.0000 PROP',
-            },
-            should_pay_via_service_provider: true,
-            lockup_release_time_delay: 1233,
-          },
-          dacId,
-          { from: propDacOwner }
-        ),
-        'successfully updated configs for appointdac',
-        'failed to update configs for appointdac'
-      );
-      await shared.daccustodian_contract.appointcust(
-        propDacCustodians.map(account => {
-          return account.name;
-        }),
-        dacId,
-        { from: propDacOwner }
-      );
+      console.log('custodians is: ' + JSON.stringify(propDacCustodiansRaw));
+
+      propDacCustodians = propDacCustodiansRaw.rows.map(row => {
+        let name = <string>row.cust_name;
+        console.log('name is: ' + name);
+        return name;
+      });
     });
     context('updateconfig', async () => {
       context('without valid auth', async () => {
-        it('should fail with auth error', async () => {});
+        it('should fail with auth error', async () => {
+          await l.assertMissingAuthority(
+            shared.dacproposals_contract.updateconfig(
+              {
+                proposal_threshold: 7,
+                finalize_threshold: 5,
+              },
+              dacId,
+              { from: otherAccount }
+            )
+          );
+        });
       });
       context('with valid auth', async () => {
-        it('should succeed', async () => {});
+        it('should succeed', async () => {
+          await shared.dacproposals_contract.updateconfig(
+            {
+              proposal_threshold: 4,
+              finalize_threshold: 3,
+            },
+            dacId,
+            { from: shared.auth_account }
+          );
+        });
+        it('should have correct config in config table', async () => {
+          await l.assertRowsEqual(
+            shared.dacproposals_contract.configTable({ scope: dacId }),
+            [
+              {
+                proposal_threshold: 4,
+                finalize_threshold: 3,
+              },
+            ]
+          );
+        });
       });
     });
     context('create proposal', async () => {
       context('without valid permissions', async () => {
-        it('should fail with auth error', async () => {});
+        it('should fail with auth error', async () => {
+          await l.assertMissingAuthority(
+            shared.dacproposals_contract.createprop(
+              proposer1Account.name,
+              'title',
+              'summary',
+              arbitrator.name,
+              { quantity: '100.0000 EOS', contract: 'eosio.token' },
+              'jhsdfkjhsdfkjhkjsdf',
+              0,
+              2,
+              130,
+              150,
+              dacId
+            )
+          );
+        });
       });
       context('with valid auth', async () => {
-        context('with invalid title', async () => {});
-        context('with invalid summary', async () => {});
-        context('with invalid pay symbol', async () => {});
-        context('with no pay symbol', async () => {});
-        context('with negative amount', async () => {});
-        context('with no arbitrator', async () => {});
-        context('with valid params', async () => {});
-        context('with duplicate id', async () => {});
-        context('with valid params as an additional proposal', async () => {});
+        context('with invalid title', async () => {
+          it('should fail with short title error', async () => {
+            await l.assertEOSErrorIncludesMessage(
+              shared.dacproposals_contract.createprop(
+                proposer1Account.name,
+                'ti',
+                'summary',
+                arbitrator.name,
+                { quantity: '100.0000 EOS', contract: 'eosio.token' },
+                'jhsdfkjhsdfkjhkjsdf',
+                0,
+                2,
+                130,
+                150,
+                dacId,
+                { from: proposer1Account }
+              ),
+              'CREATEPROP_SHORT_TITLE'
+            );
+          });
+        });
+        context('with invalid summary', async () => {
+          it('should fail with short summary error', async () => {
+            await l.assertEOSErrorIncludesMessage(
+              shared.dacproposals_contract.createprop(
+                proposer1Account.name,
+                'title',
+                'su',
+                arbitrator.name,
+                { quantity: '100.0000 EOS', contract: 'eosio.token' },
+                'jhsdfkjhsdfkjhkjsdf',
+                0,
+                2,
+                130,
+                150,
+                dacId,
+                { from: proposer1Account }
+              ),
+              'CREATEPROP_SHORT_SUMMARY'
+            );
+          });
+        });
+        context('with invalid pay symbol', async () => {
+          it('should fail with invalid pay symbol error', async () => {
+            await l.assertEOSErrorIncludesMessage(
+              shared.dacproposals_contract.createprop(
+                proposer1Account.name,
+                'title',
+                'summary',
+                arbitrator.name,
+                { quantity: '100.0000 sdff', contract: 'eosio.token' },
+                'jhsdfkjhsdfkjhkjsdf',
+                0,
+                2,
+                130,
+                150,
+                dacId,
+                { from: proposer1Account }
+              ),
+              'CREATEPROP_INVALID_SYMBOL'
+            );
+          });
+        });
+        context('with no pay symbol', async () => {
+          it('should fail with no pay symbol error', async () => {
+            await l.assertEOSErrorIncludesMessage(
+              shared.dacproposals_contract.createprop(
+                proposer1Account.name,
+                'title',
+                'summary',
+                arbitrator.name,
+                { quantity: '100.0000', contract: 'eosio.token' },
+                'jhsdfkjhsdfkjhkjsdf',
+                0,
+                2,
+                130,
+                150,
+                dacId,
+                { from: proposer1Account }
+              ),
+              'CREATEPROP_INVALID_SYMBOL'
+            );
+          });
+        });
+        context('with negative amount', async () => {
+          it('should fail with negative pay error', async () => {
+            await l.assertEOSErrorIncludesMessage(
+              shared.dacproposals_contract.createprop(
+                proposer1Account.name,
+                'title',
+                'summary',
+                arbitrator.name,
+                { quantity: '-100.0000 EOS', contract: 'eosio.token' },
+                'jhsdfkjhsdfkjhkjsdf',
+                0,
+                2,
+                130,
+                150,
+                dacId,
+                { from: proposer1Account }
+              ),
+              'CREATEPROP_INVALID_PAY_AMOUNT'
+            );
+          });
+        });
+        context('with no arbitrator', async () => {
+          it('should fail with invalid arbitrator error', async () => {
+            await l.assertEOSErrorIncludesMessage(
+              shared.dacproposals_contract.createprop(
+                proposer1Account.name,
+                'title',
+                'summary',
+                'randomname',
+                { quantity: '100.0000 EOS', contract: 'eosio.token' },
+                'jhsdfkjhsdfkjhkjsdf',
+                0,
+                2,
+                130,
+                150,
+                dacId,
+                { from: proposer1Account }
+              ),
+              'CREATEPROP_INVALID_ARBITRATOR'
+            );
+          });
+        });
+        context('with valid params', async () => {
+          it('should succeed', async () => {
+            await chai.expect(
+              shared.dacproposals_contract.createprop(
+                proposer1Account.name,
+                'title',
+                'summary',
+                arbitrator.name,
+                { quantity: '100.0000 EOS', contract: 'eosio.token' },
+                'jhsdfkjhsdfkjhkjsdf',
+                0,
+                2,
+                130,
+                150,
+                dacId,
+                { from: proposer1Account }
+              ),
+              ''
+            ).to.eventually.be.fulfilled;
+          });
+        });
+        context('with duplicate id', async () => {
+          it('should fail with short title error', async () => {
+            await l.assertEOSErrorIncludesMessage(
+              shared.dacproposals_contract.createprop(
+                proposer1Account.name,
+                'title',
+                'summary',
+                'randomname',
+                {
+                  quantity: '100.0000 EOS',
+                  contract: 'eosio.token',
+                },
+                'jhsdfkjhsdfkjhkjsdf',
+                0,
+                2,
+                130,
+                150,
+                dacId,
+                { from: proposer1Account }
+              ),
+              'CREATEPROP_DUPLICATE_ID'
+            );
+          });
+        });
+        context('with valid params as an additional proposal', async () => {
+          it('should succeed', async () => {
+            await chai.expect(
+              shared.dacproposals_contract.createprop(
+                proposer1Account.name,
+                'title',
+                'summary',
+                arbitrator.name,
+                { quantity: '100.0000 EOS', contract: 'eosio.token' },
+                'jhsdfkjhsdfkjhkjsdf',
+                16,
+                2,
+                130,
+                150,
+                dacId,
+                { from: proposer1Account }
+              )
+            ).to.eventually.be.fulfilled;
+          });
+        });
       });
     });
     context('voteprop', async () => {
       context('without valid auth', async () => {
-        it('should fail with auth error', async () => {});
+        it('should fail with auth error', async () => {
+          l.assertMissingAuthority(
+            shared.dacproposals_contract.voteprop(
+              propDacCustodians[0],
+              0,
+              VoteType.proposal_approve,
+              dacId,
+              {
+                auths: [
+                  {
+                    actor: propDacCustodians[1],
+                    permission: 'active',
+                  },
+                ],
+              }
+            )
+          );
+        });
       });
       context('with valid auth', async () => {
         context('with invalid proposal id', async () => {
-          it('should fail with proposal not found error', async () => {});
+          it('should fail with proposal not found error', async () => {
+            await l.assertEOSErrorIncludesMessage(
+              shared.dacproposals_contract.voteprop(
+                propDacCustodians[0],
+                15,
+                VoteType.proposal_approve,
+                dacId,
+                {
+                  auths: [
+                    {
+                      actor: propDacCustodians[0],
+                      permission: 'active',
+                    },
+                    {
+                      actor: shared.auth_account.name,
+                      permission: 'active',
+                    },
+                  ],
+                }
+              ),
+              'VOTEPROP_PROPOSAL_NOT_FOUND'
+            );
+          });
         });
         context('proposal in pending approval state', async () => {
-          context('finalize_approve vote', async () => {
-            it('should succeed', async () => {});
+          context('proposal_approve vote', async () => {
+            it('should succeed', async () => {
+              await chai.expect(
+                shared.dacproposals_contract.voteprop(
+                  propDacCustodians[0],
+                  0,
+                  VoteType.proposal_approve,
+                  dacId,
+                  {
+                    auths: [
+                      {
+                        actor: propDacCustodians[0],
+                        permission: 'active',
+                      },
+                      {
+                        actor: shared.auth_account.name,
+                        permission: 'active',
+                      },
+                    ],
+                  }
+                )
+              ).to.eventually.be.fulfilled;
+            });
           });
-          context('final_deny vote', async () => {
-            it('should succeed', async () => {});
+          context('proposal_deny vote', async () => {
+            it('should succeed', async () => {
+              await chai.expect(
+                shared.dacproposals_contract.voteprop(
+                  propDacCustodians[0],
+                  0,
+                  VoteType.proposal_deny,
+                  dacId,
+                  {
+                    auths: [
+                      {
+                        actor: propDacCustodians[0],
+                        permission: 'active',
+                      },
+                      {
+                        actor: shared.auth_account.name,
+                        permission: 'active',
+                      },
+                    ],
+                  }
+                )
+              ).to.eventually.be.fulfilled;
+            });
           });
           context('proposal_approve vote', async () => {
-            it('should succeed', async () => {});
+            it('should succeed', async () => {
+              await chai.expect(
+                shared.dacproposals_contract.voteprop(
+                  propDacCustodians[0],
+                  0,
+                  VoteType.proposal_approve,
+                  dacId,
+                  {
+                    auths: [
+                      {
+                        actor: propDacCustodians[0],
+                        permission: 'active',
+                      },
+                      {
+                        actor: shared.auth_account.name,
+                        permission: 'active',
+                      },
+                    ],
+                  }
+                )
+              ).to.eventually.be.fulfilled;
+            });
           });
           context('Extra proposal_approve vote', async () => {
-            it('should succeed', async () => {});
+            it('should succeed', async () => {
+              await chai.expect(
+                shared.dacproposals_contract.voteprop(
+                  propDacCustodians[0],
+                  16,
+                  VoteType.proposal_approve,
+                  dacId,
+                  {
+                    auths: [
+                      {
+                        actor: propDacCustodians[0],
+                        permission: 'active',
+                      },
+                      {
+                        actor: shared.auth_account.name,
+                        permission: 'active',
+                      },
+                    ],
+                  }
+                )
+              ).to.eventually.be.fulfilled;
+            });
           });
           context('proposal_deny vote of existing vote', async () => {
-            it('should succeed', async () => {});
+            it('should succeed', async () => {
+              await chai.expect(
+                shared.dacproposals_contract.voteprop(
+                  propDacCustodians[0],
+                  0,
+                  VoteType.proposal_deny,
+                  dacId,
+                  {
+                    auths: [
+                      {
+                        actor: propDacCustodians[0],
+                        permission: 'active',
+                      },
+                      {
+                        actor: shared.auth_account.name,
+                        permission: 'active',
+                      },
+                    ],
+                  }
+                )
+              ).to.eventually.be.fulfilled;
+            });
           });
         });
       });
