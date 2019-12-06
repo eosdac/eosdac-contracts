@@ -22,6 +22,11 @@ export interface DaccustodianAccountWeightDelta {
 	weight_delta: number;
 }
 
+export interface DaccustodianAppointcust {
+	cust: Array<string|number>;
+	dac_id: string|number;
+}
+
 export interface DaccustodianBalanceobsv {
 	account_balance_deltas: Array<string>;
 	dac_id: string|number;
@@ -285,6 +290,7 @@ export interface DaccustodianWithdrawcane {
 
 export interface Daccustodian extends Contract {
 	// Actions
+	appointcust(cust: Array<string|number>, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	balanceobsv(account_balance_deltas: Array<DaccustodianAccountBalanceDelta>, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	capturestake(from: string|number, quantity: string, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	claimpay(payid: number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;

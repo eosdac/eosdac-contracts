@@ -17,11 +17,21 @@ describe('EOSDacTokens', () => {
   let shared: SharedTestObjects;
   let issuer: l.Account;
   let otherAccount: l.Account;
+  let validAuths: { auths: { actor: string; permission: string }[] };
 
   before(async () => {
     shared = await initAndGetSharedObjects();
     issuer = await l.AccountManager.createAccount();
     otherAccount = await l.AccountManager.createAccount();
+    validAuths = {
+      auths: [
+        { actor: issuer.name, permission: 'active' },
+        {
+          actor: shared.dac_token_contract.account.name,
+          permission: 'active',
+        },
+      ],
+    };
   });
 
   context('create token', async () => {
@@ -31,7 +41,7 @@ describe('EOSDacTokens', () => {
           issuer.name,
           '10000.0000 asdf',
           false,
-          { from: issuer }
+          validAuths
         ),
         'ERR::CREATE_INVALID_SYMBOL'
       );
@@ -42,7 +52,7 @@ describe('EOSDacTokens', () => {
           issuer.name,
           `${2 ** 62 + 10} ABC`,
           false,
-          { from: issuer }
+          validAuths
         ),
         'ERR::CREATE_INVALID_SUPPLY'
       );
@@ -53,7 +63,7 @@ describe('EOSDacTokens', () => {
           issuer.name,
           '-10000.0000 ABC',
           false,
-          { from: issuer }
+          validAuths
         ),
         'ERR::CREATE_MAX_SUPPLY_MUST_BE_POSITIVE'
       );
@@ -63,7 +73,7 @@ describe('EOSDacTokens', () => {
         issuer.name,
         '100000.0000 ABC',
         false,
-        { from: issuer }
+        validAuths
       );
     });
     it('with existing token should fail with existing token error', async () => {
@@ -72,7 +82,7 @@ describe('EOSDacTokens', () => {
           issuer.name,
           '1000000.0000 ABC',
           false,
-          { from: issuer }
+          validAuths
         ),
         'ERR::CREATE_EXISITNG_SYMBOL'
       );
@@ -85,7 +95,7 @@ describe('EOSDacTokens', () => {
           issuer.name,
           '10000.0000 sdasd',
           'some memo',
-          { from: issuer }
+          validAuths
         ),
         'ERR::ISSUE_INVALID_SYMBOL'
       );
@@ -96,7 +106,7 @@ describe('EOSDacTokens', () => {
           issuer.name,
           '10000.0000 CBA',
           'some memo',
-          { from: issuer }
+          validAuths
         ),
         'ERR::ISSUE_NON_EXISTING_SYMBOL:'
       );
@@ -107,7 +117,7 @@ describe('EOSDacTokens', () => {
           issuer.name,
           `${2 ** 62 + 10} ABC`,
           'some memo',
-          { from: issuer }
+          validAuths
         ),
         'ERR::ISSUE_INVALID_QUANTITY:'
       );
@@ -118,7 +128,7 @@ describe('EOSDacTokens', () => {
           issuer.name,
           `-1000.0000 ABC`,
           'some memo',
-          { from: issuer }
+          validAuths
         ),
         'ERR::ISSUE_NON_POSITIVE'
       );
@@ -129,7 +139,7 @@ describe('EOSDacTokens', () => {
           issuer.name,
           `1000.00 ABC`,
           'some memo',
-          { from: issuer }
+          validAuths
         ),
         'ERR::ISSUE_INVALID_PRECISION:'
       );
@@ -139,7 +149,7 @@ describe('EOSDacTokens', () => {
         issuer.name,
         `1000.0000 ABC`,
         'some memo',
-        { from: issuer }
+        validAuths
       );
       await l.assertRowsEqual(
         shared.dac_token_contract.statTable({ scope: '4,ABC' }),
@@ -159,7 +169,7 @@ describe('EOSDacTokens', () => {
               otherAccount.name,
               `1200.0000 ABC`,
               'some memo',
-              { from: issuer }
+              validAuths
             ),
             'ERR::DAC_NOT_FOUND_SYMBOL'
           );
@@ -195,7 +205,7 @@ describe('EOSDacTokens', () => {
             otherAccount.name,
             `1200.0000 ABC`,
             'some memo',
-            { from: issuer }
+            validAuths
           );
           await l.assertRowsEqual(
             shared.dac_token_contract.statTable({ scope: '4,ABC' }),
@@ -220,7 +230,7 @@ describe('EOSDacTokens', () => {
         staker.name,
         '1000.0000 ABC',
         'initial issued tokens',
-        { from: issuer }
+        validAuths
       );
     });
     context('stake', async () => {
@@ -457,48 +467,3 @@ describe('EOSDacTokens', () => {
     });
   });
 });
-
-/*
-
-
-  it('Registering as a member', async function() {
-    let terms_hash: string = '1df37bdb72c0be963ef2bdfe9b7ef10b';
-    const terms_url: string =
-      'https://raw.githubusercontent.com/eosdac/eosdac-constitution/master/boilerplate_constitution.md';
-    const terms_incorrect = '19254f2be00396b63c713e5b06e7dd36';
-
-    await dao_token_contract.newmemtermse(terms_url, terms_hash, dac_id, {
-      from: sharedTestObjects.auth_account
-    });
-
-    await l.assertEOSError(
-      dao_token_contract.memberrege(donor1.name, terms_hash, dac_id, {
-        from: donor1
-      }),
-      'eosio_assert_message_exception',
-      'Attempt to register with no hash asserts'
-    );
-
-    await l.assertEOSError(
-      dao_token_contract.memberrege(donor1.name, terms_hash, dac_id, {
-        from: donor1
-      }),
-      'eosio_assert_message_exception',
-      'Attempt to register with no member terms configured asserts'
-    );
-
-    await l.assertEOSError(
-      dao_token_contract.memberrege(donor1.name, terms_incorrect, dac_id, {
-        from: donor1
-      }),
-      'eosio_assert_message_exception',
-      'Attempt to register with incorrect hash asserts'
-    );
-
-    // registration should succeed
-    await dao_token_contract.memberrege(donor1.name, terms_hash, dac_id, {
-      from: donor1
-    });
-  });
-});
-*/

@@ -29,6 +29,25 @@
     "@types/node" "*"
     "@types/tape" "*"
 
+"@types/chai-as-promised@^7.1.2":
+  version "7.1.2"
+  resolved "https://registry.yarnpkg.com/@types/chai-as-promised/-/chai-as-promised-7.1.2.tgz#2f564420e81eaf8650169e5a3a6b93e096e5068b"
+  integrity sha512-PO2gcfR3Oxa+u0QvECLe1xKXOqYTzCmWf0FhLhjREoW3fPAVamjihL7v1MOVLJLsnAMdLcjkfrs01yvDMwVK4Q==
+  dependencies:
+    "@types/chai" "*"
+
+"@types/chai-datetime@0.0.33":
+  version "0.0.33"
+  resolved "https://registry.yarnpkg.com/@types/chai-datetime/-/chai-datetime-0.0.33.tgz#26205ded289944aa2e44f5ad3e14d3d93446233c"
+  integrity sha512-WRo2HJtCBCNQYWNPOLgzikBjiHy4BKl2z8TIYLPjFoWvkiTasVMhmu2cDqocxaLTowNSaJ1khKvmJPDhOWU5cQ==
+  dependencies:
+    "@types/chai" "*"
+
+"@types/chai@*", "@types/chai@^4.2.3":
+  version "4.2.4"
+  resolved "https://registry.yarnpkg.com/@types/chai/-/chai-4.2.4.tgz#8936cffad3c96ec470a2dc26a38c3ba8b9b6f619"
+  integrity sha512-7qvf9F9tMTzo0akeswHPGqgUx/gIaJqrOEET/FCD8CFRkSUHlygQiM5yB6OvjrtdxBVLSyw7COJubsFYs0683g==
+
 "@types/json5@^0.0.29":
   version "0.0.29"
   resolved "https://registry.yarnpkg.com/@types/json5/-/json5-0.0.29.tgz#ee28707ae94e11d2b827bcbe5270bcea7f3e71ee"
@@ -211,7 +230,21 @@ camelcase@^5.0.0:
   resolved "https://registry.yarnpkg.com/camelcase/-/camelcase-5.3.1.tgz#e3c9b31569e106811df242f715725a1f4c494320"
   integrity sha512-L28STB170nwWS63UjtlEOE3dldQApaJXZkOI1uMFfzf3rRuPegHaHesyee+YxQ+W6SvRDQV6UrdOdRiR153wJg==
 
-chai@4.2.0, chai@^4.2.0:
+chai-as-promised@^7.1.1:
+  version "7.1.1"
+  resolved "https://registry.yarnpkg.com/chai-as-promised/-/chai-as-promised-7.1.1.tgz#08645d825deb8696ee61725dbf590c012eb00ca0"
+  integrity sha512-azL6xMoi+uxu6z4rhWQ1jbdUhOMhis2PvscD/xjLqNMkv3BPPp2JyyuTHOrf9BOosGpNQ11v6BKv/g57RXbiaA==
+  dependencies:
+    check-error "^1.0.2"
+
+chai-datetime@^1.5.0:
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/chai-datetime/-/chai-datetime-1.5.0.tgz#3742f18b024c75b76a2b7eee291662324467596c"
+  integrity sha1-N0LxiwJMdbdqK37uKRZiMkRnWWw=
+  dependencies:
+    chai ">1.9.0"
+
+chai@4.2.0, chai@>1.9.0, chai@^4.2.0:
   version "4.2.0"
   resolved "https://registry.yarnpkg.com/chai/-/chai-4.2.0.tgz#760aa72cf20e3795e84b12877ce0e83737aa29e5"
   integrity sha512-XQU3bhBukrOsQCuwZndwGcCVQHyZi53fQ6Ys1Fym7E4olpIqqZZhhoFJoaKVvV17lWQoXYwgWN2nF5crA8J2jw==
@@ -549,6 +582,13 @@ eosjs@^20.0.0:
     babel-runtime "6.26.0"
     eosjs-ecc "4.0.4"
     text-encoding "0.7.0"
+
+error-stack-parser@^1.3.6:
+  version "1.3.6"
+  resolved "https://registry.yarnpkg.com/error-stack-parser/-/error-stack-parser-1.3.6.tgz#e0e73b93e417138d1cd7c0b746b1a4a14854c292"
+  integrity sha1-4Oc7k+QXE40c18C3RrGkoUhUwpI=
+  dependencies:
+    stackframe "^0.3.1"
 
 es-abstract@^1.5.1:
   version "1.14.2"
@@ -1368,6 +1408,11 @@ source-map-support@^0.5.6:
     buffer-from "^1.0.0"
     source-map "^0.6.0"
 
+source-map@0.5.6:
+  version "0.5.6"
+  resolved "https://registry.yarnpkg.com/source-map/-/source-map-0.5.6.tgz#75ce38f52bf0733c5a7f0c118d81334a2bb5f412"
+  integrity sha1-dc449SvwczxafwwRjYEzSiu19BI=
+
 source-map@^0.6.0:
   version "0.6.1"
   resolved "https://registry.yarnpkg.com/source-map/-/source-map-0.6.1.tgz#74722af32e9614e9c287a8d0bbde48b5e2f1a263"
@@ -1382,6 +1427,40 @@ stack-chain@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/stack-chain/-/stack-chain-2.0.0.tgz#d73d1172af89565f07438b5bcc086831b6689b2d"
   integrity sha512-GGrHXePi305aW7XQweYZZwiRwR7Js3MWoK/EHzzB9ROdc75nCnjSJVi21rdAGxFl+yCx2L2qdfl5y7NO4lTyqg==
+
+stack-generator@^1.0.7:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/stack-generator/-/stack-generator-1.1.0.tgz#36f6a920751a6c10f499a13c32cbb5f51a0b8b25"
+  integrity sha1-NvapIHUabBD0maE8Msu19RoLiyU=
+  dependencies:
+    stackframe "^1.0.2"
+
+stackframe@^0.3.1, stackframe@~0.3:
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/stackframe/-/stackframe-0.3.1.tgz#33aa84f1177a5548c8935533cbfeb3420975f5a4"
+  integrity sha1-M6qE8Rd6VUjIk1Uzy/6zQgl19aQ=
+
+stackframe@^1.0.2:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/stackframe/-/stackframe-1.1.0.tgz#e3fc2eb912259479c9822f7d1f1ff365bd5cbc83"
+  integrity sha512-Vx6W1Yvy+AM1R/ckVwcHQHV147pTPBKWCRLrXMuPrFVfvBUc3os7PR1QLIWCMhPpRg5eX9ojzbQIMLGBwyLjqg==
+
+stacktrace-gps@^2.4.3:
+  version "2.4.4"
+  resolved "https://registry.yarnpkg.com/stacktrace-gps/-/stacktrace-gps-2.4.4.tgz#69c827e9d6d6f41cf438d7f195e2e3cbfcf28c44"
+  integrity sha1-acgn6dbW9Bz0ONfxleLjy/zyjEQ=
+  dependencies:
+    source-map "0.5.6"
+    stackframe "~0.3"
+
+stacktrace-js@1.3.1:
+  version "1.3.1"
+  resolved "https://registry.yarnpkg.com/stacktrace-js/-/stacktrace-js-1.3.1.tgz#67cab2589af5c417b962f7369940277bb3b6a18b"
+  integrity sha1-Z8qyWJr1xBe5Yvc2mUAne7O2oYs=
+  dependencies:
+    error-stack-parser "^1.3.6"
+    stack-generator "^1.0.7"
+    stacktrace-gps "^2.4.3"
 
 string-width@^1.0.1:
   version "1.0.2"
@@ -1542,6 +1621,13 @@ type-detect@^4.0.0, type-detect@^4.0.5:
   version "4.0.8"
   resolved "https://registry.yarnpkg.com/type-detect/-/type-detect-4.0.8.tgz#7646fb5f18871cfbb7749e69bd39a6388eb7450c"
   integrity sha512-0fr/mIH1dlO+x7TlcMy+bIDqKPsw/70tVyeHW787goQjhmqaZe10uwLujubK9q9Lg6Fiho1KUKDYz0Z7k7g5/g==
+
+typescript-logging@^0.6.3:
+  version "0.6.4"
+  resolved "https://registry.yarnpkg.com/typescript-logging/-/typescript-logging-0.6.4.tgz#c752cb3e7c051a32d3636a9b277a0a5e5295051e"
+  integrity sha512-jXISCGFyp4Q1uKLKi3zF0o8rwjeEipcIO7+C+jRttks3Ci8+8jDi9e87Jmz+8xuzZq+OcKJhDkiyHriqaWb+4A==
+  dependencies:
+    stacktrace-js "1.3.1"
 
 typescript@^3.6.3:
   version "3.6.3"

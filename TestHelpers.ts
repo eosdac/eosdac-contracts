@@ -18,7 +18,6 @@ import { EosioToken } from './external_contracts/eosio.token/eosio.token';
 import { Dacdirectory } from './dacdirectory/dacdirectory';
 import { Daccustodian } from './daccustodian/daccustodian';
 import { Eosdactokens } from './eosdactokens/eosdactokens';
-// import { Dacescrow } from "./dacescrow/dacescrow";
 // import { Dacmultisigs } from "./dacmultisigs/dacmultisigs";
 // import { Dacproposals } from "./dacproposals/dacproposals";
 
@@ -28,18 +27,19 @@ import * as path from 'path';
 const log = factory.getLogger('TestHelper');
 
 export var NUMBER_OF_REG_MEMBERS = 16;
-export var NUMBER_OF_CANDIDATES = 14;
+export var NUMBER_OF_CANDIDATES = 7;
 
 export async function debugPromise<T>(
   promise: Promise<T>,
   successMessage: string,
   errorMessage?: string
 ) {
-  let successString = 'debugPromise - ' + successMessage + ': ';
+  let debugPrefix = 'debugPromise - ';
+  let successString = debugPrefix + successMessage + ': ';
 
   let errorString = errorMessage
-    ? 'debugPromise - ' + errorMessage + ': '
-    : 'debugPromise - error - ' + successMessage + ': ';
+    ? debugPrefix + errorMessage + ': '
+    : debugPrefix + 'error - ' + successMessage + ': ';
 
   return promise
     .then(value => {
@@ -67,6 +67,7 @@ export interface SharedTestObjects {
   // === Shared Values
   readonly configured_dac_id: string;
   readonly configured_dac_memberterms: string;
+  readonly eosiotoken_contract: EosioToken;
   // readonly regmembers: Array<Account>;
 }
 
@@ -79,37 +80,30 @@ export async function initAndGetSharedObjects(): Promise<SharedTestObjects> {
     // log.info('Getting passed the if block');
     await sleep(1500);
     EOSManager.initWithDefaults();
-    let auth_account = await new_account('eosdacauth');
-
-    log.info('auth_account: ' + JSON.stringify(auth_account, null, 4));
-
-    let treasury_account = await new_account('treasury');
-
-    let dacdirectory: Dacdirectory = await ContractDeployer.deployWithName(
-      'dacdirectory/dacdirectory',
-      'dacdirectory'
-    );
-    let daccustodian: Daccustodian = await ContractDeployer.deployWithName(
-      'daccustodian/daccustodian',
-      'daccustodian'
-    );
-    let token: Eosdactokens = await ContractDeployer.deployWithName(
-      'eosdactokens/eosdactokens',
-      'eosdactokens'
-    );
-    let dacowner = await AccountManager.createAccount();
-
     let tempSharedObjects: SharedTestObjects = {
-      auth_account: auth_account,
+      auth_account: await new_account('eosdacauth'),
 
-      treasury_account: treasury_account,
+      treasury_account: await new_account('treasury'),
       // Configure Dac contracts
-      dacdirectory_contract: dacdirectory,
-      daccustodian_contract: daccustodian,
-      dac_token_contract: token,
+      dacdirectory_contract: await ContractDeployer.deployWithName(
+        'dacdirectory/dacdirectory',
+        'dacdirectory'
+      ),
+      daccustodian_contract: await ContractDeployer.deployWithName(
+        'daccustodian/daccustodian',
+        'daccustodian'
+      ),
+      dac_token_contract: await ContractDeployer.deployWithName(
+        'eosdactokens/eosdactokens',
+        'eosdactokens'
+      ),
       // Other objects
       configured_dac_id: 'eosdacio',
       configured_dac_memberterms: 'AgreedMemberTermsHashValue',
+      eosiotoken_contract: await ContractDeployer.deployWithName(
+        './external_contracts/eosio.token/eosio.token',
+        'eosio.token'
+      ),
     };
     // Further setup after the inital singleton object have been created.
     await setup_tokens(tempSharedObjects);
@@ -149,7 +143,7 @@ async function getRegMembers(count: number): Promise<Account[]> {
         return shared.dac_token_contract.transfer(
           shared.dac_token_contract.account.name,
           account.name,
-          '2000.0000 EOSDAC',
+          '1000.0000 EOSDAC',
           '',
           { from: shared.dac_token_contract.account }
         );
@@ -175,22 +169,35 @@ export async function candidates(): Promise<Account[]> {
 
 async function getCandidates(count: number): Promise<Account[]> {
   let newCandidates = await getRegMembers(count);
-  for (let candidate of newCandidates) {
+  for (let { candidate, index } of newCandidates.map((candidate, index) => ({
+    candidate,
+    index,
+  }))) {
     await debugPromise(
       shared.dac_token_contract.transfer(
         candidate.name,
         shared.daccustodian_contract.account.name,
         '12.0000 EOSDAC',
         '',
-        { from: candidate }
+        {
+          from: candidate,
+        }
       ),
       'sending candidate funds for staking'
     );
-
+    let indexOption = index % 3;
+    let payAmount = '';
+    if (indexOption == 0) {
+      payAmount = '15.0000 EOS';
+    } else if (indexOption == 1) {
+      payAmount = '20.0000 EOS';
+    } else {
+      payAmount = '25.0000 EOS';
+    }
     await debugPromise(
       shared.daccustodian_contract.nominatecane(
         candidate.name,
-        '25.0000 EOS',
+        payAmount,
         shared.configured_dac_id,
         {
           from: candidate,
@@ -236,7 +243,10 @@ async function setup_external(name: string) {
     `${compiled_dir}/${name}.abi`
   );
 
-  await generateTypes(`contracts/external_contracts/${name}/${name}`);
+  await debugPromise(
+    generateTypes(`contracts/external_contracts/${name}/${name}`),
+    'generating types for external contract: ' + name
+  );
 }
 
 export async function new_account(name: string): Promise<Account> {
@@ -249,18 +259,35 @@ export async function new_account(name: string): Promise<Account> {
 }
 
 export function eosio_dot_code_perm(account: Account): any {
-  return customAuthority(account, 'eosio.code');
+  return singleAuthority(account, 'eosio.code');
+}
+export interface PermissionLevelWeight {
+  name: string;
+  permission: string;
+  weight: number;
 }
 
-export function customAuthority(account: Account, permission: string): any {
+export function singleAuthority(account: Account, permission: string): any {
+  return authorities([
+    { name: account.name, permission: permission, weight: 1 },
+  ]);
+}
+
+export function authorities(
+  permissionLevelWeights: PermissionLevelWeight[],
+  threshold: number = 1
+): any {
   return {
-    threshold: 1,
-    accounts: [
-      {
-        permission: { actor: account.name, permission: permission },
-        weight: 1,
-      },
-    ],
+    threshold: threshold,
+    accounts: permissionLevelWeights.map(permLevelWeight => {
+      return {
+        permission: {
+          actor: permLevelWeight.name,
+          permission: permLevelWeight.permission,
+        },
+        weight: permLevelWeight.weight,
+      };
+    }),
     keys: [],
     waits: [],
   };
@@ -337,6 +364,19 @@ async function add_token_contract_permissions(
     {
       account: 'eosio',
       name: 'updateauth',
+      authorization: tempSharedObjects.daccustodian_contract.account.active,
+      data: {
+        account: tempSharedObjects.daccustodian_contract.account.name,
+        permission: 'pay',
+        parent: 'active',
+        auth: eosio_dot_code_perm(
+          tempSharedObjects.daccustodian_contract.account
+        ),
+      },
+    },
+    {
+      account: 'eosio',
+      name: 'updateauth',
       authorization: tempSharedObjects.auth_account.owner,
       data: {
         account: tempSharedObjects.auth_account.name,
@@ -345,6 +385,28 @@ async function add_token_contract_permissions(
         auth: eosio_dot_code_perm(
           tempSharedObjects.daccustodian_contract.account
         ),
+      },
+    },
+    {
+      account: 'eosio',
+      name: 'updateauth',
+      authorization: tempSharedObjects.daccustodian_contract.account.owner,
+      data: {
+        account: tempSharedObjects.daccustodian_contract.account.name,
+        permission: 'owner',
+        parent: '',
+        auth: singleAuthority(tempSharedObjects.auth_account, 'active'),
+      },
+    },
+    {
+      account: 'eosio',
+      name: 'updateauth',
+      authorization: tempSharedObjects.daccustodian_contract.account.owner,
+      data: {
+        account: tempSharedObjects.daccustodian_contract.account.name,
+        permission: 'active',
+        parent: 'owner',
+        auth: singleAuthority(tempSharedObjects.auth_account, 'active'),
       },
     },
   ];
@@ -432,6 +494,29 @@ async function add_token_contract_permissions(
         requirement: 'xfer',
       },
     },
+    // Link the xfer permission of account to the transfer action of account.
+    {
+      account: 'eosio',
+      name: 'linkauth',
+      authorization: tempSharedObjects.daccustodian_contract.account.active,
+      data: {
+        account: tempSharedObjects.daccustodian_contract.account.name,
+        code: tempSharedObjects.dac_token_contract.account.name,
+        type: 'transfer',
+        requirement: 'xfer',
+      },
+    },
+    {
+      account: 'eosio',
+      name: 'linkauth',
+      authorization: tempSharedObjects.daccustodian_contract.account.active,
+      data: {
+        account: tempSharedObjects.daccustodian_contract.account.name,
+        code: tempSharedObjects.daccustodian_contract.account.name,
+        type: 'clearstake',
+        requirement: 'pay',
+      },
+    },
   ];
   // Execute the transaction actions
   await debugPromise(EOSManager.transact({ actions }), 'Add auth actions');
@@ -516,6 +601,35 @@ async function add_token_contract_permissions(
           parent: 'one',
           auth: eosio_dot_code_perm(
             tempSharedObjects.daccustodian_contract.account
+          ),
+        },
+      },
+    ],
+  });
+  await EOSManager.transact({
+    actions: [
+      {
+        account: 'eosio',
+        name: 'updateauth',
+        authorization: tempSharedObjects.daccustodian_contract.account.active,
+        data: {
+          account: tempSharedObjects.daccustodian_contract.account.name,
+          permission: 'xfer',
+          parent: 'active',
+          auth: authorities(
+            [
+              {
+                name: tempSharedObjects.daccustodian_contract.account.name,
+                permission: 'eosio.code',
+                weight: 1,
+              },
+              {
+                name: tempSharedObjects.auth_account.name,
+                permission: 'med',
+                weight: 1,
+              },
+            ],
+            2
           ),
         },
       },
