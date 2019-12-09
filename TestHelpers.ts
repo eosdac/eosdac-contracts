@@ -20,6 +20,7 @@ import { Daccustodian } from './daccustodian/daccustodian';
 import { Eosdactokens } from './eosdactokens/eosdactokens';
 // import { Dacmultisigs } from "./dacmultisigs/dacmultisigs";
 import { Dacproposals } from './dacproposals/dacproposals';
+import { Dacescrow } from './dacescrow/dacescrow';
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -67,6 +68,7 @@ export class SharedTestObjects {
   daccustodian_contract: Daccustodian;
   dac_token_contract: Eosdactokens;
   dacproposals_contract: Dacproposals;
+  dacescrow_contract: Dacescrow;
   // === Shared Values
   configured_dac_id: string;
   configured_dac_memberterms: string;
@@ -104,6 +106,10 @@ export class SharedTestObjects {
     this.dacproposals_contract = await ContractDeployer.deployWithName(
       'dacproposals/dacproposals',
       'dacproposals'
+    );
+    this.dacescrow_contract = await ContractDeployer.deployWithName(
+      'dacescrow/dacescrow',
+      'dacescrow'
     );
     // Other objects
     this.configured_dac_id = 'eosdacio';
@@ -254,7 +260,10 @@ export class SharedTestObjects {
           key: Account_type.CUSTODIAN,
           value: this.daccustodian_contract.account.name,
         },
-        { key: Account_type.ESCROW, value: '' },
+        {
+          key: Account_type.ESCROW,
+          value: this.dacescrow_contract.account.name,
+        },
         {
           key: Account_type.TREASURY,
           value: this.treasury_account.name,
@@ -307,6 +316,28 @@ export class SharedTestObjects {
           permission: 'xfer',
           parent: 'active',
           auth: eosio_dot_code_perm(this.dac_token_contract.account),
+        },
+      },
+      {
+        account: 'eosio',
+        name: 'updateauth',
+        authorization: this.treasury_account.active,
+        data: {
+          account: this.treasury_account.name,
+          permission: 'escrow',
+          parent: 'active',
+          auth: eosio_dot_code_perm(this.dacproposals_contract.account),
+        },
+      },
+      {
+        account: 'eosio',
+        name: 'updateauth',
+        authorization: this.treasury_account.active,
+        data: {
+          account: this.treasury_account.name,
+          permission: 'xfer',
+          parent: 'active',
+          auth: eosio_dot_code_perm(this.dacproposals_contract.account),
         },
       },
       {
@@ -377,6 +408,28 @@ export class SharedTestObjects {
           code: this.daccustodian_contract.account.name,
           type: 'weightobsv',
           requirement: 'notify',
+        },
+      },
+      {
+        account: 'eosio',
+        name: 'linkauth',
+        authorization: this.treasury_account.active,
+        data: {
+          account: this.treasury_account.name,
+          code: this.dacescrow_contract.account.name,
+          type: 'init',
+          requirement: 'escrow',
+        },
+      },
+      {
+        account: 'eosio',
+        name: 'linkauth',
+        authorization: this.treasury_account.active,
+        data: {
+          account: this.treasury_account.name,
+          code: 'eosio.token',
+          type: 'transfer',
+          requirement: 'xfer',
         },
       },
       // Link the notify permission of account to the stakeobsv action of custodian
