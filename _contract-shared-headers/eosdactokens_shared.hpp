@@ -9,8 +9,9 @@
 namespace eosdac {
 
     struct account_stake_delta {
-        name  account;
-        asset stake_delta;
+        name     account;
+        asset    stake_delta;
+        uint32_t unstake_delay;
     };
 
     // This is a reference to the member struct as used in the eosdactoken contract.
