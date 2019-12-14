@@ -6,16 +6,6 @@ namespace eosdac {
     #include <eosio/eosio.hpp>
     #include <eosio/multi_index.hpp>
 
-    struct account_balance_delta {
-        eosio::name    account;
-        eosio::asset   balance_delta;
-    };
-
-    struct account_weight_delta {
-        eosio::name    account;
-        int64_t        weight_delta;
-    };
-
     struct [[eosio::table("custodians"), eosio::contract("daccustodian")]] custodian {
         eosio::name cust_name;
         eosio::asset requestedpay;
