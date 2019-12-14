@@ -419,7 +419,7 @@ describe('EOSDacTokens', () => {
             });
           });
           it('should fail', async () => {
-            l.assertEOSErrorIncludesMessage(
+            await l.assertEOSErrorIncludesMessage(
               shared.dac_token_contract.transfer(
                 sender.name,
                 receiver.name,

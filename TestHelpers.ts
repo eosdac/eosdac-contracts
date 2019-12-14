@@ -12,7 +12,6 @@ import * as ecc from 'eosjs-ecc';
 
 import { factory } from './LoggingConfig';
 
-import { EosioToken } from './external_contracts/eosio.token/eosio.token';
 
 // Dac contracts
 import { Dacdirectory } from './dacdirectory/dacdirectory';
@@ -72,7 +71,6 @@ export class SharedTestObjects {
   // === Shared Values
   configured_dac_id: string;
   configured_dac_memberterms: string;
-  eosiotoken_contract: EosioToken;
 
   static async getInstance(): Promise<SharedTestObjects> {
     if (!SharedTestObjects.instance) {
@@ -83,41 +81,55 @@ export class SharedTestObjects {
   }
 
   private async initAndGetSharedObjects() {
-    await sleep(1500);
+    await sleep(4500);
     EOSManager.initWithDefaults();
-    await sleep(1500);
+    await sleep(4500);
 
-    this.auth_account = await new_account('eosdacauth');
-    this.treasury_account = await new_account('treasury');
+    this.auth_account = await debugPromise(
+      new_account('eosdacauth'),
+      'create eosdacauth'
+    );
+    this.treasury_account = await debugPromise(
+      new_account('treasury'),
+      'create treasury account'
+    );
 
     // Configure Dac contracts
-    this.dacdirectory_contract = await ContractDeployer.deployWithName(
-      'dacdirectory/dacdirectory',
-      'dacdirectory'
+    this.dacdirectory_contract = await debugPromise(
+      ContractDeployer.deployWithName(
+        'dacdirectory/dacdirectory',
+        'dacdirectory'
+      ),
+      'Created dadirecrtory'
     );
-    this.daccustodian_contract = await ContractDeployer.deployWithName(
-      'daccustodian/daccustodian',
-      'daccustodian'
+    this.daccustodian_contract = await await debugPromise(
+      ContractDeployer.deployWithName(
+        'daccustodian/daccustodian',
+        'daccustodian'
+      ),
+      'created daccustodian'
     );
-    this.dac_token_contract = await ContractDeployer.deployWithName(
-      'eosdactokens/eosdactokens',
-      'eosdactokens'
+    this.dac_token_contract = await await debugPromise(
+      ContractDeployer.deployWithName(
+        'eosdactokens/eosdactokens',
+        'eosdactokens'
+      ),
+      'created eosdactokens'
     );
-    this.dacproposals_contract = await ContractDeployer.deployWithName(
-      'dacproposals/dacproposals',
-      'dacproposals'
+    this.dacproposals_contract = await await debugPromise(
+      ContractDeployer.deployWithName(
+        'dacproposals/dacproposals',
+        'dacproposals'
+      ),
+      'created dacproposals'
     );
-    this.dacescrow_contract = await ContractDeployer.deployWithName(
-      'dacescrow/dacescrow',
-      'dacescrow'
+    this.dacescrow_contract = await await debugPromise(
+      ContractDeployer.deployWithName('dacescrow/dacescrow', 'dacescrow'),
+      'created dacescrow'
     );
     // Other objects
     this.configured_dac_id = 'eosdacio';
     this.configured_dac_memberterms = 'AgreedMemberTermsHashValue';
-    this.eosiotoken_contract = await ContractDeployer.deployWithName(
-      './external_contracts/eosio.token/eosio.token',
-      'eosio.token'
-    );
 
     // Further setup after the inital singleton object have been created.
     await this.setup_tokens('100000.0000 EOSDAC');

@@ -921,7 +921,7 @@ describe('Daccustodian', () => {
             .to.be.afterTime(new Date(Date.now()));
         });
         it('should prevent unstaking with timelock error', async () => {
-          l.assertEOSErrorIncludesMessage(
+          await l.assertEOSErrorIncludesMessage(
             shared.daccustodian_contract.unstakee(
               electedCandidateToResign.name,
               shared.configured_dac_id,
@@ -1251,7 +1251,7 @@ describe('Daccustodian', () => {
       );
     });
     it('should fail without correct auth', async () => {
-      l.assertMissingAuthority(
+      await l.assertMissingAuthority(
         shared.daccustodian_contract.appointcust(
           accountsToRegister.map(account => {
             return account.name;

@@ -325,7 +325,7 @@ describe('Dacproposals', () => {
   context('voteprop', async () => {
     context('without valid auth', async () => {
       it('should fail with auth error', async () => {
-        l.assertMissingAuthority(
+        await l.assertMissingAuthority(
           shared.dacproposals_contract.voteprop(
             propDacCustodians[0],
             0,
