@@ -14,6 +14,16 @@ namespace eosdac {
         uint32_t unstake_delay;
     };
 
+    struct account_balance_delta {
+        eosio::name    account;
+        eosio::asset   balance_delta;
+    };
+
+    struct account_weight_delta {
+        eosio::name    account;
+        int64_t        weight_delta;
+    };
+
     // This is a reference to the member struct as used in the eosdactoken contract.
     // @abi table members
     struct member {

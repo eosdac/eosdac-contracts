@@ -98,7 +98,6 @@ void daccustodian::balanceobsv(vector<account_balance_delta> account_balance_del
   }
 }
 
-// Unused by anything
 void daccustodian::weightobsv(vector<account_weight_delta> account_weight_deltas, name dac_id) {
   auto dac = dacdir::dac_for_id(dac_id);
   auto token_contract = dac.symbol.get_contract();
