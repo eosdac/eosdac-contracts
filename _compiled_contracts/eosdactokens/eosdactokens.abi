@@ -458,6 +458,28 @@
                     "type": "name"
                 }
             ]
+        },
+        {
+            "name": "xferstake",
+            "base": "",
+            "fields": [
+                {
+                    "name": "from",
+                    "type": "name"
+                },
+                {
+                    "name": "to",
+                    "type": "name"
+                },
+                {
+                    "name": "quantity",
+                    "type": "asset"
+                },
+                {
+                    "name": "memo",
+                    "type": "string"
+                }
+            ]
         }
     ],
     "actions": [
@@ -569,6 +591,11 @@
         {
             "name": "updatetermse",
             "type": "updatetermse",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "xferstake",
+            "type": "xferstake",
             "ricardian_contract": ""
         }
     ],

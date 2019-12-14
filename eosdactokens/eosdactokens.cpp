@@ -287,6 +287,34 @@ void eosdactokens::close(name owner, const symbol &symbol) {
   acnts.erase(it);
 }
 
+// Staking functions
+
+void eosdactokens::xferstake(name from, name to, asset quantity, string memo) {
+  require_auth(from);
+  dacdir::dac dac = dacdir::dac_for_symbol(extended_symbol{quantity.symbol, get_self()});
+  eosio::name custodian_contract = dac.account_for_type(dacdir::CUSTODIAN);
+
+  stake_config config = stake_config::get_current_configs(get_self(), dac.dac_id);
+  check(config.enabled, "ERR::STAKING_NOT_ENABLED::Staking is not enabled for this token");
+
+  check(quantity.is_valid(), "ERR::STAKE_INVALID_QTY::Invalid quantity supplied");
+  check(quantity.amount > 0, "ERR::STAKE_NON_POSITIVE_QTY::Stake amount must be greater than 0");
+
+  asset liquid = eosdac::get_liquid(from, get_self(), quantity.symbol.code());
+
+  print("Liquid balance ", liquid, "\n");
+
+  check(liquid >= quantity, "ERR::STAKE_MORE_LIQUID::Attempting to stake more than your liquid balance");
+
+  sub_balance(from, quantity);
+  add_balance(to, quantity, from);
+  add_stake(to, quantity, dac.dac_id, from);
+
+  // notify of stake delta
+  send_stake_notification(to, quantity, dac);
+
+}
+
 void eosdactokens::stake(name account, asset quantity) {
   require_auth(account);
   dacdir::dac dac = dacdir::dac_for_symbol(extended_symbol{quantity.symbol, get_self()});
@@ -302,7 +330,7 @@ void eosdactokens::stake(name account, asset quantity) {
 
   check(liquid >= quantity, "ERR::STAKE_MORE_LIQUID::Attempting to stake more than your liquid balance");
 
-  add_stake(account, quantity, dac.dac_id);
+  add_stake(account, quantity, dac.dac_id, account);
 
   // notify of stake delta
   send_stake_notification(account, quantity, dac);
@@ -437,7 +465,7 @@ void eosdactokens::cancel(uint64_t unstake_id, symbol token_symbol) {
   require_auth(us->account);
 
   // Add stake back and delete the unstake so the liquid balance is correct
-  add_stake(us->account, us->stake, dac.dac_id);
+  add_stake(us->account, us->stake, dac.dac_id, us->account);
 
   send_stake_notification(us->account, us->stake, dac);
 
@@ -456,14 +484,14 @@ void eosdactokens::sub_stake(name account, asset value, name dac_id) {
   }
 }
 
-void eosdactokens::add_stake(name account, asset value, name dac_id) {
+void eosdactokens::add_stake(name account, asset value, name dac_id, name ram_payer) {
   stakes_table stakes(get_self(), dac_id.value);
   auto existing_stake = stakes.find(account.value);
 
   if (existing_stake != stakes.end()) {
-    stakes.modify(*existing_stake, account, [&](stake_info &s) { s.stake += value; });
+    stakes.modify(*existing_stake, same_payer, [&](stake_info &s) { s.stake += value; });
   } else {
-    stakes.emplace(account, [&](stake_info &s) {
+    stakes.emplace(ram_payer, [&](stake_info &s) {
       s.account = account;
       s.stake = value;
     });
