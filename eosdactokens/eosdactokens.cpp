@@ -376,14 +376,32 @@ void eosdactokens::staketime(name account, uint32_t unstake_time, symbol token_s
         "ERR::CANNOT_REDUCE_STAKE_TIME::You cannot reduce the stake time if you have tokens staked or in the process of unstaking");
   }
 
+  uint32_t current_unstake_time = config.min_stake_time;
   if (existing_time == staketimes.end()) {
     staketimes.emplace(account, [&](staketime_info &s) {
       s.account = account;
       s.delay = unstake_time;
     });
   } else {
-    staketimes.modify(*existing_time, account, [&](staketime_info &s) { s.delay = unstake_time; });
+      current_unstake_time = existing_time->delay;
+      staketimes.modify(*existing_time, account, [&](staketime_info &s) { s.delay = unstake_time; });
   }
+
+  // send notification for unstake at current delay and then stake with new delay
+  name custodian_contract = dac.account_for_type(dacdir::CUSTODIAN);
+  name vote_contract = dac.account_for_type(dacdir::VOTE_WEIGHT);
+  name notify_contract = (vote_contract) ? vote_contract : custodian_contract;
+  asset current_stake = eosdac::get_staked(account, get_self(), token_symbol.code());
+
+  vector<account_stake_delta> stake_deltas_sub = {{account, -current_stake, current_unstake_time}};
+  action(permission_level{get_self(), "notify"_n}, notify_contract, "stakeobsv"_n,
+      make_tuple(stake_deltas_sub, dac.dac_id))
+      .send();
+
+  vector<account_stake_delta> stake_deltas_add = {{account, current_stake, unstake_time}};
+  action(permission_level{get_self(), "notify"_n}, notify_contract, "stakeobsv"_n,
+      make_tuple(stake_deltas_add, dac.dac_id))
+      .send();
 }
 
 void eosdactokens::stakeconfig(stake_config config, symbol token_symbol) {
@@ -457,7 +475,15 @@ void eosdactokens::send_stake_notification(name account, asset stake, dacdir::da
   name vote_contract = dac_inst.account_for_type(dacdir::VOTE_WEIGHT);
   name notify_contract = (vote_contract) ? vote_contract : custodian_contract;
 
-  vector<account_stake_delta> stake_deltas = {{account, stake}};
+  stake_config config = stake_config::get_current_configs(get_self(), dac_inst.dac_id);
+  uint32_t unstake_delay = config.min_stake_time;
+  staketimes_table staketimes(get_self(), dac_inst.dac_id.value);
+  auto existing_staketime = staketimes.find(account.value);
+  if (existing_staketime != staketimes.end()) {
+      unstake_delay = existing_staketime->delay;
+  }
+
+  vector<account_stake_delta> stake_deltas = {{account, stake, unstake_delay}};
   action(permission_level{get_self(), "notify"_n}, notify_contract, "stakeobsv"_n,
       make_tuple(stake_deltas, dac_inst.dac_id))
       .send();

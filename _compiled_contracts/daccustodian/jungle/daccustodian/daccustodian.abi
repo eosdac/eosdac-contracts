@@ -28,6 +28,10 @@
                 {
                     "name": "stake_delta",
                     "type": "asset"
+                },
+                {
+                    "name": "unstake_delay",
+                    "type": "uint32"
                 }
             ]
         },
