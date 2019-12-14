@@ -434,6 +434,16 @@
             ]
         },
         {
+            "name": "paycpu",
+            "base": "",
+            "fields": [
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "payold",
             "base": "",
             "fields": [
@@ -930,6 +940,11 @@
             "name": "nominatecane",
             "type": "nominatecane",
             "ricardian_contract": "---\nspec_version: \"0.2.0\"\ntitle: Register as a Candidate\nsummary: 'Register {{ nowrap cand }} as a candidate for DAC ID {{ nowrap dac_id }}'\nicon: https://eosdac.io/assets/contracts/generic.png#00da1afc6464028359b3a02ffbdb59e1ea79fa261b5523ce7ac174cc0ef27bbd\n---\n\nRegister {{ nowrap cand }} as a candidate for {{ dac_id }}, I request to be paid {{ nowrap requestedpay }}"
+        },
+        {
+            "name": "paycpu",
+            "type": "paycpu",
+            "ricardian_contract": ""
         },
         {
             "name": "rejectcuspay",

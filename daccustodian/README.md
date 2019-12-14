@@ -322,6 +322,24 @@ This action is used to remove a custodian.
 The custodian will be removed from the active custodians and should still be present in the candidates table but will be set to inactive. Their staked tokens will be locked up for the time delay added from the moment this action was called so they will not able to unstake until that time has passed. A replacement custodian will be selected from the candidates to fill the missing place (based on vote ranking) then the auths for the controlling dac auth account will be set for the custodian board.
 
 ---
+### paycpu
+
+This action does nothing except check that it has the authorisation of the authority account and that the `max_cpu_usage_ms` of the transaction is less than 5 but not 0. 
+
+##### Assertions:
+
+-   The action is authorised by the authority account.
+-   0 < `max_cpu_usage_ms` <= 5
+
+##### Parameters:
+
+     dac_id - The dac_id, the action must provide authorisation of the authority account of this DAC.
+
+##### Post Condition:
+
+If this action is the first in a transaction then the authority account of the DAC will be billed for the CPU / NET of the transaction.
+
+---
 
 # Compile
 
