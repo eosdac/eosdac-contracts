@@ -1,6 +1,59 @@
 
 #include "../_contract-shared-headers/migration_helpers.hpp"
 
+ACTION daccustodian::returnstake(uint16_t batch_size, name dac_id, optional<name> begin) {
+    // transfers the staked tokens back to their account using staketrans
+    dacdir::dac found_dac = dacdir::dac_for_id(dac_id);
+    name token_contract = found_dac.symbol.get_contract();
+
+    candidates_table candidates(get_self(), dac_id.value);
+    auto itr = candidates.begin();
+    if (begin){
+        itr = candidates.find((*begin).value);
+    }
+
+    transaction deferred_trans{};
+
+    uint16_t batch_counter = 0;
+    uint128_t sender_id = 0;
+    while (batch_counter < batch_size && itr != candidates.end()) {
+        if (itr->locked_tokens.amount > 0){
+            const string memo = "Restaking custodian lockup tokens";
+            deferred_trans.actions.emplace_back(
+                    action(
+                            permission_level{get_self(), "xfer"_n},
+                            token_contract, "xferstake"_n,
+                            make_tuple(get_self(), itr->candidate_name, itr->locked_tokens, memo)
+                    )
+            );
+
+
+            auto new_stake = itr->locked_tokens;
+            new_stake.amount = 0;
+            deferred_trans.actions.emplace_back(
+                    action(
+                            permission_level{get_self(), "pay"_n},
+                            get_self(), "clearstake"_n,
+                            make_tuple(itr->candidate_name, new_stake, dac_id)
+                    )
+            );
+
+            if (batch_counter < 2){
+                sender_id |= itr->candidate_name.value << (8 * batch_counter);
+            }
+
+            ++batch_counter;
+        }
+
+        ++itr;
+    }
+
+    check(batch_counter > 0, "No more transfers");
+
+    deferred_trans.delay_sec = TRANSFER_DELAY;
+    deferred_trans.send(sender_id, get_self());
+}
+
 ACTION daccustodian::migrate(uint16_t batch_size) {
 
 //    uint64_t total_migrated = 0;

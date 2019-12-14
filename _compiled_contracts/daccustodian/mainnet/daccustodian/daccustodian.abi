@@ -518,6 +518,24 @@
             ]
         },
         {
+            "name": "returnstake",
+            "base": "",
+            "fields": [
+                {
+                    "name": "batch_size",
+                    "type": "uint16"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                },
+                {
+                    "name": "begin",
+                    "type": "name?"
+                }
+            ]
+        },
+        {
             "name": "runnewperiod",
             "base": "",
             "fields": [
@@ -941,6 +959,11 @@
             "name": "resigncuste",
             "type": "resigncuste",
             "ricardian_contract": "---\nspec_version: \"0.2.0\"\ntitle: Resign as a Custodian\nsummary: 'Resign custodian {{ nowrap cand }} for DAC ID {{ nowrap dac_id }}'\nicon: https://eosdac.io/assets/contracts/generic.png#00da1afc6464028359b3a02ffbdb59e1ea79fa261b5523ce7ac174cc0ef27bbd\n---\n\nThis action will resign the custodian account {{ cand }}.  This account will be removed from the list of candidates."
+        },
+        {
+            "name": "returnstake",
+            "type": "returnstake",
+            "ricardian_contract": ""
         },
         {
             "name": "runnewperiod",

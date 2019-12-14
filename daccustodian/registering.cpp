@@ -92,6 +92,8 @@ void daccustodian::unstake(name cand) {
 }
 
 void daccustodian::unstakee(name cand, name dac_id) {
+    check(false, "ERR::UNSTAKING_TOKEN::Unstake via the token contract unstake action");
+
     validateUnstake(get_self(), cand, dac_id);
 
     extended_asset lockup_asset = contr_config::get_current_configs(get_self(), dac_id).lockupasset;
@@ -128,7 +130,7 @@ void daccustodian::clearstake(name cand, asset new_value, name dac_id) {
     candidates_table registered_candidates(get_self(), dac_id.value);
     const auto &reg_candidate = registered_candidates.get(cand.value, "ERR::UNSTAKE_CAND_NOT_REGISTERED::Candidate is not already registered.");
 
-    registered_candidates.modify(reg_candidate, cand, [&](candidate &c) {
+    registered_candidates.modify(reg_candidate, same_payer, [&](candidate &c) {
         c.locked_tokens = new_value;
     });
 }
@@ -188,6 +190,7 @@ void daccustodian::setperm(name cand, name permission, name dac_id) {
 void daccustodian::validateUnstake(name code, name cand, name dac_id){
     // Will assert if adc_id not found
     dacdir::dac_for_id(dac_id);
+    return;
     candidates_table registered_candidates(code, dac_id.value);
     const auto &reg_candidate = registered_candidates.get(cand.value, "ERR::UNSTAKE_CAND_NOT_REGISTERED::Candidate is not already registered.");
     extended_asset lockup_asset = contr_config::get_current_configs(code, dac_id).lockupasset;
