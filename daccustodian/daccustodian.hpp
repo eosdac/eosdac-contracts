@@ -211,6 +211,7 @@ namespace eosdac {
         ACTION unstake(name cand);
         ACTION unstakee(name cand, name dac_id);
         ACTION clearstake(name cand, asset new_value, name dac_id);
+        ACTION paycpu(name dac_id);
         ACTION migrate(uint16_t batch_size);
         ACTION clearold(uint16_t batch_size);
 #ifdef DEBUG

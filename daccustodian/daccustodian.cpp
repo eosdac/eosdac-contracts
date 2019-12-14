@@ -16,6 +16,7 @@
 #include "pay_handling.cpp"
 #include "external_observable_actions.cpp"
 #include "config.cpp"
+#include "paycpu.cpp"
 #include "migration.cpp"
 
 #ifdef DEBUG
