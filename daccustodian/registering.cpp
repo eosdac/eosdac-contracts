@@ -3,7 +3,7 @@
 #include "../_contract-shared-headers/migration_helpers.hpp"
 
 void daccustodian::nominatecand(name cand, asset requestedpay) {
-    check(false, "This action is deprecated call `nominatecane` instead.");
+    check(false, "ERR::DEPRECATED_NOMINATECAND::This action is deprecated call `nominatecane` instead.");
 }
 
 void daccustodian::nominatecane(name cand, asset requestedpay, name dac_id) {
@@ -17,13 +17,13 @@ void daccustodian::nominatecane(name cand, asset requestedpay, name dac_id) {
     check(requestedpay <= configs.requested_pay_max.quantity,
                  "ERR::NOMINATECAND_PAY_LIMIT_EXCEEDED::Requested pay limit for a candidate was exceeded.");
 
+    validateMinStake(cand, dac_id);
+
+
     currentState.number_active_candidates++;
-    currentState.save(_self, dac_id);
+    currentState.save(get_self(), dac_id);
 
-    pendingstake_table_t pendingstake(_self, dac_id.value);
-    auto pending = pendingstake.find(cand.value);
-
-    candidates_table registered_candidates(_self, dac_id.value);
+    candidates_table registered_candidates(get_self(), dac_id.value);
 
     auto reg_candidate = registered_candidates.find(cand.value);
     if (reg_candidate != registered_candidates.end()) {
@@ -31,45 +31,27 @@ void daccustodian::nominatecane(name cand, asset requestedpay, name dac_id) {
         registered_candidates.modify(reg_candidate, cand, [&](candidate &c) {
             c.is_active = 1;
             c.requestedpay = requestedpay;
-
-            if (pending != pendingstake.end()) {
-                c.locked_tokens += pending->quantity;
-            }
-            check(c.locked_tokens >= configs.lockupasset.quantity, "ERR::NOMINATECAND_INSUFFICIENT_FUNDS_TO_STAKE::Insufficient funds have been staked.");
         });
     } else {
-        extended_asset actual_stake = configs.lockupasset;
         extended_asset required_stake = configs.lockupasset;
 
-        if (pending == pendingstake.end() ){
-            actual_stake.quantity.amount = 0;
-
-        }
-        else {
-            actual_stake.quantity = pending->quantity;
-
-        }
-
-        check(actual_stake.quantity >= required_stake.quantity,
-              "ERR::NOMINATECAND_STAKING_FUNDS_INCOMPLETE::A registering candidate must transfer sufficient tokens to the contract for staking.");
-
-
+        // locked_tokens is now ignored, staking is done in the token contract
+        auto zero_tokens = required_stake.quantity;
+        zero_tokens.amount = 0;
         registered_candidates.emplace(cand, [&](candidate &c) {
             c.candidate_name = cand;
             c.requestedpay = requestedpay;
-            c.locked_tokens = actual_stake.quantity;
+            c.locked_tokens = zero_tokens;
             c.total_votes = 0;
             c.is_active = 1;
         });
 
-        if (pending != pendingstake.end() ) {
-            pendingstake.erase(pending);
-        }
     }
+
 }
 
 void daccustodian::withdrawcand(name cand) {
-    check(false, "This action is deprecated call `withdrawcane` instead.");
+    check(false, "ERR::DEPRECATED_WITHDRAWCAND::This action is deprecated call `withdrawcane` instead.");
 }
 
 void daccustodian::withdrawcane(name cand, name dac_id) {
@@ -78,7 +60,7 @@ void daccustodian::withdrawcane(name cand, name dac_id) {
 }
 
 void daccustodian::firecand(name cand, bool lockupStake) {
-    check(false, "This action is deprecated call `firecande` instead.");
+    check(false, "ERR::DEPRECATED_FIRECAND::This action is deprecated call `firecande` instead.");
 }
 
 void daccustodian::firecande(name cand, bool lockupStake, name dac_id) {
@@ -88,53 +70,15 @@ void daccustodian::firecande(name cand, bool lockupStake, name dac_id) {
 }
 
 void daccustodian::unstake(name cand) {
-    check(false, "This action is deprecated call `unstakee` instead.");
+    check(false, "ERR::DEPRECATED_UNSTAKE::This action is deprecated call `unstakee` instead.");
 }
 
 void daccustodian::unstakee(name cand, name dac_id) {
-    validateUnstake(get_self(), cand, dac_id);
-
-    extended_asset lockup_asset = contr_config::get_current_configs(get_self(), dac_id).lockupasset;
-
-    candidates_table registered_candidates(get_self(), dac_id.value);
-    const auto &reg_candidate = registered_candidates.get(cand.value, "ERR::UNSTAKE_CAND_NOT_REGISTERED::Candidate is not already registered.");
-
-    transaction deferredTrans{};
-
-    deferredTrans.actions.emplace_back(
-            action(permission_level{get_self(), "xfer"_n},
-                   lockup_asset.contract,
-                   "transfer"_n,
-                   make_tuple(get_self(), cand, reg_candidate.locked_tokens,
-                              string("Returning locked up stake. Thank you."))
-            )
-    );
-    deferredTrans.actions.emplace_back(
-            action(permission_level{get_self(), "pay"_n},
-                   get_self(), "clearstake"_n,
-                   make_tuple(cand, asset(0, lockup_asset.quantity.symbol), dac_id)
-            )
-    );
-
-    deferredTrans.delay_sec = TRANSFER_DELAY;
-    deferredTrans.send(cand.value, get_self());
-}
-
-void daccustodian::clearstake(name cand, asset new_value, name dac_id) {
-    require_auth(get_self());
-
-    validateUnstake(get_self(), cand, dac_id);
-
-    candidates_table registered_candidates(get_self(), dac_id.value);
-    const auto &reg_candidate = registered_candidates.get(cand.value, "ERR::UNSTAKE_CAND_NOT_REGISTERED::Candidate is not already registered.");
-
-    registered_candidates.modify(reg_candidate, cand, [&](candidate &c) {
-        c.locked_tokens = new_value;
-    });
+    check(false, "ERR::UNSTAKING_TOKEN::Unstake via the token contract unstake action");
 }
 
 void daccustodian::resigncust(name cust) {
-    check(false, "This action is deprecated call `resigncuste` instead.");
+    check(false, "ERR::DEPRECATED_RESIGNCUST::This action is deprecated call `resigncuste` instead.");
 }
 
 void daccustodian::resigncuste(name cust, name dac_id) {
@@ -143,7 +87,7 @@ void daccustodian::resigncuste(name cust, name dac_id) {
 }
 
 void daccustodian::firecust(name cust) {
-    check(false, "This action is deprecated call `firecuste` instead.");
+    check(false, "ERR::DEPRECATED_FIRECUST::This action is deprecated call `firecuste` instead.");
 }
 
 void daccustodian::firecuste(name cust, name dac_id) {
@@ -183,17 +127,56 @@ void daccustodian::setperm(name cand, name permission, name dac_id) {
     }
 }
 
+
+void daccustodian::appointcust(vector<name> custs, name dac_id){
+    dacdir::dac dac = dacdir::dac_for_id(dac_id);
+    name auth_account = dac.account_for_type(dacdir::AUTH);
+    require_auth(auth_account);
+
+    contr_config configs = contr_config::get_current_configs(_self, dac_id);
+    custodians_table custodians(_self, dac_id.value);
+    check(custodians.begin() == custodians.end(), "ERR:CUSTODIANS_NOT_EMPTY::Custodians table is not empty");
+    candidates_table candidates(_self, dac_id.value);
+
+    extended_asset lockup = configs.lockupasset;
+    extended_asset req_pay = configs.requested_pay_max;
+    lockup.quantity.amount = 0;
+    req_pay.quantity.amount = 0;
+
+    for (auto cust: custs){
+        auto cand = candidates.find(cust.value);
+        if (cand == candidates.end()){
+            candidates.emplace(auth_account, [&](candidate& c){
+                c.candidate_name = cust;
+                c.requestedpay = req_pay.quantity;
+                c.locked_tokens = lockup.quantity;
+                c.total_votes = 0;
+                c.is_active = 1;
+                c.custodian_end_time_stamp = time_point_sec(0);
+            });
+        }
+
+        custodians.emplace(auth_account, [&](custodian& c){
+            c.cust_name = cust;
+            c.requestedpay = req_pay.quantity;
+            c.total_votes = 0;
+        });
+    }
+
+
+}
+
 // private methods for the above actions
 
-void daccustodian::validateUnstake(name code, name cand, name dac_id){
-    // Will assert if adc_id not found
-    dacdir::dac_for_id(dac_id);
-    candidates_table registered_candidates(code, dac_id.value);
-    const auto &reg_candidate = registered_candidates.get(cand.value, "ERR::UNSTAKE_CAND_NOT_REGISTERED::Candidate is not already registered.");
-    extended_asset lockup_asset = contr_config::get_current_configs(code, dac_id).lockupasset;
-    check(!reg_candidate.is_active, "ERR::UNSTAKE_CANNOT_UNSTAKE_FROM_ACTIVE_CAND::Cannot unstake tokens for an active candidate. Call withdrawcand first.");
+void daccustodian::validateMinStake(name account, name dac_id){
+    auto dac_inst = dacdir::dac_for_id(dac_id);
 
-    check(reg_candidate.custodian_end_time_stamp < time_point_sec(eosio::current_time_point()), "ERR::UNSTAKE_CANNOT_UNSTAKE_UNDER_TIME_LOCK::Cannot unstake tokens before they are unlocked from the time delay.");
+    contr_config configs = contr_config::get_current_configs(get_self(), dac_id);
+    extended_asset required_stake = configs.lockupasset;
+
+    asset staked = eosdac::get_staked(account, required_stake.contract, required_stake.quantity.symbol.code());
+    print("Staked : ", staked, "\nRequired : ", required_stake.quantity);
+    check(staked.amount >= required_stake.quantity.amount, "Not staked enough");
 }
 
 void daccustodian::removeCustodian(name cust, name dac_id) {
@@ -244,42 +227,4 @@ void daccustodian::removeCandidate(name cand, bool lockupStake, name dac_id) {
             c.custodian_end_time_stamp = end_time_stamp;
         }
     });
-}
-
-void daccustodian::appointcust(vector<name> custs, name dac_id){
-    dacdir::dac dac = dacdir::dac_for_id(dac_id);
-    name auth_account = dac.account_for_type(dacdir::AUTH);
-    require_auth(auth_account);
-
-    contr_config configs = contr_config::get_current_configs(_self, dac_id);
-    custodians_table custodians(_self, dac_id.value);
-    check(custodians.begin() == custodians.end(), "ERR:CUSTODIANS_NOT_EMPTY::Custodians table is not empty");
-    candidates_table candidates(_self, dac_id.value);
-
-    extended_asset lockup = configs.lockupasset;
-    extended_asset req_pay = configs.requested_pay_max;
-    lockup.quantity.amount = 0;
-    req_pay.quantity.amount = 0;
-
-    for (auto cust: custs){
-        auto cand = candidates.find(cust.value);
-        if (cand == candidates.end()){
-            candidates.emplace(auth_account, [&](candidate& c){
-                c.candidate_name = cust;
-                c.requestedpay = req_pay.quantity;
-                c.locked_tokens = lockup.quantity;
-                c.total_votes = 0;
-                c.is_active = 1;
-                c.custodian_end_time_stamp = time_point_sec(0);
-            });
-        }
-
-        custodians.emplace(auth_account, [&](custodian& c){
-            c.cust_name = cust;
-            c.requestedpay = req_pay.quantity;
-            c.total_votes = 0;
-        });
-    }
-
-
 }

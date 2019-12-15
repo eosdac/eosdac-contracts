@@ -2,33 +2,6 @@
 #include "../_contract-shared-headers/dacdirectory_shared.hpp"
 #include "../_contract-shared-headers/migration_helpers.hpp"
 
-void daccustodian::capturestake(name from, asset quantity, name dac_id) {
-
-  auto dac = dacdir::dac_for_id(dac_id);
-  auto token_contract = dac.symbol.get_contract();
-  print("token contract: ", token_contract);
-  require_auth(token_contract);
-
-  candidates_table candidates(_self, dac_id.value);
-  auto cand = candidates.find(from.value);
-  if (cand != candidates.end()) {
-    candidates.modify(cand, _self, [&](candidate &c) { c.locked_tokens += quantity; });
-  } else {
-    pendingstake_table_t pendingstake(_self, dac_id.value);
-    auto source = pendingstake.find(from.value);
-    if (source != pendingstake.end()) {
-      pendingstake.modify(source, _self, [&](tempstake &s) { s.quantity += quantity; });
-      print("Modified exisiting stake record: ", from);
-    } else {
-      pendingstake.emplace(_self, [&](tempstake &s) {
-        s.sender = from;
-        s.quantity = quantity;
-      });
-      print("Created stake record: ", from);
-    }
-  }
-}
-
 void daccustodian::transferobsv(name from, name to, asset quantity, name dac_id) {
 
   // Only for compatibility during contract update, can be safely removed
@@ -152,11 +125,12 @@ void daccustodian::validateUnstakeAmount(name code, name cand, asset unstake_amo
 
   candidates_table registered_candidates(code, dac_id.value);
   auto reg_candidate = registered_candidates.find(cand.value);
-  if (reg_candidate != registered_candidates.end() && reg_candidate->is_active) {
+  if (reg_candidate != registered_candidates.end()) {
     extended_asset lockup_asset = contr_config::get_current_configs(code, dac_id).lockupasset;
     auto current_stake = eosdac::get_staked(cand, token_contract, unstake_amount.symbol.code());
 
     print(" Current stake : ", current_stake, ", Unstake amount : ", unstake_amount);
+    check(!reg_candidate->is_active, "ERR::CANNOT_UNSTAKE_REGISTERED::Cannot unstake because you are registered as a candidate, use withdrawcane to unregister.");
 
     if (reg_candidate->custodian_end_time_stamp > time_point_sec(eosio::current_time_point())) {
       // Still under restrictions
