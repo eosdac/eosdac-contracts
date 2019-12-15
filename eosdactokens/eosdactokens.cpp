@@ -95,38 +95,28 @@ void eosdactokens::unlock(asset unlock) {
 }
 
 void eosdactokens::transfer(name from, name to, asset quantity, string memo) {
-  check(from != to, "ERR::TRANSFER_TO_SELF::cannot transfer to self");
-  require_auth(from);
-  check(is_account(to), "ERR::TRANSFER_NONEXISTING_DESTN::to account does not exist");
+    check(from != to, "ERR::TRANSFER_TO_SELF::cannot transfer to self");
+    require_auth(from);
+    check(is_account(to), "ERR::TRANSFER_NONEXISTING_DESTN::to account does not exist");
 
-  auto sym = quantity.symbol.code();
-  stats statstable(_self, sym.raw());
-  const auto &st = statstable.get(sym.raw());
+    auto sym = quantity.symbol.code();
+    stats statstable(_self, sym.raw());
+    const auto &st = statstable.get(sym.raw());
 
-  if (st.transfer_locked) {
-    check(has_auth(st.issuer), "Transfer is locked, need issuer permission");
-  }
-
-  require_recipient(from, to);
-
-  dacdir::dac dac = dacdir::dac_for_symbol(extended_symbol{quantity.symbol, get_self()});
-  eosio::name custodian_contract = dac.account_for_type(dacdir::CUSTODIAN);
-
-  if (is_account(custodian_contract)) {
-    if (to == custodian_contract) {
-      eosio::action(eosio::permission_level{get_self(), "notify"_n}, custodian_contract, "capturestake"_n,
-          make_tuple(from, quantity, dac.dac_id))
-          .send();
-
-    } else {
-      // Send to notify of balance change
-      vector<account_balance_delta> account_weights;
-      account_weights.push_back(account_balance_delta{from, quantity * -1});
-      account_weights.push_back(account_balance_delta{to, quantity});
-
-      send_balance_notification(account_weights, dac);
+    if (st.transfer_locked) {
+        check(has_auth(st.issuer), "Transfer is locked, need issuer permission");
     }
-  }
+
+    require_recipient(from, to);
+
+    dacdir::dac dac = dacdir::dac_for_symbol(extended_symbol{quantity.symbol, get_self()});
+
+    // Send to notify of balance change
+    vector<account_balance_delta> account_weights;
+    account_weights.push_back(account_balance_delta{from, quantity * -1});
+    account_weights.push_back(account_balance_delta{to, quantity});
+
+    send_balance_notification(account_weights, dac);
 
   check(quantity.is_valid(), "ERR::TRANSFER_INVALID_QTY::invalid quantity");
   check(quantity.amount > 0, "ERR::TRANSFER_NON_POSITIVE_QTY::must transfer positive quantity");
