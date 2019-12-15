@@ -12,7 +12,6 @@ import * as ecc from 'eosjs-ecc';
 
 import { factory } from './LoggingConfig';
 
-
 // Dac contracts
 import { Dacdirectory } from './dacdirectory/dacdirectory';
 import { Daccustodian } from './daccustodian/daccustodian';
@@ -28,6 +27,13 @@ const log = factory.getLogger('TestHelper');
 
 export var NUMBER_OF_REG_MEMBERS = 16;
 export var NUMBER_OF_CANDIDATES = 7;
+
+export type Action = {
+  account: string;
+  name: string;
+  authorization: { actor: string; permission: string }[];
+  data: any;
+};
 
 export async function debugPromise<T>(
   promise: Promise<T>,
@@ -293,7 +299,7 @@ export class SharedTestObjects {
 
   private async add_token_contract_permissions() {
     // Construct the update actions
-    const actions: any = [
+    const actions: Action[] = [
       // Add the issue permission as a child of active to dac_token
       {
         account: 'eosio',
@@ -397,7 +403,7 @@ export class SharedTestObjects {
         },
       },
     ];
-    const link_actions: any = [
+    const link_actions: Action[] = [
       // Link issue permission of account to the issue action of account.
       {
         account: 'eosio',

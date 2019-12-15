@@ -5,6 +5,7 @@ import {
   debugPromise,
   NUMBER_OF_CANDIDATES,
   Account_type,
+  Action,
 } from '../TestHelpers';
 import * as chai from 'chai';
 
@@ -12,7 +13,7 @@ import * as chaiAsPromised from 'chai-as-promised';
 
 chai.use(chaiAsPromised);
 import { factory } from '../LoggingConfig';
-import { sleep } from 'lamington';
+import { sleep, EOSManager } from 'lamington';
 
 const log = factory.getLogger('Custodian Tests');
 
@@ -36,6 +37,8 @@ enum ProposalState {
   ProposalStateHas_enough_finalize_votes,
   ProposalStateExpired,
 }
+
+let proposalHash = 'jhsdfkjhsdfkjhkjsdf';
 
 describe('Dacproposals', () => {
   let shared: SharedTestObjects;
@@ -118,7 +121,7 @@ describe('Dacproposals', () => {
             'summary',
             arbitrator.name,
             { quantity: '100.0000 EOS', contract: 'eosio.token' },
-            'jhsdfkjhsdfkjhkjsdf',
+            proposalHash,
             0,
             2,
             130,
@@ -138,7 +141,7 @@ describe('Dacproposals', () => {
               'summary',
               arbitrator.name,
               { quantity: '100.0000 EOS', contract: 'eosio.token' },
-              'jhsdfkjhsdfkjhkjsdf',
+              proposalHash,
               0,
               2,
               130,
@@ -159,7 +162,7 @@ describe('Dacproposals', () => {
               'su',
               arbitrator.name,
               { quantity: '100.0000 EOS', contract: 'eosio.token' },
-              'jhsdfkjhsdfkjhkjsdf',
+              proposalHash,
               0,
               2,
               130,
@@ -180,7 +183,7 @@ describe('Dacproposals', () => {
               'summary',
               arbitrator.name,
               { quantity: '100.0000 sdff', contract: 'eosio.token' },
-              'jhsdfkjhsdfkjhkjsdf',
+              proposalHash,
               0,
               2,
               130,
@@ -201,7 +204,7 @@ describe('Dacproposals', () => {
               'summary',
               arbitrator.name,
               { quantity: '100.0000', contract: 'eosio.token' },
-              'jhsdfkjhsdfkjhkjsdf',
+              proposalHash,
               0,
               2,
               130,
@@ -222,7 +225,7 @@ describe('Dacproposals', () => {
               'summary',
               arbitrator.name,
               { quantity: '-100.0000 EOS', contract: 'eosio.token' },
-              'jhsdfkjhsdfkjhkjsdf',
+              proposalHash,
               0,
               2,
               130,
@@ -243,7 +246,7 @@ describe('Dacproposals', () => {
               'summary',
               'randomname',
               { quantity: '100.0000 EOS', contract: 'eosio.token' },
-              'jhsdfkjhsdfkjhkjsdf',
+              proposalHash,
               0,
               2,
               130,
@@ -264,7 +267,7 @@ describe('Dacproposals', () => {
               'summary',
               arbitrator.name,
               { quantity: '100.0000 EOS', contract: 'eosio.token' },
-              'jhsdfkjhsdfkjhkjsdf',
+              proposalHash,
               0,
               2,
               130,
@@ -288,7 +291,7 @@ describe('Dacproposals', () => {
                 quantity: '100.0000 EOS',
                 contract: 'eosio.token',
               },
-              'jhsdfkjhsdfkjhkjsdf',
+              proposalHash,
               0,
               2,
               130,
@@ -309,7 +312,7 @@ describe('Dacproposals', () => {
               'summary',
               arbitrator.name,
               { quantity: '100.0000 EOS', contract: 'eosio.token' },
-              'jhsdfkjhsdfkjhkjsdf',
+              proposalHash,
               16,
               2,
               130,
@@ -860,6 +863,23 @@ describe('Dacproposals', () => {
       );
     });
     context('start work with enough votes', async () => {
+      before(async () => {
+        let action: Action = {
+          account: 'eosio.token',
+          name: 'transfer',
+          authorization: [{ actor: 'eosio', permission: 'active' }],
+          data: {
+            from: 'eosio',
+            to: shared.treasury_account.name,
+            quantity: '100000.0000 EOS',
+            memo: 'initial funds for proposal payments',
+          },
+        };
+        await debugPromise(
+          EOSManager.transact({ actions: [action] }),
+          'failed to fund the treasuty account for dacproposals'
+        );
+      });
       it('should succeed', async () => {
         await chai.expect(
           shared.dacproposals_contract.startwork(
@@ -880,7 +900,179 @@ describe('Dacproposals', () => {
           )
         ).to.eventually.be.fulfilled;
       });
-      it('should change proposal state to ', async () => {});
+      it('should change proposal state to ', async () => {
+        let proposalRow = await shared.dacescrow_contract.escrowsTable({
+          scope: 'dacescrow',
+        });
+        let row = proposalRow.rows[0];
+        chai.expect(row.key).to.eq(0);
+        chai.expect(row.sender).to.eq('treasury');
+        chai.expect(row.receiver).to.eq(proposer1Account.name);
+        chai.expect(row.arb).to.eq(arbitrator.name);
+        chai.expect(row.ext_asset.quantity).to.eq('0.0000 EOS');
+        chai
+          .expect(row.memo)
+          .to.eq(`${proposer1Account.name}:0:${proposalHash}`);
+        chai.expect(row.expires).to.be.afterTime(new Date(Date.now()));
+        chai.expect(row.arb_payment).to.be.eq(0);
+        await sleep(6000);
+        proposalRow = await shared.dacescrow_contract.escrowsTable({
+          scope: 'dacescrow',
+        });
+        row = proposalRow.rows[0];
+        //wait for 5 seconds for the deferred transaction to run
+        chai.expect(row.ext_asset.quantity).to.eq('100.0000 EOS');
+      });
     });
+    // context('proposal not in pending_approval state', async () => {
+    //   it('should fail with proposal is not in pensing approval state error', async () => {});
+    // });
+    // context('proposal has expired', async () => {
+    //   before(async () => {});
+    //   it('should have correct initial proposals before expiring', async () => {});
+    //   context('start work after expiry', async () => {
+    //     before(async () => {
+    //       sleep(3);
+    //     });
+    //     it('should fail with expired error', async () => {});
+    //   });
+    // });
   });
+  // context('clear expired proposals', async () => {
+  //   it('should have the correct number before clearing', async () => {});
+  //   it('should clear the expired proposals', async () => {});
+  //   it('should have the correct number of proposals after clearing', async () => {});
+  //   it('should have correctly populated the escrow table', async () => {});
+  // });
 });
+// context(
+//   'voteprop with valid auth and proposal in work_in_progress state',
+//   async () => {
+//     context('voteup', async () => {
+//       it('should fail with invalid state to accept votes', async () => {});
+//     });
+//     context('votedown', async () => {
+//       it('should fail with invalid state to accept votes', async () => {});
+//     });
+//   }
+// );
+// context('complete work', async () => {
+//   context('proposal in pending approval state', async () => {
+//     it('should fail with incorrect to state to complete error', async () => {});
+//   });
+// });
+// context('finalize', async () => {
+//   context('without valid auth', async () => {
+//     it('should fail with invalid auth error', async () => {});
+//   });
+//   context('with valid auth', async () => {
+//     context('with invalid proposal id', async () => {
+//       it('should fail with proposal not found error', async () => {});
+//     });
+//     context('proposal in not in pending_finalize state', async () => {
+//       it('should fail with not in pending_finalize state error', async () => {});
+//     });
+//     context('proposal is in pending_finalize state', async () => {
+//       it('should fail to ompletework', async () => {});
+//       context('without enough votes to approve the finalize', async () => {
+//         it('should fail to complete work with not enough votes error', async () => {});
+//       });
+//       context(
+//         'with enough votes to complete finalize with denial',
+//         async () => {
+//           context('update votes count', async () => {
+//             before(async () => {});
+//             it('should succeed', async () => {});
+//           });
+//         }
+//       );
+//       context(
+//         'read the proposals table after creating prop before expiring',
+//         async () => {
+//           it('should contain expected rows', async () => {});
+//         }
+//       );
+//       context('finalize after updating vote count', async () => {
+//         it('should succeed', async () => {});
+//       });
+//       it('propvote table should contain expected rows', async () => {});
+//       it('proposals table should contain expected rows', async () => {});
+//       it('escrow table should contain expected rows', async () => {});
+//     });
+//   });
+//   context('cancel', async () => {
+//     context('without valid auth', async () => {
+//       it('should fail with invalid auth error', async () => {});
+//     });
+//     context('with valid auth', async () => {
+//       context('with invalid proposal id', async () => {
+//         it('should fail with proposal not found error', async () => {});
+//       });
+//       context('with valid proposal id', async () => {
+//         context('after starting work but before completing', async () => {
+//           before(async () => {});
+//           it('should succeed', async () => {});
+//           it('proposals table should contain expected rows', async () => {});
+//           it('escrow table should contain expected rows', async () => {});
+//         });
+//       });
+//     });
+//   });
+// });
+// context('delegate categories', async () => {
+// context(
+//   'created proposal but still needing a vote for approval',
+//   async () => {
+//     context(
+//       'delegate category for a vote with pre-existing vote should have no effect',
+//       async () => {
+//         it('should fail with insufficient votes', async () => {});
+//       }
+//     );
+//     context('delegated vote with non-matching category', async () => {
+//       it('should fail with insufficient votes', async () => {});
+//     });
+//     context('delegated category with matching category', async () => {
+//       it('should succeed to allow start work', async () => {});
+//     });
+//   }
+// );
+// context(
+//   'created a proposal but still need one vote for approval for categories',
+//   async () => {
+//     context(
+//       'delegated category with already voted custodian should have no effect',
+//       async () => {
+//         it('should fail with insufficient votes', async () => {});
+//       }
+//     );
+//     context('delegated category with non-matching category', async () => {
+//       it('should fail with insufficient votes', async () => {});
+//     });
+//     context('delegated category with matching category', async () => {
+//       it('should succeed', async () => {});
+//     });
+//   }
+// );
+// context(
+//   'created a proposal but still need 2 votes for approval for complex case',
+//   async () => {
+//     context(
+//       'delegated vote with matching proposal and category',
+//       async () => {
+//         it('should succeed when attempting start work', async () => {});
+//         it('propvotes should contain expected rows', async () => {});
+//       }
+//     );
+//   }
+// );
+//   context('undelegate vote', async () => {
+//     context('with wrong auth', async () => {
+//       it('should fail with wrong auth', async () => {});
+//     });
+//     context('with correct auth', async () => {
+//       it('should succeed to undelegate', async () => {});
+//       it('propvotes should have the correct rows', async () => {});
+//     });
+//   });
+// });
