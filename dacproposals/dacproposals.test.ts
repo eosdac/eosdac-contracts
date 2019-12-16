@@ -924,26 +924,162 @@ describe('Dacproposals', () => {
         chai.expect(row.ext_asset.quantity).to.eq('100.0000 EOS');
       });
     });
-    // context('proposal not in pending_approval state', async () => {
-    //   it('should fail with proposal is not in pensing approval state error', async () => {});
-    // });
-    // context('proposal has expired', async () => {
-    //   before(async () => {});
-    //   it('should have correct initial proposals before expiring', async () => {});
-    //   context('start work after expiry', async () => {
-    //     before(async () => {
-    //       sleep(3);
-    //     });
-    //     it('should fail with expired error', async () => {});
-    //   });
-    // });
+    context('proposal not in pending_approval state', async () => {
+      it('should fail with proposal is not in pensing approval state error', async () => {
+        await l.assertEOSErrorIncludesMessage(
+          shared.dacproposals_contract.startwork(
+            0, // proposal id
+            dacId,
+            {
+              auths: [
+                {
+                  actor: proposer1Account.name,
+                  permission: 'active',
+                },
+                {
+                  actor: shared.auth_account.name,
+                  permission: 'active',
+                },
+              ],
+            }
+          ),
+          'STARTWORK_WRONG_STATE'
+        );
+      });
+    });
+    context('proposal has expired', async () => {
+      before(async () => {
+        await chai.expect(
+          shared.dacproposals_contract.createprop(
+            proposer1Account.name,
+            'startwork_title',
+            'startwork_summary',
+            arbitrator.name,
+            { quantity: '105.0000 EOS', contract: 'eosio.token' },
+            'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
+            5, // proposal id
+            3,
+            130, // job duration
+            3, // approval duration
+            dacId,
+            { from: proposer1Account }
+          ),
+          ''
+        ).to.eventually.be.fulfilled;
+        await chai.expect(
+          shared.dacproposals_contract.voteprop(
+            propDacCustodians[0],
+            5,
+            VoteType.proposal_deny,
+            dacId,
+            {
+              auths: [
+                {
+                  actor: propDacCustodians[0],
+                  permission: 'active',
+                },
+                {
+                  actor: shared.auth_account.name,
+                  permission: 'active',
+                },
+              ],
+            }
+          )
+        ).to.eventually.be.fulfilled;
+      });
+      it('should have correct initial proposals before expiring', async () => {});
+      context('startwork before expiry without enough votes', async () => {
+        it('should fail with insufficient votes', async () => {
+          await l.assertEOSErrorIncludesMessage(
+            shared.dacproposals_contract.startwork(
+              5, // proposal id
+              dacId,
+              {
+                auths: [
+                  {
+                    actor: proposer1Account.name,
+                    permission: 'active',
+                  },
+                  {
+                    actor: shared.auth_account.name,
+                    permission: 'active',
+                  },
+                ],
+              }
+            ),
+            'ERR::STARTWORK_INSUFFICIENT_VOTES'
+          );
+        });
+      });
+      context('start work after expiry', async () => {
+        before(async () => {
+          await sleep(4000);
+        });
+        it('should fail with expired error', async () => {
+          await l.assertEOSErrorIncludesMessage(
+            shared.dacproposals_contract.startwork(
+              5, // proposal id
+              dacId,
+              {
+                auths: [
+                  {
+                    actor: proposer1Account.name,
+                    permission: 'active',
+                  },
+                  {
+                    actor: shared.auth_account.name,
+                    permission: 'active',
+                  },
+                ],
+              }
+            ),
+            'ERR::PROPOSAL_EXPIRED'
+          );
+        });
+      });
+    });
   });
-  // context('clear expired proposals', async () => {
-  //   it('should have the correct number before clearing', async () => {});
-  //   it('should clear the expired proposals', async () => {});
-  //   it('should have the correct number of proposals after clearing', async () => {});
-  //   it('should have correctly populated the escrow table', async () => {});
-  // });
+  context('clear expired proposals', async () => {
+    it('should have the correct number of votes before clearing', async () => {
+      await l.assertRowCount(
+        shared.dacproposals_contract.propvotesTable({ scope: dacId }),
+        8
+      );
+    });
+    it('should have the correct number of proposals before clearing', async () => {
+      await l.assertRowCount(
+        shared.dacproposals_contract.proposalsTable({ scope: dacId }),
+        4
+      );
+    });
+    it('should now allow to clear unexpired proposals', async () => {
+      await l.assertEOSErrorIncludesMessage(
+        shared.dacproposals_contract.clearexpprop(0, dacId, {
+          from: proposer1Account,
+        }),
+        'ERR::PROPOSAL_NOT_EXPIRED'
+      );
+    });
+    it('should clear the expired proposals', async () => {
+      await chai.expect(shared.dacproposals_contract.clearexpprop(5, dacId)).to
+        .eventually.fulfilled;
+    });
+    context('After clearing expired proposals', async () => {
+      it('should have the correct number of proposals', async () => {
+        await l.assertRowCount(
+          shared.dacproposals_contract.proposalsTable({ scope: dacId }),
+          3
+        );
+      });
+      it('should have the correct number of votes', async () => {
+        await l.assertRowCount(
+          shared.dacproposals_contract.propvotesTable({ scope: dacId }),
+          7
+        );
+      });
+    });
+    it('should have correctly populated the escrow table', async () => {});
+  });
 });
 // context(
 //   'voteprop with valid auth and proposal in work_in_progress state',
