@@ -900,7 +900,7 @@ describe('Dacproposals', () => {
           )
         ).to.eventually.be.fulfilled;
       });
-      it('should change proposal state to ', async () => {
+      it('should populate the escrow table', async () => {
         let proposalRow = await shared.dacescrow_contract.escrowsTable({
           scope: 'dacescrow',
         });
@@ -922,6 +922,20 @@ describe('Dacproposals', () => {
         row = proposalRow.rows[0];
         //wait for 5 seconds for the deferred transaction to run
         chai.expect(row.ext_asset.quantity).to.eq('100.0000 EOS');
+      });
+      it('should update the proposal state to in_progress', async () => {
+        let proposalRow = await shared.dacproposals_contract.proposalsTable({
+          scope: dacId,
+          lowerBound: 0,
+          upperBound: 0,
+        });
+        let row = proposalRow.rows[0];
+        chai.expect(row.key).to.eq(0);
+        chai.expect(row.arbitrator).to.eq(arbitrator.name);
+        chai.expect(row.content_hash).to.eq(proposalHash);
+        chai
+          .expect(row.state)
+          .to.eq(ProposalState.ProposalStateWork_in_progress);
       });
     });
     context('proposal not in pending_approval state', async () => {
@@ -987,7 +1001,6 @@ describe('Dacproposals', () => {
           )
         ).to.eventually.be.fulfilled;
       });
-      it('should have correct initial proposals before expiring', async () => {});
       context('startwork before expiry without enough votes', async () => {
         it('should fail with insufficient votes', async () => {
           await l.assertEOSErrorIncludesMessage(
@@ -1078,64 +1091,200 @@ describe('Dacproposals', () => {
         );
       });
     });
-    it('should have correctly populated the escrow table', async () => {});
+  });
+
+  context(
+    'voteprop with valid auth and proposal in work_in_progress state',
+    async () => {
+      context('voteup', async () => {
+        it('should fail with invalid state to accept votes', async () => {
+          await l.assertEOSErrorIncludesMessage(
+            shared.dacproposals_contract.voteprop(
+              propDacCustodians[0],
+              0,
+              VoteType.proposal_approve,
+              dacId,
+              {
+                auths: [
+                  { actor: propDacCustodians[0], permission: 'active' },
+                  {
+                    actor: shared.auth_account.name,
+                    permission: 'active',
+                  },
+                ],
+              }
+            ),
+            'VOTEPROP_INVALID_PROPOSAL_STATE'
+          );
+        });
+      });
+      context('votedown', async () => {
+        it('should fail with invalid state to accept votes', async () => {
+          await l.assertEOSErrorIncludesMessage(
+            shared.dacproposals_contract.voteprop(
+              propDacCustodians[0],
+              0,
+              VoteType.proposal_deny,
+              dacId,
+              {
+                auths: [
+                  { actor: propDacCustodians[0], permission: 'active' },
+                  {
+                    actor: shared.auth_account.name,
+                    permission: 'active',
+                  },
+                ],
+              }
+            ),
+            'VOTEPROP_INVALID_PROPOSAL_STATE'
+          );
+        });
+      });
+    }
+  );
+  context('complete work', async () => {
+    context('without existing proposal', async () => {
+      it('should fail with proposal not found error', async () => {
+        await l.assertEOSErrorIncludesMessage(
+          shared.dacproposals_contract.completework(26, dacId, {
+            from: proposer1Account,
+          }),
+          'PROPOSAL_NOT_FOUND'
+        );
+      });
+    });
+    context('with incorrect auth', async () => {
+      it('should fail with auth error', async () => {
+        await l.assertMissingAuthority(
+          shared.dacproposals_contract.completework(1, dacId, {
+            auths: [{ actor: propDacCustodians[1], permission: 'active' }],
+          })
+        );
+      });
+    });
+    context('proposal in pending approval state', async () => {
+      it('should fail with incorrect to state to complete error', async () => {
+        await l.assertEOSErrorIncludesMessage(
+          shared.dacproposals_contract.completework(1, dacId, {
+            from: proposer1Account,
+          }),
+          'COMPLETEWORK_WRONG_STATE'
+        );
+      });
+    });
+    context('proposal in work_in_progress state', async () => {
+      it('should allow completework', async () => {
+        await chai.expect(
+          shared.dacproposals_contract.completework(0, dacId, {
+            from: proposer1Account,
+          })
+        ).to.eventually.be.fulfilled;
+      });
+    });
+  });
+
+  context('finalize', async () => {
+    context('without valid auth', async () => {
+      // Any auth is allowed
+    });
+    // context('with valid auth', async () => {
+    context('with invalid proposal id', async () => {
+      it('should fail with proposal not found error', async () => {
+        await l.assertEOSErrorIncludesMessage(
+          shared.dacproposals_contract.finalize(26, dacId, {
+            from: proposer1Account,
+          }),
+          'PROPOSAL_NOT_FOUND'
+        );
+      });
+    });
+  });
+  context('proposal in not in pending_finalize state', async () => {
+    before(async () => {
+      await shared.dacproposals_contract.updpropvotes(1, dacId, {
+        from: proposer1Account,
+      });
+    });
+    it('should fail with not in pending_finalize state error', async () => {
+      await l.assertEOSErrorIncludesMessage(
+        shared.dacproposals_contract.finalize(1, dacId, {
+          from: proposer1Account,
+        }),
+        'FINALIZE_WRONG_STATE'
+      );
+    });
+  });
+  context('proposal is in pending_finalize state', async () => {
+    before(async () => {
+      await shared.dacproposals_contract.updpropvotes(0, dacId, {
+        from: proposer1Account,
+      });
+    });
+    context('without enough votes to approve the finalize', async () => {
+      it('should fail to complete work with not enough votes error', async () => {
+        await l.assertEOSErrorIncludesMessage(
+          shared.dacproposals_contract.finalize(0, dacId, {
+            from: proposer1Account,
+          }),
+          'FINALIZE_INSUFFICIENT_VOTES'
+        );
+      });
+    });
+    context('with enough votes to complete finalize with denial', async () => {
+      context('update votes count', async () => {
+        before(async () => {
+          for (const custodian of propDacCustodians) {
+            await shared.dacproposals_contract.voteprop(
+              custodian,
+              0,
+              VoteType.finalize_approve,
+              dacId,
+              {
+                auths: [
+                  {
+                    actor: custodian,
+                    permission: 'active',
+                  },
+                  {
+                    actor: shared.auth_account.name,
+                    permission: 'active',
+                  },
+                ],
+              }
+            );
+          }
+        });
+        it('should succeed', async () => {
+          await chai.expect(
+            shared.dacproposals_contract.finalize(0, dacId, {
+              from: proposer1Account,
+            })
+          ).to.eventually.be.fulfilled;
+        });
+      });
+    });
+    context('Read the proposals table after finalize', async () => {
+      it('should have removed the finalized proposal', async () => {
+        await l.assertRowCount(
+          shared.dacproposals_contract.proposalsTable({
+            scope: dacId,
+            lowerBound: 0,
+            upperBound: 0,
+          }),
+          0
+        );
+      });
+      it('escrow table should contain 0 row after finalize is done', async () => {
+        await l.assertRowCount(
+          shared.dacescrow_contract.escrowsTable({
+            scope: 'dacescrow',
+          }),
+          0
+        );
+      });
+    });
   });
 });
-// context(
-//   'voteprop with valid auth and proposal in work_in_progress state',
-//   async () => {
-//     context('voteup', async () => {
-//       it('should fail with invalid state to accept votes', async () => {});
-//     });
-//     context('votedown', async () => {
-//       it('should fail with invalid state to accept votes', async () => {});
-//     });
-//   }
-// );
-// context('complete work', async () => {
-//   context('proposal in pending approval state', async () => {
-//     it('should fail with incorrect to state to complete error', async () => {});
-//   });
-// });
-// context('finalize', async () => {
-//   context('without valid auth', async () => {
-//     it('should fail with invalid auth error', async () => {});
-//   });
-//   context('with valid auth', async () => {
-//     context('with invalid proposal id', async () => {
-//       it('should fail with proposal not found error', async () => {});
-//     });
-//     context('proposal in not in pending_finalize state', async () => {
-//       it('should fail with not in pending_finalize state error', async () => {});
-//     });
-//     context('proposal is in pending_finalize state', async () => {
-//       it('should fail to ompletework', async () => {});
-//       context('without enough votes to approve the finalize', async () => {
-//         it('should fail to complete work with not enough votes error', async () => {});
-//       });
-//       context(
-//         'with enough votes to complete finalize with denial',
-//         async () => {
-//           context('update votes count', async () => {
-//             before(async () => {});
-//             it('should succeed', async () => {});
-//           });
-//         }
-//       );
-//       context(
-//         'read the proposals table after creating prop before expiring',
-//         async () => {
-//           it('should contain expected rows', async () => {});
-//         }
-//       );
-//       context('finalize after updating vote count', async () => {
-//         it('should succeed', async () => {});
-//       });
-//       it('propvote table should contain expected rows', async () => {});
-//       it('proposals table should contain expected rows', async () => {});
-//       it('escrow table should contain expected rows', async () => {});
-//     });
-//   });
 //   context('cancel', async () => {
 //     context('without valid auth', async () => {
 //       it('should fail with invalid auth error', async () => {});

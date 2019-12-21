@@ -402,6 +402,17 @@ export class SharedTestObjects {
           auth: singleAuthority(this.auth_account, 'active'),
         },
       },
+      {
+        account: 'eosio',
+        name: 'updateauth',
+        authorization: this.dacescrow_contract.account.owner,
+        data: {
+          account: this.dacescrow_contract.account.name,
+          permission: 'active',
+          parent: 'owner',
+          auth: eosio_dot_code_perm(this.dacescrow_contract.account),
+        },
+      },
     ];
     const link_actions: Action[] = [
       // Link issue permission of account to the issue action of account.
@@ -436,6 +447,17 @@ export class SharedTestObjects {
           account: this.treasury_account.name,
           code: this.dacescrow_contract.account.name,
           type: 'init',
+          requirement: 'escrow',
+        },
+      },
+      {
+        account: 'eosio',
+        name: 'linkauth',
+        authorization: this.treasury_account.active,
+        data: {
+          account: this.treasury_account.name,
+          code: this.dacescrow_contract.account.name,
+          type: 'approve',
           requirement: 'escrow',
         },
       },
