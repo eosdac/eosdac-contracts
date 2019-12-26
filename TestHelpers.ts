@@ -63,9 +63,6 @@ export class SharedTestObjects {
   private static instance: SharedTestObjects;
   private constructor() {}
 
-  private _regmembers: Account[];
-  private _candidates: Account[];
-
   auth_account: Account;
   treasury_account: Account;
   // === Dac Contracts
@@ -75,7 +72,6 @@ export class SharedTestObjects {
   dacproposals_contract: Dacproposals;
   dacescrow_contract: Dacescrow;
   // === Shared Values
-  configured_dac_id: string;
   configured_dac_memberterms: string;
 
   static async getInstance(): Promise<SharedTestObjects> {
@@ -134,40 +130,48 @@ export class SharedTestObjects {
       'created dacescrow'
     );
     // Other objects
-    this.configured_dac_id = 'eosdacio';
     this.configured_dac_memberterms = 'AgreedMemberTermsHashValue';
-
-    // Further setup after the inital singleton object have been created.
-    await this.setup_tokens('100000.0000 EOSDAC');
     await this.add_token_contract_permissions();
-    await this.register_dac_with_directory();
-    await this.setup_dac_memberterms(this.configured_dac_id, this.auth_account);
   }
 
-  async regMembers(): Promise<Account[]> {
-    if (this._regmembers) {
-      return this._regmembers;
-    }
-    this._regmembers = await this.getRegMembers(
-      NUMBER_OF_REG_MEMBERS,
-      this.configured_dac_id
+  async initDac(dacId: string, symbol: string, initialAsset: string) {
+    // Further setup after the inital singleton object have been created.
+    await this.setup_tokens(initialAsset);
+    await this.register_dac_with_directory(dacId, symbol);
+    await this.setup_dac_memberterms(dacId, this.auth_account);
+  }
+
+  async updateconfig(dacId: string, lockupAsset: string) {
+    await this.daccustodian_contract.updateconfige(
+      {
+        numelected: 5,
+        maxvotes: 4,
+        requested_pay_max: {
+          contract: 'eosio.token',
+          quantity: '30.0000 EOS',
+        },
+        periodlength: 5,
+        initial_vote_quorum_percent: 31,
+        vote_quorum_percent: 15,
+        auth_threshold_high: 4,
+        auth_threshold_mid: 3,
+        auth_threshold_low: 2,
+        lockupasset: {
+          contract: this.dac_token_contract.account.name,
+          quantity: lockupAsset,
+        },
+        should_pay_via_service_provider: true,
+        lockup_release_time_delay: 1233,
+      },
+      dacId,
+      { from: this.auth_account }
     );
-    return this._regmembers;
-  }
-
-  async candidates(): Promise<Account[]> {
-    if (this._candidates) {
-      return this._candidates;
-    }
-    this._candidates = await this.getCandidates(NUMBER_OF_CANDIDATES);
-
-    return this._candidates;
   }
 
   async getRegMembers(
-    count: number,
-    dacId: string = this.configured_dac_id,
-    initialDacAsset: string = '1000.0000 EOSDAC'
+    dacId: string,
+    initialDacAsset: string,
+    count: number = NUMBER_OF_REG_MEMBERS
   ): Promise<Account[]> {
     let newMembers = await AccountManager.createAccounts(count);
 
@@ -205,8 +209,12 @@ export class SharedTestObjects {
     return newMembers;
   }
 
-  async getCandidates(count: number): Promise<Account[]> {
-    let newCandidates = await this.getRegMembers(count);
+  async getCandidates(
+    dacId: string,
+    dacStakeAsset: string,
+    count: number = NUMBER_OF_CANDIDATES
+  ): Promise<Account[]> {
+    let newCandidates = await this.getRegMembers(dacId, dacStakeAsset, count);
     for (let { candidate, index } of newCandidates.map((candidate, index) => ({
       candidate,
       index,
@@ -215,7 +223,7 @@ export class SharedTestObjects {
         this.dac_token_contract.transfer(
           candidate.name,
           this.daccustodian_contract.account.name,
-          '12.0000 EOSDAC',
+          dacStakeAsset,
           '',
           {
             from: candidate,
@@ -236,7 +244,7 @@ export class SharedTestObjects {
         this.daccustodian_contract.nominatecane(
           candidate.name,
           payAmount,
-          this.configured_dac_id,
+          dacId,
           {
             from: candidate,
           }
@@ -247,7 +255,120 @@ export class SharedTestObjects {
     return newCandidates;
   }
 
-  async setup_tokens(initialAsset: string) {
+  async getCandidates(
+    dacId: string,
+    dacStakeAsset: string,
+    count: number = NUMBER_OF_CANDIDATES
+  ): Promise<Account[]> {
+    let newCandidates = await this.getRegMembers(dacId, dacStakeAsset, count);
+    for (let { candidate, index } of newCandidates.map((candidate, index) => ({
+      candidate,
+      index,
+    }))) {
+      await debugPromise(
+        this.dac_token_contract.transfer(
+          candidate.name,
+          this.daccustodian_contract.account.name,
+          dacStakeAsset,
+          '',
+          {
+            from: candidate,
+          }
+        ),
+        'sending candidate funds for staking'
+      );
+      let indexOption = index % 3;
+      let payAmount = '';
+      if (indexOption == 0) {
+        payAmount = '15.0000 EOS';
+      } else if (indexOption == 1) {
+        payAmount = '20.0000 EOS';
+      } else {
+        payAmount = '25.0000 EOS';
+      }
+      await debugPromise(
+        this.daccustodian_contract.nominatecane(
+          candidate.name,
+          payAmount,
+          dacId,
+          {
+            from: candidate,
+          }
+        ),
+        'nominate candidate'
+      );
+    }
+    return newCandidates;
+  }
+
+  async getStakeObservedCandidates(
+    dacId: string,
+    dacStakeAsset: string,
+    count: number = NUMBER_OF_CANDIDATES
+  ): Promise<Account[]> {
+    let newCandidates = await this.getRegMembers(dacId, dacStakeAsset, count);
+    for (let { candidate, index } of newCandidates.map((candidate, index) => ({
+      candidate,
+      index,
+    }))) {
+      await debugPromise(
+        this.dac_token_contract.stake(candidate.name, dacStakeAsset, {
+          from: candidate,
+        }),
+        'staking for candidate'
+      );
+      let indexOption = index % 3;
+      let payAmount = '';
+      if (indexOption == 0) {
+        payAmount = '15.0000 EOS';
+      } else if (indexOption == 1) {
+        payAmount = '20.0000 EOS';
+      } else {
+        payAmount = '25.0000 EOS';
+      }
+      await debugPromise(
+        this.daccustodian_contract.nominatecane(
+          candidate.name,
+          payAmount,
+          dacId,
+          {
+            from: candidate,
+          }
+        ),
+        'nominate candidate'
+      );
+    }
+    return newCandidates;
+  }
+
+  async configureCustodianConfig(lockupAsset: string, dacId: string) {
+    await this.daccustodian_contract.updateconfige(
+      {
+        numelected: 5,
+        maxvotes: 4,
+        requested_pay_max: {
+          contract: 'eosio.token',
+          quantity: '30.0000 EOS',
+        },
+        periodlength: 5,
+        initial_vote_quorum_percent: 31,
+        vote_quorum_percent: 15,
+        auth_threshold_high: 4,
+        auth_threshold_mid: 3,
+        auth_threshold_low: 2,
+        lockupasset: {
+          contract: this.dac_token_contract.account.name,
+          quantity: lockupAsset,
+        },
+        should_pay_via_service_provider: true,
+        lockup_release_time_delay: 1233,
+      },
+      dacId,
+      { from: this.auth_account }
+    );
+  }
+
+  private async setup_tokens(initialAsset: string) {
     await this.dac_token_contract.create(
       this.dac_token_contract.account.name,
       initialAsset,
@@ -262,13 +383,17 @@ export class SharedTestObjects {
     );
   }
 
-  private async register_dac_with_directory() {
+  // tokenSymbol is the symbol in this format: '4,EOSDAC'
+  private async register_dac_with_directory(
+    dacId: string,
+    tokenSymbol: string
+  ) {
     await this.dacdirectory_contract.regdac(
       this.auth_account.name,
-      this.configured_dac_id,
+      dacId,
       {
         contract: this.dac_token_contract.account.name,
-        symbol: '4,EOSDAC',
+        symbol: tokenSymbol,
       },
       'dac_title',
       [],
@@ -679,6 +804,49 @@ export class SharedTestObjects {
       ),
       'setting member terms'
     );
+  }
+
+  async voteForCustodians(
+    regMembers: Account[],
+    electedCandidates: Account[],
+    dacId: string
+  ) {
+    // Running 2 loops through different sections of members to spread 4 votes each over at least 5 candidates.
+
+    for (let index = 0; index < 8; index++) {
+      const mbr = regMembers[index];
+      await debugPromise(
+        this.daccustodian_contract.votecuste(
+          mbr.name,
+          [
+            electedCandidates[0].name,
+            electedCandidates[1].name,
+            electedCandidates[2].name,
+            electedCandidates[3].name,
+          ],
+          dacId,
+          { from: mbr }
+        ),
+        'voting custodian for new period'
+      );
+    }
+    for (let index = 8; index < 16; index++) {
+      const mbr = regMembers[index];
+      await debugPromise(
+        this.daccustodian_contract.votecuste(
+          mbr.name,
+          [
+            electedCandidates[3].name,
+            electedCandidates[4].name,
+            electedCandidates[5].name,
+            electedCandidates[6].name,
+          ],
+          dacId,
+          { from: mbr }
+        ),
+        'voting custodian for new period'
+      );
+    }
   }
 }
 
