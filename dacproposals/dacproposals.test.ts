@@ -1284,26 +1284,128 @@ describe('Dacproposals', () => {
       });
     });
   });
+  context('cancel', async () => {
+    before(async () => {
+      await chai.expect(
+        shared.dacproposals_contract.createprop(
+          proposer1Account.name,
+          'startwork_title',
+          'startwork_summary',
+          arbitrator.name,
+          { quantity: '106.0000 EOS', contract: 'eosio.token' },
+          'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
+          7, // proposal id
+          3,
+          130, // job duration
+          3, // approval duration
+          dacId,
+          { from: proposer1Account }
+        ),
+        ''
+      ).to.eventually.be.fulfilled;
+      for (let index = 0; index < 4; index++) {
+        const custodian = propDacCustodians[index];
+        await shared.dacproposals_contract.voteprop(
+          custodian,
+          7, // proposal id
+          VoteType.proposal_approve,
+          dacId,
+          {
+            auths: [
+              {
+                actor: custodian,
+                permission: 'active',
+              },
+              {
+                actor: shared.auth_account.name,
+                permission: 'active',
+              },
+            ],
+          }
+        );
+      }
+    });
+    context('without valid auth', async () => {
+      it('should fail with invalid auth error', async () => {
+        await l.assertMissingAuthority(
+          shared.dacproposals_contract.cancel(7, dacId, { from: otherAccount })
+        );
+      });
+    });
+    context('with valid auth', async () => {
+      context('with invalid proposal id', async () => {
+        it('should fail with proposal not found error', async () => {
+          await l.assertEOSErrorIncludesMessage(
+            shared.dacproposals_contract.cancel(8, dacId, {
+              from: proposer1Account,
+            }),
+            'PROPOSAL_NOT_FOUND'
+          );
+        });
+      });
+      context('with valid proposal id', async () => {
+        context('after starting work but before completing', async () => {
+          before(async () => {
+            await shared.dacproposals_contract.startwork(7, dacId, {
+              from: proposer1Account,
+            });
+          });
+          it('should initially contain proposal', async () => {
+            await l.assertRowCount(
+              shared.dacproposals_contract.proposalsTable({
+                scope: dacId,
+                lowerBound: 7,
+                upperBound: 8,
+              }),
+              1
+            );
+          });
+          it('should contain initial votes for proposal', async () => {
+            let result = await shared.dacproposals_contract.propvotesTable({
+              scope: dacId,
+              indexPosition: 1,
+              keyType: 'i64',
+              lowerBound: 7,
+              upperBound: 7,
+            });
+            console.log(`votttee: ${JSON.stringify(result)}`);
+            chai.expect(result.rows.length).equal(4);
+          });
+          it('should succeed', async () => {
+            await chai.expect(
+              shared.dacproposals_contract.cancel(7, dacId, {
+                from: proposer1Account,
+              })
+            ).to.eventually.be.fulfilled;
+          });
+          it('should not contain proposal', async () => {
+            await l.assertRowCount(
+              shared.dacproposals_contract.proposalsTable({
+                scope: dacId,
+                lowerBound: 7,
+                upperBound: 7,
+              }),
+              0
+            );
+          });
+          it('should not contain initial votes for proposal', async () => {
+            await l.assertRowCount(
+              shared.dacproposals_contract.propvotesTable({
+                scope: dacId,
+                indexPosition: 1,
+                keyType: 'i64',
+                lowerBound: 7,
+                upperBound: 7,
+              }),
+              0
+            );
+          });
+        });
+        it('escrow table should contain expected rows', async () => {});
+      });
+    });
+  });
 });
-//   context('cancel', async () => {
-//     context('without valid auth', async () => {
-//       it('should fail with invalid auth error', async () => {});
-//     });
-//     context('with valid auth', async () => {
-//       context('with invalid proposal id', async () => {
-//         it('should fail with proposal not found error', async () => {});
-//       });
-//       context('with valid proposal id', async () => {
-//         context('after starting work but before completing', async () => {
-//           before(async () => {});
-//           it('should succeed', async () => {});
-//           it('proposals table should contain expected rows', async () => {});
-//           it('escrow table should contain expected rows', async () => {});
-//         });
-//       });
-//     });
-//   });
-// });
 // context('delegate categories', async () => {
 // context(
 //   'created proposal but still needing a vote for approval',
