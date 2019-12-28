@@ -97,8 +97,9 @@ CONTRACT referendum : public contract {
 
 
         struct account_stake_delta {
-            name  account;
-            asset stake_delta;
+            name     account;
+            asset    stake_delta;
+            uint32_t unstake_delay;
         };
 
 

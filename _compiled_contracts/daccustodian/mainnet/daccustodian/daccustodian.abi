@@ -28,6 +28,10 @@
                 {
                     "name": "stake_delta",
                     "type": "asset"
+                },
+                {
+                    "name": "unstake_delay",
+                    "type": "uint32"
                 }
             ]
         },
@@ -118,24 +122,6 @@
             ]
         },
         {
-            "name": "capturestake",
-            "base": "",
-            "fields": [
-                {
-                    "name": "from",
-                    "type": "name"
-                },
-                {
-                    "name": "quantity",
-                    "type": "asset"
-                },
-                {
-                    "name": "dac_id",
-                    "type": "name"
-                }
-            ]
-        },
-        {
             "name": "claimpay",
             "base": "",
             "fields": [
@@ -166,24 +152,6 @@
                 {
                     "name": "batch_size",
                     "type": "uint16"
-                }
-            ]
-        },
-        {
-            "name": "clearstake",
-            "base": "",
-            "fields": [
-                {
-                    "name": "cand",
-                    "type": "name"
-                },
-                {
-                    "name": "new_value",
-                    "type": "asset"
-                },
-                {
-                    "name": "dac_id",
-                    "type": "name"
                 }
             ]
         },
@@ -430,6 +398,16 @@
             ]
         },
         {
+            "name": "paycpu",
+            "base": "",
+            "fields": [
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "payold",
             "base": "",
             "fields": [
@@ -577,24 +555,6 @@
                 },
                 {
                     "name": "profile",
-                    "type": "string"
-                }
-            ]
-        },
-        {
-            "name": "tempstake",
-            "base": "",
-            "fields": [
-                {
-                    "name": "sender",
-                    "type": "name"
-                },
-                {
-                    "name": "quantity",
-                    "type": "asset"
-                },
-                {
-                    "name": "memo",
                     "type": "string"
                 }
             ]
@@ -834,11 +794,6 @@
             "ricardian_contract": ""
         },
         {
-            "name": "capturestake",
-            "type": "capturestake",
-            "ricardian_contract": ""
-        },
-        {
             "name": "claimpay",
             "type": "claimpay",
             "ricardian_contract": ""
@@ -851,11 +806,6 @@
         {
             "name": "clearold",
             "type": "clearold",
-            "ricardian_contract": ""
-        },
-        {
-            "name": "clearstake",
-            "type": "clearstake",
             "ricardian_contract": ""
         },
         {
@@ -902,6 +852,11 @@
             "name": "nominatecane",
             "type": "nominatecane",
             "ricardian_contract": "---\nspec_version: \"0.2.0\"\ntitle: Register as a Candidate\nsummary: 'Register {{ nowrap cand }} as a candidate for DAC ID {{ nowrap dac_id }}'\nicon: https://eosdac.io/assets/contracts/generic.png#00da1afc6464028359b3a02ffbdb59e1ea79fa261b5523ce7ac174cc0ef27bbd\n---\n\nRegister {{ nowrap cand }} as a candidate for {{ dac_id }}, I request to be paid {{ nowrap requestedpay }}"
+        },
+        {
+            "name": "paycpu",
+            "type": "paycpu",
+            "ricardian_contract": ""
         },
         {
             "name": "rejectcuspay",
@@ -1058,13 +1013,6 @@
         {
             "name": "pendingpay2",
             "type": "pay",
-            "index_type": "i64",
-            "key_names": [],
-            "key_types": []
-        },
-        {
-            "name": "pendingstake",
-            "type": "tempstake",
             "index_type": "i64",
             "key_names": [],
             "key_types": []

@@ -95,38 +95,28 @@ void eosdactokens::unlock(asset unlock) {
 }
 
 void eosdactokens::transfer(name from, name to, asset quantity, string memo) {
-  check(from != to, "ERR::TRANSFER_TO_SELF::cannot transfer to self");
-  require_auth(from);
-  check(is_account(to), "ERR::TRANSFER_NONEXISTING_DESTN::to account does not exist");
+    check(from != to, "ERR::TRANSFER_TO_SELF::cannot transfer to self");
+    require_auth(from);
+    check(is_account(to), "ERR::TRANSFER_NONEXISTING_DESTN::to account does not exist");
 
-  auto sym = quantity.symbol.code();
-  stats statstable(_self, sym.raw());
-  const auto &st = statstable.get(sym.raw());
+    auto sym = quantity.symbol.code();
+    stats statstable(_self, sym.raw());
+    const auto &st = statstable.get(sym.raw());
 
-  if (st.transfer_locked) {
-    check(has_auth(st.issuer), "Transfer is locked, need issuer permission");
-  }
-
-  require_recipient(from, to);
-
-  dacdir::dac dac = dacdir::dac_for_symbol(extended_symbol{quantity.symbol, get_self()});
-  eosio::name custodian_contract = dac.account_for_type(dacdir::CUSTODIAN);
-
-  if (is_account(custodian_contract)) {
-    if (to == custodian_contract) {
-      eosio::action(eosio::permission_level{get_self(), "notify"_n}, custodian_contract, "capturestake"_n,
-          make_tuple(from, quantity, dac.dac_id))
-          .send();
-
-    } else {
-      // Send to notify of balance change
-      vector<account_balance_delta> account_weights;
-      account_weights.push_back(account_balance_delta{from, quantity * -1});
-      account_weights.push_back(account_balance_delta{to, quantity});
-
-      send_balance_notification(account_weights, dac);
+    if (st.transfer_locked) {
+        check(has_auth(st.issuer), "Transfer is locked, need issuer permission");
     }
-  }
+
+    require_recipient(from, to);
+
+    dacdir::dac dac = dacdir::dac_for_symbol(extended_symbol{quantity.symbol, get_self()});
+
+    // Send to notify of balance change
+    vector<account_balance_delta> account_weights;
+    account_weights.push_back(account_balance_delta{from, quantity * -1});
+    account_weights.push_back(account_balance_delta{to, quantity});
+
+    send_balance_notification(account_weights, dac);
 
   check(quantity.is_valid(), "ERR::TRANSFER_INVALID_QTY::invalid quantity");
   check(quantity.amount > 0, "ERR::TRANSFER_NON_POSITIVE_QTY::must transfer positive quantity");
@@ -287,6 +277,34 @@ void eosdactokens::close(name owner, const symbol &symbol) {
   acnts.erase(it);
 }
 
+// Staking functions
+
+void eosdactokens::xferstake(name from, name to, asset quantity, string memo) {
+  require_auth(from);
+  dacdir::dac dac = dacdir::dac_for_symbol(extended_symbol{quantity.symbol, get_self()});
+  eosio::name custodian_contract = dac.account_for_type(dacdir::CUSTODIAN);
+
+  stake_config config = stake_config::get_current_configs(get_self(), dac.dac_id);
+  check(config.enabled, "ERR::STAKING_NOT_ENABLED::Staking is not enabled for this token");
+
+  check(quantity.is_valid(), "ERR::STAKE_INVALID_QTY::Invalid quantity supplied");
+  check(quantity.amount > 0, "ERR::STAKE_NON_POSITIVE_QTY::Stake amount must be greater than 0");
+
+  asset liquid = eosdac::get_liquid(from, get_self(), quantity.symbol.code());
+
+  print("Liquid balance ", liquid, "\n");
+
+  check(liquid >= quantity, "ERR::STAKE_MORE_LIQUID::Attempting to stake more than your liquid balance");
+
+  sub_balance(from, quantity);
+  add_balance(to, quantity, from);
+  add_stake(to, quantity, dac.dac_id, from);
+
+  // notify of stake delta
+  send_stake_notification(to, quantity, dac);
+
+}
+
 void eosdactokens::stake(name account, asset quantity) {
   require_auth(account);
   dacdir::dac dac = dacdir::dac_for_symbol(extended_symbol{quantity.symbol, get_self()});
@@ -302,7 +320,7 @@ void eosdactokens::stake(name account, asset quantity) {
 
   check(liquid >= quantity, "ERR::STAKE_MORE_LIQUID::Attempting to stake more than your liquid balance");
 
-  add_stake(account, quantity, dac.dac_id);
+  add_stake(account, quantity, dac.dac_id, account);
 
   // notify of stake delta
   send_stake_notification(account, quantity, dac);
@@ -376,14 +394,32 @@ void eosdactokens::staketime(name account, uint32_t unstake_time, symbol token_s
         "ERR::CANNOT_REDUCE_STAKE_TIME::You cannot reduce the stake time if you have tokens staked or in the process of unstaking");
   }
 
+  uint32_t current_unstake_time = config.min_stake_time;
   if (existing_time == staketimes.end()) {
     staketimes.emplace(account, [&](staketime_info &s) {
       s.account = account;
       s.delay = unstake_time;
     });
   } else {
-    staketimes.modify(*existing_time, account, [&](staketime_info &s) { s.delay = unstake_time; });
+      current_unstake_time = existing_time->delay;
+      staketimes.modify(*existing_time, account, [&](staketime_info &s) { s.delay = unstake_time; });
   }
+
+  // send notification for unstake at current delay and then stake with new delay
+  name custodian_contract = dac.account_for_type(dacdir::CUSTODIAN);
+  name vote_contract = dac.account_for_type(dacdir::VOTE_WEIGHT);
+  name notify_contract = (vote_contract) ? vote_contract : custodian_contract;
+  asset current_stake = eosdac::get_staked(account, get_self(), token_symbol.code());
+
+  vector<account_stake_delta> stake_deltas_sub = {{account, -current_stake, current_unstake_time}};
+  action(permission_level{get_self(), "notify"_n}, notify_contract, "stakeobsv"_n,
+      make_tuple(stake_deltas_sub, dac.dac_id))
+      .send();
+
+  vector<account_stake_delta> stake_deltas_add = {{account, current_stake, unstake_time}};
+  action(permission_level{get_self(), "notify"_n}, notify_contract, "stakeobsv"_n,
+      make_tuple(stake_deltas_add, dac.dac_id))
+      .send();
 }
 
 void eosdactokens::stakeconfig(stake_config config, symbol token_symbol) {
@@ -419,7 +455,7 @@ void eosdactokens::cancel(uint64_t unstake_id, symbol token_symbol) {
   require_auth(us->account);
 
   // Add stake back and delete the unstake so the liquid balance is correct
-  add_stake(us->account, us->stake, dac.dac_id);
+  add_stake(us->account, us->stake, dac.dac_id, us->account);
 
   send_stake_notification(us->account, us->stake, dac);
 
@@ -438,14 +474,14 @@ void eosdactokens::sub_stake(name account, asset value, name dac_id) {
   }
 }
 
-void eosdactokens::add_stake(name account, asset value, name dac_id) {
+void eosdactokens::add_stake(name account, asset value, name dac_id, name ram_payer) {
   stakes_table stakes(get_self(), dac_id.value);
   auto existing_stake = stakes.find(account.value);
 
   if (existing_stake != stakes.end()) {
-    stakes.modify(*existing_stake, account, [&](stake_info &s) { s.stake += value; });
+    stakes.modify(*existing_stake, same_payer, [&](stake_info &s) { s.stake += value; });
   } else {
-    stakes.emplace(account, [&](stake_info &s) {
+    stakes.emplace(ram_payer, [&](stake_info &s) {
       s.account = account;
       s.stake = value;
     });
@@ -457,7 +493,15 @@ void eosdactokens::send_stake_notification(name account, asset stake, dacdir::da
   name vote_contract = dac_inst.account_for_type(dacdir::VOTE_WEIGHT);
   name notify_contract = (vote_contract) ? vote_contract : custodian_contract;
 
-  vector<account_stake_delta> stake_deltas = {{account, stake}};
+  stake_config config = stake_config::get_current_configs(get_self(), dac_inst.dac_id);
+  uint32_t unstake_delay = config.min_stake_time;
+  staketimes_table staketimes(get_self(), dac_inst.dac_id.value);
+  auto existing_staketime = staketimes.find(account.value);
+  if (existing_staketime != staketimes.end()) {
+      unstake_delay = existing_staketime->delay;
+  }
+
+  vector<account_stake_delta> stake_deltas = {{account, stake, unstake_delay}};
   action(permission_level{get_self(), "notify"_n}, notify_contract, "stakeobsv"_n,
       make_tuple(stake_deltas, dac_inst.dac_id))
       .send();

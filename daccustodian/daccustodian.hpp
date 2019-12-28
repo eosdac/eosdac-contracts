@@ -138,15 +138,6 @@ namespace eosdac {
                         indexed_by<"receiversym"_n, const_mem_fun<pay, checksum256, &pay::byreceiver_and_symbol>>>
         pending_pay_table;
 
-    struct [[eosio::table("pendingstake"), eosio::contract("daccustodian")]] tempstake {
-        name sender;
-        asset quantity;
-        string memo; //deprecated - but needs mifgrations to get rid of it.
-
-        uint64_t primary_key() const { return sender.value; }
-    };
-
-    typedef multi_index<"pendingstake"_n, tempstake> pendingstake_table_t;
 
     struct [[eosio::table("candperms"), eosio::contract("daccustodian")]] candperm {
         name cand;
@@ -166,9 +157,6 @@ namespace eosdac {
 
         ACTION updateconfig(contr_config newconfig);
         ACTION updateconfige(contr_config newconfig, name dac_id);
-        ACTION capturestake(name from,
-                            asset quantity,
-                            name dac_id);
         ACTION transferobsv(name from,
                             name to,
                             asset quantity,
@@ -210,7 +198,7 @@ namespace eosdac {
         ACTION rejectcuspay(uint64_t payid, name dac_id);
         ACTION unstake(name cand);
         ACTION unstakee(name cand, name dac_id);
-        ACTION clearstake(name cand, asset new_value, name dac_id);
+        ACTION paycpu(name dac_id);
         ACTION migrate(uint16_t batch_size);
         ACTION clearold(uint16_t batch_size);
 #ifdef DEBUG
@@ -253,6 +241,7 @@ namespace eosdac {
         permission_level getCandidatePermission(name account, name internal_dac_id);
         void validateUnstake(name code, name cand, name dac_id);
         void validateUnstakeAmount(name code, name cand, asset unstake_amount, name dac_id);
+        void validateMinStake(name account, name dac_id);
 
         // Temporary actions for old pay processing
         bool claimoldpaye_if_found(uint64_t payid, name dac_id);
