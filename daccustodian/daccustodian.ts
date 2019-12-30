@@ -4,7 +4,7 @@
 // Any changes you make will be overwritten by Lamington
 // =====================================================
 
-import { Account, Contract, GetTableRowsOptions, ActorPermission, ExtendedAsset, ExtendedSymbol, TableRowsResult } from 'lamington';
+import { Account, Contract, GetTableRowsOptions, ExtendedAsset, ExtendedSymbol, TableRowsResult } from 'lamington';
 
 // Table row types
 export interface DaccustodianAccountBalanceDelta {
@@ -15,6 +15,7 @@ export interface DaccustodianAccountBalanceDelta {
 export interface DaccustodianAccountStakeDelta {
 	account: string|number;
 	stake_delta: string;
+	unstake_delay: number;
 }
 
 export interface DaccustodianAccountWeightDelta {
@@ -46,12 +47,6 @@ export interface DaccustodianCandperm {
 	permission: string|number;
 }
 
-export interface DaccustodianCapturestake {
-	from: string|number;
-	quantity: string;
-	dac_id: string|number;
-}
-
 export interface DaccustodianClaimpay {
 	payid: number;
 }
@@ -63,12 +58,6 @@ export interface DaccustodianClaimpaye {
 
 export interface DaccustodianClearold {
 	batch_size: number;
-}
-
-export interface DaccustodianClearstake {
-	cand: string|number;
-	new_value: string;
-	dac_id: string|number;
 }
 
 export interface DaccustodianContrConfig {
@@ -151,6 +140,10 @@ export interface DaccustodianPay {
 	due_date: Date;
 }
 
+export interface DaccustodianPaycpu {
+	dac_id: string|number;
+}
+
 export interface DaccustodianPayold {
 	key: number;
 	receiver: string|number;
@@ -202,12 +195,6 @@ export interface DaccustodianStprofile {
 export interface DaccustodianStprofileuns {
 	cand: string|number;
 	profile: string;
-}
-
-export interface DaccustodianTempstake {
-	sender: string|number;
-	quantity: string;
-	memo: string;
 }
 
 export interface DaccustodianTransferobsv {
@@ -292,11 +279,9 @@ export interface Daccustodian extends Contract {
 	// Actions
 	appointcust(cust: Array<string|number>, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	balanceobsv(account_balance_deltas: Array<DaccustodianAccountBalanceDelta>, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
-	capturestake(from: string|number, quantity: string, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	claimpay(payid: number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	claimpaye(payid: number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	clearold(batch_size: number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
-	clearstake(cand: string|number, new_value: string, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	firecand(cand: string|number, lockupStake: boolean, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	firecande(cand: string|number, lockupStake: boolean, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	firecust(cust: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
@@ -306,6 +291,7 @@ export interface Daccustodian extends Contract {
 	newperiode(message: string, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	nominatecand(cand: string|number, requestedpay: string, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	nominatecane(cand: string|number, requestedpay: string, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	paycpu(dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	rejectcuspay(payid: number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	removecuspay(payid: number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	resigncust(cust: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
@@ -337,7 +323,6 @@ export interface Daccustodian extends Contract {
 	custodiansTable(options?: GetTableRowsOptions): Promise<TableRowsResult<DaccustodianCustodian>>;
 	pendingpayTable(options?: GetTableRowsOptions): Promise<TableRowsResult<DaccustodianPayold>>;
 	pendingpay2Table(options?: GetTableRowsOptions): Promise<TableRowsResult<DaccustodianPay>>;
-	pendingstakeTable(options?: GetTableRowsOptions): Promise<TableRowsResult<DaccustodianTempstake>>;
 	stateTable(options?: GetTableRowsOptions): Promise<TableRowsResult<DaccustodianContrState>>;
 	votesTable(options?: GetTableRowsOptions): Promise<TableRowsResult<DaccustodianVote>>;
 }

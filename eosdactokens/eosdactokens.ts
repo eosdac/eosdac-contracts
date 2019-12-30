@@ -4,7 +4,7 @@
 // Any changes you make will be overwritten by Lamington
 // =====================================================
 
-import { Account, Contract, GetTableRowsOptions, ActorPermission, ExtendedAsset, ExtendedSymbol, TableRowsResult } from 'lamington';
+import { Account, Contract, GetTableRowsOptions, ExtendedAsset, ExtendedSymbol, TableRowsResult } from 'lamington';
 
 // Table row types
 export interface EosdactokensAccount {
@@ -166,6 +166,13 @@ export interface EosdactokensUpdatetermse {
 	dac_id: string|number;
 }
 
+export interface EosdactokensXferstake {
+	from: string|number;
+	to: string|number;
+	quantity: string;
+	memo: string;
+}
+
 export interface Eosdactokens extends Contract {
 	// Actions
 	burn(from: string|number, quantity: string, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
@@ -190,6 +197,7 @@ export interface Eosdactokens extends Contract {
 	unstake(account: string|number, quantity: string, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	updateterms(termsid: number, terms: string, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	updatetermse(termsid: number, terms: string, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	xferstake(from: string|number, to: string|number, quantity: string, memo: string, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	
 	// Tables
 	accountsTable(options?: GetTableRowsOptions): Promise<TableRowsResult<EosdactokensAccount>>;

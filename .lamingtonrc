@@ -21,7 +21,7 @@
         "dacmultisigs",
         "_test_helpers",
         "referendum.cpp",
-        "dacproposals.spec.ts"
-
+        "dacproposals.spec.ts",
+        "paycpu.cpp"
     ]
 }
