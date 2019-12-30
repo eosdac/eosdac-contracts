@@ -4,18 +4,12 @@ import {
   SharedTestObjects,
   debugPromise,
   NUMBER_OF_CANDIDATES,
-  Account_type,
 } from '../TestHelpers';
 import * as chai from 'chai';
-
 import * as chaiAsPromised from 'chai-as-promised';
-
 chai.use(chaiAsPromised);
-import { factory } from '../LoggingConfig';
 
-const log = factory.getLogger('Custodian Tests');
-
-describe.only('Daccustodian', () => {
+describe('Daccustodian', () => {
   let shared: SharedTestObjects;
 
   before(async () => {
