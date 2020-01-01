@@ -236,6 +236,10 @@
                     "type": "name"
                 },
                 {
+                    "name": "referendum_id",
+                    "type": "name"
+                },
+                {
                     "name": "type",
                     "type": "uint8"
                 },
@@ -491,7 +495,7 @@
             "key_types": []
         },
         {
-            "name": "referenda",
+            "name": "referendums",
             "type": "referendum_data",
             "index_type": "i64",
             "key_names": [],

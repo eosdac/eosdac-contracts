@@ -40,6 +40,7 @@ void referendum::updateconfig(config_item config, name dac_id){
 
 void referendum::propose(
         name proposer,
+        name referendum_id,
         uint8_t type,
         uint8_t voting_type,
         string title,
@@ -64,7 +65,7 @@ void referendum::propose(
     checksum256 trx_id = sha256(buffer, read);
 
     // Calculate a referendum id
-    name referendum_id = nextID(trx_id);
+//    name referendum_id = nextID(trx_id);
 
     check(type < vote_type::TYPE_INVALID, "ERR::TYPE_INVALID::Referendum type is invalid");
     check(voting_type < count_type::COUNT_INVALID, "ERR::COUNT_TYPE_INVALID::Referendum vote counting type is invalid");
@@ -160,7 +161,10 @@ void referendum::vote(name voter, name referendum_id, uint8_t vote, name dac_id)
 
     referenda_table referenda(get_self(), dac_id.value);
     auto ref = referenda.get(referendum_id.value, "ERR::REFERENDUM_NOT_FOUND::Referendum not found");
-    check(ref.status != referendum_status::STATUS_EXPIRED, "ERR::REFERENDUM_EXPIRED::Referendum has expired");
+
+    uint32_t time_now = current_time_point().sec_since_epoch();
+    check(ref.expires.sec_since_epoch() >= time_now, "ERR::REFERENDUM_EXPIRED::Referendum is closed, no more voting is allowed");
+    check(ref.status == referendum_status::STATUS_OPEN, "ERR::REFERENDUM_NOT_OPEN::Referendum status is not open");
 
     uint64_t current_votes_token = 0;
     if (ref.token_votes.find(vote) != ref.token_votes.end()){
@@ -396,7 +400,7 @@ uint8_t referendum::calculateStatus(name referendum_id, name dac_id) {
 
     map<uint8_t, uint64_t> votes;
 
-    if (ref->expires.sec_since_epoch() >= time_now)
+    if (ref->expires.sec_since_epoch() < time_now)
     {
         if (ref->voting_type == count_type::COUNT_TOKEN) {
             quorum = config.quorum_token[ref->type];
@@ -427,15 +431,13 @@ uint8_t referendum::calculateStatus(name referendum_id, name dac_id) {
             if (yes_percentage >= pass_rate){
                 status = referendum_status::STATUS_PASSING;
             }
+            else {
+                status = referendum_status::STATUS_FAILING;
+            }
         }
 
         print("referendum id : ", referendum_id, ", dac id : ", dac_id, ", quorum : ", quorum, ", pass rate : ", pass_rate, ", current rate : ", current_all, ", total : ", total, ", yes : ", current_yes, ", yes% : ", yes_percentage);
     }
-    else {
-        // Expired
-        status = referendum_status::STATUS_EXPIRED;
-    }
-
 
     return status;
 }
