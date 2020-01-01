@@ -209,98 +209,6 @@ export class SharedTestObjects {
     return newMembers;
   }
 
-  async getCandidates(
-    dacId: string,
-    dacStakeAsset: string,
-    count: number = NUMBER_OF_CANDIDATES
-  ): Promise<Account[]> {
-    let newCandidates = await this.getRegMembers(dacId, dacStakeAsset, count);
-    for (let { candidate, index } of newCandidates.map((candidate, index) => ({
-      candidate,
-      index,
-    }))) {
-      await debugPromise(
-        this.dac_token_contract.transfer(
-          candidate.name,
-          this.daccustodian_contract.account.name,
-          dacStakeAsset,
-          '',
-          {
-            from: candidate,
-          }
-        ),
-        'sending candidate funds for staking'
-      );
-      let indexOption = index % 3;
-      let payAmount = '';
-      if (indexOption == 0) {
-        payAmount = '15.0000 EOS';
-      } else if (indexOption == 1) {
-        payAmount = '20.0000 EOS';
-      } else {
-        payAmount = '25.0000 EOS';
-      }
-      await debugPromise(
-        this.daccustodian_contract.nominatecane(
-          candidate.name,
-          payAmount,
-          dacId,
-          {
-            from: candidate,
-          }
-        ),
-        'nominate candidate'
-      );
-    }
-    return newCandidates;
-  }
-
-  async getCandidates(
-    dacId: string,
-    dacStakeAsset: string,
-    count: number = NUMBER_OF_CANDIDATES
-  ): Promise<Account[]> {
-    let newCandidates = await this.getRegMembers(dacId, dacStakeAsset, count);
-    for (let { candidate, index } of newCandidates.map((candidate, index) => ({
-      candidate,
-      index,
-    }))) {
-      await debugPromise(
-        this.dac_token_contract.transfer(
-          candidate.name,
-          this.daccustodian_contract.account.name,
-          dacStakeAsset,
-          '',
-          {
-            from: candidate,
-          }
-        ),
-        'sending candidate funds for staking'
-      );
-      let indexOption = index % 3;
-      let payAmount = '';
-      if (indexOption == 0) {
-        payAmount = '15.0000 EOS';
-      } else if (indexOption == 1) {
-        payAmount = '20.0000 EOS';
-      } else {
-        payAmount = '25.0000 EOS';
-      }
-      await debugPromise(
-        this.daccustodian_contract.nominatecane(
-          candidate.name,
-          payAmount,
-          dacId,
-          {
-            from: candidate,
-          }
-        ),
-        'nominate candidate'
-      );
-    }
-    return newCandidates;
-  }
-
   async getStakeObservedCandidates(
     dacId: string,
     dacStakeAsset: string,
@@ -836,10 +744,10 @@ export class SharedTestObjects {
         this.daccustodian_contract.votecuste(
           mbr.name,
           [
-            electedCandidates[3].name,
+            electedCandidates[0].name,
+            electedCandidates[1].name,
+            electedCandidates[2].name,
             electedCandidates[4].name,
-            electedCandidates[5].name,
-            electedCandidates[6].name,
           ],
           dacId,
           { from: mbr }

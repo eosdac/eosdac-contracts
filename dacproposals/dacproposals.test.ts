@@ -1,12 +1,6 @@
 import * as l from 'lamington';
 
-import {
-  SharedTestObjects,
-  debugPromise,
-  NUMBER_OF_CANDIDATES,
-  Account_type,
-  Action,
-} from '../TestHelpers';
+import { SharedTestObjects, debugPromise, Action } from '../TestHelpers';
 import * as chai from 'chai';
 
 import * as chaiAsPromised from 'chai-as-promised';
@@ -40,37 +34,40 @@ enum ProposalState {
 
 let proposalHash = 'jhsdfkjhsdfkjhkjsdf';
 
-describe('Dacproposals', () => {
+describe.only('Dacproposals', () => {
   let shared: SharedTestObjects;
   let otherAccount: l.Account;
   let proposer1Account: l.Account;
-  let proposer2Account: l.Account;
   let arbitrator: l.Account;
-  let propDacCustodians: string[];
-  let members: l.Account[];
-  let dacId: string;
-  let delegateeCustodianName: string;
+  let propDacCustodians: l.Account[];
+  let regMembers: l.Account[];
+  let dacId = 'popdac';
+  let delegateeCustodian: l.Account;
 
   before(async () => {
     shared = await SharedTestObjects.getInstance();
-    dacId = shared.configured_dac_id;
-    members = await shared.regMembers();
-    otherAccount = members[1];
-    arbitrator = members[2];
-    proposer1Account = members[3];
-    proposer2Account = members[4];
-
-    let propDacCustodiansRaw = await shared.daccustodian_contract.custodiansTable(
-      {
-        scope: shared.configured_dac_id,
-      }
+    await shared.initDac(dacId, '4,PROPDAC', '1000000.0000 PROPDAC');
+    await shared.updateconfig(dacId, '12.0000 PROPDAC');
+    await shared.dac_token_contract.stakeconfig(
+      { enabled: true, min_stake_time: 5, max_stake_time: 20 },
+      '4,PROPDAC',
+      { from: shared.auth_account }
     );
 
-    propDacCustodians = propDacCustodiansRaw.rows.map(row => {
-      let name = <string>row.cust_name;
-      return name;
+    regMembers = await shared.getRegMembers(dacId, '20000.0000 PROPDAC');
+    propDacCustodians = await shared.getStakeObservedCandidates(
+      dacId,
+      '20.0000 PROPDAC'
+    );
+    await shared.voteForCustodians(regMembers, propDacCustodians, dacId);
+    await shared.daccustodian_contract.newperiode('propDac', dacId, {
+      from: regMembers[0],
     });
-    delegateeCustodianName = propDacCustodians[4];
+
+    otherAccount = regMembers[1];
+    arbitrator = regMembers[2];
+    proposer1Account = regMembers[3];
+    delegateeCustodian = propDacCustodians[4];
   });
   context('updateconfig', async () => {
     context('without valid auth', async () => {
@@ -330,14 +327,14 @@ describe('Dacproposals', () => {
       it('should fail with auth error', async () => {
         await l.assertMissingAuthority(
           shared.dacproposals_contract.voteprop(
-            propDacCustodians[0],
+            propDacCustodians[0].name,
             0,
             VoteType.proposal_approve,
             dacId,
             {
               auths: [
                 {
-                  actor: propDacCustodians[1],
+                  actor: propDacCustodians[1].name,
                   permission: 'active',
                 },
               ],
@@ -351,14 +348,14 @@ describe('Dacproposals', () => {
         it('should fail with proposal not found error', async () => {
           await l.assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.voteprop(
-              propDacCustodians[0],
+              propDacCustodians[0].name,
               15,
               VoteType.proposal_approve,
               dacId,
               {
                 auths: [
                   {
-                    actor: propDacCustodians[0],
+                    actor: propDacCustodians[0].name,
                     permission: 'active',
                   },
                   {
@@ -377,14 +374,14 @@ describe('Dacproposals', () => {
           it('should succeed', async () => {
             await chai.expect(
               shared.dacproposals_contract.voteprop(
-                propDacCustodians[0],
+                propDacCustodians[0].name,
                 0,
                 VoteType.proposal_approve,
                 dacId,
                 {
                   auths: [
                     {
-                      actor: propDacCustodians[0],
+                      actor: propDacCustodians[0].name,
                       permission: 'active',
                     },
                     {
@@ -401,14 +398,14 @@ describe('Dacproposals', () => {
           it('should succeed', async () => {
             await chai.expect(
               shared.dacproposals_contract.voteprop(
-                propDacCustodians[0],
+                propDacCustodians[0].name,
                 0,
                 VoteType.proposal_deny,
                 dacId,
                 {
                   auths: [
                     {
-                      actor: propDacCustodians[0],
+                      actor: propDacCustodians[0].name,
                       permission: 'active',
                     },
                     {
@@ -425,14 +422,14 @@ describe('Dacproposals', () => {
           it('should succeed', async () => {
             await chai.expect(
               shared.dacproposals_contract.voteprop(
-                propDacCustodians[0],
+                propDacCustodians[0].name,
                 0,
                 VoteType.proposal_approve,
                 dacId,
                 {
                   auths: [
                     {
-                      actor: propDacCustodians[0],
+                      actor: propDacCustodians[0].name,
                       permission: 'active',
                     },
                     {
@@ -449,14 +446,14 @@ describe('Dacproposals', () => {
           it('should succeed', async () => {
             await chai.expect(
               shared.dacproposals_contract.voteprop(
-                propDacCustodians[0],
+                propDacCustodians[0].name,
                 16,
                 VoteType.proposal_approve,
                 dacId,
                 {
                   auths: [
                     {
-                      actor: propDacCustodians[0],
+                      actor: propDacCustodians[0].name,
                       permission: 'active',
                     },
                     {
@@ -473,14 +470,14 @@ describe('Dacproposals', () => {
           it('should succeed', async () => {
             await chai.expect(
               shared.dacproposals_contract.voteprop(
-                propDacCustodians[0],
+                propDacCustodians[0].name,
                 0,
                 VoteType.proposal_deny,
                 dacId,
                 {
                   auths: [
                     {
-                      actor: propDacCustodians[0],
+                      actor: propDacCustodians[0].name,
                       permission: 'active',
                     },
                     {
@@ -520,14 +517,14 @@ describe('Dacproposals', () => {
       it('should fail with invalid auth error', async () => {
         await l.assertMissingAuthority(
           shared.dacproposals_contract.delegatevote(
-            propDacCustodians[0],
+            propDacCustodians[0].name,
             1, // proposal id
-            delegateeCustodianName,
+            delegateeCustodian.name,
             dacId,
             {
               auths: [
                 {
-                  actor: propDacCustodians[1],
+                  actor: propDacCustodians[1].name,
                   permission: 'active',
                 },
                 {
@@ -545,14 +542,14 @@ describe('Dacproposals', () => {
         it('should fail with proposal not found error', async () => {
           await l.assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.delegatevote(
-              propDacCustodians[1],
+              propDacCustodians[1].name,
               15, // proposal id
-              delegateeCustodianName,
+              delegateeCustodian.name,
               dacId,
               {
                 auths: [
                   {
-                    actor: propDacCustodians[1],
+                    actor: propDacCustodians[1].name,
                     permission: 'active',
                   },
                   {
@@ -570,14 +567,14 @@ describe('Dacproposals', () => {
         it('should fail with Cannot delegate voting to yourself error', async () => {
           await l.assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.delegatevote(
-              propDacCustodians[0],
+              propDacCustodians[0].name,
               1, // proposal id
-              propDacCustodians[0],
+              propDacCustodians[0].name,
               dacId,
               {
                 auths: [
                   {
-                    actor: propDacCustodians[0],
+                    actor: propDacCustodians[0].name,
                     permission: 'active',
                   },
                   {
@@ -596,14 +593,14 @@ describe('Dacproposals', () => {
           it('should succeed', async () => {
             await chai.expect(
               shared.dacproposals_contract.delegatevote(
-                propDacCustodians[0],
+                propDacCustodians[0].name,
                 1, // proposal id
-                propDacCustodians[1],
+                propDacCustodians[1].name,
                 dacId,
                 {
                   auths: [
                     {
-                      actor: propDacCustodians[0],
+                      actor: propDacCustodians[0].name,
                       permission: 'active',
                     },
                     {
@@ -624,7 +621,7 @@ describe('Dacproposals', () => {
       it('should fail with invalid auth error', async () => {
         await l.assertMissingAuthority(
           shared.dacproposals_contract.comment(
-            propDacCustodians[0],
+            propDacCustodians[0].name,
             15,
             'some comment string',
             'some comment category',
@@ -632,7 +629,7 @@ describe('Dacproposals', () => {
             {
               auths: [
                 {
-                  actor: propDacCustodians[1],
+                  actor: propDacCustodians[1].name,
                   permission: 'active',
                 },
                 {
@@ -650,7 +647,7 @@ describe('Dacproposals', () => {
         it('should fail with proposal not found error', async () => {
           await l.assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.comment(
-              propDacCustodians[1],
+              propDacCustodians[1].name,
               15, // proposal id
               'some comment',
               'a comment category',
@@ -658,7 +655,7 @@ describe('Dacproposals', () => {
               {
                 auths: [
                   {
-                    actor: propDacCustodians[1],
+                    actor: propDacCustodians[1].name,
                     permission: 'active',
                   },
                   {
@@ -678,7 +675,7 @@ describe('Dacproposals', () => {
     it('should succeed', async () => {
       await chai.expect(
         shared.dacproposals_contract.comment(
-          propDacCustodians[3],
+          propDacCustodians[3].name,
           1, // proposal id
           'some comment',
           'a comment category',
@@ -686,7 +683,7 @@ describe('Dacproposals', () => {
           {
             auths: [
               {
-                actor: propDacCustodians[3],
+                actor: propDacCustodians[3].name,
                 permission: 'active',
               },
               {
@@ -707,7 +704,7 @@ describe('Dacproposals', () => {
           shared.dacproposals_contract.startwork(1, dacId, {
             auths: [
               {
-                actor: propDacCustodians[4],
+                actor: propDacCustodians[4].name,
                 permission: 'active',
               },
               {
@@ -729,7 +726,7 @@ describe('Dacproposals', () => {
               {
                 auths: [
                   {
-                    actor: propDacCustodians[1],
+                    actor: propDacCustodians[1].name,
                     permission: 'active',
                   },
                   {
@@ -774,14 +771,14 @@ describe('Dacproposals', () => {
         before(async () => {
           for (const custodian of propDacCustodians) {
             await shared.dacproposals_contract.voteprop(
-              custodian,
+              custodian.name,
               0,
               VoteType.proposal_deny,
               dacId,
               {
                 auths: [
                   {
-                    actor: custodian,
+                    actor: custodian.name,
                     permission: 'active',
                   },
                   {
@@ -821,14 +818,14 @@ describe('Dacproposals', () => {
         for (let index = 0; index < 4; index++) {
           const custodian = propDacCustodians[index];
           await shared.dacproposals_contract.voteprop(
-            custodian,
+            custodian.name,
             0,
             VoteType.proposal_approve,
             dacId,
             {
               auths: [
                 {
-                  actor: custodian,
+                  actor: custodian.name,
                   permission: 'active',
                 },
                 {
@@ -961,8 +958,8 @@ describe('Dacproposals', () => {
         );
       });
     });
-    context('proposal has expired', async () => {
-      before(async () => {
+    context('proposal with short expiry', async () => {
+      it('should create a proposal with a short expiry', async () => {
         await chai.expect(
           shared.dacproposals_contract.createprop(
             proposer1Account.name,
@@ -974,22 +971,24 @@ describe('Dacproposals', () => {
             5, // proposal id
             3,
             130, // job duration
-            3, // approval duration
+            3, // approval duration. Specify short duration so that it expires for expired tests.
             dacId,
             { from: proposer1Account }
           ),
           ''
         ).to.eventually.be.fulfilled;
+      });
+      it('should allow a vote before expiry', async () => {
         await chai.expect(
           shared.dacproposals_contract.voteprop(
-            propDacCustodians[0],
+            propDacCustodians[0].name,
             5,
             VoteType.proposal_deny,
             dacId,
             {
               auths: [
                 {
-                  actor: propDacCustodians[0],
+                  actor: propDacCustodians[0].name,
                   permission: 'active',
                 },
                 {
@@ -1026,7 +1025,7 @@ describe('Dacproposals', () => {
       });
       context('start work after expiry', async () => {
         before(async () => {
-          await sleep(4000);
+          await sleep(3000);
         });
         it('should fail with expired error', async () => {
           await l.assertEOSErrorIncludesMessage(
@@ -1053,16 +1052,26 @@ describe('Dacproposals', () => {
     });
   });
   context('clear expired proposals', async () => {
-    it('should have the correct number of votes before clearing', async () => {
+    it('should have the 10 of votes before clearing', async () => {
       await l.assertRowCount(
-        shared.dacproposals_contract.propvotesTable({ scope: dacId }),
-        8
+        shared.dacproposals_contract.propvotesTable({
+          scope: dacId,
+          indexPosition: 3,
+          keyType: 'i64',
+          lowerBound: 5,
+          upperBound: 5,
+        }),
+        1
       );
     });
     it('should have the correct number of proposals before clearing', async () => {
       await l.assertRowCount(
-        shared.dacproposals_contract.proposalsTable({ scope: dacId }),
-        4
+        shared.dacproposals_contract.proposalsTable({
+          scope: dacId,
+          lowerBound: 5,
+          upperBound: 5,
+        }),
+        1
       );
     });
     it('should now allow to clear unexpired proposals', async () => {
@@ -1080,14 +1089,24 @@ describe('Dacproposals', () => {
     context('After clearing expired proposals', async () => {
       it('should have the correct number of proposals', async () => {
         await l.assertRowCount(
-          shared.dacproposals_contract.proposalsTable({ scope: dacId }),
-          3
+          shared.dacproposals_contract.proposalsTable({
+            scope: dacId,
+            lowerBound: 5,
+            upperBound: 5,
+          }),
+          0
         );
       });
       it('should have the correct number of votes', async () => {
         await l.assertRowCount(
-          shared.dacproposals_contract.propvotesTable({ scope: dacId }),
-          7
+          shared.dacproposals_contract.propvotesTable({
+            scope: dacId,
+            indexPosition: 3,
+            keyType: 'i64',
+            lowerBound: 5,
+            upperBound: 5,
+          }),
+          0
         );
       });
     });
@@ -1100,13 +1119,13 @@ describe('Dacproposals', () => {
         it('should fail with invalid state to accept votes', async () => {
           await l.assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.voteprop(
-              propDacCustodians[0],
+              propDacCustodians[0].name,
               0,
               VoteType.proposal_approve,
               dacId,
               {
                 auths: [
-                  { actor: propDacCustodians[0], permission: 'active' },
+                  { actor: propDacCustodians[0].name, permission: 'active' },
                   {
                     actor: shared.auth_account.name,
                     permission: 'active',
@@ -1122,13 +1141,13 @@ describe('Dacproposals', () => {
         it('should fail with invalid state to accept votes', async () => {
           await l.assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.voteprop(
-              propDacCustodians[0],
+              propDacCustodians[0].name,
               0,
               VoteType.proposal_deny,
               dacId,
               {
                 auths: [
-                  { actor: propDacCustodians[0], permission: 'active' },
+                  { actor: propDacCustodians[0].name, permission: 'active' },
                   {
                     actor: shared.auth_account.name,
                     permission: 'active',
@@ -1157,7 +1176,7 @@ describe('Dacproposals', () => {
       it('should fail with auth error', async () => {
         await l.assertMissingAuthority(
           shared.dacproposals_contract.completework(1, dacId, {
-            auths: [{ actor: propDacCustodians[1], permission: 'active' }],
+            auths: [{ actor: propDacCustodians[1].name, permission: 'active' }],
           })
         );
       });
@@ -1235,14 +1254,14 @@ describe('Dacproposals', () => {
         before(async () => {
           for (const custodian of propDacCustodians) {
             await shared.dacproposals_contract.voteprop(
-              custodian,
+              custodian.name,
               0,
               VoteType.finalize_approve,
               dacId,
               {
                 auths: [
                   {
-                    actor: custodian,
+                    actor: custodian.name,
                     permission: 'active',
                   },
                   {
@@ -1305,23 +1324,26 @@ describe('Dacproposals', () => {
       ).to.eventually.be.fulfilled;
       for (let index = 0; index < 4; index++) {
         const custodian = propDacCustodians[index];
-        await shared.dacproposals_contract.voteprop(
-          custodian,
-          7, // proposal id
-          VoteType.proposal_approve,
-          dacId,
-          {
-            auths: [
-              {
-                actor: custodian,
-                permission: 'active',
-              },
-              {
-                actor: shared.auth_account.name,
-                permission: 'active',
-              },
-            ],
-          }
+        await debugPromise(
+          shared.dacproposals_contract.voteprop(
+            custodian.name,
+            7, // proposal id
+            VoteType.proposal_approve,
+            dacId,
+            {
+              auths: [
+                {
+                  actor: custodian.name,
+                  permission: 'active',
+                },
+                {
+                  actor: shared.auth_account.name,
+                  permission: 'active',
+                },
+              ],
+            }
+          ),
+          'vote approve for proposal 7'
         );
       }
     });
@@ -1355,7 +1377,7 @@ describe('Dacproposals', () => {
               shared.dacproposals_contract.proposalsTable({
                 scope: dacId,
                 lowerBound: 7,
-                upperBound: 8,
+                upperBound: 7,
               }),
               1
             );
@@ -1363,7 +1385,7 @@ describe('Dacproposals', () => {
           it('should contain initial votes for proposal', async () => {
             let result = await shared.dacproposals_contract.propvotesTable({
               scope: dacId,
-              indexPosition: 1,
+              indexPosition: 3,
               keyType: 'i64',
               lowerBound: 7,
               upperBound: 7,
@@ -1392,7 +1414,7 @@ describe('Dacproposals', () => {
             await l.assertRowCount(
               shared.dacproposals_contract.propvotesTable({
                 scope: dacId,
-                indexPosition: 1,
+                indexPosition: 3,
                 keyType: 'i64',
                 lowerBound: 7,
                 upperBound: 7,
@@ -1407,52 +1429,52 @@ describe('Dacproposals', () => {
   });
 });
 // context('delegate categories', async () => {
-// context(
-//   'created proposal but still needing a vote for approval',
-//   async () => {
-//     context(
-//       'delegate category for a vote with pre-existing vote should have no effect',
-//       async () => {
+//   context(
+//     'created proposal but still needing a vote for approval',
+//     async () => {
+//       context(
+//         'delegate category for a vote with pre-existing vote should have no effect',
+//         async () => {
+//           it('should fail with insufficient votes', async () => {});
+//         }
+//       );
+//       context('delegated vote with non-matching category', async () => {
 //         it('should fail with insufficient votes', async () => {});
-//       }
-//     );
-//     context('delegated vote with non-matching category', async () => {
-//       it('should fail with insufficient votes', async () => {});
-//     });
-//     context('delegated category with matching category', async () => {
-//       it('should succeed to allow start work', async () => {});
-//     });
-//   }
-// );
-// context(
-//   'created a proposal but still need one vote for approval for categories',
-//   async () => {
-//     context(
-//       'delegated category with already voted custodian should have no effect',
-//       async () => {
+//       });
+//       context('delegated category with matching category', async () => {
+//         it('should succeed to allow start work', async () => {});
+//       });
+//     }
+//   );
+//   context(
+//     'created a proposal but still need one vote for approval for categories',
+//     async () => {
+//       context(
+//         'delegated category with already voted custodian should have no effect',
+//         async () => {
+//           it('should fail with insufficient votes', async () => {});
+//         }
+//       );
+//       context('delegated category with non-matching category', async () => {
 //         it('should fail with insufficient votes', async () => {});
-//       }
-//     );
-//     context('delegated category with non-matching category', async () => {
-//       it('should fail with insufficient votes', async () => {});
-//     });
-//     context('delegated category with matching category', async () => {
-//       it('should succeed', async () => {});
-//     });
-//   }
-// );
-// context(
-//   'created a proposal but still need 2 votes for approval for complex case',
-//   async () => {
-//     context(
-//       'delegated vote with matching proposal and category',
-//       async () => {
-//         it('should succeed when attempting start work', async () => {});
-//         it('propvotes should contain expected rows', async () => {});
-//       }
-//     );
-//   }
-// );
+//       });
+//       context('delegated category with matching category', async () => {
+//         it('should succeed', async () => {});
+//       });
+//     }
+//   );
+//   context(
+//     'created a proposal but still need 2 votes for approval for complex case',
+//     async () => {
+//       context(
+//         'delegated vote with matching proposal and category',
+//         async () => {
+//           it('should succeed when attempting start work', async () => {});
+//           it('propvotes should contain expected rows', async () => {});
+//         }
+//       );
+//     }
+//   );
 //   context('undelegate vote', async () => {
 //     context('with wrong auth', async () => {
 //       it('should fail with wrong auth', async () => {});
