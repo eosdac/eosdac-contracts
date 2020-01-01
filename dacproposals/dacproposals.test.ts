@@ -43,6 +43,8 @@ describe.only('Dacproposals', () => {
   let regMembers: l.Account[];
   let dacId = 'popdac';
   let delegateeCustodian: l.Account;
+  let proposeApproveTheshold = 4;
+  let category = 3;
 
   before(async () => {
     shared = await SharedTestObjects.getInstance();
@@ -88,7 +90,7 @@ describe.only('Dacproposals', () => {
       it('should succeed', async () => {
         await shared.dacproposals_contract.updateconfig(
           {
-            proposal_threshold: 4,
+            proposal_threshold: proposeApproveTheshold,
             finalize_threshold: 3,
           },
           dacId,
@@ -100,7 +102,7 @@ describe.only('Dacproposals', () => {
           shared.dacproposals_contract.configTable({ scope: dacId }),
           [
             {
-              proposal_threshold: 4,
+              proposal_threshold: proposeApproveTheshold,
               finalize_threshold: 3,
             },
           ]
@@ -120,7 +122,7 @@ describe.only('Dacproposals', () => {
             { quantity: '100.0000 EOS', contract: 'eosio.token' },
             proposalHash,
             0,
-            2,
+            category,
             130,
             150,
             dacId
@@ -140,7 +142,7 @@ describe.only('Dacproposals', () => {
               { quantity: '100.0000 EOS', contract: 'eosio.token' },
               proposalHash,
               0,
-              2,
+              category,
               130,
               150,
               dacId,
@@ -161,7 +163,7 @@ describe.only('Dacproposals', () => {
               { quantity: '100.0000 EOS', contract: 'eosio.token' },
               proposalHash,
               0,
-              2,
+              category,
               130,
               150,
               dacId,
@@ -182,7 +184,7 @@ describe.only('Dacproposals', () => {
               { quantity: '100.0000 sdff', contract: 'eosio.token' },
               proposalHash,
               0,
-              2,
+              category,
               130,
               150,
               dacId,
@@ -203,7 +205,7 @@ describe.only('Dacproposals', () => {
               { quantity: '100.0000', contract: 'eosio.token' },
               proposalHash,
               0,
-              2,
+              category,
               130,
               150,
               dacId,
@@ -224,7 +226,7 @@ describe.only('Dacproposals', () => {
               { quantity: '-100.0000 EOS', contract: 'eosio.token' },
               proposalHash,
               0,
-              2,
+              category,
               130,
               150,
               dacId,
@@ -245,7 +247,7 @@ describe.only('Dacproposals', () => {
               { quantity: '100.0000 EOS', contract: 'eosio.token' },
               proposalHash,
               0,
-              2,
+              category,
               130,
               150,
               dacId,
@@ -266,7 +268,7 @@ describe.only('Dacproposals', () => {
               { quantity: '100.0000 EOS', contract: 'eosio.token' },
               proposalHash,
               0,
-              2,
+              category,
               130,
               150,
               dacId,
@@ -290,7 +292,7 @@ describe.only('Dacproposals', () => {
               },
               proposalHash,
               0,
-              2,
+              category,
               130,
               150,
               dacId,
@@ -311,7 +313,7 @@ describe.only('Dacproposals', () => {
               { quantity: '100.0000 EOS', contract: 'eosio.token' },
               proposalHash,
               16,
-              2,
+              category,
               130,
               150,
               dacId,
@@ -505,7 +507,7 @@ describe.only('Dacproposals', () => {
             { quantity: '101.0000 EOS', contract: 'eosio.token' },
             'asdfasdfasdfasdfasdfasdfasdffdsa',
             1, // proposal id
-            3,
+            category,
             130, // job duration
             150, // approval duration
             dacId,
@@ -815,7 +817,7 @@ describe.only('Dacproposals', () => {
     });
     context('with enough votes to approve the proposal', async () => {
       before(async () => {
-        for (let index = 0; index < 4; index++) {
+        for (let index = 0; index < proposeApproveTheshold; index++) {
           const custodian = propDacCustodians[index];
           await shared.dacproposals_contract.voteprop(
             custodian.name,
@@ -969,7 +971,7 @@ describe.only('Dacproposals', () => {
             { quantity: '105.0000 EOS', contract: 'eosio.token' },
             'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
             5, // proposal id
-            3,
+            category,
             130, // job duration
             3, // approval duration. Specify short duration so that it expires for expired tests.
             dacId,
@@ -1314,7 +1316,7 @@ describe.only('Dacproposals', () => {
           { quantity: '106.0000 EOS', contract: 'eosio.token' },
           'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
           7, // proposal id
-          3,
+          category,
           130, // job duration
           3, // approval duration
           dacId,
@@ -1322,7 +1324,7 @@ describe.only('Dacproposals', () => {
         ),
         ''
       ).to.eventually.be.fulfilled;
-      for (let index = 0; index < 4; index++) {
+      for (let index = 0; index < proposeApproveTheshold; index++) {
         const custodian = propDacCustodians[index];
         await debugPromise(
           shared.dacproposals_contract.voteprop(
@@ -1391,7 +1393,7 @@ describe.only('Dacproposals', () => {
               upperBound: 7,
             });
             console.log(`votttee: ${JSON.stringify(result)}`);
-            chai.expect(result.rows.length).equal(4);
+            chai.expect(result.rows.length).equal(proposeApproveTheshold);
           });
           it('should succeed', async () => {
             await chai.expect(
@@ -1427,61 +1429,233 @@ describe.only('Dacproposals', () => {
       });
     });
   });
+  context('delegate categories', async () => {
+    let propId = 71;
+    context(
+      'created proposal but still needing one vote for approval',
+      async () => {
+        before(async () => {
+          await chai.expect(
+            shared.dacproposals_contract.createprop(
+              proposer1Account.name,
+              'delegate categories_title',
+              'delegate categories_summary',
+              arbitrator.name,
+              { quantity: '106.0000 EOS', contract: 'eosio.token' },
+              'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
+              propId, // proposal id
+              category, // category number
+              130, // job duration
+              3000, // approval duration
+              dacId,
+              { from: proposer1Account }
+            ),
+            ''
+          ).to.eventually.be.fulfilled;
+          for (let index = 0; index < proposeApproveTheshold - 1; index++) {
+            const custodian = propDacCustodians[index];
+            await debugPromise(
+              shared.dacproposals_contract.voteprop(
+                custodian.name,
+                propId, // proposal id
+                VoteType.proposal_approve,
+                dacId,
+                {
+                  auths: [
+                    {
+                      actor: custodian.name,
+                      permission: 'active',
+                    },
+                    {
+                      actor: shared.auth_account.name,
+                      permission: 'active',
+                    },
+                  ],
+                }
+              ),
+              `vote approve for proposal ${propId}`
+            );
+          }
+        });
+        context(
+          'delegate category for a vote with pre-existing vote should have no effect',
+          async () => {
+            before(async () => {
+              await debugPromise(
+                shared.dacproposals_contract.delegatecat(
+                  propDacCustodians[1].name,
+                  category,
+                  propDacCustodians[2].name,
+                  dacId,
+                  {
+                    auths: [
+                      {
+                        actor: propDacCustodians[1].name,
+                        permission: 'active',
+                      },
+                      {
+                        actor: shared.auth_account.name,
+                        permission: 'active',
+                      },
+                    ],
+                  }
+                ),
+                'delegate category for voter with a pre-exisiting direct vote'
+              );
+            });
+            it('should fail with insufficient votes', async () => {
+              await l.assertEOSErrorIncludesMessage(
+                shared.dacproposals_contract.startwork(
+                  propId, // proposal id
+                  dacId,
+                  {
+                    auths: [
+                      {
+                        actor: proposer1Account.name,
+                        permission: 'active',
+                      },
+                      {
+                        actor: shared.auth_account.name,
+                        permission: 'active',
+                      },
+                    ],
+                  }
+                ),
+                'ERR::STARTWORK_INSUFFICIENT_VOTES'
+              );
+            });
+          }
+        );
+        context('delegated vote with non-matching category', async () => {
+          before(async () => {
+            await debugPromise(
+              shared.dacproposals_contract.delegatecat(
+                propDacCustodians[3].name,
+                90, // non-matching category
+                propDacCustodians[2].name,
+                dacId,
+                {
+                  auths: [
+                    {
+                      actor: propDacCustodians[1].name,
+                      permission: 'active',
+                    },
+                    {
+                      actor: shared.auth_account.name,
+                      permission: 'active',
+                    },
+                  ],
+                }
+              ),
+              'delegate category to a non-mathing category'
+            );
+          });
+          it('should fail with insufficient votes', async () => {
+            await l.assertEOSErrorIncludesMessage(
+              shared.dacproposals_contract.startwork(
+                propId, // proposal id
+                dacId,
+                {
+                  auths: [
+                    {
+                      actor: proposer1Account.name,
+                      permission: 'active',
+                    },
+                    {
+                      actor: shared.auth_account.name,
+                      permission: 'active',
+                    },
+                  ],
+                }
+              ),
+              'ERR::STARTWORK_INSUFFICIENT_VOTES'
+            );
+          });
+        });
+        context('delegated category with matching category', async () => {
+          before(async () => {
+            await debugPromise(
+              shared.dacproposals_contract.delegatecat(
+                propDacCustodians[3].name,
+                category, // non-matching category
+                propDacCustodians[2].name,
+                dacId,
+                {
+                  auths: [
+                    {
+                      actor: propDacCustodians[1].name,
+                      permission: 'active',
+                    },
+                    {
+                      actor: shared.auth_account.name,
+                      permission: 'active',
+                    },
+                  ],
+                }
+              ),
+              'delegate matching category to an existing voter'
+            );
+          });
+          it('should succeed to allow start work', async () => {
+            chai.expect(
+              shared.dacproposals_contract.startwork(
+                propId, // proposal id
+                dacId,
+                {
+                  auths: [
+                    {
+                      actor: proposer1Account.name,
+                      permission: 'active',
+                    },
+                    {
+                      actor: shared.auth_account.name,
+                      permission: 'active',
+                    },
+                  ],
+                }
+              )
+            ).to.be.fulfilled;
+          });
+        });
+      }
+    );
+    context(
+      'created a proposal but still need one vote for approval for categories',
+      async () => {
+        context(
+          'delegated category with already voted custodian should have no effect',
+          async () => {
+            it('should fail with insufficient votes', async () => {});
+          }
+        );
+        context('delegated category with non-matching category', async () => {
+          it('should fail with insufficient votes', async () => {});
+        });
+        context('delegated category with matching category', async () => {
+          it('should succeed', async () => {});
+        });
+      }
+    );
+    context(
+      'created a proposal but still need 2 votes for approval for complex case',
+      async () => {
+        context(
+          'delegated vote with matching proposal and category',
+          async () => {
+            it('should succeed when attempting start work', async () => {});
+            it('propvotes should contain expected rows', async () => {});
+          }
+        );
+      }
+    );
+    context('undelegate vote', async () => {
+      context('with wrong auth', async () => {
+        it('should fail with wrong auth', async () => {});
+      });
+      context('with correct auth', async () => {
+        it('should succeed to undelegate', async () => {});
+        it('propvotes should have the correct rows', async () => {});
+      });
+    });
+  });
 });
-// context('delegate categories', async () => {
-//   context(
-//     'created proposal but still needing a vote for approval',
-//     async () => {
-//       context(
-//         'delegate category for a vote with pre-existing vote should have no effect',
-//         async () => {
-//           it('should fail with insufficient votes', async () => {});
-//         }
-//       );
-//       context('delegated vote with non-matching category', async () => {
-//         it('should fail with insufficient votes', async () => {});
-//       });
-//       context('delegated category with matching category', async () => {
-//         it('should succeed to allow start work', async () => {});
-//       });
-//     }
-//   );
-//   context(
-//     'created a proposal but still need one vote for approval for categories',
-//     async () => {
-//       context(
-//         'delegated category with already voted custodian should have no effect',
-//         async () => {
-//           it('should fail with insufficient votes', async () => {});
-//         }
-//       );
-//       context('delegated category with non-matching category', async () => {
-//         it('should fail with insufficient votes', async () => {});
-//       });
-//       context('delegated category with matching category', async () => {
-//         it('should succeed', async () => {});
-//       });
-//     }
-//   );
-//   context(
-//     'created a proposal but still need 2 votes for approval for complex case',
-//     async () => {
-//       context(
-//         'delegated vote with matching proposal and category',
-//         async () => {
-//           it('should succeed when attempting start work', async () => {});
-//           it('propvotes should contain expected rows', async () => {});
-//         }
-//       );
-//     }
-//   );
-//   context('undelegate vote', async () => {
-//     context('with wrong auth', async () => {
-//       it('should fail with wrong auth', async () => {});
-//     });
-//     context('with correct auth', async () => {
-//       it('should succeed to undelegate', async () => {});
-//       it('propvotes should have the correct rows', async () => {});
-//     });
-//   });
-// });
