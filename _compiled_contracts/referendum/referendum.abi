@@ -49,7 +49,7 @@
             "fields": [
                 {
                     "name": "referendum_id",
-                    "type": "uint64"
+                    "type": "name"
                 },
                 {
                     "name": "dac_id",
@@ -117,7 +117,25 @@
             "fields": [
                 {
                     "name": "referendum_id",
-                    "type": "uint64"
+                    "type": "name"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "expired",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposer",
+                    "type": "name"
+                },
+                {
+                    "name": "referendum_id",
+                    "type": "name"
                 },
                 {
                     "name": "dac_id",
@@ -244,12 +262,30 @@
             ]
         },
         {
+            "name": "proposed",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposer",
+                    "type": "name"
+                },
+                {
+                    "name": "referendum_id",
+                    "type": "name"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "referendum_data",
             "base": "",
             "fields": [
                 {
                     "name": "referendum_id",
-                    "type": "uint64"
+                    "type": "name"
                 },
                 {
                     "name": "proposer",
@@ -337,7 +373,7 @@
             "fields": [
                 {
                     "name": "referendum_id",
-                    "type": "uint64"
+                    "type": "name"
                 },
                 {
                     "name": "dac_id",
@@ -355,7 +391,7 @@
                 },
                 {
                     "name": "referendum_id",
-                    "type": "uint64"
+                    "type": "name"
                 },
                 {
                     "name": "vote",
@@ -399,9 +435,19 @@
             "ricardian_contract": "---\nspec_version: \"0.2.0\"\ntitle: Execute a Referendum\nsummary: 'Execute a referendum for DAC ID {{ nowrap dac_id }} with ID \"{{ referendum_id }}\"'\nicon: https://eosdac.io/assets/contracts/generic.png#00da1afc6464028359b3a02ffbdb59e1ea79fa261b5523ce7ac174cc0ef27bbd\n---\n\nOnce a referendum has passed the threshold for acceptance, this action will execute it.\n\nDepending on the type of the referendium, this will have a different action.\n\n**Binding** : This will execute the action provided in the referendum.\n\n**Semi-binding** : This will propose a multisig for the custodians to review.\n\n**Opinion** : Nothing will be done."
         },
         {
+            "name": "expired",
+            "type": "expired",
+            "ricardian_contract": ""
+        },
+        {
             "name": "propose",
             "type": "propose",
             "ricardian_contract": "---\nspec_version: \"0.2.0\"\ntitle: Propose a Referendum\nsummary: 'Propose a referendum for DAC ID {{ nowrap dac_id }} with title \"{{ title }}\"'\nicon: https://eosdac.io/assets/contracts/generic.png#00da1afc6464028359b3a02ffbdb59e1ea79fa261b5523ce7ac174cc0ef27bbd\n---\n\nThis will propose a referendum with title \"{{ title }}\", there may be a fee to pay for this, depending on the configuration of the DAC."
+        },
+        {
+            "name": "proposed",
+            "type": "proposed",
+            "ricardian_contract": ""
         },
         {
             "name": "refund",

@@ -124,7 +124,7 @@ CONTRACT referendum : public contract {
 
 
         struct [[eosio::table("referenda"), eosio::contract("referendum")]] referendum_data {
-            uint64_t                    referendum_id;
+            name                        referendum_id;
             name                        proposer;
             uint8_t                     type;
             uint8_t                     voting_type; // 0 = token, 1 = account
@@ -136,7 +136,7 @@ CONTRACT referendum : public contract {
             time_point_sec              expires;
             vector<action>              acts;
 
-            uint64_t primary_key() const { return referendum_id; }
+            uint64_t primary_key() const { return referendum_id.value; }
             uint64_t by_proposer() const { return proposer.value; }
         };
         /* Have to use EOSLIB_SERIALIZE to work around problems with boost deserialization */
@@ -186,9 +186,9 @@ CONTRACT referendum : public contract {
             return (res > 0);
         }
         bool hasAuth(vector<action> acts);
-        uint8_t calculateStatus(uint64_t referendum_id, name dac_id);
+        uint8_t calculateStatus(name referendum_id, name dac_id);
         void proposeMsig(referendum_data ref, name dac_id);
-        uint64_t nextID(checksum256 trxid);
+        name nextID(checksum256 trxid);
         void checkDAC(name dac_id);
 
 
@@ -200,12 +200,16 @@ CONTRACT referendum : public contract {
         ACTION updateconfig(config_item config, name dac_id);
 
         ACTION propose(name proposer, uint8_t type, uint8_t voting_type, string title, string content, name dac_id, vector<action> acts);
-        ACTION cancel(uint64_t referendum_id, name dac_id);
-        ACTION vote(name voter, uint64_t referendum_id, uint8_t vote, name dac_id); // vote: 0=no vote (remove), 1=yes, 2=no, 3=abstain
-        ACTION exec(uint64_t referendum_id, name dac_id);  // Exec the action if type is binding or semi-binding
+        ACTION cancel(name referendum_id, name dac_id);
+        ACTION vote(name voter, name referendum_id, uint8_t vote, name dac_id); // vote: 0=no vote (remove), 1=yes, 2=no, 3=abstain
+        ACTION exec(name referendum_id, name dac_id);  // Exec the action if type is binding or semi-binding
         ACTION clean(name account, name dac_id);
         ACTION refund(name account);
-        ACTION updatestatus(uint64_t referendum_id, name dac_id);
+        ACTION updatestatus(name referendum_id, name dac_id);
+
+        // Notifications
+        ACTION proposed(name proposer, name referendum_id, name dac_id);
+        ACTION expired(name proposer, name referendum_id, name dac_id);
 
         // Observation of stake deltas
         ACTION stakeobsv(vector<account_stake_delta> stake_deltas, name dac_id);
