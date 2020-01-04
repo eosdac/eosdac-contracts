@@ -85,7 +85,7 @@ export class SharedTestObjects {
   private async initAndGetSharedObjects() {
     // await sleep(4500);
     EOSManager.initWithDefaults();
-    await sleep(6000);
+    await sleep(16000);
 
     this.auth_account = await debugPromise(
       new_account('eosdacauth'),

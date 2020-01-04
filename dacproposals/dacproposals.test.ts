@@ -961,6 +961,7 @@ describe.only('Dacproposals', () => {
       });
     });
     context('proposal with short expiry', async () => {
+      let propId = 5;
       it('should create a proposal with a short expiry', async () => {
         await chai.expect(
           shared.dacproposals_contract.createprop(
@@ -970,7 +971,7 @@ describe.only('Dacproposals', () => {
             arbitrator.name,
             { quantity: '105.0000 EOS', contract: 'eosio.token' },
             'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
-            5, // proposal id
+            propId, // proposal id
             category,
             130, // job duration
             3, // approval duration. Specify short duration so that it expires for expired tests.
@@ -984,7 +985,7 @@ describe.only('Dacproposals', () => {
         await chai.expect(
           shared.dacproposals_contract.voteprop(
             propDacCustodians[0].name,
-            5,
+            propId,
             VoteType.proposal_deny,
             dacId,
             {
@@ -1006,7 +1007,7 @@ describe.only('Dacproposals', () => {
         it('should fail with insufficient votes', async () => {
           await l.assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.startwork(
-              5, // proposal id
+              propId, // proposal id
               dacId,
               {
                 auths: [
@@ -1032,7 +1033,7 @@ describe.only('Dacproposals', () => {
         it('should fail with expired error', async () => {
           await l.assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.startwork(
-              5, // proposal id
+              propId, // proposal id
               dacId,
               {
                 auths: [
@@ -1051,65 +1052,66 @@ describe.only('Dacproposals', () => {
           );
         });
       });
-    });
-  });
-  context('clear expired proposals', async () => {
-    it('should have the 10 of votes before clearing', async () => {
-      await l.assertRowCount(
-        shared.dacproposals_contract.propvotesTable({
-          scope: dacId,
-          indexPosition: 3,
-          keyType: 'i64',
-          lowerBound: 5,
-          upperBound: 5,
-        }),
-        1
-      );
-    });
-    it('should have the correct number of proposals before clearing', async () => {
-      await l.assertRowCount(
-        shared.dacproposals_contract.proposalsTable({
-          scope: dacId,
-          lowerBound: 5,
-          upperBound: 5,
-        }),
-        1
-      );
-    });
-    it('should now allow to clear unexpired proposals', async () => {
-      await l.assertEOSErrorIncludesMessage(
-        shared.dacproposals_contract.clearexpprop(0, dacId, {
-          from: proposer1Account,
-        }),
-        'ERR::PROPOSAL_NOT_EXPIRED'
-      );
-    });
-    it('should clear the expired proposals', async () => {
-      await chai.expect(shared.dacproposals_contract.clearexpprop(5, dacId)).to
-        .eventually.fulfilled;
-    });
-    context('After clearing expired proposals', async () => {
-      it('should have the correct number of proposals', async () => {
-        await l.assertRowCount(
-          shared.dacproposals_contract.proposalsTable({
-            scope: dacId,
-            lowerBound: 5,
-            upperBound: 5,
-          }),
-          0
-        );
-      });
-      it('should have the correct number of votes', async () => {
-        await l.assertRowCount(
-          shared.dacproposals_contract.propvotesTable({
-            scope: dacId,
-            indexPosition: 3,
-            keyType: 'i64',
-            lowerBound: 5,
-            upperBound: 5,
-          }),
-          0
-        );
+      context('clear expired proposals', async () => {
+        it('should have the 10 of votes before clearing', async () => {
+          await l.assertRowCount(
+            shared.dacproposals_contract.propvotesTable({
+              scope: dacId,
+              indexPosition: 3,
+              keyType: 'i64',
+              lowerBound: propId,
+              upperBound: propId,
+            }),
+            1
+          );
+        });
+        it('should have the correct number of proposals before clearing', async () => {
+          await l.assertRowCount(
+            shared.dacproposals_contract.proposalsTable({
+              scope: dacId,
+              lowerBound: propId,
+              upperBound: propId,
+            }),
+            1
+          );
+        });
+        it('should now allow to clear unexpired proposals', async () => {
+          await l.assertEOSErrorIncludesMessage(
+            shared.dacproposals_contract.clearexpprop(0, dacId, {
+              from: proposer1Account,
+            }),
+            'ERR::PROPOSAL_NOT_EXPIRED'
+          );
+        });
+        it('should clear the expired proposals', async () => {
+          await chai.expect(
+            shared.dacproposals_contract.clearexpprop(propId, dacId)
+          ).to.eventually.fulfilled;
+        });
+        context('After clearing expired proposals', async () => {
+          it('should have the correct number of proposals', async () => {
+            await l.assertRowCount(
+              shared.dacproposals_contract.proposalsTable({
+                scope: dacId,
+                lowerBound: propId,
+                upperBound: propId,
+              }),
+              0
+            );
+          });
+          it('should have the correct number of votes', async () => {
+            await l.assertRowCount(
+              shared.dacproposals_contract.propvotesTable({
+                scope: dacId,
+                indexPosition: 3,
+                keyType: 'i64',
+                lowerBound: propId,
+                upperBound: propId,
+              }),
+              0
+            );
+          });
+        });
       });
     });
   });
@@ -1619,42 +1621,224 @@ describe.only('Dacproposals', () => {
         });
       }
     );
-    context(
-      'created a proposal but still need one vote for approval for categories',
-      async () => {
-        context(
-          'delegated category with already voted custodian should have no effect',
-          async () => {
-            it('should fail with insufficient votes', async () => {});
-          }
-        );
-        context('delegated category with non-matching category', async () => {
-          it('should fail with insufficient votes', async () => {});
-        });
-        context('delegated category with matching category', async () => {
-          it('should succeed', async () => {});
-        });
-      }
-    );
+    // context(
+    //   'created a proposal but still need one vote for approval for categories',
+    //   async () => {
+    //     context(
+    //       'delegated category with already voted custodian should have no effect',
+    //       async () => {
+    //         it('should fail with insufficient votes', async () => {
+    //           chai.expect(false).to.eq(true);
+    //         });
+    //       }
+    //     );
+    //     context('delegated category with non-matching category', async () => {
+    //       it('should fail with insufficient votes', async () => {});
+    //     });
+    //     context('delegated category with matching category', async () => {
+    //       it('should succeed', async () => {});
+    //     });
+    //   }
+    // );
     context(
       'created a proposal but still need 2 votes for approval for complex case',
       async () => {
+        let propId = 91;
+        before(async () => {
+          await chai.expect(
+            shared.dacproposals_contract.createprop(
+              proposer1Account.name,
+              'delegate complex title',
+              'delegate complex_summary',
+              arbitrator.name,
+              { quantity: '106.0000 EOS', contract: 'eosio.token' },
+              'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
+              propId, // proposal id
+              category, // category number
+              130, // job duration
+              3000, // approval duration
+              dacId,
+              { from: proposer1Account }
+            ),
+            ''
+          ).to.eventually.be.fulfilled;
+          for (let index = 0; index < proposeApproveTheshold - 2; index++) {
+            const custodian = propDacCustodians[index];
+            await debugPromise(
+              shared.dacproposals_contract.voteprop(
+                custodian.name,
+                propId, // proposal id
+                VoteType.proposal_approve,
+                dacId,
+                {
+                  auths: [
+                    {
+                      actor: custodian.name,
+                      permission: 'active',
+                    },
+                    {
+                      actor: shared.auth_account.name,
+                      permission: 'active',
+                    },
+                  ],
+                }
+              ),
+              `vote approve for proposal ${propId}`
+            );
+          }
+        });
         context(
           'delegated vote with matching proposal and category',
           async () => {
-            it('should succeed when attempting start work', async () => {});
-            it('propvotes should contain expected rows', async () => {});
+            before(async () => {
+              await debugPromise(
+                shared.dacproposals_contract.delegatecat(
+                  propDacCustodians[2].name,
+                  category, // matching category
+                  propDacCustodians[1].name,
+                  dacId,
+                  {
+                    auths: [
+                      {
+                        actor: propDacCustodians[2].name,
+                        permission: 'active',
+                      },
+                      {
+                        actor: shared.auth_account.name,
+                        permission: 'active',
+                      },
+                    ],
+                  }
+                ),
+                'delegate matching category to an existing voter'
+              );
+              await chai.expect(
+                shared.dacproposals_contract.delegatevote(
+                  propDacCustodians[3].name,
+                  propId,
+                  propDacCustodians[1].name,
+                  dacId,
+                  {
+                    auths: [
+                      {
+                        actor: propDacCustodians[3].name,
+                        permission: 'active',
+                      },
+                      {
+                        actor: shared.auth_account.name,
+                        permission: 'active',
+                      },
+                    ],
+                  }
+                )
+              ).eventually.be.fulfilled;
+            });
+            it('should succeed when attempting start work', async () => {
+              chai.expect(
+                shared.dacproposals_contract.startwork(
+                  propId, // proposal id
+                  dacId,
+                  {
+                    auths: [
+                      {
+                        actor: proposer1Account.name,
+                        permission: 'active',
+                      },
+                      {
+                        actor: shared.auth_account.name,
+                        permission: 'active',
+                      },
+                    ],
+                  }
+                )
+              ).to.be.fulfilled;
+            });
+            it('propvotes should contain 3 votes for this proposal - one as a delegated vote', async () => {
+              await l.assertRowCount(
+                shared.dacproposals_contract.propvotesTable({
+                  scope: dacId,
+                  indexPosition: 3,
+                  keyType: 'i64',
+                  lowerBound: propId,
+                  upperBound: propId,
+                }),
+                3
+              );
+            });
           }
         );
       }
     );
     context('undelegate vote', async () => {
       context('with wrong auth', async () => {
-        it('should fail with wrong auth', async () => {});
+        it('should fail with wrong auth', async () => {
+          l.assertMissingAuthority(
+            shared.dacproposals_contract.undelegateca(
+              propDacCustodians[2].name,
+              category, // matching category
+              dacId,
+              {
+                auths: [
+                  {
+                    actor: propDacCustodians[1].name,
+                    permission: 'active',
+                  },
+                  {
+                    actor: shared.auth_account.name,
+                    permission: 'active',
+                  },
+                ],
+              }
+            )
+          );
+        });
+        it('should contain the delegated category votes', async () => {
+          await l.assertRowCount(
+            shared.dacproposals_contract.propvotesTable({
+              scope: dacId,
+              indexPosition: 4,
+              keyType: 'i64',
+              lowerBound: category,
+              upperBound: category,
+            }),
+            2
+          );
+        });
       });
-      context('with correct auth', async () => {
-        it('should succeed to undelegate', async () => {});
-        it('propvotes should have the correct rows', async () => {});
+    });
+    context('with correct auth', async () => {
+      it('should succeed to undelegate', async () => {
+        chai.expect(
+          shared.dacproposals_contract.undelegateca(
+            propDacCustodians[2].name,
+            category, // matching category
+            dacId,
+            {
+              auths: [
+                {
+                  actor: propDacCustodians[2].name,
+                  permission: 'active',
+                },
+                {
+                  actor: shared.auth_account.name,
+                  permission: 'active',
+                },
+              ],
+            }
+          )
+        ).to.eventually.be.fulfilled;
+      });
+      it('should have removed the delegated category votes', async () => {
+        await l.assertRowCount(
+          shared.dacproposals_contract.propvotesTable({
+            scope: dacId,
+            indexPosition: 4,
+            keyType: 'i64',
+            lowerBound: category,
+            upperBound: category,
+          }),
+          1
+        );
       });
     });
   });
