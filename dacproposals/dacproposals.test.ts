@@ -34,7 +34,7 @@ enum ProposalState {
 
 let proposalHash = 'jhsdfkjhsdfkjhkjsdf';
 
-describe.only('Dacproposals', () => {
+describe('Dacproposals', () => {
   let shared: SharedTestObjects;
   let otherAccount: l.Account;
   let proposer1Account: l.Account;

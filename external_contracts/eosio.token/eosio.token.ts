@@ -4,7 +4,7 @@
 // Any changes you make will be overwritten by Lamington
 // =====================================================
 
-import { Account, Contract, GetTableRowsOptions, ExtendedAsset, ExtendedSymbol, TableRowsResult } from 'lamington';
+import { Account, Contract, GetTableRowsOptions, ExtendedAsset, ExtendedSymbol, ActorPermission, TableRowsResult } from 'lamington';
 
 // Table row types
 export interface EosioTokenAccount {
