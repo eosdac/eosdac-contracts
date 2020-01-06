@@ -20,6 +20,7 @@ namespace eosdac {
             ESCROW = 7,
             VOTE_WEIGHT = 8,
             ACTIVATION = 9,
+            REFERENDUM = 10,
             EXTERNAL = 254,
             OTHER = 255
         };
@@ -76,7 +77,7 @@ namespace eosdac {
             dac_table dactable = dac_table("dacdirectory"_n, "dacdirectory"_n.value);
             auto index = dactable.get_index<"bysymbol"_n>();
             auto dac_idx = index.find(eosdac::raw_from_extended_symbol(sym));
-            print("\ndac_for_symbol: ", sym, "\n"); 
+            print("\ndac_for_symbol: ", sym, "\n");
             eosio::check(dac_idx != index.end() && dac_idx->symbol == sym, "ERR::DAC_NOT_FOUND_SYMBOL::DAC not found in directory for the given symbol");
             return *dac_idx;
         }
