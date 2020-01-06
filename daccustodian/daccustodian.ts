@@ -261,6 +261,12 @@ export interface DaccustodianVotecuste {
 	dac_id: string|number;
 }
 
+export interface DaccustodianVoteproxy {
+	voter: string|number;
+	proxy: string|number;
+	dac_id: string|number;
+}
+
 export interface DaccustodianWeightobsv {
 	account_weight_deltas: Array<string>;
 	dac_id: string|number;
@@ -312,6 +318,7 @@ export interface Daccustodian extends Contract {
 	updatereqpay(cand: string|number, requestedpay: string, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	votecust(voter: string|number, newvotes: Array<string|number>, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	votecuste(voter: string|number, newvotes: Array<string|number>, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	voteproxy(voter: string|number, proxy: string|number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	weightobsv(account_weight_deltas: Array<DaccustodianAccountWeightDelta>, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	withdrawcand(cand: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	withdrawcane(cand: string|number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
