@@ -569,8 +569,8 @@ describe('Daccustodian', () => {
                   : 1;
               }).reverse();
               chai.expect(rs[0].total_votes).to.equal(3200000000);
-              chai.expect(rs[1].total_votes).to.equal(1600000000);
-              chai.expect(rs[2].total_votes).to.equal(1600000000);
+              chai.expect(rs[1].total_votes).to.equal(3200000000);
+              chai.expect(rs[2].total_votes).to.equal(3200000000);
               chai.expect(rs[3].total_votes).to.equal(1600000000);
               chai.expect(rs[4].total_votes).to.equal(1600000000);
             });
@@ -735,6 +735,8 @@ describe('Daccustodian', () => {
   });
   context('resign custodian', () => {
     let dacId = 'resigndac';
+    let regMembers: l.Account[];
+    let existing_candidates: l.Account[];
     before(async () => {
       await shared.initDac(dacId, '4,RESDAC', '1000000.0000 RESDAC');
       await shared.updateconfig(dacId, '12.0000 RESDAC');
@@ -743,12 +745,18 @@ describe('Daccustodian', () => {
         '4,RESDAC',
         { from: shared.auth_account }
       );
-    });
-    it('should fail with incorrect auth returning auth error', async () => {
-      let existing_candidates = await shared.getStakeObservedCandidates(
+      regMembers = await shared.getRegMembers(dacId, '20000.0000 RESDAC');
+      existing_candidates = await shared.getStakeObservedCandidates(
         dacId,
         '12.0000 RESDAC'
       );
+
+      await shared.voteForCustodians(regMembers, existing_candidates, dacId);
+      await shared.daccustodian_contract.newperiode('resigndac', dacId, {
+        from: regMembers[0],
+      });
+    });
+    it('should fail with incorrect auth returning auth error', async () => {
       let electedCandidateToResign = existing_candidates[0];
       await l.assertMissingAuthority(
         shared.daccustodian_contract.resigncuste(
@@ -760,53 +768,87 @@ describe('Daccustodian', () => {
     });
     context('with correct auth', async () => {
       context('for a currently elected custodian', async () => {
-        it('should succeed with lockup of stake', async () => {
-          let elected_candidates = await shared.getStakeObservedCandidates(
-            dacId,
-            '12.0000 RESDAC'
-          );
-          let regMembers = await shared.getRegMembers(
-            dacId,
-            '20000.0000 RESDAC'
-          );
-          let electedCandidateToResign = elected_candidates[3];
-          await shared.voteForCustodians(regMembers, elected_candidates, dacId);
-
-          await shared.daccustodian_contract.newperiode(
-            'new dac first period',
-            dacId,
-            {
-              from: regMembers[0],
-            }
-          );
-          await shared.daccustodian_contract.resigncuste(
-            electedCandidateToResign.name,
-            dacId,
-            {
-              auths: [
-                { actor: electedCandidateToResign.name, permission: 'active' },
-                { actor: shared.auth_account.name, permission: 'active' },
-              ],
-            }
-          );
-          let candidates = await shared.daccustodian_contract.candidatesTable({
-            scope: dacId,
-            limit: 20,
-            lowerBound: electedCandidateToResign.name,
-            upperBound: electedCandidateToResign.name,
+        context('without enough elected candidates to replace', async () => {
+          it('should fail with not enough candidates error', async () => {
+            let electedCandidateToResign = existing_candidates[3];
+            // The implementation of `voteForCustodians` only votes for enough to
+            // satisfy the config that requires 5 candidates be voted for.
+            // Therefore the `resigncuste` would fail because a replacement candidate is not
+            // available until another candiate has been voted for.
+            l.assertEOSErrorIncludesMessage(
+              shared.daccustodian_contract.resigncuste(
+                electedCandidateToResign.name,
+                dacId,
+                {
+                  auths: [
+                    {
+                      actor: electedCandidateToResign.name,
+                      permission: 'active',
+                    },
+                    {
+                      actor: shared.auth_account.name,
+                      permission: 'active',
+                    },
+                  ],
+                }
+              ),
+              'NEWPERIOD_NOT_ENOUGH_CANDIDATES'
+            );
           });
-          chai
-            .expect(candidates.rows[0].custodian_end_time_stamp)
-            .to.be.greaterThan(new Date(Date.now()));
+          context(
+            'with enough elected candidates to replace a removed candidate',
+            async () => {
+              before(async () => {
+                await debugPromise(
+                  shared.daccustodian_contract.votecuste(
+                    regMembers[14].name,
+                    [
+                      existing_candidates[0].name,
+                      existing_candidates[1].name,
+                      existing_candidates[2].name,
+                      existing_candidates[5].name,
+                    ],
+                    dacId,
+                    { from: regMembers[14] }
+                  ),
+                  'voting for an extra candidate'
+                );
+              });
+              it('should succeed with lockup of stake', async () => {
+                let electedCandidateToResign = existing_candidates[3];
+
+                await shared.daccustodian_contract.resigncuste(
+                  electedCandidateToResign.name,
+                  dacId,
+                  {
+                    auths: [
+                      {
+                        actor: electedCandidateToResign.name,
+                        permission: 'active',
+                      },
+                      { actor: shared.auth_account.name, permission: 'active' },
+                    ],
+                  }
+                );
+                let candidates = await shared.daccustodian_contract.candidatesTable(
+                  {
+                    scope: dacId,
+                    limit: 20,
+                    lowerBound: electedCandidateToResign.name,
+                    upperBound: electedCandidateToResign.name,
+                  }
+                );
+                chai
+                  .expect(candidates.rows[0].custodian_end_time_stamp)
+                  .to.be.greaterThan(new Date(Date.now()));
+              });
+            }
+          );
         });
       });
       context('for an unelected candidate', async () => {
         it('should fail with not current custodian error', async () => {
-          let unelected_candidates = await shared.getStakeObservedCandidates(
-            dacId,
-            '12.0000 RESDAC'
-          );
-          let unelectedCandidateToResign = unelected_candidates[0];
+          let unelectedCandidateToResign = existing_candidates[6];
           await l.assertEOSErrorIncludesMessage(
             shared.daccustodian_contract.resigncuste(
               unelectedCandidateToResign.name,
@@ -1059,6 +1101,8 @@ describe('Daccustodian', () => {
     let unelectedCandidateToFire: l.Account;
     let electedCandidateToFire: l.Account;
     let unregisteredCandidate: l.Account;
+    let regMembers: l.Account[];
+    let candidates: l.Account[];
 
     before(async () => {
       await shared.initDac(dacId, '4,FCUSTDAC', '1000000.0000 FCUSTDAC');
@@ -1069,9 +1113,9 @@ describe('Daccustodian', () => {
         { from: shared.auth_account }
       );
 
-      let regMembers = await shared.getRegMembers(dacId, '20000.0000 FCUSTDAC');
+      regMembers = await shared.getRegMembers(dacId, '20000.0000 FCUSTDAC');
       unregisteredCandidate = regMembers[0];
-      let candidates = await shared.getStakeObservedCandidates(
+      candidates = await shared.getStakeObservedCandidates(
         dacId,
         '12.0000 FCUSTDAC',
         NUMBER_OF_CANDIDATES + 1
@@ -1098,6 +1142,23 @@ describe('Daccustodian', () => {
     });
     context('with correct auth', async () => {
       context('for a currently elected custodian', async () => {
+        before(async () => {
+          // vote for another candidate to allow enough for replacement after firing
+          await debugPromise(
+            shared.daccustodian_contract.votecuste(
+              regMembers[14].name,
+              [
+                candidates[0].name,
+                candidates[1].name,
+                candidates[2].name,
+                candidates[5].name,
+              ],
+              dacId,
+              { from: regMembers[14] }
+            ),
+            'voting for an extra candidate'
+          );
+        });
         it('should succeed with lockup of stake', async () => {
           await shared.daccustodian_contract.firecuste(
             electedCandidateToFire.name,
