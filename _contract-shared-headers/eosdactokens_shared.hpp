@@ -106,15 +106,14 @@ namespace eosdac {
         return ac.balance;
     }
 
-    asset get_liquid(name owner, name code, symbol_code sym) {
-        // Hardcoding a precision of 4, it doesnt matter because the index ignores precision
-        dacdir::dac dac = dacdir::dac_for_symbol(extended_symbol{symbol{sym, 4}, code});
+    asset get_liquid(name owner, name code, symbol sym) {
+        dacdir::dac dac = dacdir::dac_for_symbol(extended_symbol{sym, code});
 
         stakes_table stakes(code, dac.dac_id.value);
         unstakes_table unstakes(code, dac.dac_id.value);
         auto unstakes_idx = unstakes.get_index<"byaccount"_n>();
 
-        asset liquid = get_balance(owner, code, sym);
+        asset liquid = get_balance(owner, code, sym.code());
 
         auto existing_stake = stakes.find(owner.value);
         if (existing_stake != stakes.end()){
@@ -130,13 +129,12 @@ namespace eosdac {
         return liquid;
     }
 
-    asset get_staked(name owner, name code, symbol_code sym) {
-        // Hardcoding a precision of 4, it doesnt matter because the index ignores precision
-        dacdir::dac dac = dacdir::dac_for_symbol(extended_symbol{symbol{sym, 4}, code});
+    asset get_staked(name owner, name code, symbol sym) {
+        dacdir::dac dac = dacdir::dac_for_symbol(extended_symbol{sym, code});
 
         stakes_table stakes(code, dac.dac_id.value);
 
-        asset staked = asset{0, symbol{sym, 4}};
+        asset staked = asset{0, sym};
 
         auto existing_stake = stakes.find(owner.value);
         if (existing_stake != stakes.end()){
@@ -149,7 +147,7 @@ namespace eosdac {
 
     static void assertValidMember(eosio::name member, eosio::name dac_id) {
         eosio::name member_terms_account;
-        
+
         member_terms_account = dacdir::dac_for_id(dac_id).symbol.get_contract(); // Need this line without the temp block
         regmembers reg_members(member_terms_account, dac_id.value);
         memterms memberterms(member_terms_account, dac_id.value);

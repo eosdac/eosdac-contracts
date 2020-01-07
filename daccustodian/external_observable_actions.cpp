@@ -154,7 +154,7 @@ void daccustodian::validateUnstakeAmount(name code, name cand, asset unstake_amo
   auto reg_candidate = registered_candidates.find(cand.value);
   if (reg_candidate != registered_candidates.end() && reg_candidate->is_active) {
     extended_asset lockup_asset = contr_config::get_current_configs(code, dac_id).lockupasset;
-    auto current_stake = eosdac::get_staked(cand, token_contract, unstake_amount.symbol.code());
+    auto current_stake = eosdac::get_staked(cand, token_contract, unstake_amount.symbol);
 
     print(" Current stake : ", current_stake, ", Unstake amount : ", unstake_amount);
 

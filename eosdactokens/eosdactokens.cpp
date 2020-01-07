@@ -136,7 +136,7 @@ void eosdactokens::transfer(name from, name to, asset quantity, string memo) {
   // Check transfer doesnt exceed stake
   stake_config stakeconfig = stake_config::get_current_configs(get_self(), dac.dac_id);
   if (stakeconfig.enabled) {
-    asset liquid = eosdac::get_liquid(from, get_self(), quantity.symbol.code());
+    asset liquid = eosdac::get_liquid(from, get_self(), quantity.symbol);
 
     check(quantity <= liquid, "ERR::BALANCE_STAKED::Attempt to transfer more than liquid balance, unstake first");
   }
@@ -298,7 +298,7 @@ void eosdactokens::stake(name account, asset quantity) {
   check(quantity.is_valid(), "ERR::STAKE_INVALID_QTY::Invalid quantity supplied");
   check(quantity.amount > 0, "ERR::STAKE_NON_POSITIVE_QTY::Stake amount must be greater than 0");
 
-  asset liquid = eosdac::get_liquid(account, get_self(), quantity.symbol.code());
+  asset liquid = eosdac::get_liquid(account, get_self(), quantity.symbol);
 
   check(liquid >= quantity, "ERR::STAKE_MORE_LIQUID::Attempting to stake more than your liquid balance");
 
@@ -391,7 +391,7 @@ void eosdactokens::staketime(name account, uint32_t unstake_time, symbol token_s
   name custodian_contract = dac.account_for_type(dacdir::CUSTODIAN);
   name vote_contract = dac.account_for_type(dacdir::VOTE_WEIGHT);
   name notify_contract = (vote_contract) ? vote_contract : custodian_contract;
-  asset current_stake = eosdac::get_staked(account, get_self(), token_symbol.code());
+  asset current_stake = eosdac::get_staked(account, get_self(), token_symbol);
 
   vector<account_stake_delta> stake_deltas_sub = {{account, -current_stake, current_unstake_time}};
   action(permission_level{get_self(), "notify"_n}, notify_contract, "stakeobsv"_n,
