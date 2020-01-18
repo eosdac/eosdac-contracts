@@ -35,6 +35,8 @@ namespace eosdac {
             FAVICON_URL = 7,
             DAC_CURRENCY_URL = 8,
             SYSTEM_CURRENCY_URL = 9,
+            DISCORD_URL = 10,
+            TELEGRAM_URL = 11,
         };
 
         enum dac_state_type: uint8_t {
@@ -76,7 +78,7 @@ namespace eosdac {
             dac_table dactable = dac_table("dacdirectory"_n, "dacdirectory"_n.value);
             auto index = dactable.get_index<"bysymbol"_n>();
             auto dac_idx = index.find(eosdac::raw_from_extended_symbol(sym));
-            print("\ndac_for_symbol: ", sym, "\n"); 
+            print("\ndac_for_symbol: ", sym, "\n");
             eosio::check(dac_idx != index.end() && dac_idx->symbol == sym, "ERR::DAC_NOT_FOUND_SYMBOL::DAC not found in directory for the given symbol");
             return *dac_idx;
         }
