@@ -1,4 +1,4 @@
-#include "../_contract-shared-headers/migration_helpers.hpp"
+// #include "../_contract-shared-headers/migration_helpers.hpp"
 
 void daccustodian::updateVoteWeight(name custodian, int64_t weight, name dac_id) {
   if (weight == 0) {
@@ -63,11 +63,8 @@ int64_t daccustodian::get_vote_weight(name voter, name dac_id) {
   }
 }
 
-void daccustodian::modifyVoteWeights(name voter, vector<name> oldVotes, vector<name> newVotes, name dac_id) {
+void daccustodian::modifyVoteWeights(int64_t vote_weight, vector<name> oldVotes, vector<name> newVotes, name dac_id) {
   // This could be optimised with set diffing to avoid remove then add for unchanged votes. - later
-  eosio::print("Modify vote weights: ", voter, "\n");
-
-  int64_t vote_weight = get_vote_weight(voter, dac_id);
 
   if (vote_weight == 0) {
     print("Voter has no weight therefore no need to update vote weights");

@@ -220,3 +220,37 @@ void daccustodian::removeCandidate(name cand, bool lockupStake, name dac_id) {
     }
   });
 }
+
+void daccustodian::regproxy(name proxy_member, name dac_id) {
+  require_auth(proxy_member);
+  assertValidMember(proxy_member, dac_id);
+
+  proxies_table proxies(get_self(), dac_id.value);
+
+  auto found_proxy = proxies.find(proxy_member.value);
+  check(found_proxy == proxies.end(), "ERR::REGPROXY_ALREADY_REGISTERED::User is already registered as a proxy.");
+  proxies.emplace(proxy_member, [&](proxy &p) {
+    p.proxy = proxy_member;
+    p.total_weight = 0;
+  });
+}
+
+void daccustodian::unregproxy(name proxy_member, name dac_id) {
+  require_auth(proxy_member);
+
+  proxies_table proxies(get_self(), dac_id.value);
+
+  auto found_proxy = proxies.find(proxy_member.value);
+  check(found_proxy != proxies.end(), "ERR::UNREGPROXY_NOT_REGISTERED::User is not registered as a proxy.");
+
+  if (found_proxy->total_weight != 0) {
+    // Remove proxied vote weight for the proxy
+    votes_table votes_cast_by_members(_self, dac_id.value);
+    auto existingVote = votes_cast_by_members.find(proxy_member.value);
+    if (existingVote != votes_cast_by_members.end()) {
+      modifyVoteWeights(found_proxy->total_weight, existingVote->candidates, {}, dac_id);
+    }
+  }
+
+  proxies.erase(found_proxy);
+}

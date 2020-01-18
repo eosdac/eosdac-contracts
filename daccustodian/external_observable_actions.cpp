@@ -2,68 +2,17 @@
 #include "../_contract-shared-headers/dacdirectory_shared.hpp"
 #include "../_contract-shared-headers/migration_helpers.hpp"
 
-void daccustodian::transferobsv(name from, name to, asset quantity, name dac_id) {
-
-  // Only for compatibility during contract update, can be safely removed
-
-  eosio::print("\n > transfer from : ", from, " to: ", to, " quantity: ", quantity);
-
-  auto dac = dacdir::dac_for_id(dac_id);
-  auto token_contract = dac.symbol.get_contract();
-  print("token contract: ", token_contract);
-  require_auth(token_contract);
-
-  votes_table votes_cast_by_members(get_self(), dac_id.value);
-
-  int64_t total_weight_of_votes_delta = 0;
-
-  auto existingVote = votes_cast_by_members.find(from.value);
-  if (existingVote != votes_cast_by_members.end()) {
-    updateVoteWeights(existingVote->candidates, -quantity.amount, dac_id);
-    total_weight_of_votes_delta = quantity.amount * -1;
-  }
-
-  // Update vote weight for the 'to' in the transfer if vote exists
-  existingVote = votes_cast_by_members.find(to.value);
-  if (existingVote != votes_cast_by_members.end()) {
-    updateVoteWeights(existingVote->candidates, quantity.amount, dac_id);
-    total_weight_of_votes_delta = quantity.amount;
-  }
-
-  if (total_weight_of_votes_delta != 0) {
-    contr_state currentState = contr_state::get_current_state(get_self(), dac_id);
-    currentState.total_weight_of_votes += total_weight_of_votes_delta;
-    currentState.save(get_self(), dac_id);
-  }
-}
-
 void daccustodian::balanceobsv(vector<account_balance_delta> account_balance_deltas, name dac_id) {
   auto dac = dacdir::dac_for_id(dac_id);
-  auto token_contract = dac.symbol.get_contract();
-
-  auto router_account = dac.account_for_type(dacdir::VOTE_WEIGHT);
-
-  check(has_auth(token_contract) || has_auth(router_account),
-      "Must have auth of token or router contract to call balanceobsv");
-
-  votes_table votes_cast_by_members(get_self(), dac_id.value);
-  int64_t total_weight_of_votes_delta = 0;
-
-  for (account_balance_delta abd : account_balance_deltas) {
-    auto existingVote = votes_cast_by_members.find(abd.account.value);
-    if (existingVote != votes_cast_by_members.end()) {
-      check(dac.symbol.get_symbol() == abd.balance_delta.symbol,
-          "ERR::INCORRECT_SYMBOL_DELTA::Incorrect symbol in balance_delta");
-      updateVoteWeights(existingVote->candidates, abd.balance_delta.amount, dac_id);
-      total_weight_of_votes_delta += abd.balance_delta.amount;
-    }
+  auto dacSymbol = dac.symbol.get_symbol();
+  vector<account_weight_delta> weightDeltas;
+  for (account_balance_delta balanceDelta : account_balance_deltas) {
+    check(dacSymbol == balanceDelta.balance_delta.symbol,
+        "ERR::INCORRECT_SYMBOL_DELTA::Incorrect symbol in balance_delta");
+    weightDeltas.push_back({balanceDelta.account, balanceDelta.balance_delta.amount});
   }
 
-  if (total_weight_of_votes_delta != 0) {
-    contr_state currentState = contr_state::get_current_state(get_self(), dac_id);
-    currentState.total_weight_of_votes += total_weight_of_votes_delta;
-    currentState.save(get_self(), dac_id);
-  }
+  weightobsv(weightDeltas, dac_id);
 }
 
 void daccustodian::weightobsv(vector<account_weight_delta> account_weight_deltas, name dac_id) {
@@ -75,9 +24,9 @@ void daccustodian::weightobsv(vector<account_weight_delta> account_weight_deltas
   check(has_auth(token_contract) || has_auth(router_account),
       "Must have auth of token or router contract to call weightobsv");
 
-  votes_table votes_cast_by_members(get_self(), dac_id.value);
-
   int64_t total_weight_of_votes_delta = 0;
+
+  votes_table votes_cast_by_members(get_self(), dac_id.value);
 
   for (account_weight_delta awd : account_weight_deltas) {
     auto existingVote = votes_cast_by_members.find(awd.account.value);
@@ -86,6 +35,7 @@ void daccustodian::weightobsv(vector<account_weight_delta> account_weight_deltas
       total_weight_of_votes_delta += awd.weight_delta;
     }
   }
+
   if (total_weight_of_votes_delta != 0) {
     contr_state currentState = contr_state::get_current_state(get_self(), dac_id);
     currentState.total_weight_of_votes += total_weight_of_votes_delta;

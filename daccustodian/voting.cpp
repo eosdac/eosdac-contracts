@@ -25,8 +25,11 @@ void daccustodian::votecuste(name voter, vector<name> newvotes, name dac_id) {
   // Find a vote that has been cast by this voter previously.
   votes_table votes_cast_by_members(_self, dac_id.value);
   auto existingVote = votes_cast_by_members.find(voter.value);
+
+  int64_t vote_weight = get_vote_weight(voter, dac_id);
   if (existingVote != votes_cast_by_members.end()) {
-    modifyVoteWeights(voter, existingVote->candidates, newvotes, dac_id);
+
+    modifyVoteWeights(vote_weight, existingVote->candidates, newvotes, dac_id);
 
     if (newvotes.size() == 0) {
       // Remove the vote if the array of candidates is empty
@@ -39,7 +42,7 @@ void daccustodian::votecuste(name voter, vector<name> newvotes, name dac_id) {
       });
     }
   } else {
-    modifyVoteWeights(voter, {}, newvotes, dac_id);
+    modifyVoteWeights(vote_weight, {}, newvotes, dac_id);
 
     votes_cast_by_members.emplace(voter, [&](vote &v) {
       v.voter = voter;
@@ -48,36 +51,86 @@ void daccustodian::votecuste(name voter, vector<name> newvotes, name dac_id) {
   }
 }
 
-void daccustodian::voteproxy(name voter, name proxy, name dac_id) {
+void daccustodian::modifyProxiesWeight(int64_t vote_weight, name oldProxy, name newProxy, name dac_id) {
+  proxies_table proxies(get_self(), dac_id.value);
+  votes_table votes_cast_by_members(_self, dac_id.value);
 
-  candidates_table registered_candidates(_self, dac_id.value);
-  contr_config configs = contr_config::get_current_configs(_self, dac_id);
+  auto oldProxyRow = proxies.find(oldProxy.value);
+
+  vector<name> oldProxyVotes = {};
+  vector<name> newProxyVotes = {};
+
+  if (oldProxyRow != proxies.end() && oldProxyRow->proxy == oldProxy) {
+    proxies.modify(oldProxyRow, same_payer, [&](proxy &p) { p.total_weight -= vote_weight; });
+    auto existingProxyVote = votes_cast_by_members.find(oldProxy.value);
+    oldProxyVotes = existingProxyVote->candidates;
+  }
+
+  auto newProxyRow = proxies.find(newProxy.value);
+
+  if (newProxyRow != proxies.end() && newProxyRow->proxy == newProxy) {
+    proxies.modify(newProxyRow, same_payer, [&](proxy &p) { p.total_weight += vote_weight; });
+    auto existingProxyVote = votes_cast_by_members.find(newProxy.value);
+    oldProxyVotes = existingProxyVote->candidates;
+  }
+  modifyVoteWeights(vote_weight, oldProxyVotes, newProxyVotes, dac_id);
+}
+
+void daccustodian::voteproxy(name voter, name proxyName, name dac_id) {
 
   require_auth(voter);
   assertValidMember(voter, dac_id);
 
   string error_msg = "Member cannot proxy vote for themselves: " + voter.to_string();
-  check(voter != proxy, error_msg.c_str());
-  votes_table votes_cast_by_members(_self, dac_id.value);
+  check(voter != proxyName, error_msg.c_str());
+  votes_table votes_cast_by_members(get_self(), dac_id.value);
+  proxies_table proxies(get_self(), dac_id.value);
 
-  auto destproxy = votes_cast_by_members.find(proxy.value);
+  auto destproxy = votes_cast_by_members.find(proxyName.value);
   if (destproxy != votes_cast_by_members.end()) {
     error_msg = "Proxy voters cannot vote for another proxy: " + voter.to_string();
     check(destproxy->proxy.value == 0, error_msg.c_str());
   }
 
+  name oldProxy;
+  name newProxy;
+
   // Find a vote that has been cast by this voter previously.
   auto existingVote = votes_cast_by_members.find(voter.value);
+  int64_t vote_weight = get_vote_weight(voter, dac_id);
   if (existingVote != votes_cast_by_members.end()) {
+    name existingVoteForProxy = existingVote->proxy;
+    check(existingVoteForProxy != proxyName,
+        "ERR::VOTEPROXY_ALREADY_VOTED_FOR_PROXY::Voter has already voted for this proxy.");
 
-    votes_cast_by_members.modify(existingVote, _self, [&](vote &v) {
+    if (existingVoteForProxy.value != 0) {
+      // Check the proxy is still an active proxy
+
+      auto oldProxyRow = proxies.find(existingVoteForProxy.value);
+
+      if (oldProxyRow != proxies.end()) {
+        oldProxy = oldProxyRow->proxy;
+        // proxies.modify(oldProxy, [&](proxy &p) { p.total_weight -= vote_weight });
+        // auto existingProxyVote = votes_cast_by_members.find(existingVoteForProxy.value);
+        // oldProxyVotes = existingProxyVote->candidates;
+      }
+    }
+
+    votes_cast_by_members.modify(existingVote, get_self(), [&](vote &v) {
       v.candidates.clear();
-      v.proxy = proxy;
+      v.proxy = proxyName;
     });
   } else {
-    votes_cast_by_members.emplace(_self, [&](vote &v) {
+    votes_cast_by_members.emplace(get_self(), [&](vote &v) {
       v.voter = voter;
-      v.proxy = proxy;
+      v.proxy = proxyName;
     });
-  }
+
+    auto newProxyRow = proxies.find(proxyName.value);
+    check(newProxyRow != proxies.end(), "ERR::VOTEPROXY_PROXY_NOT_ACTIVE::The nominated proxy is not an active proxy.");
+
+    newProxy = newProxyRow->proxy;
+    }
+
+  modifyProxiesWeight(vote_weight, oldProxy, newProxy, dac_id);
 }

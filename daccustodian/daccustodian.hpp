@@ -95,6 +95,15 @@ struct [[ eosio::table("votes"), eosio::contract("daccustodian") ]] vote {
 typedef eosio::multi_index<"votes"_n, vote, indexed_by<"byproxy"_n, const_mem_fun<vote, uint64_t, &vote::by_proxy>>>
     votes_table;
 
+struct [[ eosio::table("proxies"), eosio::contract("daccustodian") ]] proxy {
+  name proxy;
+  int64_t total_weight;
+
+  uint64_t primary_key() const { return proxy.value; }
+};
+
+typedef eosio::multi_index<"proxies"_n, proxy> proxies_table;
+
 // Old table start
 
 struct [[ eosio::table("pendingpay"), eosio::contract("daccustodian") ]] payold {
@@ -178,6 +187,8 @@ public:
   ACTION votecust(name voter, std::vector<name> newvotes);
   ACTION votecuste(name voter, std::vector<name> newvotes, name dac_id);
   ACTION voteproxy(name voter, name proxy, name dac_id);
+  ACTION regproxy(name proxy, name dac_id);
+  ACTION unregproxy(name proxy, name dac_id);
   ACTION newperiod(std::string message);
   ACTION newperiode(std::string message, name dac_id);
   ACTION runnewperiod(std::string message, name dac_id);
@@ -215,7 +226,8 @@ private: // Private helper methods used by other actions.
   void updateVoteWeight(name custodian, int64_t weight, name internal_dac_id);
   void updateVoteWeights(const vector<name> &votes, int64_t vote_weight, name internal_dac_id);
   int64_t get_vote_weight(name voter, name dac_id);
-  void modifyVoteWeights(name voter, vector<name> oldVotes, vector<name> newVotes, name internal_dac_id);
+  void modifyVoteWeights(int64_t vote_weight, vector<name> oldVotes, vector<name> newVotes, name internal_dac_id);
+  void modifyProxiesWeight(int64_t vote_weight, name oldProxy, name newProxy, name dac_id);
   void assertPeriodTime(contr_config &configs, contr_state &currentState);
   void distributeMeanPay(name internal_dac_id);
   void setCustodianAuths(name internal_dac_id);
