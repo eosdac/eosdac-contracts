@@ -83,9 +83,12 @@ export class SharedTestObjects {
   }
 
   private async initAndGetSharedObjects() {
-    // await sleep(4500);
+    console.log('init eos blockchain');
+    await sleep(4500);
     EOSManager.initWithDefaults();
-    await sleep(16000);
+    // console.log('after init eos blockchain');
+
+    await sleep(6000);
 
     this.auth_account = await debugPromise(
       new_account('eosdacauth'),
@@ -104,28 +107,28 @@ export class SharedTestObjects {
       ),
       'Created dadirecrtory'
     );
-    this.daccustodian_contract = await await debugPromise(
+    this.daccustodian_contract = await debugPromise(
       ContractDeployer.deployWithName(
         'daccustodian/daccustodian',
         'daccustodian'
       ),
       'created daccustodian'
     );
-    this.dac_token_contract = await await debugPromise(
+    this.dac_token_contract = await debugPromise(
       ContractDeployer.deployWithName(
         'eosdactokens/eosdactokens',
         'eosdactokens'
       ),
       'created eosdactokens'
     );
-    this.dacproposals_contract = await await debugPromise(
+    this.dacproposals_contract = await debugPromise(
       ContractDeployer.deployWithName(
         'dacproposals/dacproposals',
         'dacproposals'
       ),
       'created dacproposals'
     );
-    this.dacescrow_contract = await await debugPromise(
+    this.dacescrow_contract = await debugPromise(
       ContractDeployer.deployWithName('dacescrow/dacescrow', 'dacescrow'),
       'created dacescrow'
     );
