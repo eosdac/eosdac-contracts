@@ -88,7 +88,7 @@ export class SharedTestObjects {
     EOSManager.initWithDefaults();
     // console.log('after init eos blockchain');
 
-    await sleep(6000);
+    await sleep(16000);
 
     this.auth_account = await debugPromise(
       new_account('eosdacauth'),
@@ -128,10 +128,13 @@ export class SharedTestObjects {
       ),
       'created dacproposals'
     );
+    await sleep(2000);
     this.dacescrow_contract = await debugPromise(
       ContractDeployer.deployWithName('dacescrow/dacescrow', 'dacescrow'),
       'created dacescrow'
     );
+    await sleep(2000);
+
     // Other objects
     this.configured_dac_memberterms = 'AgreedMemberTermsHashValue';
     await this.add_token_contract_permissions();
