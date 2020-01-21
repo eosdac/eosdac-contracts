@@ -160,7 +160,7 @@ public:
 
   ACTION updateconfig(contr_config newconfig);
   ACTION updateconfige(contr_config newconfig, name dac_id);
-  ACTION transferobsv(name from, name to, asset quantity, name dac_id);
+  // ACTION transferobsv(name from, name to, asset quantity, name dac_id);
   ACTION balanceobsv(vector<account_balance_delta> account_balance_deltas, name dac_id);
   ACTION stakeobsv(vector<account_stake_delta> account_stake_deltas, name dac_id);
   ACTION weightobsv(vector<account_weight_delta> account_weight_deltas, name dac_id);

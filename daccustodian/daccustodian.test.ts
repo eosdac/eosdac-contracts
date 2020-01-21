@@ -268,7 +268,7 @@ describe('Daccustodian', () => {
     });
   });
 
-  context('candidates', async () => {
+  context('candidates voting', async () => {
     let regMembers: l.Account[];
     let dacId = 'canddac';
     let cands: l.Account[];
@@ -281,14 +281,11 @@ describe('Daccustodian', () => {
         { from: shared.auth_account }
       );
       regMembers = await shared.getRegMembers(dacId, '1000.0000 CANDAC');
+      cands = await shared.getStakeObservedCandidates(dacId, '12.0000 CANDAC');
     });
     context('with no votes', async () => {
       let currentCandidates: l.TableRowsResult<DaccustodianCandidate>;
       before(async () => {
-        cands = await shared.getStakeObservedCandidates(
-          dacId,
-          '12.0000 CANDAC'
-        );
         currentCandidates = await shared.daccustodian_contract.candidatesTable({
           scope: dacId,
           limit: 20,
@@ -441,6 +438,238 @@ describe('Daccustodian', () => {
       });
     });
   });
+
+  context('proxy voting', async () => {
+    let regMembers: l.Account[];
+    let dacId = 'proxydac';
+    let cands: l.Account[];
+    before(async () => {
+      await shared.initDac(dacId, '4,PROXDAC', '1000000.0000 PROXDAC');
+      await shared.updateconfig(dacId, '12.0000 PROXDAC');
+      await shared.dac_token_contract.stakeconfig(
+        { enabled: true, min_stake_time: 5, max_stake_time: 20 },
+        '4,PROXDAC',
+        { from: shared.auth_account }
+      );
+      regMembers = await shared.getRegMembers(dacId, '1000.0000 PROXDAC');
+      cands = await shared.getStakeObservedCandidates(dacId, '12.0000 PROXDAC');
+    });
+    context('After voting but before proxy voting', async () => {
+      before(async () => {
+        // Place votes for even number candidates and leave odd number without votes.
+        // Only vote with the first 2 members
+        for (const member of regMembers.slice(0, 2)) {
+          await debugPromise(
+            shared.daccustodian_contract.votecuste(
+              member.name,
+              [cands[0].name, cands[2].name],
+              dacId,
+              { from: member }
+            ),
+            'voting custodian'
+          );
+        }
+      });
+      it('votes table should have rows', async () => {
+        let votedCandidateResult = shared.daccustodian_contract.votesTable({
+          scope: dacId,
+        });
+        await l.assertRowsEqual(votedCandidateResult, [
+          {
+            candidates: [cands[0].name, cands[2].name],
+            proxy: '',
+            voter: regMembers[0].name,
+          },
+          {
+            candidates: [cands[0].name, cands[2].name],
+            proxy: '',
+            voter: regMembers[1].name,
+          },
+        ]);
+      });
+      it('only candidates with votes have total_votes values', async () => {
+        let unvotedCandidateResult = await shared.daccustodian_contract.candidatesTable(
+          {
+            scope: dacId,
+            limit: 1,
+            lowerBound: cands[1].name,
+          }
+        );
+        chai.expect(unvotedCandidateResult.rows[0]).to.include({
+          total_votes: 0,
+        });
+        let votedCandidateResult = await shared.daccustodian_contract.candidatesTable(
+          {
+            scope: dacId,
+            limit: 1,
+            lowerBound: cands[0].name,
+          }
+        );
+        chai.expect(votedCandidateResult.rows[0]).to.include({
+          total_votes: 20_000_000,
+        });
+        await l.assertRowCount(
+          shared.daccustodian_contract.votesTable({
+            scope: dacId,
+          }),
+          2
+        );
+      });
+      it('state should have increased the total_weight_of_votes', async () => {
+        let dacState = await shared.daccustodian_contract.stateTable({
+          scope: dacId,
+        });
+        chai.expect(dacState.rows[0]).to.include({
+          total_weight_of_votes: 20_000_000,
+        });
+      });
+    });
+    context('Before registering as a proxy', async () => {
+      it('voteproxy should fail with not registered error', async () => {
+        l.assertEOSErrorIncludesMessage(
+          shared.daccustodian_contract.voteproxy(
+            regMembers[3].name,
+            regMembers[0].name,
+            dacId,
+            { from: regMembers[3] }
+          ),
+          'VOTEPROXY_PROXY_NOT_ACTIVE'
+        );
+      });
+    });
+    context('Registering as proxy', async () => {
+      context('without correct auth', async () => {
+        it('should fail with auth error', async () => {
+          l.assertMissingAuthority(
+            shared.daccustodian_contract.regproxy(regMembers[0].name, dacId, {
+              from: regMembers[3],
+            })
+          );
+        });
+      });
+      context('with correct auth', async () => {
+        it('should succeed', async () => {
+          chai.expect(
+            shared.daccustodian_contract.regproxy(regMembers[0].name, dacId, {
+              from: regMembers[0],
+            })
+          ).to.eventually.be.fulfilled;
+        });
+      });
+    });
+    context('After proxy voting', async () => {
+      before(async () => {
+        for (const member of regMembers.slice(3, 4)) {
+          await debugPromise(
+            shared.daccustodian_contract.voteproxy(
+              member.name,
+              regMembers[0].name,
+              dacId,
+              { from: member }
+            ),
+            'voting proxy'
+          );
+        }
+      });
+      it('votes table should have rows', async () => {
+        let votedCandidateResult = await shared.daccustodian_contract.votesTable(
+          {
+            scope: dacId,
+            lowerBound: regMembers[3].name,
+            upperBound: regMembers[3].name,
+          }
+        );
+        let proxyVote = votedCandidateResult.rows[0];
+        chai.expect(proxyVote.voter).to.equal(regMembers[3].name);
+        chai.expect(proxyVote.candidates).to.be.empty;
+        chai.expect(proxyVote.proxy).to.equal(regMembers[0].name);
+      });
+      it('only candidates with votes have total_votes values', async () => {
+        let unvotedCandidateResult = await shared.daccustodian_contract.candidatesTable(
+          {
+            scope: dacId,
+            limit: 1,
+            lowerBound: cands[1].name,
+          }
+        );
+        chai.expect(unvotedCandidateResult.rows[0]).to.include({
+          total_votes: 0,
+        });
+        let votedCandidateResult = await shared.daccustodian_contract.candidatesTable(
+          {
+            scope: dacId,
+            limit: 1,
+            lowerBound: cands[0].name,
+          }
+        );
+        chai.expect(votedCandidateResult.rows[0]).to.include({
+          total_votes: 30_000_000,
+        });
+        await l.assertRowCount(
+          shared.daccustodian_contract.votesTable({
+            scope: dacId,
+          }),
+          3
+        );
+      });
+      it('state should have increased the total_weight_of_votes', async () => {
+        let dacState = await shared.daccustodian_contract.stateTable({
+          scope: dacId,
+        });
+        chai.expect(dacState.rows[0]).to.include({
+          total_weight_of_votes: 30_000_000, // SHould be 30,000,000 I think
+        });
+      });
+      context('vote values after transfers', async () => {
+        it('assert preconditions for vote values for custodians', async () => {
+          let votedCandidateResult = await shared.daccustodian_contract.candidatesTable(
+            {
+              scope: dacId,
+              limit: 20,
+              lowerBound: cands[0].name,
+            }
+          );
+          let initialVoteValue = votedCandidateResult.rows[0].total_votes;
+          chai.expect(initialVoteValue).to.equal(30_000_000);
+        });
+        it('assert preconditions for total vote values on state', async () => {
+          let dacState = await shared.daccustodian_contract.stateTable({
+            scope: dacId,
+          });
+          chai.expect(dacState.rows[0]).to.include({
+            total_weight_of_votes: 30_000_000,
+          });
+        });
+        it('after transfer to non-voter values should reduce for candidates and total values', async () => {
+          await shared.dac_token_contract.transfer(
+            regMembers[3].name,
+            regMembers[7].name,
+            '300.0000 PROXDAC',
+            '',
+            { from: regMembers[3] }
+          );
+          let votedCandidateResult = await shared.daccustodian_contract.candidatesTable(
+            {
+              scope: dacId,
+              limit: 20,
+              lowerBound: cands[0].name,
+            }
+          );
+          let updatedCandVoteValue = votedCandidateResult.rows[0].total_votes;
+          chai.expect(updatedCandVoteValue).to.equal(30_000_000); // should be 27,000,000
+        });
+        it('total vote values on state should have changed', async () => {
+          let dacState = await shared.daccustodian_contract.stateTable({
+            scope: dacId,
+          });
+          chai.expect(dacState.rows[0]).to.include({
+            total_weight_of_votes: 27_000_000,
+          });
+        });
+      });
+    });
+  });
+
   context('New Period Elections', async () => {
     let dacId = 'newperioddac';
     let regMembers: l.Account[];
@@ -733,6 +962,7 @@ describe('Daccustodian', () => {
       }
     );
   });
+
   context('resign custodian', () => {
     let dacId = 'resigndac';
     let regMembers: l.Account[];

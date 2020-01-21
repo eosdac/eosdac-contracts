@@ -63,7 +63,9 @@ void daccustodian::modifyProxiesWeight(int64_t vote_weight, name oldProxy, name 
   if (oldProxyRow != proxies.end() && oldProxyRow->proxy == oldProxy) {
     proxies.modify(oldProxyRow, same_payer, [&](proxy &p) { p.total_weight -= vote_weight; });
     auto existingProxyVote = votes_cast_by_members.find(oldProxy.value);
-    oldProxyVotes = existingProxyVote->candidates;
+    if (existingProxyVote != votes_cast_by_members.end() && existingProxyVote->voter == oldProxy) {
+      oldProxyVotes = existingProxyVote->candidates;
+    }
   }
 
   auto newProxyRow = proxies.find(newProxy.value);
@@ -71,7 +73,9 @@ void daccustodian::modifyProxiesWeight(int64_t vote_weight, name oldProxy, name 
   if (newProxyRow != proxies.end() && newProxyRow->proxy == newProxy) {
     proxies.modify(newProxyRow, same_payer, [&](proxy &p) { p.total_weight += vote_weight; });
     auto existingProxyVote = votes_cast_by_members.find(newProxy.value);
-    oldProxyVotes = existingProxyVote->candidates;
+    if (existingProxyVote != votes_cast_by_members.end() && existingProxyVote->voter == newProxy) {
+      newProxyVotes = existingProxyVote->candidates;
+    }
   }
   modifyVoteWeights(vote_weight, oldProxyVotes, newProxyVotes, dac_id);
 }
@@ -86,19 +90,29 @@ void daccustodian::voteproxy(name voter, name proxyName, name dac_id) {
   votes_table votes_cast_by_members(get_self(), dac_id.value);
   proxies_table proxies(get_self(), dac_id.value);
 
-  auto destproxy = votes_cast_by_members.find(proxyName.value);
-  if (destproxy != votes_cast_by_members.end()) {
-    error_msg = "Proxy voters cannot vote for another proxy: " + voter.to_string();
-    check(destproxy->proxy.value == 0, error_msg.c_str());
-  }
+  auto newProxyRow = proxies.find(proxyName.value);
+  check(newProxyRow != proxies.end() && newProxyRow->proxy == proxyName,
+      "ERR::VOTEPROXY_PROXY_NOT_ACTIVE::The nominated proxy is not an active proxy.");
+
+  auto selfProxyRow = proxies.find(voter.value);
+  check(selfProxyRow == proxies.end() || selfProxyRow->proxy != voter,
+      "ERR::VOTEPROXY_PROXY_VOTE_FOR_PROXY::A registered proxy cannot make a proxy vote.");
+
+  // Prevent a proxy voting for another proxy voter
+  // auto destProxyVote = votes_cast_by_members.find(proxyName.value);
+  // if (destProxyVote != votes_cast_by_members.end() && destProxyVote.) {
+  //   error_msg = "Proxy voters cannot vote for another proxy: " + voter.to_string();
+  //   check(destProxyVote->proxy.value == 0, error_msg.c_str());
+  // }
 
   name oldProxy;
   name newProxy;
 
+  int64_t vote_weight = get_vote_weight(voter, dac_id);
+
   // Find a vote that has been cast by this voter previously.
   auto existingVote = votes_cast_by_members.find(voter.value);
-  int64_t vote_weight = get_vote_weight(voter, dac_id);
-  if (existingVote != votes_cast_by_members.end()) {
+  if (existingVote != votes_cast_by_members.end() && existingVote->voter == voter) {
     name existingVoteForProxy = existingVote->proxy;
     check(existingVoteForProxy != proxyName,
         "ERR::VOTEPROXY_ALREADY_VOTED_FOR_PROXY::Voter has already voted for this proxy.");
@@ -107,12 +121,8 @@ void daccustodian::voteproxy(name voter, name proxyName, name dac_id) {
       // Check the proxy is still an active proxy
 
       auto oldProxyRow = proxies.find(existingVoteForProxy.value);
-
-      if (oldProxyRow != proxies.end()) {
+      if (oldProxyRow != proxies.end() && oldProxyRow->proxy == existingVoteForProxy) {
         oldProxy = oldProxyRow->proxy;
-        // proxies.modify(oldProxy, [&](proxy &p) { p.total_weight -= vote_weight });
-        // auto existingProxyVote = votes_cast_by_members.find(existingVoteForProxy.value);
-        // oldProxyVotes = existingProxyVote->candidates;
       }
     }
 
@@ -126,11 +136,8 @@ void daccustodian::voteproxy(name voter, name proxyName, name dac_id) {
       v.proxy = proxyName;
     });
 
-    auto newProxyRow = proxies.find(proxyName.value);
-    check(newProxyRow != proxies.end(), "ERR::VOTEPROXY_PROXY_NOT_ACTIVE::The nominated proxy is not an active proxy.");
-
-    newProxy = newProxyRow->proxy;
-    }
+    newProxy = proxyName;
+  }
 
   modifyProxiesWeight(vote_weight, oldProxy, newProxy, dac_id);
 }

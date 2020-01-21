@@ -151,6 +151,16 @@ export interface DaccustodianPayold {
 	memo: string;
 }
 
+export interface DaccustodianProxy {
+	proxy: string|number;
+	total_weight: number;
+}
+
+export interface DaccustodianRegproxy {
+	proxy: string|number;
+	dac_id: string|number;
+}
+
 export interface DaccustodianRejectcuspay {
 	payid: number;
 	dac_id: string|number;
@@ -197,10 +207,8 @@ export interface DaccustodianStprofileuns {
 	profile: string;
 }
 
-export interface DaccustodianTransferobsv {
-	from: string|number;
-	to: string|number;
-	quantity: string;
+export interface DaccustodianUnregproxy {
+	proxy: string|number;
 	dac_id: string|number;
 }
 
@@ -298,6 +306,7 @@ export interface Daccustodian extends Contract {
 	nominatecand(cand: string|number, requestedpay: string, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	nominatecane(cand: string|number, requestedpay: string, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	paycpu(dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	regproxy(proxy: string|number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	rejectcuspay(payid: number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	removecuspay(payid: number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	resigncust(cust: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
@@ -307,7 +316,7 @@ export interface Daccustodian extends Contract {
 	stakeobsv(account_stake_deltas: Array<DaccustodianAccountStakeDelta>, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	stprofile(cand: string|number, profile: string, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	stprofileuns(cand: string|number, profile: string, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
-	transferobsv(from: string|number, to: string|number, quantity: string, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	unregproxy(proxy: string|number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	unstake(cand: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	unstakee(cand: string|number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	updatebio(cand: string|number, bio: string, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
@@ -330,6 +339,7 @@ export interface Daccustodian extends Contract {
 	custodiansTable(options?: GetTableRowsOptions): Promise<TableRowsResult<DaccustodianCustodian>>;
 	pendingpayTable(options?: GetTableRowsOptions): Promise<TableRowsResult<DaccustodianPayold>>;
 	pendingpay2Table(options?: GetTableRowsOptions): Promise<TableRowsResult<DaccustodianPay>>;
+	proxiesTable(options?: GetTableRowsOptions): Promise<TableRowsResult<DaccustodianProxy>>;
 	stateTable(options?: GetTableRowsOptions): Promise<TableRowsResult<DaccustodianContrState>>;
 	votesTable(options?: GetTableRowsOptions): Promise<TableRowsResult<DaccustodianVote>>;
 }
