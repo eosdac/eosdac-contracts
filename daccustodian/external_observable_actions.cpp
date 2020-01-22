@@ -24,8 +24,6 @@ void daccustodian::weightobsv(vector<account_weight_delta> account_weight_deltas
   check(has_auth(token_contract) || has_auth(router_account),
       "Must have auth of token or router contract to call weightobsv");
 
-  int64_t total_weight_of_votes_delta = 0;
-
   votes_table votes_cast_by_members(get_self(), dac_id.value);
 
   for (account_weight_delta awd : account_weight_deltas) {
@@ -34,16 +32,9 @@ void daccustodian::weightobsv(vector<account_weight_delta> account_weight_deltas
       if (existingVote->proxy.value != 0) {
         modifyProxiesWeight(awd.weight_delta, name{}, existingVote->proxy, dac_id);
       } else {
-        updateVoteWeights(existingVote->candidates, awd.weight_delta, dac_id);
+        modifyVoteWeights(awd.weight_delta, {}, existingVote->candidates, dac_id);
       }
-      total_weight_of_votes_delta += awd.weight_delta;
     }
-  }
-
-  if (total_weight_of_votes_delta != 0) {
-    contr_state currentState = contr_state::get_current_state(get_self(), dac_id);
-    currentState.total_weight_of_votes += total_weight_of_votes_delta;
-    currentState.save(get_self(), dac_id);
   }
 }
 

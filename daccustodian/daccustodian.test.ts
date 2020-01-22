@@ -667,6 +667,64 @@ describe('Daccustodian', () => {
           });
         });
       });
+      context('after unregproxy', async () => {
+        context('with wrong auth', async () => {
+          it('should fail', async () => {
+            l.assertMissingAuthority(
+              shared.daccustodian_contract.unregproxy(
+                regMembers[0].name,
+                dacId,
+                { from: regMembers[1] }
+              )
+            );
+          });
+        });
+        context('with correct auth', async () => {
+          it('should succeed', async () => {
+            chai.expect(
+              shared.daccustodian_contract.unregproxy(
+                regMembers[0].name,
+                dacId,
+                { from: regMembers[0] }
+              )
+            ).to.eventually.be.fulfilled;
+          });
+        });
+      });
+      context('with non proxy member', async () => {
+        it('should fail', async () => {
+          l.assertEOSErrorIncludesMessage(
+            shared.daccustodian_contract.unregproxy(regMembers[2].name, dacId, {
+              from: regMembers[2],
+            }),
+            'UNREGPROXY_NOT_REGISTERED'
+          );
+        });
+      });
+      context(
+        'values of votes after unregproxy should be updated.',
+        async () => {
+          it('should reduce vote weight for existing votes', async () => {
+            let votedCandidateResult = await shared.daccustodian_contract.candidatesTable(
+              {
+                scope: dacId,
+                limit: 20,
+                lowerBound: cands[0].name,
+              }
+            );
+            let updatedCandVoteValue = votedCandidateResult.rows[0].total_votes;
+            chai.expect(updatedCandVoteValue).to.equal(20_000_000);
+          });
+          it('total vote values on state should have changed', async () => {
+            let dacState = await shared.daccustodian_contract.stateTable({
+              scope: dacId,
+            });
+            chai.expect(dacState.rows[0]).to.include({
+              total_weight_of_votes: 20_000_000,
+            });
+          });
+        }
+      );
     });
   });
 
