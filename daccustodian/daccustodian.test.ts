@@ -656,7 +656,7 @@ describe('Daccustodian', () => {
             }
           );
           let updatedCandVoteValue = votedCandidateResult.rows[0].total_votes;
-          chai.expect(updatedCandVoteValue).to.equal(30_000_000); // should be 27,000,000
+          chai.expect(updatedCandVoteValue).to.equal(27_000_000); // should be 27,000,000
         });
         it('total vote values on state should have changed', async () => {
           let dacState = await shared.daccustodian_contract.stateTable({

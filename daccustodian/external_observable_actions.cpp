@@ -31,7 +31,11 @@ void daccustodian::weightobsv(vector<account_weight_delta> account_weight_deltas
   for (account_weight_delta awd : account_weight_deltas) {
     auto existingVote = votes_cast_by_members.find(awd.account.value);
     if (existingVote != votes_cast_by_members.end()) {
-      updateVoteWeights(existingVote->candidates, awd.weight_delta, dac_id);
+      if (existingVote->proxy.value != 0) {
+        modifyProxiesWeight(awd.weight_delta, name{}, existingVote->proxy, dac_id);
+      } else {
+        updateVoteWeights(existingVote->candidates, awd.weight_delta, dac_id);
+      }
       total_weight_of_votes_delta += awd.weight_delta;
     }
   }

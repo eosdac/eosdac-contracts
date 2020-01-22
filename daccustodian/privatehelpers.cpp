@@ -73,14 +73,18 @@ void daccustodian::modifyVoteWeights(int64_t vote_weight, vector<name> oldVotes,
   contr_state currentState = contr_state::get_current_state(get_self(), dac_id);
 
   // New voter -> Add the tokens to the total weight.
-  check((currentState.total_weight_of_votes + vote_weight) >= currentState.total_weight_of_votes,
-      "Overflow in total_weight_of_votes");
+  if (vote_weight > 0) {
+    check((currentState.total_weight_of_votes + vote_weight) >= currentState.total_weight_of_votes,
+        "Overflow in total_weight_of_votes");
+  } else {
+    check((currentState.total_weight_of_votes + vote_weight) <= currentState.total_weight_of_votes,
+        "Underflow in total_weight_of_votes");
+  }
+
   if (oldVotes.size() == 0)
     currentState.total_weight_of_votes += vote_weight;
 
   // Leaving voter -> Remove the tokens to the total weight.
-  check((currentState.total_weight_of_votes - vote_weight) <= currentState.total_weight_of_votes,
-      "Underflow in total_weight_of_votes");
   if (newVotes.size() == 0)
     currentState.total_weight_of_votes -= vote_weight;
 
