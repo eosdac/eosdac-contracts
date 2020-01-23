@@ -21,17 +21,17 @@ namespace eosdac {
     enum VoteType {
             none = 0,
             // a vote type to indicate a custodian's approval of a worker proposal.
-            proposal_approve, 
+            proposal_approve,
             // a vote type to indicate a custodian's denial of a worker proposal.
-            proposal_deny, 
+            proposal_deny,
             // a vote type to indicate a custodian's acceptance of a worker proposal as completed.
             finalize_approve,
             // a vote type to indicate a custodian's rejection of a worker proposal as completed.
             finalize_deny
         };
 
-        enum ProposalState {  
-            ProposalStatePending_approval = 0, 
+        enum ProposalState {
+            ProposalStatePending_approval = 0,
             ProposalStateWork_in_progress,
             ProposalStatePending_finalize,
             ProposalStateHas_enough_approvals_votes,
@@ -42,17 +42,17 @@ namespace eosdac {
         public:
 
         TABLE proposal {
-                uint64_t key;
-                name proposer;
-                name arbitrator;
-                string content_hash;
+                name           proposal_id;
+                name           proposer;
+                name           arbitrator;
+                string         content_hash;
                 extended_asset pay_amount;
-                uint8_t state;
+                uint8_t        state;
                 time_point_sec expiry;
-                uint32_t job_duration; // job duration in seconds
-                uint16_t category;
+                uint32_t       job_duration; // job duration in seconds
+                uint16_t       category;
 
-                uint64_t primary_key() const { return key; }
+                uint64_t primary_key() const { return proposal_id.value; }
                 uint64_t proposer_key() const { return proposer.value; }
                 uint64_t arbitrator_key() const { return arbitrator.value; }
                 uint64_t category_key() const { return uint64_t(category); }
@@ -82,20 +82,21 @@ namespace eosdac {
         dacproposals( name receiver, name code, datastream<const char*> ds )
             : contract(receiver, code, ds) {}
 
-        ACTION createprop(name proposer, string title, string summary, name arbitrator, extended_asset pay_amount, string content_hash, uint64_t id, uint16_t category, uint32_t job_duration, uint32_t approval_duration, name dac_id);
-        ACTION voteprop(name custodian, uint64_t proposal_id, uint8_t vote, name dac_id);
-        ACTION delegatevote(name custodian, uint64_t proposal_id, name delegatee_custodian, name dac_id);
+        ACTION createprop(name proposer, string title, string summary, name arbitrator, extended_asset pay_amount, string content_hash, name id, uint16_t category, uint32_t job_duration, name dac_id);
+        ACTION voteprop(name custodian, name proposal_id, uint8_t vote, name dac_id);
+        ACTION delegatevote(name custodian, name proposal_id, name delegatee_custodian, name dac_id);
         ACTION delegatecat(name custodian, uint64_t category, name delegatee_custodian, name dac_id);
         ACTION undelegateca(name custodian, uint64_t category, name dac_id);
-        ACTION arbapprove(name arbitrator, uint64_t proposal_id, name dac_id);
-        ACTION startwork(uint64_t proposal_id, name dac_id);
-        ACTION completework(uint64_t proposal_id, name dac_id);
-        ACTION finalize(uint64_t proposal_id, name dac_id);
-        ACTION cancel(uint64_t proposal_id, name dac_id);
-        ACTION comment(name commenter, uint64_t proposal_id, string comment, string comment_category, name dac_id);
+        ACTION arbapprove(name arbitrator, name proposal_id, name dac_id);
+        ACTION startwork(name proposal_id, name dac_id);
+        ACTION runstartwork(name proposal_id, name dac_id);
+        ACTION completework(name proposal_id, name dac_id);
+        ACTION finalize(name proposal_id, name dac_id);
+        ACTION cancel(name proposal_id, name dac_id);
+        ACTION comment(name commenter, name proposal_id, string comment, string comment_category, name dac_id);
         ACTION updateconfig(config new_config, name dac_id);
-        ACTION clearexpprop(uint64_t proposal_id, name dac_id);
-        ACTION updpropvotes(uint64_t proposal_id, name dac_id);
+        ACTION clearexpprop(name proposal_id, name dac_id);
+        ACTION updpropvotes(name proposal_id, name dac_id);
         ACTION updallprops(name dac_id);
 
 
@@ -103,23 +104,24 @@ namespace eosdac {
 
         void clearprop(const proposal& proposal, name dac_id);
         void transferfunds(const proposal &prop, name dac_id);
+        void check_start(name proposal_id, name dac_id);
         int16_t count_votes(proposal prop, VoteType vote_type, name dac_id);
 
     TABLE proposalvote {
-            uint64_t vote_id;
-            name voter;
-            optional<uint64_t> proposal_id;
+            uint64_t           vote_id;
+            name               voter;
+            optional<name>     proposal_id;
             optional<uint64_t> category_id;
-            optional<uint8_t> vote;
-            optional<name> delegatee;
-            optional<string> comment_hash;
+            optional<uint8_t>  vote;
+            optional<name>     delegatee;
+            optional<string>   comment_hash;
 
             uint64_t primary_key() const { return vote_id; }
             uint64_t voter_key() const { return voter.value; }
 
-            uint64_t proposal_key() const { return proposal_id.value_or(UINT64_MAX); }
+            uint64_t proposal_key() const { return proposal_id.value_or(name{0}).value; }
             uint64_t category_key() const { return category_id.value_or(UINT64_MAX); }
-            uint128_t get_prop_and_voter() const { return combine_ids(proposal_id.value_or(UINT64_MAX), voter.value); }
+            uint128_t get_prop_and_voter() const { return combine_ids(proposal_id.value_or(name{0}).value, voter.value); }
             uint128_t get_category_and_voter() const { return combine_ids(category_id.value_or(UINT64_MAX), voter.value); }
 
             EOSLIB_SERIALIZE(proposalvote, (vote_id)(voter)(proposal_id)(category_id)(vote)(delegatee)(comment_hash))
