@@ -10,7 +10,7 @@ using namespace std;
 
 namespace eosdac {
 
-    dacescrow::~dacescrow() {}  
+    dacescrow::~dacescrow() {}
 
 
   ACTION dacescrow::transfer(name from,
@@ -61,11 +61,6 @@ namespace eosdac {
         extended_asset zero_asset{{0, symbol{"EOS", 4}}, "eosio.token"_n};
 
         auto by_sender = escrows.get_index<"bysender"_n>();
-
-        for (auto esc_itr = by_sender.lower_bound(sender.value), end_itr = by_sender.upper_bound(sender.value); esc_itr != end_itr; ++esc_itr) {
-            check(esc_itr->ext_asset.quantity.amount > 0, "You already have an empty escrow.  Either fill it or delete it");
-        }
-
         check(escrows.find(ext_reference) == escrows.end(),
                          "Already have an escrow with this external reference");
 
@@ -197,4 +192,3 @@ EOSIO_ABI_EX(eosdac::dacescrow,
                      (cancel)
                      (clean)
 )
-    

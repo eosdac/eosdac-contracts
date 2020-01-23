@@ -36,6 +36,8 @@ namespace eosdac {
             FAVICON_URL = 7,
             DAC_CURRENCY_URL = 8,
             SYSTEM_CURRENCY_URL = 9,
+            DISCORD_URL = 10,
+            TELEGRAM_URL = 11,
         };
 
         enum dac_state_type: uint8_t {

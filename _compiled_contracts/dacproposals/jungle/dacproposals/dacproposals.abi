@@ -13,7 +13,7 @@
                 },
                 {
                     "name": "proposal_id",
-                    "type": "uint64"
+                    "type": "name"
                 },
                 {
                     "name": "dac_id",
@@ -27,7 +27,7 @@
             "fields": [
                 {
                     "name": "proposal_id",
-                    "type": "uint64"
+                    "type": "name"
                 },
                 {
                     "name": "dac_id",
@@ -41,7 +41,7 @@
             "fields": [
                 {
                     "name": "proposal_id",
-                    "type": "uint64"
+                    "type": "name"
                 },
                 {
                     "name": "dac_id",
@@ -59,7 +59,7 @@
                 },
                 {
                     "name": "proposal_id",
-                    "type": "uint64"
+                    "type": "name"
                 },
                 {
                     "name": "comment",
@@ -81,7 +81,7 @@
             "fields": [
                 {
                     "name": "proposal_id",
-                    "type": "uint64"
+                    "type": "name"
                 },
                 {
                     "name": "dac_id",
@@ -133,7 +133,7 @@
                 },
                 {
                     "name": "id",
-                    "type": "uint64"
+                    "type": "name"
                 },
                 {
                     "name": "category",
@@ -141,10 +141,6 @@
                 },
                 {
                     "name": "job_duration",
-                    "type": "uint32"
-                },
-                {
-                    "name": "approval_duration",
                     "type": "uint32"
                 },
                 {
@@ -185,7 +181,7 @@
                 },
                 {
                     "name": "proposal_id",
-                    "type": "uint64"
+                    "type": "name"
                 },
                 {
                     "name": "delegatee_custodian",
@@ -203,7 +199,7 @@
             "fields": [
                 {
                     "name": "proposal_id",
-                    "type": "uint64"
+                    "type": "name"
                 },
                 {
                     "name": "dac_id",
@@ -216,8 +212,8 @@
             "base": "",
             "fields": [
                 {
-                    "name": "key",
-                    "type": "uint64"
+                    "name": "proposal_id",
+                    "type": "name"
                 },
                 {
                     "name": "proposer",
@@ -267,7 +263,7 @@
                 },
                 {
                     "name": "proposal_id",
-                    "type": "uint64?"
+                    "type": "name?"
                 },
                 {
                     "name": "category_id",
@@ -288,12 +284,26 @@
             ]
         },
         {
+            "name": "runstartwork",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposal_id",
+                    "type": "name"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "startwork",
             "base": "",
             "fields": [
                 {
                     "name": "proposal_id",
-                    "type": "uint64"
+                    "type": "name"
                 },
                 {
                     "name": "dac_id",
@@ -349,7 +359,7 @@
             "fields": [
                 {
                     "name": "proposal_id",
-                    "type": "uint64"
+                    "type": "name"
                 },
                 {
                     "name": "dac_id",
@@ -367,7 +377,7 @@
                 },
                 {
                     "name": "proposal_id",
-                    "type": "uint64"
+                    "type": "name"
                 },
                 {
                     "name": "vote",
@@ -425,6 +435,11 @@
             "name": "finalize",
             "type": "finalize",
             "ricardian_contract": "## ACTION: finalize\n **PARAMETERS:**\n * __proposal_id__ is an integer id for an existing proposal for the proposer to finalize.\n\n **INTENT:**\n The intent of finalize is to trigger the transfer of funds to the worker from the escrow account. Upon successful transfer the proposal will cleaned from the contract table to free up RAM."
+        },
+        {
+            "name": "runstartwork",
+            "type": "runstartwork",
+            "ricardian_contract": ""
         },
         {
             "name": "startwork",
