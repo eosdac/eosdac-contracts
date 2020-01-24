@@ -393,7 +393,9 @@ namespace eosdac {
         // Remove all the votes associated with that proposal.
         proposal_vote_table prop_votes(_self, dac_id.value);
         auto by_proposal = prop_votes.get_index<"proposal"_n>();
-        for (auto itr = by_proposal.lower_bound(proposal.proposal_id.value), end_itr = by_proposal.upper_bound(proposal.proposal_id.value); itr != end_itr && itr != by_proposal.end(); ++itr) {
+        auto itr = by_proposal.lower_bound(proposal.proposal_id.value);
+        auto end_itr = by_proposal.upper_bound(proposal.proposal_id.value);
+        while (itr != end_itr && itr != by_proposal.end() && itr->proposal_id == proposal.proposal_id) {
             itr = by_proposal.erase(itr);
         }
 
