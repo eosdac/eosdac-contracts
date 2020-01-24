@@ -26,10 +26,12 @@ namespace eosdac {
         check(pay_amount.quantity.amount > 0, "ERR::CREATEPROP_INVALID_PAY_AMOUNT::Invalid pay amount. Must be greater than 0.");
         check(is_account(arbitrator), "ERR::CREATEPROP_INVALID_ARBITRATOR::Invalid arbitrator.");
 
-        auto treasury = dacdir::dac_for_id(dac_id).account_for_type(dacdir::TREASURY);
-        check(arbitrator != proposer && arbitrator != treasury, "Arbitrator must be a third party");
+        auto dac = dacdir::dac_for_id(dac_id);
+        auto treasury = dac.account_for_type(dacdir::TREASURY);
+        auto auth = dac.account_for_type(dacdir::AUTH);
+        check(arbitrator != auth && arbitrator != treasury, "Arbitrator must be a third party");
 
-        uint32_t approval_duration = 60 * 60 * 24 * 30;
+        uint32_t approval_duration = current_configs(dac_id).approval_duration;
 
         proposals.emplace(proposer, [&](proposal &p) {
             p.proposal_id = id;
