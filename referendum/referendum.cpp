@@ -34,8 +34,12 @@ void referendum::refund(name account){
 
 void referendum::updateconfig(config_item config, name dac_id){
     checkDAC(dac_id);
-    require_auth(get_self());
-    config.save(get_self(), dac_id, get_self());
+
+    auto dac = dacdir::dac_for_id(dac_id);
+    auto auth_account = dac.account_for_type(dacdir::AUTH);
+    require_auth(auth_account);
+
+    config.save(get_self(), dac_id, auth_account);
 }
 
 void referendum::propose(
@@ -55,6 +59,7 @@ void referendum::propose(
 #endif
 
     auto config = config_item::get_current_configs(get_self(), dac_id);
+    check(config.allow_vote_type.at(type), "ERR::VOTING_TYPE_NOT_ALLOWED::This type of vote is not allowed");
 
     // Get transaction hash for content_ref and next id
     auto size = transaction_size();
@@ -89,7 +94,7 @@ void referendum::propose(
     auto dep = deposits.find(proposer.value);
     extended_asset fee_required = config.fee[type];
     if (fee_required.quantity.amount > 0){
-        check(dep != deposits.end(), "ERR::FEE_REQUIRED::A fee is required to propose this type of referenda.  Please send the correct fee to this contract and try again.");
+        check(dep != deposits.end(), "ERR::FEE_REQUIRED::A fee is required to propose this type of referendum.  Please send the correct fee to this contract and try again.");
         check(dep->deposit.quantity >= fee_required.quantity &&
               dep->deposit.contract == fee_required.contract, "ERR::INSUFFICIENT_FEE::Fee provided is insufficient");
 
