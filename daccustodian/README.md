@@ -56,12 +56,187 @@ All of the active actions require a `dac_id (account_name)` parameter to be pass
 - auth_threshold_mid (uint8) - Number of custodians required to approve highest level actions.
 - auth_threshold_low (uint8) - Number of custodians required to approve highest level actions.
 - lockup_release_time_delay (date) - The time before locked up stake can be released back to the candidate using the unstake action
-- lockup_release_time_delay - The time for how long a staked amount will be locked after a candidate is voted in before they can get their staked funds back.
 - requested_pay_max (asset) - The max amount a custodian can requested as a candidate.
 
 ## Actions
 
 ---
+### appointcust
+
+##### Assertions:
+
+##### Parameters:
+
+	cust 	- Custodian account name
+	dac_id	- The ID for the DAC that is appointing custodian	
+
+##### Post Condition:
+
+
+### balanceobsv
+
+##### Assertions:
+
+##### Parameters:
+	account_balance_deltas	-
+	dac_id			-
+
+##### Post Condition:
+
+
+
+### capturestake
+
+##### Assertions:
+
+##### Parameters:
+	from		-
+	quantity	-	
+	dac_id		-
+
+##### Post Condition:
+
+
+### clearold
+
+##### Assertions:
+
+##### Parameters:
+	batch_size	-
+
+##### Post Condition:
+
+
+### clearstake
+
+##### Assertions:
+
+##### Parameters:
+	cand		- The account id for the candidate nominating.
+	new_value	-
+	dac_id		- The ID for the DAC
+
+##### Post Condition:
+
+
+### migrate
+
+##### Assertions:
+
+##### Parameters:
+	batch_size	-
+
+##### Post Condition:
+
+
+### rejectcuspay
+
+##### Assertions:
+
+##### Parameters:
+	payid 		-
+	dac_id		-
+
+##### Post Condition:
+
+
+### removecuspay
+
+##### Assertions:
+
+##### Parameters:
+	payid 		-
+	dac_id		-
+
+	
+
+##### Post Condition:
+
+
+### runnewperiod
+
+##### Assertions:
+
+##### Parameters:
+	message		-
+	dac_id		-
+
+##### Post Condition:
+
+
+### setperm
+
+##### Assertions:
+
+##### Parameters:
+
+	cand		- The account id for the candidate nominating.
+	permission	-
+	dac_id		- The ID for the DAC
+##### Post Condition:
+
+
+### stakeobsv
+
+##### Assertions:
+
+##### Parameters:
+	account_stake_deltas	-
+	dac_id			- The ID for the DAC
+
+##### Post Condition:
+
+
+### stprofile
+
+##### Assertions:
+
+##### Parameters:
+	cand		- The account id for the candidate nominating.
+	profile		-
+	dac_id		- The ID for the DAC
+
+##### Post Condition:
+
+
+### stprofileuns
+
+##### Assertions:
+
+##### Parameters:
+	cand 		- The account id for the candidate nominating.
+	profile		- 
+
+##### Post Condition:
+
+
+### transferobsv
+
+##### Assertions:
+
+##### Parameters:
+
+	from		-
+	to		-
+	quantity	-
+	dac_id		- The ID for the DAC
+
+##### Post Condition:
+
+
+### weightobsv
+
+##### Assertions:
+
+##### Parameters:
+	account_weight_deltas	-
+	dac_id			- The ID for the DAC
+
+##### Post Condition:
+
+
+
+### nominatecane
 
 ### nominatecande
 
@@ -239,6 +414,7 @@ This action asserts:
 If successful a new record should be added to the proxy table which is then used to track cumulative proxy weight from proxy voters.
 
 ---
+### updateconfige
 
 ## unregproxy
 
@@ -300,9 +476,15 @@ This action is to be run to end and begin each period in the DAC life cycle. It 
 - After the initial vote quorum percent has been reached subsequent calls to this action will require a minimum of `vote_quorum_percent` to vote for the votes to be considered sufficient to trigger a new period with new custodians.
 
 ##### Parameters:
+##### Assertions:
 
-     message - a string that is used to log a message in the chain history logs. It serves no function in the contract logic.
-     dac_id (name) - for DAC scoping
+##### Parameters:
+
+     message 	- a string that is used to log a message in the chain history logs. It serves no function in the contract logic.
+     dac_id  	- The ID for the DAC
+
+
+##### Post Condition:
 
 ---
 
@@ -342,7 +524,7 @@ This action is used to unstake a candidates tokens and have them transferred to 
     cand  - The account id for the candidate nominating.
     dac_id (name) - for DAC scoping
 
-### Post Condition:
+##### Post Condition:
 
 The candidate should still be present in the candidates table and should be still set to inactive. The candidates tokens will be transferred back to their account and their `locked_tokens` value will be reduced to 0.
 
@@ -352,14 +534,14 @@ The candidate should still be present in the candidates table and should be stil
 
 This action is used to remove a candidate from being a candidate for custodian elections.
 
-## Assertions:
+##### Assertions:
 
 - The action is authorised by the mid level permission the auth account for the contract.
 - The candidate is already a nominated candidate.
 
 ##### Parameters
 
-     cand        - The account id for the candidate nominating.
+     cand	 - The account id for the candidate nominating.
      lockupStake - if true the stake will be locked up for a time period as set by the contract config `lockup_release_time_delay`
      dac_id (name) - for DAC scoping
 
@@ -388,7 +570,6 @@ This action is used to remove a custodian.
 The custodian will be removed from the active custodians and should still be present in the candidates table but will be set to inactive. Their staked tokens will be locked up for the time delay added from the moment this action was called so they will not able to unstake until that time has passed. A replacement custodian will be selected from the candidates to fill the missing place (based on vote ranking) then the auths for the controlling dac auth account will be set for the custodian board.
 
 ---
-
 ### paycpu
 
 This action does nothing except check that it has the authorisation of the authority account and that the `max_cpu_usage_ms` of the transaction is less than 5 but not 0.
@@ -410,9 +591,11 @@ If this action is the first in a transaction then the authority account of the D
 
 # Compile
 
+
 The contract code has some compile time constants used for configuration. As a compile time constant the code has more flexibility for reuse on other DACs, and an extra layer of safety over exposing another configuration variable which could be changed after the code has been set and the ability to unit test the code without needing to modify the source just for testing.
 The available compile time flags are:
 
+- TOKENCONTRACT (default = "eosdactokens") - This is to set the associated token contract to inter-operate with for tracking voting weights, registered members and staking.
 - VOTING_DISABLED (default = false) - Setting this flag will disable the ability for anyone to vote for custodians by disabling the vote action.
 - TRANSFER_DELAY (default = 60 \* 60) - for configuring the time delay on token transfers from the contract
 
