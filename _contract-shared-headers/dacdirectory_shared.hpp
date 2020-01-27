@@ -20,6 +20,7 @@ namespace eosdac {
             ESCROW = 7,
             VOTE_WEIGHT = 8,
             ACTIVATION = 9,
+            REFERENDUM = 10,
             EXTERNAL = 254,
             OTHER = 255
         };
