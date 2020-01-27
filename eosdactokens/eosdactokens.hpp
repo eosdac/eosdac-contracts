@@ -45,6 +45,7 @@ namespace eosdac {
         ACTION close(name owner, const symbol& symbol);
 
         // staking
+        ACTION xferstake(name from, name to, asset quantity, string memo);
         ACTION stake(name account, asset quantity);
         ACTION unstake(name account, asset quantity);
         ACTION staketime(name account, uint32_t unstake_time, symbol token_symbol);
@@ -161,7 +162,7 @@ namespace eosdac {
         void sub_balance(name owner, asset value);
         void add_balance(name owner, asset value, name payer);
         void sub_stake(name owner, asset value, name dac_id);
-        void add_stake(name owner, asset value, name dac_id);
+        void add_stake(name owner, asset value, name dac_id, name ram_payer);
 
         void send_stake_notification(name account, asset stake, dacdir::dac dac_inst);
         void send_balance_notification(vector<account_balance_delta> account_weights, dacdir::dac dac_inst);

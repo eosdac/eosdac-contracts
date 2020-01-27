@@ -72,6 +72,12 @@ void referendum::propose(
     check( size == read, "ERR::READ_TRANSACTION_FAILED::read_transaction failed");
     checksum256 trx_id = sha256(buffer, read);
 
+    // Calculate a referendum id
+//    name referendum_id = nextID(trx_id);
+
+    check(type < vote_type::TYPE_INVALID, "ERR::TYPE_INVALID::Referendum type is invalid");
+    check(voting_type < count_type::COUNT_INVALID, "ERR::COUNT_TYPE_INVALID::Referendum vote counting type is invalid");
+
     // Do checks if it is account based voting
     if (voting_type == count_type::COUNT_ACCOUNT){
         string msg = "ERR::ACCOUNT_VOTE_NOT_ALLOWED::Account vote is not allowed for this type of referendum";
@@ -160,6 +166,9 @@ void referendum::vote(name voter, name referendum_id, uint8_t vote, name dac_id)
 
     referenda_table referenda(get_self(), dac_id.value);
     auto ref = referenda.get(referendum_id.value, "ERR::REFERENDUM_NOT_FOUND::Referendum not found");
+
+    uint32_t time_now = current_time_point().sec_since_epoch();
+    check(ref.expires.sec_since_epoch() >= time_now, "ERR::REFERENDUM_EXPIRED::Referendum is closed, no more voting is allowed");
     check(ref.status == referendum_status::STATUS_OPEN, "ERR::REFERENDUM_NOT_OPEN::Referendum is not open for voting");
 
     uint64_t current_votes_token = 0;

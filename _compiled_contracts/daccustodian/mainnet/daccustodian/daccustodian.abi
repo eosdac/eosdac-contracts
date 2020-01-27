@@ -122,24 +122,6 @@
             ]
         },
         {
-            "name": "capturestake",
-            "base": "",
-            "fields": [
-                {
-                    "name": "from",
-                    "type": "name"
-                },
-                {
-                    "name": "quantity",
-                    "type": "asset"
-                },
-                {
-                    "name": "dac_id",
-                    "type": "name"
-                }
-            ]
-        },
-        {
             "name": "claimpay",
             "base": "",
             "fields": [
@@ -170,24 +152,6 @@
                 {
                     "name": "batch_size",
                     "type": "uint16"
-                }
-            ]
-        },
-        {
-            "name": "clearstake",
-            "base": "",
-            "fields": [
-                {
-                    "name": "cand",
-                    "type": "name"
-                },
-                {
-                    "name": "new_value",
-                    "type": "asset"
-                },
-                {
-                    "name": "dac_id",
-                    "type": "name"
                 }
             ]
         },
@@ -596,24 +560,6 @@
             ]
         },
         {
-            "name": "tempstake",
-            "base": "",
-            "fields": [
-                {
-                    "name": "sender",
-                    "type": "name"
-                },
-                {
-                    "name": "quantity",
-                    "type": "asset"
-                },
-                {
-                    "name": "memo",
-                    "type": "string"
-                }
-            ]
-        },
-        {
             "name": "transferobsv",
             "base": "",
             "fields": [
@@ -848,11 +794,6 @@
             "ricardian_contract": ""
         },
         {
-            "name": "capturestake",
-            "type": "capturestake",
-            "ricardian_contract": ""
-        },
-        {
             "name": "claimpay",
             "type": "claimpay",
             "ricardian_contract": ""
@@ -865,11 +806,6 @@
         {
             "name": "clearold",
             "type": "clearold",
-            "ricardian_contract": ""
-        },
-        {
-            "name": "clearstake",
-            "type": "clearstake",
             "ricardian_contract": ""
         },
         {
@@ -1077,13 +1013,6 @@
         {
             "name": "pendingpay2",
             "type": "pay",
-            "index_type": "i64",
-            "key_names": [],
-            "key_types": []
-        },
-        {
-            "name": "pendingstake",
-            "type": "tempstake",
             "index_type": "i64",
             "key_names": [],
             "key_types": []
