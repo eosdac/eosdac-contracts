@@ -49,7 +49,7 @@
             "fields": [
                 {
                     "name": "referendum_id",
-                    "type": "uint64"
+                    "type": "name"
                 },
                 {
                     "name": "dac_id",
@@ -72,9 +72,23 @@
             ]
         },
         {
+            "name": "clearconfig",
+            "base": "",
+            "fields": [
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "config_item",
             "base": "",
             "fields": [
+                {
+                    "name": "duration",
+                    "type": "uint32"
+                },
                 {
                     "name": "fee",
                     "type": "pair_uint8_extended_asset[]"
@@ -93,6 +107,10 @@
                 },
                 {
                     "name": "allow_per_account_voting",
+                    "type": "pair_uint8_uint8[]"
+                },
+                {
+                    "name": "allow_vote_type",
                     "type": "pair_uint8_uint8[]"
                 }
             ]
@@ -117,7 +135,7 @@
             "fields": [
                 {
                     "name": "referendum_id",
-                    "type": "uint64"
+                    "type": "name"
                 },
                 {
                     "name": "dac_id",
@@ -126,12 +144,12 @@
             ]
         },
         {
-            "name": "pair_uint64_uint8",
+            "name": "pair_name_uint8",
             "base": "",
             "fields": [
                 {
                     "name": "key",
-                    "type": "uint64"
+                    "type": "name"
                 },
                 {
                     "name": "value",
@@ -218,6 +236,10 @@
                     "type": "name"
                 },
                 {
+                    "name": "referendum_id",
+                    "type": "name"
+                },
+                {
                     "name": "type",
                     "type": "uint8"
                 },
@@ -249,7 +271,7 @@
             "fields": [
                 {
                     "name": "referendum_id",
-                    "type": "uint64"
+                    "type": "name"
                 },
                 {
                     "name": "proposer",
@@ -337,7 +359,7 @@
             "fields": [
                 {
                     "name": "referendum_id",
-                    "type": "uint64"
+                    "type": "name"
                 },
                 {
                     "name": "dac_id",
@@ -355,7 +377,7 @@
                 },
                 {
                     "name": "referendum_id",
-                    "type": "uint64"
+                    "type": "name"
                 },
                 {
                     "name": "vote",
@@ -377,7 +399,7 @@
                 },
                 {
                     "name": "votes",
-                    "type": "pair_uint64_uint8[]"
+                    "type": "pair_name_uint8[]"
                 }
             ]
         }
@@ -391,6 +413,11 @@
         {
             "name": "clean",
             "type": "clean",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "clearconfig",
+            "type": "clearconfig",
             "ricardian_contract": ""
         },
         {
@@ -445,7 +472,7 @@
             "key_types": []
         },
         {
-            "name": "referenda",
+            "name": "referendums",
             "type": "referendum_data",
             "index_type": "i64",
             "key_names": [],
