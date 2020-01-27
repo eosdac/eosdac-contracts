@@ -473,6 +473,7 @@ void eosdactokens::add_stake(name account, asset value, name dac_id) {
 void eosdactokens::send_stake_notification(name account, asset stake, dacdir::dac dac_inst) {
   name custodian_contract = dac_inst.account_for_type(dacdir::CUSTODIAN);
   name vote_contract = dac_inst.account_for_type(dacdir::VOTE_WEIGHT);
+  name referendum_contract = dac_inst.account_for_type(dacdir::REFERENDUM);
   name notify_contract = (vote_contract) ? vote_contract : custodian_contract;
 
   stake_config config = stake_config::get_current_configs(get_self(), dac_inst.dac_id);
@@ -487,6 +488,12 @@ void eosdactokens::send_stake_notification(name account, asset stake, dacdir::da
   action(permission_level{get_self(), "notify"_n}, notify_contract, "stakeobsv"_n,
       make_tuple(stake_deltas, dac_inst.dac_id))
       .send();
+
+    if (referendum_contract && is_account(referendum_contract)){
+        action(permission_level{get_self(), "notify"_n}, referendum_contract, "stakeobsv"_n,
+               make_tuple(stake_deltas, dac_inst.dac_id))
+                .send();
+    }
 }
 
 void eosdactokens::send_balance_notification(vector<account_balance_delta> account_weights, dacdir::dac dac_inst) {
