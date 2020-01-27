@@ -438,8 +438,6 @@ uint8_t referendum::calculateStatus(name referendum_id, name dac_id) {
         double yes_percentage = 0.0;
         if (total >= quorum){
             // quorum has been reached, check we have passed
-            status = referendum_status::STATUS_ATTENTION;
-
             yes_percentage = (double(current_yes) / double(current_all)) * 10000.0; // multiply by 10000 to get integer with 2 dp
             pass_rate = config.pass[ref->type];
             if (uint64_t(yes_percentage) >= pass_rate){
@@ -448,6 +446,9 @@ uint8_t referendum::calculateStatus(name referendum_id, name dac_id) {
             else {
                 status = referendum_status::STATUS_FAILING;
             }
+        }
+        else {
+            status = referendum_status::STATUS_QUORUM_NOT_MET;
         }
 
         print("referendum id : ", referendum_id, ", dac id : ", dac_id, ", quorum : ", quorum, ", pass rate : ", pass_rate, ", current rate : ", current_all, ", total : ", total, ", yes : ", current_yes, "double: ", double(current_yes), "all double: ", double(current_all), ", yes% : ", yes_percentage, " status: ", status);

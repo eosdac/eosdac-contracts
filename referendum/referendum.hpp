@@ -91,7 +91,7 @@ CONTRACT referendum : public contract {
             STATUS_OPEN = 0,
             STATUS_PASSING = 1,
             STATUS_FAILING = 2,
-            STATUS_ATTENTION = 3,
+            STATUS_QUORUM_NOT_MET = 3,
             STATUS_INVALID = 4
         };
 
