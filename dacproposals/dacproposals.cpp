@@ -26,10 +26,12 @@ namespace eosdac {
         check(pay_amount.quantity.amount > 0, "ERR::CREATEPROP_INVALID_PAY_AMOUNT::Invalid pay amount. Must be greater than 0.");
         check(is_account(arbitrator), "ERR::CREATEPROP_INVALID_ARBITRATOR::Invalid arbitrator.");
 
-        auto treasury = dacdir::dac_for_id(dac_id).account_for_type(dacdir::TREASURY);
-        check(arbitrator != proposer && arbitrator != treasury, "Arbitrator must be a third party");
+        auto dac = dacdir::dac_for_id(dac_id);
+        auto treasury = dac.account_for_type(dacdir::TREASURY);
+        auto auth = dac.account_for_type(dacdir::AUTH);
+        check(arbitrator != auth && arbitrator != treasury, "Arbitrator must be a third party");
 
-        uint32_t approval_duration = 60 * 60 * 24 * 30;
+        uint32_t approval_duration = current_configs(dac_id).approval_duration;
 
         proposals.emplace(proposer, [&](proposal &p) {
             p.proposal_id = id;
@@ -299,6 +301,16 @@ namespace eosdac {
         configs.set(new_config, auth_account);
     }
 
+    ACTION dacproposals::clearconfig(name dac_id) {
+        auto auth_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::AUTH);
+        require_auth(auth_account);
+
+        configs_table configs(_self, dac_id.value);
+        if (configs.exists()){
+            configs.remove();
+        }
+    }
+
     ACTION dacproposals::clearexpprop(name proposal_id, name dac_id) {
         proposal_table proposals(_self, dac_id.value);
 
@@ -376,19 +388,18 @@ namespace eosdac {
     void dacproposals::clearprop(const proposal& proposal, name dac_id){
 
         proposal_table proposals(_self, dac_id.value);
+        auto prop_to_erase = proposals.find(proposal.proposal_id.value);
+
+        check(prop_to_erase != proposals.end(), "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
 
         // Remove all the votes associated with that proposal.
         proposal_vote_table prop_votes(_self, dac_id.value);
-        auto by_voters = prop_votes.get_index<"proposal"_n>();
-        auto itr = by_voters.find(proposal.proposal_id.value);
-        while(itr != by_voters.end() && itr->proposal_id) {
-            auto proposal_id = *(itr->proposal_id);
-            if (proposal_id == proposal.proposal_id){
-                print(itr->voter);
-                itr = by_voters.erase(itr);
-            }
+        auto by_proposal = prop_votes.get_index<"proposal"_n>();
+        auto itr = by_proposal.lower_bound(proposal.proposal_id.value);
+        auto end_itr = by_proposal.upper_bound(proposal.proposal_id.value);
+        while (itr != end_itr && itr != by_proposal.end() && itr->proposal_id == proposal.proposal_id) {
+            itr = by_proposal.erase(itr);
         }
-        auto prop_to_erase = proposals.find(proposal.proposal_id.value);
 
         proposals.erase(prop_to_erase);
     }

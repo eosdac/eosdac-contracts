@@ -36,6 +36,16 @@
             ]
         },
         {
+            "name": "clearconfig",
+            "base": "",
+            "fields": [
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "clearexpprop",
             "base": "",
             "fields": [
@@ -100,6 +110,10 @@
                 {
                     "name": "finalize_threshold",
                     "type": "uint16"
+                },
+                {
+                    "name": "approval_duration",
+                    "type": "uint32"
                 }
             ]
         },
@@ -400,6 +414,11 @@
             "name": "cancel",
             "type": "cancel",
             "ricardian_contract": "## ACTION: cancel\n  **PARAMETERS:**\n  * __proposal_id__ is an integer id for an existing proposal for the proposer to cancel.\n\n  **INTENT:**\n  The intent of cancel is to cancel a proposal."
+        },
+        {
+            "name": "clearconfig",
+            "type": "clearconfig",
+            "ricardian_contract": ""
         },
         {
             "name": "clearexpprop",

@@ -34,8 +34,12 @@ void referendum::refund(name account){
 
 void referendum::updateconfig(config_item config, name dac_id){
     checkDAC(dac_id);
-    require_auth(get_self());
-    config.save(get_self(), dac_id, get_self());
+
+    auto dac = dacdir::dac_for_id(dac_id);
+    auto auth_account = dac.account_for_type(dacdir::AUTH);
+    require_auth(auth_account);
+
+    config.save(get_self(), dac_id, auth_account);
 }
 
 void referendum::propose(
@@ -56,6 +60,10 @@ void referendum::propose(
 #endif
 
     auto config = config_item::get_current_configs(get_self(), dac_id);
+    check(config.allow_vote_type.at(type), "ERR::VOTING_TYPE_NOT_ALLOWED::This type of vote is not allowed");
+
+    check(type < vote_type::TYPE_INVALID, "ERR::TYPE_INVALID::Referendum type is invalid");
+    check(voting_type < count_type::COUNT_INVALID, "ERR::COUNT_TYPE_INVALID::Referendum vote counting type is invalid");
 
     // Get transaction hash for content_ref and next id
     auto size = transaction_size();
@@ -90,7 +98,7 @@ void referendum::propose(
     auto dep = deposits.find(proposer.value);
     extended_asset fee_required = config.fee[type];
     if (fee_required.quantity.amount > 0){
-        check(dep != deposits.end(), "ERR::FEE_REQUIRED::A fee is required to propose this type of referenda.  Please send the correct fee to this contract and try again.");
+        check(dep != deposits.end(), "ERR::FEE_REQUIRED::A fee is required to propose this type of referendum.  Please send the correct fee to this contract and try again.");
         check(dep->deposit.quantity >= fee_required.quantity &&
               dep->deposit.contract == fee_required.contract, "ERR::INSUFFICIENT_FEE::Fee provided is insufficient");
 
@@ -117,7 +125,9 @@ void referendum::propose(
 
     // Calculate expiry
     uint32_t time_now = current_time_point().sec_since_epoch();
-    uint32_t expiry_time = time_now + (60 * 60 * 24 * 30);
+//    config_item config = config_item::get_current_configs(get_self(), dac_id);
+    uint32_t expiry_time = time_now + config.duration;
+//    uint32_t expiry_time = time_now;
 
 
     // Save to database
@@ -146,25 +156,20 @@ void referendum::propose(
         r.acts =          acts;
     });
 
-
-    action(
-            eosio::permission_level{ get_self(), "active"_n },
-            get_self(), "proposed"_n,
-            make_tuple( proposer, referendum_id, dac_id )
-    ).send();
 }
 
 void referendum::vote(name voter, name referendum_id, uint8_t vote, name dac_id){
 
     checkDAC(dac_id);
     assertValidMember(voter, dac_id);
+    auto dac = dacdir::dac_for_id(dac_id);
 
     referenda_table referenda(get_self(), dac_id.value);
     auto ref = referenda.get(referendum_id.value, "ERR::REFERENDUM_NOT_FOUND::Referendum not found");
 
     uint32_t time_now = current_time_point().sec_since_epoch();
     check(ref.expires.sec_since_epoch() >= time_now, "ERR::REFERENDUM_EXPIRED::Referendum is closed, no more voting is allowed");
-    check(ref.status == referendum_status::STATUS_OPEN, "ERR::REFERENDUM_NOT_OPEN::Referendum status is not open");
+    check(ref.status == referendum_status::STATUS_OPEN, "ERR::REFERENDUM_NOT_OPEN::Referendum is not open for voting");
 
     uint64_t current_votes_token = 0;
     if (ref.token_votes.find(vote) != ref.token_votes.end()){
@@ -183,14 +188,15 @@ void referendum::vote(name voter, name referendum_id, uint8_t vote, name dac_id)
     }
 
     // get vote weight from token (staked balance - unstaking balance)
-    uint64_t weight = 1000000;
+    asset weightAsset = get_staked(voter, dac.symbol.get_contract(), dac.symbol.get_symbol().code());
+    uint64_t weight = weightAsset.amount;
     uint8_t old_vote = vote_choice::VOTE_REMOVE;
     // get existing vote
     votes_table votes(get_self(), dac_id.value);
     auto existing_vote_data = votes.find(voter.value);
     if (existing_vote_data != votes.end()){
-        if (existing_vote_data->votes.find(referendum_id.value) != existing_vote_data->votes.end()){
-            old_vote = uint8_t(existing_vote_data->votes.at(referendum_id.value));
+        if (existing_vote_data->votes.find(referendum_id) != existing_vote_data->votes.end()){
+            old_vote = uint8_t(existing_vote_data->votes.at(referendum_id));
         }
 
         auto ev = *existing_vote_data;
@@ -199,7 +205,7 @@ void referendum::vote(name voter, name referendum_id, uint8_t vote, name dac_id)
 
         auto existing_votes = ev.votes;
         if (vote == vote_choice::VOTE_REMOVE){
-            existing_votes.erase(referendum_id.value);
+            existing_votes.erase(referendum_id);
         }
         else {
             if (old_vote == vote_choice::VOTE_REMOVE){
@@ -207,7 +213,7 @@ void referendum::vote(name voter, name referendum_id, uint8_t vote, name dac_id)
                 // when updating vote weight
                 check(existing_votes.size() < 20, "ERR::::Can only vote on 20 referenda at a time, try using the clean action to remove old votes");
             }
-            existing_votes[referendum_id.value] = vote;
+            existing_votes[referendum_id] = vote;
         }
 
         votes.modify(existing_vote_data, same_payer, [&](vote_info& v) {
@@ -219,8 +225,8 @@ void referendum::vote(name voter, name referendum_id, uint8_t vote, name dac_id)
     else {
         votes.emplace(voter, [&](vote_info& v) {
             v.voter = voter;
-            map<uint64_t, uint8_t> votes;
-            votes.emplace(referendum_id.value, vote);
+            map<name, uint8_t> votes;
+            votes.emplace(referendum_id, vote);
             v.votes = votes;
         });
     }
@@ -309,8 +315,8 @@ void referendum::exec(name referendum_id, name dac_id){
 void referendum::stakeobsv(vector<account_stake_delta> stake_deltas, name dac_id){
     checkDAC(dac_id);
     auto dac = dacdir::dac_for_id(dac_id);
-    auto router_account = dac.account_for_type(dacdir::VOTE_WEIGHT);
-    require_auth(router_account);
+    auto token_contract = dac.symbol.get_contract();
+    require_auth(token_contract);
 
     referenda_table referenda(get_self(), dac_id.value);
 
@@ -320,7 +326,7 @@ void referendum::stakeobsv(vector<account_stake_delta> stake_deltas, name dac_id
 
         if (existing_vote_data != votes.end()){
             for (auto v: existing_vote_data->votes){
-                auto ref = referenda.find(v.first);
+                auto ref = referenda.find(v.first.value);
 
                 if (ref != referenda.end()){
                     referenda.modify(ref, same_payer, [&](referendum_data& r){
@@ -340,10 +346,10 @@ void referendum::clean(name account, name dac_id){
     votes_table votes(get_self(), dac_id.value);
     auto existing_vote_data = votes.find(account.value);
 
-    map<uint64_t, uint8_t> new_votes;
+    map<name, uint8_t> new_votes;
     if (existing_vote_data != votes.end()){
         for (auto vd: existing_vote_data->votes){
-            if (referenda.find(vd.first) != referenda.end()){
+            if (referenda.find(vd.first.value) != referenda.end()){
                 new_votes[vd.first] = vd.second;
             }
         }
@@ -354,10 +360,16 @@ void referendum::clean(name account, name dac_id){
     });
 }
 
-// Notifications
-void referendum::proposed(name proposer, name referendum_id, name dac_id){}
-void referendum::expired(name proposer, name referendum_id, name dac_id){}
+void referendum::clearconfig(name dac_id) {
+    checkDAC(dac_id);
 
+    auto dac = dacdir::dac_for_id(dac_id);
+    auto auth_account = dac.account_for_type(dacdir::AUTH);
+    require_auth(auth_account);
+
+    config_container c = config_container(get_self(), dac_id.value);
+    c.remove();
+}
 
 // Private
 
@@ -386,6 +398,7 @@ void referendum::checkDAC(name dac_id){
 #endif
 }
 
+
 uint8_t referendum::calculateStatus(name referendum_id, name dac_id) {
     referenda_table referenda(get_self(), dac_id.value);
     auto ref = referenda.find(referendum_id.value);
@@ -393,7 +406,7 @@ uint8_t referendum::calculateStatus(name referendum_id, name dac_id) {
 
     config_item config = config_item::get_current_configs(get_self(), dac_id);
     uint64_t quorum = 0, current_yes = 0, current_no = 0, current_abstain = 0, current_all = 0;
-    uint16_t pass_rate = 10000; // 100%
+    uint16_t pass_rate = config.pass[ref->type]; // integer with 2 decimals
     uint8_t status = referendum_status::STATUS_OPEN;
     uint32_t time_now = current_time_point().sec_since_epoch();
     uint64_t yes_percentage = 0;
@@ -422,21 +435,23 @@ uint8_t referendum::calculateStatus(name referendum_id, name dac_id) {
         current_all = current_yes + current_no + current_abstain;
 
         // check we have made quorum
+        double yes_percentage = 0.0;
         if (total >= quorum){
             // quorum has been reached, check we have passed
-            status = referendum_status::STATUS_ATTENTION;
-
-            uint64_t yes_percentage = uint64_t((double(current_yes) / double(current_all)) * 10000.0); // multiply by 10000 to get integer with 2 dp
+            yes_percentage = (double(current_yes) / double(current_all)) * 10000.0; // multiply by 10000 to get integer with 2 dp
             pass_rate = config.pass[ref->type];
-            if (yes_percentage >= pass_rate){
+            if (uint64_t(yes_percentage) >= pass_rate){
                 status = referendum_status::STATUS_PASSING;
             }
             else {
                 status = referendum_status::STATUS_FAILING;
             }
         }
+        else {
+            status = referendum_status::STATUS_QUORUM_NOT_MET;
+        }
 
-        print("referendum id : ", referendum_id, ", dac id : ", dac_id, ", quorum : ", quorum, ", pass rate : ", pass_rate, ", current rate : ", current_all, ", total : ", total, ", yes : ", current_yes, ", yes% : ", yes_percentage);
+        print("referendum id : ", referendum_id, ", dac id : ", dac_id, ", quorum : ", quorum, ", pass rate : ", pass_rate, ", current rate : ", current_all, ", total : ", total, ", yes : ", current_yes, "double: ", double(current_yes), "all double: ", double(current_all), ", yes% : ", yes_percentage, " status: ", status);
     }
 
     return status;
@@ -501,17 +516,4 @@ void referendum::proposeMsig(referendum_data ref, name dac_id){
             make_tuple( auth_account, proposal_name, metadata, dac_id )
     ).send();
 
-}
-
-name referendum::nextID(checksum256 trxid){
-    uint64_t id = 0;
-
-    uint32_t time_now = current_time_point().sec_since_epoch();
-    id |= uint64_t{time_now} << 32;
-    id |= static_cast<uint32_t>(trxid.data()[0]) << 24;
-    id |= static_cast<uint32_t>(trxid.data()[1]) << 16;
-    id |= static_cast<uint32_t>(trxid.data()[2]) << 8;
-    id |= static_cast<uint32_t>(trxid.data()[3]);
-
-    return name(id);
 }
