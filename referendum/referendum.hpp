@@ -14,13 +14,13 @@
 #include "../_contract-shared-headers/dacdirectory_shared.hpp"
 #include "../_contract-shared-headers/daccustodian_shared.hpp"
 
-#define SYSTEM_MSIG_CONTRACT "eosiomsigold"
+#define SYSTEM_MSIG_CONTRACT "eosio.msig"
 // WARNING : Do not use ENABLE_BINDING_VOTE if this will be a shared contract (ie RESTRICT_DAC should be set if ENABLE_BINDING_VOTE==1)
-#ifndef ENABLE_BINDING_VOTE
-#define ENABLE_BINDING_VOTE 1
-#endif
+//#ifndef ENABLE_BINDING_VOTE
+//#define ENABLE_BINDING_VOTE 1
+//#endif
 // Remove this to enable multiple dacs
-#define RESTRICT_DAC "eos.dac"
+//#define RESTRICT_DAC "eos.dac"
 
 using namespace eosio;
 using namespace eosdac;
@@ -91,7 +91,7 @@ CONTRACT referendum : public contract {
             STATUS_OPEN = 0,
             STATUS_PASSING = 1,
             STATUS_FAILING = 2,
-            STATUS_ATTENTION = 3,
+            STATUS_QUORUM_NOT_MET = 3,
             STATUS_INVALID = 4
         };
 
@@ -106,12 +106,14 @@ CONTRACT referendum : public contract {
         struct config_item;
         typedef eosio::singleton<"config"_n, config_item> config_container;
         struct [[eosio::table("config"), eosio::contract("referendum")]] config_item {
+            uint32_t duration;
             // Key for all the maps is vote_type
             map<uint8_t, extended_asset> fee;
             map<uint8_t, uint16_t> pass; // Percentage with 2 decimal places, eg. 1001 == 10.01%
             map<uint8_t, uint64_t> quorum_token; // Sum of currency units, yes no and abstain votes
             map<uint8_t, uint64_t> quorum_account; // Sum of accounts, yes no and abstain votes
             map<uint8_t, uint8_t> allow_per_account_voting;
+            map<uint8_t, uint8_t> allow_vote_type;
 
             static config_item get_current_configs(eosio::name account, eosio::name scope) {
                 return config_container(account, scope.value).get_or_default(config_item());
@@ -150,8 +152,8 @@ CONTRACT referendum : public contract {
 
 
         struct [[eosio::table("votes"), eosio::contract("referendum")]] vote_info {
-            name                        voter;
-            std::map<uint64_t, uint8_t> votes; // <referendum_id, vote>
+            name                    voter;
+            std::map<name, uint8_t> votes; // <referendum_id, vote>
 
             uint64_t primary_key() const { return voter.value; }
         };
@@ -188,7 +190,6 @@ CONTRACT referendum : public contract {
         bool hasAuth(vector<action> acts);
         uint8_t calculateStatus(name referendum_id, name dac_id);
         void proposeMsig(referendum_data ref, name dac_id);
-        name nextID(checksum256 trxid);
         void checkDAC(name dac_id);
 
 
@@ -206,10 +207,7 @@ CONTRACT referendum : public contract {
         ACTION clean(name account, name dac_id);
         ACTION refund(name account);
         ACTION updatestatus(name referendum_id, name dac_id);
-
-        // Notifications
-        ACTION proposed(name proposer, name referendum_id, name dac_id);
-        ACTION expired(name proposer, name referendum_id, name dac_id);
+        ACTION clearconfig(name dac_id);
 
         // Observation of stake deltas
         ACTION stakeobsv(vector<account_stake_delta> stake_deltas, name dac_id);

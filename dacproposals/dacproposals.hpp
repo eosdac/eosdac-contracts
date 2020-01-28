@@ -72,8 +72,7 @@ namespace eosdac {
         TABLE config {
                 uint16_t proposal_threshold = 4;
                 uint16_t finalize_threshold = 1;
-                // uint32_t escrow_expiry = 30 * 24 * 60 * 60;
-                // uint32_t approval_expiry = 30 * 24 * 60 * 60;
+                uint32_t approval_duration = 30 * 24 * 60 * 60;
         };
 
         typedef eosio::singleton<"config"_n, config> configs_table;
@@ -95,6 +94,7 @@ namespace eosdac {
         ACTION cancel(name proposal_id, name dac_id);
         ACTION comment(name commenter, name proposal_id, string comment, string comment_category, name dac_id);
         ACTION updateconfig(config new_config, name dac_id);
+        ACTION clearconfig(name dac_id);
         ACTION clearexpprop(name proposal_id, name dac_id);
         ACTION updpropvotes(name proposal_id, name dac_id);
         ACTION updallprops(name dac_id);
