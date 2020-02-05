@@ -1,11 +1,13 @@
 {
     "cdt": "https://github.com/EOSIO/eosio.cdt/releases/download/v1.6.3/eosio.cdt_1.6.3-1-ubuntu-18.04_amd64.deb",
-    "eos": "https://github.com/EOSIO/eos/releases/download/v2.0.0/eosio_2.0.0-1-ubuntu-18.04_amd64.deb",
-    "debug": 2,
-    "debugTransactions": true,
-    "keepAlive": true,
+    "eos": "https://github.com/EOSIO/eos/releases/download/v1.8.10/eosio_1.8.10-1-ubuntu-18.04_amd64.deb",
+    "contracts": "v1.8.3",
+    "debug": 0,
+    "debugTransactions": false,
+    "keepAlive": false,
     "outDir": ".lamington",
     "reporter": "List",
+    "bailOnFailure": false,
     "exclude": [
         "config.cpp",
         "external_observable_actions.cpp",

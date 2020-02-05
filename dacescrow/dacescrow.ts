@@ -8,24 +8,24 @@ import { Account, Contract, GetTableRowsOptions, ExtendedAsset, ExtendedSymbol, 
 
 // Table row types
 export interface DacescrowApprove {
-	key: number;
+	key: string|number;
 	approver: string|number;
 }
 
 export interface DacescrowCancel {
-	key: number;
+	key: string|number;
 }
 
 export interface DacescrowClean {
 }
 
 export interface DacescrowDisapprove {
-	key: number;
+	key: string|number;
 	disapprover: string|number;
 }
 
 export interface DacescrowEscrowInfo {
-	key: number;
+	key: string|number;
 	sender: string|number;
 	receiver: string|number;
 	arb: string|number;
@@ -41,12 +41,12 @@ export interface DacescrowInit {
 	arb: string|number;
 	expires: Date;
 	memo: string;
-	ext_reference: number;
+	ext_reference: string|number;
 	arb_payment: string;
 }
 
 export interface DacescrowRefund {
-	key: number;
+	key: string|number;
 }
 
 export interface DacescrowTransfer {
@@ -58,12 +58,12 @@ export interface DacescrowTransfer {
 
 export interface Dacescrow extends Contract {
 	// Actions
-	approve(key: number, approver: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
-	cancel(key: number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	approve(key: string|number, approver: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	cancel(key: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	clean(options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
-	disapprove(key: number, disapprover: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
-	init(sender: string|number, receiver: string|number, arb: string|number, expires: Date, memo: string, ext_reference: number, arb_payment: string, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
-	refund(key: number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	disapprove(key: string|number, disapprover: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	init(sender: string|number, receiver: string|number, arb: string|number, expires: Date, memo: string, ext_reference: string|number, arb_payment: string, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	refund(key: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	transfer(from: string|number, to: string|number, quantity: string, memo: string, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	
 	// Tables

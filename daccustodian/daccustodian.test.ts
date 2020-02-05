@@ -13,7 +13,7 @@ describe('Daccustodian', () => {
   let shared: SharedTestObjects;
 
   before(async () => {
-    shared = await SharedTestObjects.getInstance();
+    shared = await chai.expect(SharedTestObjects.getInstance()).to.be.fulfilled;
   });
 
   context('updateconfige', async () => {
@@ -540,7 +540,7 @@ describe('Daccustodian', () => {
     context('Registering as proxy', async () => {
       context('without correct auth', async () => {
         it('should fail with auth error', async () => {
-          l.assertMissingAuthority(
+          await l.assertMissingAuthority(
             shared.daccustodian_contract.regproxy(regMembers[0].name, dacId, {
               from: regMembers[3],
             })
@@ -549,7 +549,7 @@ describe('Daccustodian', () => {
       });
       context('with correct auth', async () => {
         it('should succeed', async () => {
-          chai.expect(
+          await chai.expect(
             shared.daccustodian_contract.regproxy(regMembers[0].name, dacId, {
               from: regMembers[0],
             })
@@ -959,15 +959,15 @@ describe('Daccustodian', () => {
             return shared.dac_token_contract.transfer(
               member.name,
               shared.dac_token_contract.account.name,
-              '1000.0000 EOSDAC',
-              'removing EOSDAC',
+              '1000.0000 PERDAC',
+              'removing PERDAC',
               { from: member }
             );
           });
 
           await debugPromise(
             Promise.all(transfers),
-            'transferring 1000 EOSDAC away for voting threshold'
+            'transferring 1000 PERDAC away for voting threshold'
           );
           await l.sleep(4_000);
         });
