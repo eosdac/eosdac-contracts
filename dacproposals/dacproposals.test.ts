@@ -1,13 +1,21 @@
-import * as l from 'lamington';
+import {
+  Account,
+  sleep,
+  EOSManager,
+  debugPromise,
+  assertMissingAuthority,
+  assertRowsEqual,
+  assertEOSErrorIncludesMessage,
+  assertRowCount,
+} from 'lamington';
 
-import { SharedTestObjects, debugPromise, Action } from '../TestHelpers';
+import { SharedTestObjects, EosioAction } from '../TestHelpers';
 import * as chai from 'chai';
 
 import * as chaiAsPromised from 'chai-as-promised';
 
 chai.use(chaiAsPromised);
 import { factory } from '../LoggingConfig';
-import { sleep, EOSManager } from 'lamington';
 
 const log = factory.getLogger('Custodian Tests');
 
@@ -36,13 +44,13 @@ let proposalHash = 'jhsdfkjhsdfkjhkjsdf';
 
 describe('Dacproposals', () => {
   let shared: SharedTestObjects;
-  let otherAccount: l.Account;
-  let proposer1Account: l.Account;
-  let arbitrator: l.Account;
-  let propDacCustodians: l.Account[];
-  let regMembers: l.Account[];
+  let otherAccount: Account;
+  let proposer1Account: Account;
+  let arbitrator: Account;
+  let propDacCustodians: Account[];
+  let regMembers: Account[];
   let dacId = 'popdac';
-  let delegateeCustodian: l.Account;
+  let delegateeCustodian: Account;
   let proposeApproveTheshold = 4;
   let category = 3;
   let newpropid = 'newpropid';
@@ -51,7 +59,8 @@ describe('Dacproposals', () => {
   let otherfoundpropid = 'otherid';
 
   before(async () => {
-    shared = await SharedTestObjects.getInstance();
+    shared = await chai.expect(SharedTestObjects.getInstance()).to.be.fulfilled;
+
     await shared.initDac(dacId, '4,PROPDAC', '1000000.0000 PROPDAC');
     await shared.updateconfig(dacId, '12.0000 PROPDAC');
     await chai.expect(
@@ -80,7 +89,7 @@ describe('Dacproposals', () => {
   context('updateconfig', async () => {
     context('without valid auth', async () => {
       it('should fail with auth error', async () => {
-        await l.assertMissingAuthority(
+        await assertMissingAuthority(
           shared.dacproposals_contract.updateconfig(
             {
               proposal_threshold: 7,
@@ -108,7 +117,7 @@ describe('Dacproposals', () => {
         ).to.eventually.be.fulfilled;
       });
       it('should have correct config in config table', async () => {
-        await l.assertRowsEqual(
+        await assertRowsEqual(
           shared.dacproposals_contract.configTable({ scope: dacId }),
           [
             {
@@ -124,7 +133,7 @@ describe('Dacproposals', () => {
   context('create proposal', async () => {
     context('without valid permissions', async () => {
       it('should fail with auth error', async () => {
-        await l.assertMissingAuthority(
+        await assertMissingAuthority(
           shared.dacproposals_contract.createprop(
             proposer1Account.name,
             'title',
@@ -144,7 +153,7 @@ describe('Dacproposals', () => {
     context('with valid auth', async () => {
       context('with invalid title', async () => {
         it('should fail with short title error', async () => {
-          await l.assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.createprop(
               proposer1Account.name,
               'ti',
@@ -164,7 +173,7 @@ describe('Dacproposals', () => {
       });
       context('with invalid summary', async () => {
         it('should fail with short summary error', async () => {
-          await l.assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.createprop(
               proposer1Account.name,
               'title',
@@ -184,7 +193,7 @@ describe('Dacproposals', () => {
       });
       context('with invalid pay symbol', async () => {
         it('should fail with invalid pay symbol error', async () => {
-          await l.assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.createprop(
               proposer1Account.name,
               'title',
@@ -204,7 +213,7 @@ describe('Dacproposals', () => {
       });
       context('with no pay symbol', async () => {
         it('should fail with no pay symbol error', async () => {
-          await l.assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.createprop(
               proposer1Account.name,
               'title',
@@ -224,7 +233,7 @@ describe('Dacproposals', () => {
       });
       context('with negative amount', async () => {
         it('should fail with negative pay error', async () => {
-          await l.assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.createprop(
               proposer1Account.name,
               'title',
@@ -244,7 +253,7 @@ describe('Dacproposals', () => {
       });
       context('with no arbitrator', async () => {
         it('should fail with invalid arbitrator error', async () => {
-          await l.assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.createprop(
               proposer1Account.name,
               'title',
@@ -284,7 +293,7 @@ describe('Dacproposals', () => {
       });
       context('with duplicate id', async () => {
         it('should fail with duplicate ID error', async () => {
-          await l.assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.createprop(
               proposer1Account.name,
               'title',
@@ -329,7 +338,7 @@ describe('Dacproposals', () => {
   context('voteprop', async () => {
     context('without valid auth', async () => {
       it('should fail with auth error', async () => {
-        await l.assertMissingAuthority(
+        await assertMissingAuthority(
           shared.dacproposals_contract.voteprop(
             propDacCustodians[0].name,
             newpropid,
@@ -350,7 +359,7 @@ describe('Dacproposals', () => {
     context('with valid auth', async () => {
       context('with invalid proposal id', async () => {
         it('should fail with proposal not found error', async () => {
-          await l.assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.voteprop(
               propDacCustodians[0].name,
               notfoundpropid,
@@ -519,7 +528,7 @@ describe('Dacproposals', () => {
         ).to.eventually.be.fulfilled;
       });
       it('should fail with invalid auth error', async () => {
-        await l.assertMissingAuthority(
+        await assertMissingAuthority(
           shared.dacproposals_contract.delegatevote(
             propDacCustodians[0].name,
             legalpropid, // proposal id
@@ -544,7 +553,7 @@ describe('Dacproposals', () => {
     context('with valid auth', async () => {
       context('with invalid proposal id', async () => {
         it('should fail with proposal not found error', async () => {
-          await l.assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.delegatevote(
               propDacCustodians[1].name,
               notfoundpropid, // proposal id
@@ -569,7 +578,7 @@ describe('Dacproposals', () => {
       });
       context('delegating to self', async () => {
         it('should fail with Cannot delegate voting to yourself error', async () => {
-          await l.assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.delegatevote(
               propDacCustodians[0].name,
               legalpropid, // proposal id
@@ -623,7 +632,7 @@ describe('Dacproposals', () => {
   context('comment', async () => {
     context('without valid auth', async () => {
       it('should fail with invalid auth error', async () => {
-        await l.assertMissingAuthority(
+        await assertMissingAuthority(
           shared.dacproposals_contract.comment(
             propDacCustodians[0].name,
             notfoundpropid,
@@ -649,7 +658,7 @@ describe('Dacproposals', () => {
     context('with valid auth', async () => {
       context('with invalid proposal id', async () => {
         it('should fail with proposal not found error', async () => {
-          await l.assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.comment(
               propDacCustodians[1].name,
               notfoundpropid, // proposal id
@@ -703,28 +712,10 @@ describe('Dacproposals', () => {
 
   context('prepare for start work', async () => {
     //`require_auth` now happens later in the startwork function which cause this test to fail
-    xcontext('without valid auth', async () => {
-      it('should fail with invalid auth error', async () => {
-        await l.assertMissingAuthority(
-          shared.dacproposals_contract.startwork(legalpropid, dacId, {
-            auths: [
-              {
-                actor: propDacCustodians[4].name,
-                permission: 'active',
-              },
-              {
-                actor: shared.auth_account.name,
-                permission: 'active',
-              },
-            ],
-          })
-        );
-      });
-    });
     context('with valid auth', async () => {
       context('with invalid proposal id', async () => {
         it('should fail with proposal not found error', async () => {
-          await l.assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.startwork(
               notfoundpropid, // proposal id
               dacId,
@@ -749,7 +740,7 @@ describe('Dacproposals', () => {
     context('proposal in pending_approval state', async () => {
       context('with insufficient votes', async () => {
         it('should fail with insuffient votes error', async () => {
-          await l.assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.startwork(
               newpropid, // proposal id
               dacId,
@@ -796,7 +787,7 @@ describe('Dacproposals', () => {
           }
         });
         it('should fail with insuffient votes error', async () => {
-          await l.assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.startwork(
               newpropid, // proposal id
               dacId,
@@ -864,9 +855,27 @@ describe('Dacproposals', () => {
         }
       );
     });
+    context('without valid auth', async () => {
+      it('should fail with invalid auth error', async () => {
+        await assertMissingAuthority(
+          shared.dacproposals_contract.startwork(newpropid, dacId, {
+            auths: [
+              {
+                actor: propDacCustodians[4].name,
+                permission: 'active',
+              },
+              {
+                actor: shared.auth_account.name,
+                permission: 'active',
+              },
+            ],
+          })
+        );
+      });
+    });
     context('start work with enough votes', async () => {
       before(async () => {
-        let action: Action = {
+        let action: EosioAction = {
           account: 'eosio.token',
           name: 'transfer',
           authorization: [{ actor: 'eosio', permission: 'active' }],
@@ -880,6 +889,7 @@ describe('Dacproposals', () => {
         chai.expect(EOSManager.transact({ actions: [action] })).to.eventually.be
           .fulfilled;
       });
+
       it('should succeed', async () => {
         await chai.expect(
           shared.dacproposals_contract.startwork(
@@ -900,41 +910,45 @@ describe('Dacproposals', () => {
           )
         ).to.eventually.be.fulfilled;
       });
-      it('should populate the escrow table', async () => {
-        await l.sleep(6000);
-        let proposalRow = await shared.dacescrow_contract.escrowsTable({
-          scope: 'dacescrow',
+      context('After time delay for deferred transaction', async () => {
+        before(async () => {
+          await sleep(6000);
         });
-        let row = proposalRow.rows[0];
-        chai.expect(row.key).to.eq(newpropid);
-        chai.expect(row.sender).to.eq('treasury');
-        chai.expect(row.receiver).to.eq(proposer1Account.name);
-        chai.expect(row.arb).to.eq(arbitrator.name);
-        chai.expect(row.ext_asset.quantity).to.eq('100.0000 EOS');
-        chai
-          .expect(row.memo)
-          .to.eq(`${proposer1Account.name}:${newpropid}:${proposalHash}`);
-        chai.expect(row.expires).to.be.afterTime(new Date(Date.now()));
-        chai.expect(row.arb_payment).to.be.eq(0);
-      });
-      it('should update the proposal state to in_progress', async () => {
-        let proposalRow = await shared.dacproposals_contract.proposalsTable({
-          scope: dacId,
-          lowerBound: newpropid,
-          upperBound: newpropid,
+        it('should populate the escrow table', async () => {
+          let proposalRow = await shared.dacescrow_contract.escrowsTable({
+            scope: 'dacescrow',
+          });
+          let row = proposalRow.rows[0];
+          chai.expect(row.key).to.eq(newpropid);
+          chai.expect(row.sender).to.eq('treasury');
+          chai.expect(row.receiver).to.eq(proposer1Account.name);
+          chai.expect(row.arb).to.eq(arbitrator.name);
+          chai.expect(row.ext_asset.quantity).to.eq('100.0000 EOS');
+          chai
+            .expect(row.memo)
+            .to.eq(`${proposer1Account.name}:${newpropid}:${proposalHash}`);
+          chai.expect(row.expires).to.be.afterTime(new Date(Date.now()));
+          chai.expect(row.arb_payment).to.be.eq(0);
         });
-        let row = proposalRow.rows[0];
-        chai.expect(row.proposal_id).to.eq(newpropid);
-        chai.expect(row.arbitrator).to.eq(arbitrator.name);
-        chai.expect(row.content_hash).to.eq(proposalHash);
-        chai
-          .expect(row.state)
-          .to.eq(ProposalState.ProposalStateWork_in_progress);
+        it('should update the proposal state to in_progress', async () => {
+          let proposalRow = await shared.dacproposals_contract.proposalsTable({
+            scope: dacId,
+            lowerBound: newpropid,
+            upperBound: newpropid,
+          });
+          let row = proposalRow.rows[0];
+          chai.expect(row.proposal_id).to.eq(newpropid);
+          chai.expect(row.arbitrator).to.eq(arbitrator.name);
+          chai.expect(row.content_hash).to.eq(proposalHash);
+          chai
+            .expect(row.state)
+            .to.eq(ProposalState.ProposalStateWork_in_progress);
+        });
       });
     });
     context('proposal not in pending_approval state', async () => {
       it('should fail with proposal is not in pensing approval state error', async () => {
-        await l.assertEOSErrorIncludesMessage(
+        await assertEOSErrorIncludesMessage(
           shared.dacproposals_contract.startwork(
             newpropid, // proposal id
             dacId,
@@ -1010,7 +1024,7 @@ describe('Dacproposals', () => {
       });
       context('startwork before expiry without enough votes', async () => {
         it('should fail with insufficient votes', async () => {
-          await l.assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.startwork(
               propId, // proposal id
               dacId,
@@ -1036,7 +1050,7 @@ describe('Dacproposals', () => {
           await sleep(3000);
         });
         it('should fail with expired error', async () => {
-          await l.assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.startwork(
               propId, // proposal id
               dacId,
@@ -1059,7 +1073,7 @@ describe('Dacproposals', () => {
       });
       context('clear expired proposals', async () => {
         it('should have the 10 of votes before clearing', async () => {
-          await l.assertRowCount(
+          await assertRowCount(
             shared.dacproposals_contract.propvotesTable({
               scope: dacId,
               indexPosition: 3,
@@ -1071,7 +1085,7 @@ describe('Dacproposals', () => {
           );
         });
         it('should have the correct number of proposals before clearing', async () => {
-          await l.assertRowCount(
+          await assertRowCount(
             shared.dacproposals_contract.proposalsTable({
               scope: dacId,
               lowerBound: propId,
@@ -1081,7 +1095,7 @@ describe('Dacproposals', () => {
           );
         });
         it('should not allow to clear unexpired proposals', async () => {
-          await l.assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.clearexpprop(newpropid, dacId, {
               from: proposer1Account,
             }),
@@ -1097,7 +1111,7 @@ describe('Dacproposals', () => {
         });
         context('After clearing expired proposals', async () => {
           it('should have the correct number of proposals', async () => {
-            await l.assertRowCount(
+            await assertRowCount(
               shared.dacproposals_contract.proposalsTable({
                 scope: dacId,
                 lowerBound: propId,
@@ -1107,7 +1121,7 @@ describe('Dacproposals', () => {
             );
           });
           it('should have the correct number of votes', async () => {
-            await l.assertRowCount(
+            await assertRowCount(
               shared.dacproposals_contract.propvotesTable({
                 scope: dacId,
                 indexPosition: 3,
@@ -1128,7 +1142,7 @@ describe('Dacproposals', () => {
     async () => {
       context('voteup', async () => {
         it('should fail with invalid state to accept votes', async () => {
-          await l.assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.voteprop(
               propDacCustodians[0].name,
               newpropid,
@@ -1150,7 +1164,7 @@ describe('Dacproposals', () => {
       });
       context('votedown', async () => {
         it('should fail with invalid state to accept votes', async () => {
-          await l.assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.voteprop(
               propDacCustodians[0].name,
               newpropid,
@@ -1175,7 +1189,7 @@ describe('Dacproposals', () => {
   context('complete work', async () => {
     context('without existing proposal', async () => {
       it('should fail with proposal not found error', async () => {
-        await l.assertEOSErrorIncludesMessage(
+        await assertEOSErrorIncludesMessage(
           shared.dacproposals_contract.completework(notfoundpropid, dacId, {
             from: proposer1Account,
           }),
@@ -1185,7 +1199,7 @@ describe('Dacproposals', () => {
     });
     context('with incorrect auth', async () => {
       it('should fail with auth error', async () => {
-        await l.assertMissingAuthority(
+        await assertMissingAuthority(
           shared.dacproposals_contract.completework(legalpropid, dacId, {
             auths: [{ actor: propDacCustodians[1].name, permission: 'active' }],
           })
@@ -1194,7 +1208,7 @@ describe('Dacproposals', () => {
     });
     context('proposal in pending approval state', async () => {
       it('should fail with incorrect to state to complete error', async () => {
-        await l.assertEOSErrorIncludesMessage(
+        await assertEOSErrorIncludesMessage(
           shared.dacproposals_contract.completework(legalpropid, dacId, {
             from: proposer1Account,
           }),
@@ -1220,7 +1234,7 @@ describe('Dacproposals', () => {
     // context('with valid auth', async () => {
     context('with invalid proposal id', async () => {
       it('should fail with proposal not found error', async () => {
-        await l.assertEOSErrorIncludesMessage(
+        await assertEOSErrorIncludesMessage(
           shared.dacproposals_contract.finalize(notfoundpropid, dacId, {
             from: proposer1Account,
           }),
@@ -1236,7 +1250,7 @@ describe('Dacproposals', () => {
       });
     });
     it('should fail with not in pending_finalize state error', async () => {
-      await l.assertEOSErrorIncludesMessage(
+      await assertEOSErrorIncludesMessage(
         shared.dacproposals_contract.finalize(legalpropid, dacId, {
           from: proposer1Account,
         }),
@@ -1252,7 +1266,7 @@ describe('Dacproposals', () => {
     });
     context('without enough votes to approve the finalize', async () => {
       it('should fail to complete work with not enough votes error', async () => {
-        await l.assertEOSErrorIncludesMessage(
+        await assertEOSErrorIncludesMessage(
           shared.dacproposals_contract.finalize(newpropid, dacId, {
             from: proposer1Account,
           }),
@@ -1295,7 +1309,7 @@ describe('Dacproposals', () => {
     });
     context('Read the proposals table after finalize', async () => {
       it('should have removed the finalized proposal', async () => {
-        await l.assertRowCount(
+        await assertRowCount(
           shared.dacproposals_contract.proposalsTable({
             scope: dacId,
             lowerBound: newpropid,
@@ -1305,7 +1319,7 @@ describe('Dacproposals', () => {
         );
       });
       it('escrow table should contain 0 row after finalize is done', async () => {
-        await l.assertRowCount(
+        await assertRowCount(
           shared.dacescrow_contract.escrowsTable({
             scope: 'dacescrow',
           }),
@@ -1369,7 +1383,7 @@ describe('Dacproposals', () => {
     });
     context('without valid auth', async () => {
       it('should fail with invalid auth error', async () => {
-        await l.assertMissingAuthority(
+        await assertMissingAuthority(
           shared.dacproposals_contract.cancel(cancelpropid, dacId, {
             from: otherAccount,
           })
@@ -1379,7 +1393,7 @@ describe('Dacproposals', () => {
     context('with valid auth', async () => {
       context('with invalid proposal id', async () => {
         it('should fail with proposal not found error', async () => {
-          await l.assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.cancel(notfoundpropid, dacId, {
               from: proposer1Account,
             }),
@@ -1395,7 +1409,7 @@ describe('Dacproposals', () => {
             });
           });
           it('should initially contain proposal', async () => {
-            await l.assertRowCount(
+            await assertRowCount(
               shared.dacproposals_contract.proposalsTable({
                 scope: dacId,
                 lowerBound: cancelpropid,
@@ -1412,7 +1426,6 @@ describe('Dacproposals', () => {
               lowerBound: cancelpropid,
               upperBound: cancelpropid,
             });
-            console.log(`votttee: ${JSON.stringify(result)}`);
             chai.expect(result.rows.length).equal(proposeApproveTheshold);
           });
           it('should succeed', async () => {
@@ -1423,7 +1436,7 @@ describe('Dacproposals', () => {
             ).to.eventually.be.fulfilled;
           });
           it('should not contain proposal', async () => {
-            await l.assertRowCount(
+            await assertRowCount(
               shared.dacproposals_contract.proposalsTable({
                 scope: dacId,
                 lowerBound: cancelpropid,
@@ -1433,7 +1446,7 @@ describe('Dacproposals', () => {
             );
           });
           it('should not contain initial votes for proposal', async () => {
-            await l.assertRowCount(
+            await assertRowCount(
               shared.dacproposals_contract.propvotesTable({
                 scope: dacId,
                 indexPosition: 3,
@@ -1532,7 +1545,7 @@ describe('Dacproposals', () => {
               );
             });
             it('should fail with insufficient votes', async () => {
-              await l.assertEOSErrorIncludesMessage(
+              await assertEOSErrorIncludesMessage(
                 shared.dacproposals_contract.startwork(
                   propId, // proposal id
                   dacId,
@@ -1579,7 +1592,7 @@ describe('Dacproposals', () => {
             );
           });
           it('should fail with insufficient votes', async () => {
-            await l.assertEOSErrorIncludesMessage(
+            await assertEOSErrorIncludesMessage(
               shared.dacproposals_contract.startwork(
                 propId, // proposal id
                 dacId,
@@ -1779,7 +1792,7 @@ describe('Dacproposals', () => {
               ).to.be.fulfilled;
             });
             it('propvotes should contain 3 votes for this proposal - one as a delegated vote', async () => {
-              await l.assertRowCount(
+              await assertRowCount(
                 shared.dacproposals_contract.propvotesTable({
                   scope: dacId,
                   indexPosition: 3,
@@ -1797,7 +1810,7 @@ describe('Dacproposals', () => {
     context('undelegate vote', async () => {
       context('with wrong auth', async () => {
         it('should fail with wrong auth', async () => {
-          await l.assertMissingAuthority(
+          await assertMissingAuthority(
             shared.dacproposals_contract.undelegateca(
               propDacCustodians[2].name,
               category, // matching category
@@ -1818,7 +1831,7 @@ describe('Dacproposals', () => {
           );
         });
         it('should contain the delegated category votes', async () => {
-          await l.assertRowCount(
+          await assertRowCount(
             shared.dacproposals_contract.propvotesTable({
               scope: dacId,
               indexPosition: 4,
@@ -1854,7 +1867,7 @@ describe('Dacproposals', () => {
         ).to.eventually.be.fulfilled;
       });
       it('should have removed the delegated category votes', async () => {
-        await l.assertRowCount(
+        await assertRowCount(
           shared.dacproposals_contract.propvotesTable({
             scope: dacId,
             indexPosition: 4,

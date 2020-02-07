@@ -2,12 +2,10 @@ import {
   Account,
   AccountManager,
   ContractDeployer,
-  nextBlock,
   sleep,
   EOSManager,
   generateTypes,
-  Contract,
-  ContractLoader,
+  debugPromise,
 } from 'lamington';
 import * as ecc from 'eosjs-ecc';
 import * as assert from 'assert';
@@ -26,40 +24,12 @@ import * as path from 'path';
 export var NUMBER_OF_REG_MEMBERS = 16;
 export var NUMBER_OF_CANDIDATES = 7;
 
-export type Action = {
+export type EosioAction = {
   account: string;
   name: string;
   authorization: { actor: string; permission: string }[];
   data: any;
 };
-
-export async function debugPromise<T>(
-  promise: Promise<T>,
-  successMessage: string,
-  errorMessage?: string
-) {
-  let debugPrefix = 'DebugPromise: ';
-  let successString = debugPrefix + successMessage + ': ';
-
-  let errorString = errorMessage
-    ? debugPrefix + errorMessage + ': '
-    : debugPrefix + 'error - ' + successMessage + ': ';
-
-  return promise
-    .then(value => {
-      console.log(
-        `${new Date().toISOString()}: ${successString} : ${JSON.stringify(
-          value,
-          null,
-          4
-        )}`
-      );
-      return value;
-    })
-    .catch(err => {
-      assert.fail(errorString + err);
-    });
-}
 
 export class SharedTestObjects {
   // Shared Instances to use between tests.
@@ -344,7 +314,7 @@ export class SharedTestObjects {
     parent: string,
     authToSet: Authority
   ) {
-    const actions: Action[] = [
+    const actions: EosioAction[] = [
       {
         account: 'eosio',
         name: 'updateauth',
@@ -375,7 +345,7 @@ export class SharedTestObjects {
     type: string,
     requirement: string
   ) {
-    const actions: Action[] = [
+    const actions: EosioAction[] = [
       {
         account: 'eosio',
         name: 'linkauth',
