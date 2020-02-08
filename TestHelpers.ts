@@ -24,13 +24,6 @@ import * as path from 'path';
 export var NUMBER_OF_REG_MEMBERS = 16;
 export var NUMBER_OF_CANDIDATES = 7;
 
-export type EosioAction = {
-  account: string;
-  name: string;
-  authorization: { actor: string; permission: string }[];
-  data: any;
-};
-
 export class SharedTestObjects {
   // Shared Instances to use between tests.
   private static instance: SharedTestObjects;
@@ -299,271 +292,238 @@ export class SharedTestObjects {
     );
   }
 
-  /**
-   *
-   * @param authorizations that would be permitted to perform this action on the account.
-   * @param account The account on which the auth is to changed.
-   * @param permission The name of the new permission to set on the account
-   * @param parent The new permission should a child of the parent permission.
-   * @param authToSet The auth to be set as the controller auth for the new permission
-   */
-  private async updateAuth(
-    authorizations: Authorization[],
-    account: string,
-    permission: string,
-    parent: string,
-    authToSet: Authority
-  ) {
-    const actions: EosioAction[] = [
-      {
-        account: 'eosio',
-        name: 'updateauth',
-        authorization: authorizations,
-        data: {
-          account: account,
-          permission: permission,
-          parent: parent,
-          auth: authToSet,
-        },
-      },
-    ];
-    await EOSManager.transact({ actions });
-  }
-
-  /**
-   *
-   * @param authorizations The authorizations allowed to make this change
-   * @param account The account to make the changes on
-   * @param code The contract that hold the action for the link_auth to be affected on
-   * @param type The action that should linked to this auth
-   * @param requirement The permission name that should now perform the action
-   */
-  private async linkAuth(
-    authorizations: Authorization[],
-    account: string,
-    code: string,
-    type: string,
-    requirement: string
-  ) {
-    const actions: EosioAction[] = [
-      {
-        account: 'eosio',
-        name: 'linkauth',
-        authorization: authorizations,
-        data: {
-          account: account,
-          code: code,
-          type: type,
-          requirement: requirement,
-        },
-      },
-    ];
-    await EOSManager.transact({ actions });
-  }
-
   private async add_token_contract_permissions() {
     await debugPromise(
-      this.updateAuth(
+      UpdateAuth.execUpdateAuth(
         this.dac_token_contract.account.active,
         this.dac_token_contract.account.name,
         'issue',
         'active',
-        eosio_dot_code_perm(this.dac_token_contract.account)
+        UpdateAuth.AuthorityToSet.forContractCode(
+          this.dac_token_contract.account
+        )
       ),
       'add issue auth'
     );
 
     await debugPromise(
-      this.updateAuth(
+      UpdateAuth.execUpdateAuth(
         this.dac_token_contract.account.active,
         this.dac_token_contract.account.name,
         'notify',
         'active',
-        eosio_dot_code_perm(this.dac_token_contract.account)
+        UpdateAuth.AuthorityToSet.forContractCode(
+          this.dac_token_contract.account
+        )
       ),
       'add notify auth'
     );
 
     await debugPromise(
-      this.updateAuth(
+      UpdateAuth.execUpdateAuth(
         this.dac_token_contract.account.active,
         this.dac_token_contract.account.name,
         'xfer',
         'active',
-        eosio_dot_code_perm(this.dac_token_contract.account)
+        UpdateAuth.AuthorityToSet.forContractCode(
+          this.dac_token_contract.account
+        )
       ),
       'add xfer auth to eosdactoken'
     );
 
     await debugPromise(
-      this.updateAuth(
+      UpdateAuth.execUpdateAuth(
         this.treasury_account.active,
         this.treasury_account.name,
         'escrow',
         'active',
-        eosio_dot_code_perm(this.dacproposals_contract.account)
+        UpdateAuth.AuthorityToSet.forContractCode(
+          this.dacproposals_contract.account
+        )
       ),
       'add escrow auth'
     );
 
     await debugPromise(
-      this.updateAuth(
+      UpdateAuth.execUpdateAuth(
         this.treasury_account.active,
         this.treasury_account.name,
         'xfer',
         'active',
-        eosio_dot_code_perm(this.dacproposals_contract.account)
+        UpdateAuth.AuthorityToSet.forContractCode(
+          this.dacproposals_contract.account
+        )
       ),
       'add xfer to treasury'
     );
 
     await debugPromise(
-      this.updateAuth(
+      UpdateAuth.execUpdateAuth(
         this.daccustodian_contract.account.active,
         this.daccustodian_contract.account.name,
         'pay',
         'active',
-        eosio_dot_code_perm(this.dacproposals_contract.account)
+        UpdateAuth.AuthorityToSet.forContractCode(
+          this.dacproposals_contract.account
+        )
       ),
       'add pay auth to daccustodian'
     );
 
     await debugPromise(
-      this.updateAuth(
+      UpdateAuth.execUpdateAuth(
         this.auth_account.owner,
         this.auth_account.name,
         'high',
         'active',
-        eosio_dot_code_perm(this.daccustodian_contract.account)
+        UpdateAuth.AuthorityToSet.forContractCode(
+          this.daccustodian_contract.account
+        )
       ),
       'add high auth'
     );
 
     await debugPromise(
-      this.updateAuth(
+      UpdateAuth.execUpdateAuth(
         this.auth_account.owner,
         this.auth_account.name,
         'owner',
         '',
-        eosio_dot_code_perm(this.daccustodian_contract.account)
+        UpdateAuth.AuthorityToSet.forContractCode(
+          this.daccustodian_contract.account
+        )
       ),
       'change owner of auth_account'
     );
 
     await debugPromise(
-      this.updateAuth(
+      UpdateAuth.execUpdateAuth(
         this.daccustodian_contract.account.owner,
         this.daccustodian_contract.account.name,
         'owner',
         '',
-        singleAuthority(this.auth_account, 'active')
+        UpdateAuth.AuthorityToSet.forAccount(this.auth_account, 'active')
       ),
       'changing owner of daccustodian'
     );
 
     await debugPromise(
-      this.updateAuth(
+      UpdateAuth.execUpdateAuth(
         this.daccustodian_contract.account.owner,
         this.daccustodian_contract.account.name,
         'active',
         'owner',
-        singleAuthority(this.auth_account, 'active')
+        UpdateAuth.AuthorityToSet.forAccount(this.auth_account, 'active')
       ),
       'change active of daccustodian'
     );
 
     await debugPromise(
-      this.updateAuth(
+      UpdateAuth.execUpdateAuth(
         this.dacescrow_contract.account.owner,
         this.dacescrow_contract.account.name,
         'active',
         'owner',
-        eosio_dot_code_perm(this.dacescrow_contract.account)
+        UpdateAuth.AuthorityToSet.forContractCode(
+          this.dacescrow_contract.account
+        )
       ),
       'change active of escrow to daccustodian'
     );
 
     await debugPromise(
-      this.updateAuth(
+      UpdateAuth.execUpdateAuth(
         this.dacproposals_contract.account.owner,
         this.dacproposals_contract.account.name,
         'active',
         'owner',
-        eosio_dot_code_perm(this.dacproposals_contract.account)
+        UpdateAuth.AuthorityToSet.forContractCode(
+          this.dacproposals_contract.account
+        )
       ),
       'change active of escrow to dacproposals'
     );
 
     await debugPromise(
-      this.updateAuth(
+      UpdateAuth.execUpdateAuth(
         this.auth_account.active,
         this.auth_account.name,
         'med',
         'high',
-        eosio_dot_code_perm(this.daccustodian_contract.account)
+        UpdateAuth.AuthorityToSet.forContractCode(
+          this.daccustodian_contract.account
+        )
       ),
       'add med auth'
     );
 
     await debugPromise(
-      this.updateAuth(
+      UpdateAuth.execUpdateAuth(
         this.auth_account.active,
         this.auth_account.name,
         'low',
         'med',
-        eosio_dot_code_perm(this.daccustodian_contract.account)
+        UpdateAuth.AuthorityToSet.forContractCode(
+          this.daccustodian_contract.account
+        )
       ),
       'add low auth'
     );
 
     await debugPromise(
-      this.updateAuth(
+      UpdateAuth.execUpdateAuth(
         this.auth_account.active,
         this.auth_account.name,
         'one',
         'low',
-        eosio_dot_code_perm(this.daccustodian_contract.account)
+        UpdateAuth.AuthorityToSet.forContractCode(
+          this.daccustodian_contract.account
+        )
       ),
       'add one auth'
     );
 
     await debugPromise(
-      this.updateAuth(
+      UpdateAuth.execUpdateAuth(
         this.auth_account.active,
         this.auth_account.name,
         'admin',
         'one',
-        eosio_dot_code_perm(this.daccustodian_contract.account)
+        UpdateAuth.AuthorityToSet.forContractCode(
+          this.daccustodian_contract.account
+        )
       ),
       'add admin auth'
     );
 
     await debugPromise(
-      this.updateAuth(
+      UpdateAuth.execUpdateAuth(
         this.daccustodian_contract.account.active,
         this.daccustodian_contract.account.name,
         'xfer',
         'active',
-        authorities(
-          [
-            {
-              name: this.daccustodian_contract.account.name,
+        UpdateAuth.AuthorityToSet.explicitAuthorities(2, [
+          {
+            permission: {
+              actor: this.daccustodian_contract.account.name,
               permission: 'eosio.code',
-              weight: 1,
             },
-            {
-              name: this.auth_account.name,
+            weight: 1,
+          },
+          {
+            permission: {
+              actor: this.auth_account.name,
               permission: 'med',
-              weight: 1,
             },
-          ],
-          2
-        )
+            weight: 1,
+          },
+        ])
       ),
       'add xfer to daccustodian'
     );
 
-    await this.linkAuth(
+    await UpdateAuth.execLinkAuth(
       this.dac_token_contract.account.active,
       this.dac_token_contract.account.name,
       this.dac_token_contract.account.name,
@@ -571,7 +531,7 @@ export class SharedTestObjects {
       'issue'
     );
 
-    await this.linkAuth(
+    await UpdateAuth.execLinkAuth(
       this.dac_token_contract.account.active,
       this.dac_token_contract.account.name,
       this.dac_token_contract.account.name,
@@ -579,7 +539,7 @@ export class SharedTestObjects {
       'notify'
     );
 
-    await this.linkAuth(
+    await UpdateAuth.execLinkAuth(
       this.treasury_account.active,
       this.treasury_account.name,
       this.dacescrow_contract.account.name,
@@ -588,7 +548,7 @@ export class SharedTestObjects {
     );
 
     await debugPromise(
-      this.linkAuth(
+      UpdateAuth.execLinkAuth(
         this.treasury_account.active,
         this.treasury_account.name,
         this.dacescrow_contract.account.name,
@@ -598,7 +558,7 @@ export class SharedTestObjects {
       'linking escrow perm to treasury'
     );
 
-    await this.linkAuth(
+    await UpdateAuth.execLinkAuth(
       this.treasury_account.active,
       this.treasury_account.name,
       'eosio.token',
@@ -606,7 +566,7 @@ export class SharedTestObjects {
       'xfer'
     );
 
-    await this.linkAuth(
+    await UpdateAuth.execLinkAuth(
       this.dac_token_contract.account.active,
       this.dac_token_contract.account.name,
       this.daccustodian_contract.account.name,
@@ -614,7 +574,7 @@ export class SharedTestObjects {
       'notify'
     );
 
-    await this.linkAuth(
+    await UpdateAuth.execLinkAuth(
       this.dac_token_contract.account.active,
       this.dac_token_contract.account.name,
       this.dac_token_contract.account.name,
@@ -622,7 +582,7 @@ export class SharedTestObjects {
       'notify'
     );
 
-    await this.linkAuth(
+    await UpdateAuth.execLinkAuth(
       this.dac_token_contract.account.active,
       this.dac_token_contract.account.name,
       this.daccustodian_contract.account.name,
@@ -630,7 +590,7 @@ export class SharedTestObjects {
       'notify'
     );
 
-    await this.linkAuth(
+    await UpdateAuth.execLinkAuth(
       this.dac_token_contract.account.active,
       this.dac_token_contract.account.name,
       this.daccustodian_contract.account.name,
@@ -638,7 +598,7 @@ export class SharedTestObjects {
       'notify'
     );
 
-    await this.linkAuth(
+    await UpdateAuth.execLinkAuth(
       this.dac_token_contract.account.active,
       this.dac_token_contract.account.name,
       this.dac_token_contract.account.name,
@@ -646,7 +606,7 @@ export class SharedTestObjects {
       'xfer'
     );
 
-    await this.linkAuth(
+    await UpdateAuth.execLinkAuth(
       this.daccustodian_contract.account.active,
       this.daccustodian_contract.account.name,
       this.dac_token_contract.account.name,
@@ -654,7 +614,7 @@ export class SharedTestObjects {
       'xfer'
     );
 
-    await this.linkAuth(
+    await UpdateAuth.execLinkAuth(
       this.daccustodian_contract.account.active,
       this.daccustodian_contract.account.name,
       this.daccustodian_contract.account.name,
@@ -744,65 +704,6 @@ async function setup_external(name: string) {
   );
 }
 
-export async function new_account(name: string): Promise<Account> {
-  const privateKey = await ecc.unsafeRandomKey();
-
-  const account = new Account(name, privateKey);
-  await debugPromise(
-    AccountManager.setupAccount(account),
-    `Create new account ${name}`
-  );
-  return account;
-}
-
-export function eosio_dot_code_perm(account: Account): Authority {
-  return singleAuthority(account, 'eosio.code');
-}
-export interface PermissionLevelWeight {
-  name: string;
-  permission: string;
-  weight: number;
-}
-
-export interface Authority {
-  permissionLevelWeights: PermissionLevelWeight[];
-  weight: number;
-}
-
-export interface Authorization {
-  actor: string;
-  permission: string;
-}
-
-export function singleAuthority(
-  account: Account,
-  permission: string
-): Authority {
-  return authorities([
-    { name: account.name, permission: permission, weight: 1 },
-  ]);
-}
-
-export function authorities(
-  permissionLevelWeights: PermissionLevelWeight[],
-  threshold: number = 1
-): any {
-  return {
-    threshold: threshold,
-    accounts: permissionLevelWeights.map(permLevelWeight => {
-      return {
-        permission: {
-          actor: permLevelWeight.name,
-          permission: permLevelWeight.permission,
-        },
-        weight: permLevelWeight.weight,
-      };
-    }),
-    keys: [],
-    waits: [],
-  };
-}
-
 export enum Account_type {
   AUTH = 0,
   TREASURY = 1,
@@ -829,4 +730,162 @@ enum ref_type {
 enum dac_state_type {
   dac_state_typeINACTIVE = 0,
   dac_state_typeACTIVE = 1,
+}
+
+/* ----------- Extracted from EOSIO types */
+
+export type EosioAction = {
+  account: string;
+  name: string;
+  authorization: { actor: string; permission: string }[];
+  data: any;
+};
+
+namespace UpdateAuth {
+  export interface PermissionLevel {
+    actor: string;
+    permission: string;
+  }
+
+  interface PermissionLevelWeight {
+    permission: PermissionLevel;
+    weight: number;
+  }
+
+  interface AuthorityToSet {
+    threshold: number;
+    keys: KeyWait[];
+    accounts: PermissionLevelWeight[];
+    waits: WeightWait[];
+  }
+
+  export interface WeightWait {
+    seconds: number;
+    weight: number; // not sure if needed
+  }
+
+  export interface KeyWait {
+    key: string;
+    weight: number; // not sure if needed
+  }
+  /**
+   *
+   * @param authorizations that would be permitted to perform this action on the account.
+   * @param account The account on which the auth is to changed.
+   * @param permission The name of the new permission to set on the account
+   * @param parent The new permission should a child of the parent permission.
+   * @param authToSet The auth to be set as the controller auth for the new permission
+   */
+  export async function execUpdateAuth(
+    authorizations: PermissionLevel[],
+    account: string,
+    permission: string,
+    parent: string,
+    authToSet: AuthorityToSet
+  ) {
+    const actions: EosioAction[] = [
+      {
+        account: 'eosio',
+        name: 'updateauth',
+        authorization: authorizations,
+        data: {
+          account: account,
+          permission: permission,
+          parent: parent,
+          auth: authToSet,
+        },
+      },
+    ];
+    await EOSManager.transact({ actions });
+  }
+
+  export namespace AuthorityToSet {
+    export function forContractCode(account: Account): AuthorityToSet {
+      return forAccount(account, 'eosio.code');
+    }
+
+    /**
+     * Convenience function to get an AuthorityToSet for a given user with a named permission.
+     * Typical usecase for this would be when assigning the control of one account's permission to a different controlling account.
+     * eg. A bookkeeper account should be given `pay` permission on a treasury account.
+     *  This function would supply the AuthorityToSet for a `bookkeeper` with their `active` permission into the `updateAuth` function.
+     * @param account Account to hold the new authority
+     * @param permission The name of the new authority to be added to `account`
+     */
+    export function forAccount(
+      account: Account,
+      permission: string
+    ): AuthorityToSet {
+      return explicitAuthorities(1, [
+        {
+          permission: { actor: account.name, permission: permission },
+          weight: 1,
+        },
+      ]);
+    }
+
+    /**
+     * A function to build the Authority to update
+     * @param threshold The threshold required from associated PermissionLevelsWeights, KeyLevelWeights and WaitWeights to activate this auth.
+     * @param permissionLevelWeights The PermissionLevelWeights to contribute to this auth
+     * @param keyWeights The KeyLevelWeights to contribute to this auth
+     * @param waitWeights The WaitWeights to contribute to this auth
+     * If the threshold is set to high for it to be satisfied by the associated permissionWeights the updateAuth action will assert.
+     */
+    export function explicitAuthorities(
+      threshold: number,
+      permissionLevelWeights: PermissionLevelWeight[] = [],
+      keyWeights: KeyWait[] = [],
+      waitWeights: WeightWait[] = []
+    ): AuthorityToSet {
+      return {
+        threshold: threshold,
+        accounts: permissionLevelWeights,
+        keys: keyWeights,
+        waits: waitWeights,
+      };
+    }
+  }
+
+  /**
+   *
+   * @param authorizations The authorizations allowed to make this change
+   * @param account The account to make the changes on
+   * @param code The contract that hold the action for the link_auth to be affected on
+   * @param type The action that should linked to this auth
+   * @param requirement The permission name that should now perform the action
+   */
+  export async function execLinkAuth(
+    authorizations: PermissionLevel[],
+    account: string,
+    code: string,
+    type: string,
+    requirement: string
+  ) {
+    const actions: EosioAction[] = [
+      {
+        account: 'eosio',
+        name: 'linkauth',
+        authorization: authorizations,
+        data: {
+          account: account,
+          code: code,
+          type: type,
+          requirement: requirement,
+        },
+      },
+    ];
+    await EOSManager.transact({ actions });
+  }
+}
+
+export async function new_account(name: string): Promise<Account> {
+  const privateKey = await ecc.unsafeRandomKey();
+
+  const account = new Account(name, privateKey);
+  await debugPromise(
+    AccountManager.setupAccount(account),
+    `Create new account ${name}`
+  );
+  return account;
 }
