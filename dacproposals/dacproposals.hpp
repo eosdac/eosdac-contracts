@@ -8,8 +8,7 @@
 #include "../_contract-shared-headers/eosdactokens_shared.hpp"
 
 #ifndef TRANSFER_DELAY
-// #define TRANSFER_DELAY 60*60
-#define TRANSFER_DELAY 3
+#define TRANSFER_DELAY 60*60
 #endif
 
 using namespace eosio;

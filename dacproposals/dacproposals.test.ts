@@ -9,7 +9,7 @@ import {
   assertRowCount,
 } from 'lamington';
 
-import { SharedTestObjects, EosioAction } from '../TestHelpers';
+import { SharedTestObjects } from '../TestHelpers';
 import * as chai from 'chai';
 
 import * as chaiAsPromised from 'chai-as-promised';
