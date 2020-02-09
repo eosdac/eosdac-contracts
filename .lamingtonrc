@@ -8,24 +8,13 @@
     "outDir": ".lamington",
     "reporter": "List",
     "bailOnFailure": false,
-    "exclude": [
-        "config.cpp",
-        "external_observable_actions.cpp",
-        "migration.cpp",
-        "newperiod_components.cpp",
-        "pay_handling.cpp",
-        "privatehelpers.cpp",
-        "registering.cpp",
-        "update_member_details.cpp",
-        "debug.cpp",
-        "voting.cpp",
-        "distribution.cpp",
-        "contracts/example/*",
-        "distribution/*",
-        "dacmultisigs",
-        "_test_helpers",
-        "referendum.cpp",
-        "dacproposals.spec.ts",
-        "paycpu.cpp"
+    "include": [
+        "daccustodian.cpp",
+        "dacdirectory.cpp",
+        "dacescrow.cpp",
+        "dacproposals.cpp",
+        "eosdactokens.cpp",
+        "eosio.token.cpp",
+        "stakevote.cpp"
     ]
 }
