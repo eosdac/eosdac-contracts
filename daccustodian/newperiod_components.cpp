@@ -41,7 +41,9 @@ void daccustodian::distributeMeanPay(name dac_id) {
   int64_t count = 0;
   for (auto cust : custodians) {
     if (total.get_extended_symbol().get_symbol() == cust.requestedpay.symbol) {
-      total += extended_asset(cust.requestedpay, total.contract);
+      if (cust.requestedpay.amount <= configs.requested_pay_max.quantity.amount) {
+        total += extended_asset(cust.requestedpay, total.contract);
+      }
       count += 1;
     }
   }

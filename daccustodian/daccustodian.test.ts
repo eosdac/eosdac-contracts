@@ -829,6 +829,35 @@ describe('Daccustodian', () => {
                 '12.0000 PERDAC'
               );
               await shared.voteForCustodians(regMembers, candidates, dacId);
+
+              // Change the config to a lower requestedPayMax to affect average pay tests after `newperiode` succeeds.
+              // This change to `23.0000 EOS` should cause the requested pays of 25.0000 EOS to be fitered from the mean pay.
+              chai.expect(
+                shared.daccustodian_contract.updateconfige(
+                  {
+                    numelected: 5,
+                    maxvotes: 4,
+                    requested_pay_max: {
+                      contract: 'eosio.token',
+                      quantity: '23.0000 EOS',
+                    },
+                    periodlength: 5,
+                    initial_vote_quorum_percent: 31,
+                    vote_quorum_percent: 15,
+                    auth_threshold_high: 4,
+                    auth_threshold_mid: 3,
+                    auth_threshold_low: 2,
+                    lockupasset: {
+                      contract: shared.dac_token_contract.account.name,
+                      quantity: '12.0000 PERDAC',
+                    },
+                    should_pay_via_service_provider: true,
+                    lockup_release_time_delay: 1233,
+                  },
+                  dacId,
+                  { from: shared.auth_account }
+                )
+              ).to.eventually.be.fulfilled;
             });
             it('should succeed with custodians populated', async () => {
               await shared.daccustodian_contract.newperiode(
@@ -1000,20 +1029,25 @@ describe('Daccustodian', () => {
             5
           );
         });
-        it('custodians should the mean pay', async () => {
+        it('custodians should the mean pay from the valid requested pays. (Requested pay exceeding the max pay should be ignored from the mean.)', async () => {
           let custodianRows = await shared.daccustodian_contract.custodiansTable(
             {
               scope: dacId,
               limit: 12,
             }
           );
-          let pays = custodianRows.rows.map(cand => {
-            return Number(cand.requestedpay.split(' ')[0]);
-          });
+          let pays = custodianRows.rows
+            .map(cand => {
+              return Number(cand.requestedpay.split(' ')[0]);
+            })
+            .filter(val => {
+              return val <= 23; // filter out pays that over 23 because they should be filtered by the requested pay calc.
+            });
+
           let expectedAverage =
             pays.reduce((a, b) => {
               return a + b;
-            }) / pays.length;
+            }) / custodianRows.rows.length;
 
           let payRows = await shared.daccustodian_contract.pendingpay2Table({
             scope: dacId,
