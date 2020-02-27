@@ -4,41 +4,46 @@
 // Any changes you make will be overwritten by Lamington
 // =====================================================
 
-import { Account, Contract, GetTableRowsOptions, ActorPermission, ExtendedAsset, ExtendedSymbol, TableRowsResult } from 'lamington';
+import { Account, Contract, GetTableRowsOptions, ExtendedAsset, ExtendedSymbol, ActorPermission, TableRowsResult } from 'lamington';
 
 // Table row types
 export interface DacproposalsArbapprove {
 	arbitrator: string|number;
-	proposal_id: number;
+	proposal_id: string|number;
 	dac_id: string|number;
 }
 
 export interface DacproposalsCancel {
-	proposal_id: number;
+	proposal_id: string|number;
+	dac_id: string|number;
+}
+
+export interface DacproposalsClearconfig {
 	dac_id: string|number;
 }
 
 export interface DacproposalsClearexpprop {
-	proposal_id: number;
+	proposal_id: string|number;
 	dac_id: string|number;
 }
 
 export interface DacproposalsComment {
 	commenter: string|number;
-	proposal_id: number;
+	proposal_id: string|number;
 	comment: string;
 	comment_category: string;
 	dac_id: string|number;
 }
 
 export interface DacproposalsCompletework {
-	proposal_id: number;
+	proposal_id: string|number;
 	dac_id: string|number;
 }
 
 export interface DacproposalsConfig {
 	proposal_threshold: number;
 	finalize_threshold: number;
+	approval_duration: number;
 }
 
 export interface DacproposalsCreateprop {
@@ -48,10 +53,9 @@ export interface DacproposalsCreateprop {
 	arbitrator: string|number;
 	pay_amount: ExtendedAsset;
 	content_hash: string;
-	id: number;
+	id: string|number;
 	category: number;
 	job_duration: number;
-	approval_duration: number;
 	dac_id: string|number;
 }
 
@@ -64,18 +68,18 @@ export interface DacproposalsDelegatecat {
 
 export interface DacproposalsDelegatevote {
 	custodian: string|number;
-	proposal_id: number;
+	proposal_id: string|number;
 	delegatee_custodian: string|number;
 	dac_id: string|number;
 }
 
 export interface DacproposalsFinalize {
-	proposal_id: number;
+	proposal_id: string|number;
 	dac_id: string|number;
 }
 
 export interface DacproposalsProposal {
-	key: number;
+	proposal_id: string|number;
 	proposer: string|number;
 	arbitrator: string|number;
 	content_hash: string;
@@ -96,8 +100,13 @@ export interface DacproposalsProposalvote {
 	comment_hash: string;
 }
 
+export interface DacproposalsRunstartwork {
+	proposal_id: string|number;
+	dac_id: string|number;
+}
+
 export interface DacproposalsStartwork {
-	proposal_id: number;
+	proposal_id: string|number;
 	dac_id: string|number;
 }
 
@@ -117,34 +126,36 @@ export interface DacproposalsUpdateconfig {
 }
 
 export interface DacproposalsUpdpropvotes {
-	proposal_id: number;
+	proposal_id: string|number;
 	dac_id: string|number;
 }
 
 export interface DacproposalsVoteprop {
 	custodian: string|number;
-	proposal_id: number;
+	proposal_id: string|number;
 	vote: number;
 	dac_id: string|number;
 }
 
 export interface Dacproposals extends Contract {
 	// Actions
-	arbapprove(arbitrator: string|number, proposal_id: number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
-	cancel(proposal_id: number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
-	clearexpprop(proposal_id: number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
-	comment(commenter: string|number, proposal_id: number, comment: string, comment_category: string, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
-	completework(proposal_id: number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
-	createprop(proposer: string|number, title: string, summary: string, arbitrator: string|number, pay_amount: ExtendedAsset, content_hash: string, id: number, category: number, job_duration: number, approval_duration: number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	arbapprove(arbitrator: string|number, proposal_id: string|number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	cancel(proposal_id: string|number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	clearconfig(dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	clearexpprop(proposal_id: string|number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	comment(commenter: string|number, proposal_id: string|number, comment: string, comment_category: string, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	completework(proposal_id: string|number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	createprop(proposer: string|number, title: string, summary: string, arbitrator: string|number, pay_amount: ExtendedAsset, content_hash: string, id: string|number, category: number, job_duration: number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	delegatecat(custodian: string|number, category: number, delegatee_custodian: string|number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
-	delegatevote(custodian: string|number, proposal_id: number, delegatee_custodian: string|number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
-	finalize(proposal_id: number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
-	startwork(proposal_id: number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	delegatevote(custodian: string|number, proposal_id: string|number, delegatee_custodian: string|number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	finalize(proposal_id: string|number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	runstartwork(proposal_id: string|number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	startwork(proposal_id: string|number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	undelegateca(custodian: string|number, category: number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	updallprops(dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	updateconfig(new_config: DacproposalsConfig, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
-	updpropvotes(proposal_id: number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
-	voteprop(custodian: string|number, proposal_id: number, vote: number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	updpropvotes(proposal_id: string|number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	voteprop(custodian: string|number, proposal_id: string|number, vote: number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	
 	// Tables
 	configTable(options?: GetTableRowsOptions): Promise<TableRowsResult<DacproposalsConfig>>;

@@ -1,16 +1,9 @@
 import * as l from 'lamington';
 
-import {
-  SharedTestObjects,
-  initAndGetSharedObjects,
-  candidates,
-  regmembers,
-  Account_type,
-} from '../TestHelpers';
+import { SharedTestObjects, Account_type } from '../TestHelpers';
 import * as chai from 'chai';
 chai.use(require('chai-datetime'));
 
-// import { equalDate } from 'chai-datetime';
 import { EosdactokensStakeConfig } from './eosdactokens';
 
 describe('EOSDacTokens', () => {
@@ -20,7 +13,7 @@ describe('EOSDacTokens', () => {
   let validAuths: { auths: { actor: string; permission: string }[] };
 
   before(async () => {
-    shared = await initAndGetSharedObjects();
+    shared = await SharedTestObjects.getInstance();
     issuer = await l.AccountManager.createAccount();
     otherAccount = await l.AccountManager.createAccount();
     validAuths = {
@@ -426,7 +419,7 @@ describe('EOSDacTokens', () => {
             });
           });
           it('should fail', async () => {
-            l.assertEOSErrorIncludesMessage(
+            await l.assertEOSErrorIncludesMessage(
               shared.dac_token_contract.transfer(
                 sender.name,
                 receiver.name,

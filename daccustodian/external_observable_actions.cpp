@@ -2,73 +2,17 @@
 #include "../_contract-shared-headers/dacdirectory_shared.hpp"
 #include "../_contract-shared-headers/migration_helpers.hpp"
 
-void daccustodian::transferobsv(name from, name to, asset quantity, name dac_id) {
-
-  // Only for compatibility during contract update, can be safely removed
-
-  eosio::print("\n > transfer from : ", from, " to: ", to, " quantity: ", quantity);
-
-  auto dac = dacdir::dac_for_id(dac_id);
-  auto token_contract = dac.symbol.get_contract();
-  print("token contract: ", token_contract);
-  require_auth(token_contract);
-
-  votes_table votes_cast_by_members(get_self(), dac_id.value);
-  contr_state currentState = contr_state::get_current_state(get_self(), dac_id);
-
-  bool state_updated = false;
-
-  auto existingVote = votes_cast_by_members.find(from.value);
-  if (existingVote != votes_cast_by_members.end()) {
-    updateVoteWeights(existingVote->candidates, -quantity.amount, dac_id, currentState);
-    currentState.total_weight_of_votes -= quantity.amount;
-
-    state_updated = true;
-  }
-
-  // Update vote weight for the 'to' in the transfer if vote exists
-  existingVote = votes_cast_by_members.find(to.value);
-  if (existingVote != votes_cast_by_members.end()) {
-    updateVoteWeights(existingVote->candidates, quantity.amount, dac_id, currentState);
-    currentState.total_weight_of_votes += quantity.amount;
-
-    state_updated = true;
-  }
-
-  if (state_updated) {
-    currentState.save(get_self(), dac_id);
-  }
-}
-
 void daccustodian::balanceobsv(vector<account_balance_delta> account_balance_deltas, name dac_id) {
   auto dac = dacdir::dac_for_id(dac_id);
-  auto token_contract = dac.symbol.get_contract();
-
-  auto router_account = dac.account_for_type(dacdir::VOTE_WEIGHT);
-
-  check(has_auth(token_contract) || has_auth(router_account),
-      "Must have auth of token or router contract to call balanceobsv");
-
-  votes_table votes_cast_by_members(get_self(), dac_id.value);
-  contr_state currentState = contr_state::get_current_state(get_self(), dac_id);
-
-  bool state_updated = false;
-
-  for (account_balance_delta abd : account_balance_deltas) {
-    auto existingVote = votes_cast_by_members.find(abd.account.value);
-    if (existingVote != votes_cast_by_members.end()) {
-      check(dac.symbol.get_symbol() == abd.balance_delta.symbol,
-          "ERR::INCORRECT_SYMBOL_DELTA::Incorrect symbol in balance_delta");
-      updateVoteWeights(existingVote->candidates, abd.balance_delta.amount, dac_id, currentState);
-      currentState.total_weight_of_votes += abd.balance_delta.amount;
-
-      state_updated = true;
-    }
+  auto dacSymbol = dac.symbol.get_symbol();
+  vector<account_weight_delta> weightDeltas;
+  for (account_balance_delta balanceDelta : account_balance_deltas) {
+    check(dacSymbol == balanceDelta.balance_delta.symbol,
+        "ERR::INCORRECT_SYMBOL_DELTA::Incorrect symbol in balance_delta");
+    weightDeltas.push_back({balanceDelta.account, balanceDelta.balance_delta.amount});
   }
 
-  if (state_updated) {
-    currentState.save(get_self(), dac_id);
-  }
+  weightobsv(weightDeltas, dac_id);
 }
 
 void daccustodian::weightobsv(vector<account_weight_delta> account_weight_deltas, name dac_id) {
@@ -81,22 +25,16 @@ void daccustodian::weightobsv(vector<account_weight_delta> account_weight_deltas
       "Must have auth of token or router contract to call weightobsv");
 
   votes_table votes_cast_by_members(get_self(), dac_id.value);
-  contr_state currentState = contr_state::get_current_state(get_self(), dac_id);
-
-  bool state_updated = false;
 
   for (account_weight_delta awd : account_weight_deltas) {
     auto existingVote = votes_cast_by_members.find(awd.account.value);
     if (existingVote != votes_cast_by_members.end()) {
-      updateVoteWeights(existingVote->candidates, awd.weight_delta, dac_id, currentState);
-      currentState.total_weight_of_votes += awd.weight_delta;
-
-      state_updated = true;
+      if (existingVote->proxy.value != 0) {
+        modifyProxiesWeight(awd.weight_delta, name{}, existingVote->proxy, dac_id);
+      } else {
+        modifyVoteWeights(awd.weight_delta, {}, existingVote->candidates, dac_id);
+      }
     }
-  }
-
-  if (state_updated) {
-    currentState.save(get_self(), dac_id);
   }
 }
 
@@ -130,7 +68,8 @@ void daccustodian::validateUnstakeAmount(name code, name cand, asset unstake_amo
     auto current_stake = eosdac::get_staked(cand, token_contract, unstake_amount.symbol.code());
 
     print(" Current stake : ", current_stake, ", Unstake amount : ", unstake_amount);
-    check(!reg_candidate->is_active, "ERR::CANNOT_UNSTAKE_REGISTERED::Cannot unstake because you are registered as a candidate, use withdrawcane to unregister.");
+    check(!reg_candidate->is_active,
+        "ERR::CANNOT_UNSTAKE_REGISTERED::Cannot unstake because you are registered as a candidate, use withdrawcane to unregister.");
 
     if (reg_candidate->custodian_end_time_stamp > time_point_sec(eosio::current_time_point())) {
       // Still under restrictions

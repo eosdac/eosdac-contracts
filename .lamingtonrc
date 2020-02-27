@@ -1,30 +1,20 @@
 {
-    "cdt": "https://github.com/EOSIO/eosio.cdt/releases/download/v1.6.2/eosio.cdt_1.6.2-1-ubuntu-18.04_amd64.deb",
-    "eos": "https://github.com/EOSIO/eos/releases/download/v1.8.3/eosio_1.8.3-1-ubuntu-18.04_amd64.deb",
-    "debug": 2,
-    "debugTransactions": true,
+    "cdt": "https://github.com/EOSIO/eosio.cdt/releases/download/v1.6.3/eosio.cdt_1.6.3-1-ubuntu-18.04_amd64.deb",
+    "eos": "https://github.com/EOSIO/eos/releases/download/v1.8.10/eosio_1.8.10-1-ubuntu-18.04_amd64.deb",
+    "contracts": "v1.8.3",
+    "debug": 0,
+    "debugTransactions": false,
     "keepAlive": false,
     "outDir": ".lamington",
     "reporter": "List",
-    "exclude": [
-        "config.cpp",
-        "external_observable_actions.cpp",
-        "migration.cpp",
-        "newperiod_components.cpp",
-        "pay_handling.cpp",
-        "privatehelpers.cpp",
-        "registering.cpp",
-        "update_member_details.cpp",
-        "debug.cpp",
-        "voting.cpp",
-        "distribution.cpp",
-        "contracts/example/*",
-        "distribution/*",
-        "dacescrow/*",
-        "dacmultisigs",
-        "_test_helpers",
-        "referendum.cpp",
-        "dacproposals.spec.ts"
-
+    "bailOnFailure": false,
+    "include": [
+        "daccustodian.cpp",
+        "dacdirectory.cpp",
+        "dacescrow.cpp",
+        "dacproposals.cpp",
+        "eosdactokens.cpp",
+        "eosio.token.cpp",
+        "stakevote.cpp"
     ]
 }

@@ -1,13 +1,16 @@
 import * as l from 'lamington';
 
-import { SharedTestObjects, initAndGetSharedObjects } from '../TestHelpers';
+import { SharedTestObjects } from '../TestHelpers';
+import * as chai from 'chai';
+import * as chaiAsPromised from 'chai-as-promised';
+chai.use(chaiAsPromised);
 
 describe('Dacdirectory', () => {
   let shared: SharedTestObjects;
   let legaldacid = 'legaldacid';
 
   before(async () => {
-    shared = await initAndGetSharedObjects();
+    shared = await SharedTestObjects.getInstance();
   });
 
   context('regdac', async () => {
@@ -168,27 +171,22 @@ describe('Dacdirectory', () => {
         }
       );
 
-      await l.assertRowsEqual(
-        shared.dacdirectory_contract.dacsTable({
-          scope: shared.dacdirectory_contract.account.name,
-          lowerBound: 'legaldacid',
-          limit: 1,
-        }),
-        [
-          {
-            accounts: [],
-            dac_id: legaldacid,
-            dac_state: 0,
-            owner: shared.auth_account.name,
-            refs: [],
-            symbol: {
-              contract: shared.dac_token_contract.account.name,
-              symbol: '4,DAO',
-            },
-            title: 'dactitle',
-          },
-        ]
-      );
+      let result = await shared.dacdirectory_contract.dacsTable({
+        scope: shared.dacdirectory_contract.account.name,
+        lowerBound: 'legaldacid',
+        limit: 1,
+      });
+      let dac = result.rows[0];
+      chai.expect(dac.accounts).to.be.empty;
+      chai.expect(dac.refs).to.be.empty;
+      chai.expect(dac.dac_id).to.equal(legaldacid);
+      chai.expect(dac.dac_state).to.equal(0);
+      chai.expect(dac.owner).to.equal(shared.auth_account.name);
+      chai
+        .expect(dac.symbol.contract)
+        .to.equal(shared.dac_token_contract.account.name);
+      chai.expect(dac.symbol.symbol).to.equal('4,DAO');
+      chai.expect(dac.title).to.equal('dactitle');
     });
     it('Should fail for a token that already has a DAC', async () => {
       await shared.dacdirectory_contract.regdac(
