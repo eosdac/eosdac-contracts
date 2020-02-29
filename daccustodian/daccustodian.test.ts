@@ -207,41 +207,25 @@ describe('Daccustodian', () => {
   });
 
   context('nominatecane', async () => {
-    let dacId = 'nominatedac';
-    let newUser1: Account;
+    context('With a staking enabled DAC', async () => {
+      let dacId = 'nomstakedac';
+      let newUser1: Account;
 
-    before(async () => {
-      await shared.initDac(dacId, '4,NOMDAC', '1000000.0000 NOMDAC');
-      await shared.updateconfig(dacId, '12.0000 NOMDAC');
-      newUser1 = await debugPromise(
-        AccountManager.createAccount(),
-        'create account for capture stake'
-      );
-    });
-
-    context('with unregistered member', async () => {
-      it('should fail with error', async () => {
-        await assertEOSErrorIncludesMessage(
-          shared.daccustodian_contract.nominatecane(
-            newUser1.name,
-            '25.0000 EOS',
-            dacId,
-            { from: newUser1 }
-          ),
-          'ERR::GENERAL_REG_MEMBER_NOT_FOUND'
-        );
-      });
-    });
-    context('with registered member', async () => {
       before(async () => {
-        await shared.dac_token_contract.memberrege(
-          newUser1.name,
-          shared.configured_dac_memberterms,
-          dacId,
-          { from: newUser1 }
+        await shared.initDac(dacId, '4,NOMDAC', '1000000.0000 NOMDAC');
+        await shared.updateconfig(dacId, '12.0000 NOMDAC');
+        await shared.dac_token_contract.stakeconfig(
+          { enabled: true, min_stake_time: 5, max_stake_time: 20 },
+          '4,NOMDAC',
+          { from: shared.auth_account }
+        );
+        newUser1 = await debugPromise(
+          AccountManager.createAccount(),
+          'create account for capture stake'
         );
       });
-      context('with insufficient staked funds', async () => {
+
+      context('with unregistered member', async () => {
         it('should fail with error', async () => {
           await assertEOSErrorIncludesMessage(
             shared.daccustodian_contract.nominatecane(
@@ -250,27 +234,123 @@ describe('Daccustodian', () => {
               dacId,
               { from: newUser1 }
             ),
-            'VALIDATEMINSTAKE_NOT_ENOUGH'
+            'ERR::GENERAL_REG_MEMBER_NOT_FOUND'
           );
         });
       });
-      context('with sufficient staked funds', async () => {
+      context('with registered member', async () => {
         before(async () => {
-          await debugPromise(
-            shared.dac_token_contract.transfer(
-              shared.dac_token_contract.account.name,
-              newUser1.name,
-              '1000.0000 NOMDAC',
-              '',
-              { from: shared.dac_token_contract.account }
-            ),
-            'failed to preload the user with enough tokens for staking'
+          await shared.dac_token_contract.memberrege(
+            newUser1.name,
+            shared.configured_dac_memberterms,
+            dacId,
+            { from: newUser1 }
           );
-          await debugPromise(
-            shared.dac_token_contract.stake(newUser1.name, '12.0000 NOMDAC', {
+        });
+        context('with insufficient staked funds', async () => {
+          it('should fail with error', async () => {
+            await assertEOSErrorIncludesMessage(
+              shared.daccustodian_contract.nominatecane(
+                newUser1.name,
+                '25.0000 EOS',
+                dacId,
+                { from: newUser1 }
+              ),
+              'VALIDATEMINSTAKE_NOT_ENOUGH'
+            );
+          });
+        });
+        context('with sufficient staked funds', async () => {
+          before(async () => {
+            await debugPromise(
+              shared.dac_token_contract.transfer(
+                shared.dac_token_contract.account.name,
+                newUser1.name,
+                '1000.0000 NOMDAC',
+                '',
+                { from: shared.dac_token_contract.account }
+              ),
+              'failed to preload the user with enough tokens for staking'
+            );
+            await debugPromise(
+              shared.dac_token_contract.stake(newUser1.name, '12.0000 NOMDAC', {
+                from: newUser1,
+              }),
+              'failed staking'
+            );
+          });
+          it('should succeed', async () => {
+            await chai.expect(
+              shared.daccustodian_contract.nominatecane(
+                newUser1.name,
+                '25.0000 EOS',
+                dacId,
+                { from: newUser1 }
+              )
+            ).eventually.be.fulfilled;
+          });
+        });
+      });
+    });
+    context('With a staking disabled DAC', async () => {
+      let dacId = 'nomnostadac';
+      let newUser1: Account;
+
+      before(async () => {
+        await shared.initDac(dacId, '4,NOSDAC', '1000000.0000 NOSDAC');
+        await shared.updateconfig(dacId, '0.0000 NOSDAC');
+        newUser1 = await debugPromise(
+          AccountManager.createAccount(),
+          'create account for capture stake'
+        );
+      });
+
+      context('with unregistered member', async () => {
+        it('should fail with error', async () => {
+          await assertEOSErrorIncludesMessage(
+            shared.daccustodian_contract.nominatecane(
+              newUser1.name,
+              '25.0000 EOS',
+              dacId,
+              { from: newUser1 }
+            ),
+            'ERR::GENERAL_REG_MEMBER_NOT_FOUND'
+          );
+        });
+      });
+      context('with registered member', async () => {
+        before(async () => {
+          await shared.dac_token_contract.memberrege(
+            newUser1.name,
+            shared.configured_dac_memberterms,
+            dacId,
+            { from: newUser1 }
+          );
+        });
+        it('should succeed', async () => {
+          await chai.expect(
+            shared.daccustodian_contract.nominatecane(
+              newUser1.name,
+              '25.0000 EOS',
+              dacId,
+              { from: newUser1 }
+            )
+          ).eventually.be.fulfilled;
+        });
+        it('should fail to unstake', async () => {
+          await assertEOSErrorIncludesMessage(
+            shared.dac_token_contract.unstake(newUser1.name, '1.0000 NOSDAC', {
               from: newUser1,
             }),
-            'failed staking'
+            'ERR::STAKING_NOT_ENABLED'
+          );
+        });
+        it('should fail to unstake zero amount', async () => {
+          await assertEOSErrorIncludesMessage(
+            shared.dac_token_contract.unstake(newUser1.name, '0.0000 NOSDAC', {
+              from: newUser1,
+            }),
+            'ERR::STAKING_NOT_ENABLED'
           );
         });
       });
@@ -1297,13 +1377,13 @@ describe('Daccustodian', () => {
             .to.be.equal(numberActiveCandidatesBefore - 1);
         });
         it('should allow unstaking without a timelock error', async () => {
-          chai.assert.isFulfilled(
+          await chai.expect(
             shared.dac_token_contract.unstake(
               unelectedCandidateToResign.name,
               '12.0000 WITHDAC',
               { from: unelectedCandidateToResign }
             )
-          );
+          ).to.eventually.be.fulfilled;
         });
       });
     });
