@@ -8,36 +8,36 @@ using namespace eosio;
 using namespace std;
 
 namespace eosdac {
-class dacescrow : public contract {
+    class dacescrow : public contract {
 
-private:
-  escrows_table escrows;
-  name sending_code;
+      private:
+        escrows_table escrows;
+        name          sending_code;
 
-public:
-  dacescrow(name s, name code, datastream<const char *> ds) : contract(s, code, ds), escrows(_self, _self.value) {
-    sending_code = name{code};
-  }
+      public:
+        dacescrow(name s, name code, datastream<const char *> ds) : contract(s, code, ds), escrows(_self, _self.value) {
+            sending_code = name{code};
+        }
 
-  ~dacescrow();
+        ~dacescrow();
 
-  /**
-   * Escrow contract
-   */
+        /**
+         * Escrow contract
+         */
 
-  ACTION init(name sender, name receiver, name arb, time_point_sec expires, string memo, name ext_reference,
-      std::optional<uint16_t> arb_payment);
+        ACTION init(name sender, name receiver, name arb, time_point_sec expires, string memo, name ext_reference,
+            std::optional<uint16_t> arb_payment);
 
-  ACTION transfer(name from, name to, asset quantity, string memo);
+        ACTION transfer(name from, name to, asset quantity, string memo);
 
-  ACTION approve(name key, name approver);
+        ACTION approve(name key, name approver);
 
-  ACTION disapprove(name key, name disapprover);
+        ACTION disapprove(name key, name disapprover);
 
-  ACTION refund(name key);
+        ACTION refund(name key);
 
-  ACTION cancel(name key);
+        ACTION cancel(name key);
 
-  ACTION clean();
-};
-};
+        ACTION clean();
+    };
+}; // namespace eosdac

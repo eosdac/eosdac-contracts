@@ -3,9 +3,9 @@
 
 ACTION daccustodian::migrate(uint16_t batch_size) {
 
-//    uint64_t total_migrated = 0;
+    //    uint64_t total_migrated = 0;
     // print("Migrating: ", batch_size, "\n");
-    
+
     // { // candidates_table
     //     candidates_table source(get_self(), get_self().value);
     //     candidates_table destination(get_self(), NEW_SCOPE.value);
@@ -103,7 +103,6 @@ ACTION daccustodian::migrate(uint16_t batch_size) {
     //     }
     //     print("votes_table table migrated: ", total_migrated, "\n");
     // }
-
 }
 
 ACTION daccustodian::clearold(uint16_t batch_size) {
@@ -119,7 +118,6 @@ ACTION daccustodian::clearold(uint16_t batch_size) {
     // source.remove();
 }
 
-
 // void daccustodian::migrate() {
 
 //    contr_config2 oldconf = configs();
@@ -129,7 +127,7 @@ ACTION daccustodian::clearold(uint16_t batch_size) {
 //            oldconf.maxvotes,
 //            oldconf.numelected,
 //            oldconf.periodlength,
-//            oldconf.authaccount,  
+//            oldconf.authaccount,
 //            oldconf.tokenholder,
 //            oldconf.tokenholder,
 //            true,
@@ -143,7 +141,6 @@ ACTION daccustodian::clearold(uint16_t batch_size) {
 //
 //    config_singleton.set(newconfig, _self);
 
-
 // Remove the old configs so the schema can be changed.
 //    configscontainer2 configs(_self, _self);
 //    configs.remove();
@@ -156,38 +153,39 @@ ACTION daccustodian::clearold(uint16_t batch_size) {
 //    cleanTable<votes_table>(_self, _self.value);
 //    cleanTable<pending_pay_table>(_self, _self.value);
 
-    /*
-    //Copy to a holding table - Enable this for the first step
+/*
+//Copy to a holding table - Enable this for the first step
 
-        candidates_table oldcands(_self, _self.value);
-        candidates_table2 holding_table(_self, _self.value);
-        auto it = oldcands.begin();
-        while (it != oldcands.end()) {
-            holding_table.emplace(_self, [&](candidate2 &c) {
-                c.candidate_name = it->candidate_name;
-                c.bio = it->bio;
-                c.requestedpay = it->requestedpay;
-                c.pendreqpay = it->pendreqpay;
-                c.locked_tokens = it->locked_tokens;
-                c.total_votes = it->total_votes;
-            });
-            it = oldcands.erase(it);
-        }
+    candidates_table oldcands(_self, _self.value);
+    candidates_table2 holding_table(_self, _self.value);
+    auto it = oldcands.begin();
+    while (it != oldcands.end()) {
+        holding_table.emplace(_self, [&](candidate2 &c) {
+            c.candidate_name = it->candidate_name;
+            c.bio = it->bio;
+            c.requestedpay = it->requestedpay;
+            c.pendreqpay = it->pendreqpay;
+            c.locked_tokens = it->locked_tokens;
+            c.total_votes = it->total_votes;
+        });
+        it = oldcands.erase(it);
+    }
 
-    // Copy back to the original table with the new schema - Enable this for the second step *after* modifying the original object's schema before copying back to the original table location.
+// Copy back to the original table with the new schema - Enable this for the second step *after* modifying the original
+object's schema before copying back to the original table location.
 
-        candidates_table2 holding_table(_self, _self.value);
-        candidates_table oldcands(_self, _self.value);
-        auto it = holding_table.begin();
-        while (it != holding_table.end()) {
-            oldcands.emplace(_self, [&](candidate &c) {
-                c.candidate_name = it->candidate_name;
-                c.bio = it->bio;
-                c.requestedpay = it->requestedpay;
-                c.locked_tokens = it->locked_tokens;
-                c.total_votes = it->total_votes;
-            });
-            it = holding_table.erase(it);
-        }
-        */
+    candidates_table2 holding_table(_self, _self.value);
+    candidates_table oldcands(_self, _self.value);
+    auto it = holding_table.begin();
+    while (it != holding_table.end()) {
+        oldcands.emplace(_self, [&](candidate &c) {
+            c.candidate_name = it->candidate_name;
+            c.bio = it->bio;
+            c.requestedpay = it->requestedpay;
+            c.locked_tokens = it->locked_tokens;
+            c.total_votes = it->total_votes;
+        });
+        it = holding_table.erase(it);
+    }
+    */
 // }
