@@ -3,8 +3,8 @@
 #include <eosio/asset.hpp>
 #include <eosio/eosio.hpp>
 #include <eosio/multi_index.hpp>
-#include <eosio/transaction.hpp>
 #include <eosio/singleton.hpp>
+#include <eosio/transaction.hpp>
 
 using namespace eosio;
 using namespace std;
@@ -20,12 +20,10 @@ namespace eosiosystem {
 
 namespace eosdac {
 
-
     CONTRACT eosdactokens : public contract {
-    public:
-
+      public:
         using contract::contract;
-        eosdactokens( name s, name code, datastream<const char*> ds );
+        eosdactokens(name s, name code, datastream<const char *> ds);
 
         struct stake_config;
 
@@ -42,7 +40,7 @@ namespace eosdac {
         ACTION memberunreg(name sender);
         ACTION updatetermse(uint64_t termsid, string terms, name dac_id);
         ACTION updateterms(uint64_t termsid, string terms);
-        ACTION close(name owner, const symbol& symbol);
+        ACTION close(name owner, const symbol &symbol);
 
         // staking
         ACTION xferstake(name from, name to, asset quantity, string memo);
@@ -56,9 +54,6 @@ namespace eosdac {
         ACTION migrate(uint16_t batch);
         ACTION clearold(uint16_t batch_size);
 
-
-
-
         TABLE stake_info {
             name  account;
             asset stake;
@@ -68,29 +63,29 @@ namespace eosdac {
         typedef multi_index<"stakes"_n, stake_info> stakes_table;
 
         TABLE unstake_info {
-                uint64_t       key;
-                name           account;
-                asset          stake;
-                time_point_sec release_time;
+            uint64_t       key;
+            name           account;
+            asset          stake;
+            time_point_sec release_time;
 
-                uint64_t primary_key() const { return key; }
-                uint64_t by_account() const { return account.value; }
+            uint64_t primary_key() const { return key; }
+            uint64_t by_account() const { return account.value; }
         };
         typedef multi_index<"unstakes"_n, unstake_info,
-                indexed_by<"byaccount"_n, const_mem_fun<unstake_info, uint64_t, &unstake_info::by_account> >
-        > unstakes_table;
+            indexed_by<"byaccount"_n, const_mem_fun<unstake_info, uint64_t, &unstake_info::by_account>>>
+            unstakes_table;
 
         TABLE staketime_info {
-                name           account;
-                uint32_t       delay;
+            name     account;
+            uint32_t delay;
 
-                uint64_t primary_key() const { return account.value; }
+            uint64_t primary_key() const { return account.value; }
         };
-        typedef multi_index<"staketime"_n, staketime_info > staketimes_table;
+        typedef multi_index<"staketime"_n, staketime_info> staketimes_table;
 
         typedef eosio::singleton<"stakeconfig"_n, stake_config> stateconfig_container;
         struct [[eosio::table("stakeconfig"), eosio::contract("eosdactokens")]] stake_config {
-            bool     enabled = false;
+            bool     enabled        = false;
             uint32_t min_stake_time = uint32_t(60 * 60 * 24 * 3);
             uint32_t max_stake_time = uint32_t(60 * 60 * 24 * 30 * 9);
 
@@ -103,7 +98,6 @@ namespace eosdac {
             }
         };
 
-
         TABLE member {
             name sender;
             // agreed terms version
@@ -115,32 +109,30 @@ namespace eosdac {
         typedef multi_index<"members"_n, member> regmembers;
 
         TABLE termsinfo {
-            string terms;
-            string hash;
+            string   terms;
+            string   hash;
             uint64_t version;
 
             termsinfo() : terms(""), hash(""), version(0) {}
 
-            termsinfo(string _terms, string _hash, uint64_t _version)
-                    : terms(_terms), hash(_hash), version(_version) {}
+            termsinfo(string _terms, string _hash, uint64_t _version) : terms(_terms), hash(_hash), version(_version) {}
 
             uint64_t primary_key() const { return version; }
             uint64_t by_latest_version() const { return UINT64_MAX - version; }
 
-          EOSLIB_SERIALIZE(termsinfo, (terms)(hash)(version))
+            EOSLIB_SERIALIZE(termsinfo, (terms)(hash)(version))
         };
 
         typedef multi_index<"memberterms"_n, termsinfo,
-                indexed_by<"bylatestver"_n, const_mem_fun<termsinfo, uint64_t, &termsinfo::by_latest_version> >
-        > memterms;
+            indexed_by<"bylatestver"_n, const_mem_fun<termsinfo, uint64_t, &termsinfo::by_latest_version>>>
+            memterms;
 
         friend eosiosystem::system_contract;
 
-//        inline asset get_supply(symbol_code sym) const;
-//        inline asset get_balance(name owner, symbol_code sym) const;
+        //        inline asset get_supply(symbol_code sym) const;
+        //        inline asset get_balance(name owner, symbol_code sym) const;
 
-    public:
-
+      public:
         TABLE account {
             asset balance;
 
@@ -150,13 +142,13 @@ namespace eosdac {
         TABLE currency_stats {
             asset supply;
             asset max_supply;
-            name issuer;
-            bool transfer_locked = false;
+            name  issuer;
+            bool  transfer_locked = false;
 
             uint64_t primary_key() const { return supply.symbol.code().raw(); }
         };
 
-        typedef eosio::multi_index<"accounts"_n, account> accounts;
+        typedef eosio::multi_index<"accounts"_n, account>    accounts;
         typedef eosio::multi_index<"stat"_n, currency_stats> stats;
 
         void sub_balance(name owner, asset value);
@@ -166,7 +158,6 @@ namespace eosdac {
 
         void send_stake_notification(name account, asset stake, dacdir::dac dac_inst);
         void send_balance_notification(vector<account_balance_delta> account_weights, dacdir::dac dac_inst);
-
     };
 
-}
+} // namespace eosdac
