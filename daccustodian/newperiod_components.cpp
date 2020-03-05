@@ -1,5 +1,7 @@
 #include "../_contract-shared-headers/migration_helpers.hpp"
 
+using namespace eosdac;
+
 // void daccustodian::distributePay(name dac_id) {
 //     custodians_table custodians(_self, dac_id.value);
 //     pending_pay_table pending_pay(_self, dac_id.value);

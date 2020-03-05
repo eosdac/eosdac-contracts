@@ -1243,7 +1243,7 @@ describe('Dacproposals', () => {
       });
     });
   });
-  context('proposal in not in pending_finalize state', async () => {
+  context('proposal not in pending_finalize state', async () => {
     before(async () => {
       await shared.dacproposals_contract.updpropvotes(legalpropid, dacId, {
         from: proposer1Account,
@@ -1258,7 +1258,7 @@ describe('Dacproposals', () => {
       );
     });
   });
-  context('proposal is in pending_finalize state', async () => {
+  context('proposal in pending_finalize state', async () => {
     before(async () => {
       await shared.dacproposals_contract.updpropvotes(newpropid, dacId, {
         from: proposer1Account,
@@ -1328,14 +1328,14 @@ describe('Dacproposals', () => {
       });
     });
   });
-  context('cancel', async () => {
-    let cancelpropid = 'cancelid';
+  context('cancelwip tests', async () => {
+    let cancelpropid = 'cancelwipid';
     before(async () => {
       await shared.dacproposals_contract.updateconfig(
         {
           proposal_threshold: proposeApproveTheshold,
           finalize_threshold: 5,
-          approval_duration: 3,
+          approval_duration: 30,
         },
         dacId,
         { from: shared.auth_account }
@@ -1384,7 +1384,7 @@ describe('Dacproposals', () => {
     context('without valid auth', async () => {
       it('should fail with invalid auth error', async () => {
         await assertMissingAuthority(
-          shared.dacproposals_contract.cancel(cancelpropid, dacId, {
+          shared.dacproposals_contract.cancelprop(cancelpropid, dacId, {
             from: otherAccount,
           })
         );
@@ -1394,7 +1394,7 @@ describe('Dacproposals', () => {
       context('with invalid proposal id', async () => {
         it('should fail with proposal not found error', async () => {
           await assertEOSErrorIncludesMessage(
-            shared.dacproposals_contract.cancel(notfoundpropid, dacId, {
+            shared.dacproposals_contract.cancelprop(notfoundpropid, dacId, {
               from: proposer1Account,
             }),
             'PROPOSAL_NOT_FOUND'
@@ -1407,6 +1407,7 @@ describe('Dacproposals', () => {
             await shared.dacproposals_contract.startwork(cancelpropid, dacId, {
               from: proposer1Account,
             });
+            await sleep(6000); // wait for the escrow to be loaded.
           });
           it('should initially contain proposal', async () => {
             await assertRowCount(
@@ -1428,9 +1429,120 @@ describe('Dacproposals', () => {
             });
             chai.expect(result.rows.length).equal(proposeApproveTheshold);
           });
+          it('cancelprop should fail with active escrow error', async () => {
+            await assertEOSErrorIncludesMessage(
+              shared.dacproposals_contract.cancelprop(cancelpropid, dacId, {
+                from: proposer1Account,
+              }),
+              'ERR::CANCELPROP_WRONG_STATE'
+            );
+          });
           it('should succeed', async () => {
             await chai.expect(
-              shared.dacproposals_contract.cancel(cancelpropid, dacId, {
+              shared.dacproposals_contract.cancelwip(cancelpropid, dacId, {
+                from: proposer1Account,
+              })
+            ).to.eventually.be.fulfilled;
+          });
+          it('should not contain proposal', async () => {
+            await assertRowCount(
+              shared.dacproposals_contract.proposalsTable({
+                scope: dacId,
+                lowerBound: cancelpropid,
+                upperBound: cancelpropid,
+              }),
+              0
+            );
+          });
+          it('should not contain initial votes for proposal', async () => {
+            await assertRowCount(
+              shared.dacproposals_contract.propvotesTable({
+                scope: dacId,
+                indexPosition: 3,
+                keyType: 'i64',
+                lowerBound: cancelpropid,
+                upperBound: cancelpropid,
+              }),
+              0
+            );
+          });
+        });
+        it('escrow table should contain expected rows', async () => {});
+      });
+    });
+  });
+  context('cancelprop tests', async () => {
+    let cancelpropid = 'cancelpropid';
+    before(async () => {
+      await shared.dacproposals_contract.updateconfig(
+        {
+          proposal_threshold: proposeApproveTheshold,
+          finalize_threshold: 5,
+          approval_duration: 30,
+        },
+        dacId,
+        { from: shared.auth_account }
+      );
+      await chai.expect(
+        shared.dacproposals_contract.createprop(
+          proposer1Account.name,
+          'startwork_title',
+          'startwork_summary',
+          arbitrator.name,
+          { quantity: '106.0000 EOS', contract: 'eosio.token' },
+          'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
+          cancelpropid, // proposal id
+          category,
+          130, // job duration
+          dacId,
+          { from: proposer1Account }
+        ),
+        ''
+      ).to.eventually.be.fulfilled;
+    });
+    context('without valid auth', async () => {
+      it('should fail with invalid auth error', async () => {
+        await assertMissingAuthority(
+          shared.dacproposals_contract.cancelprop(cancelpropid, dacId, {
+            from: otherAccount,
+          })
+        );
+      });
+    });
+    context('with valid auth', async () => {
+      context('with invalid proposal id', async () => {
+        it('should fail with proposal not found error', async () => {
+          await assertEOSErrorIncludesMessage(
+            shared.dacproposals_contract.cancelprop(notfoundpropid, dacId, {
+              from: proposer1Account,
+            }),
+            'PROPOSAL_NOT_FOUND'
+          );
+        });
+      });
+      context('with valid proposal id', async () => {
+        context('after starting work but before completing', async () => {
+          it('should initially contain proposal', async () => {
+            await assertRowCount(
+              shared.dacproposals_contract.proposalsTable({
+                scope: dacId,
+                lowerBound: cancelpropid,
+                upperBound: cancelpropid,
+              }),
+              1
+            );
+          });
+          it('cancelwip should fail with escrow error', async () => {
+            await assertEOSErrorIncludesMessage(
+              shared.dacproposals_contract.cancelwip(cancelpropid, dacId, {
+                from: proposer1Account,
+              }),
+              'ERR::CANCELWIP_WRONG_STATE'
+            );
+          });
+          it('should succeed', async () => {
+            await chai.expect(
+              shared.dacproposals_contract.cancelprop(cancelpropid, dacId, {
                 from: proposer1Account,
               })
             ).to.eventually.be.fulfilled;

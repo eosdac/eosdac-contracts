@@ -7,7 +7,7 @@
     "keepAlive": false,
     "outDir": ".lamington",
     "reporter": "List",
-    "bailOnFailure": false,
+    "bailOnFailure": true,
     "include": [
         "daccustodian.cpp",
         "dacdirectory.cpp",

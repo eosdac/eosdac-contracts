@@ -1,4 +1,5 @@
 #include "../_contract-shared-headers/dacdirectory_shared.hpp"
+using namespace eosdac;
 
 void daccustodian::updateconfig(contr_config new_config) {
     check(false, "This action is deprecated call `updateconfige` instead.");

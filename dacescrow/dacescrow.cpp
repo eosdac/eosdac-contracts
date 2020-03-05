@@ -71,6 +71,7 @@ namespace eosdac {
             p.expires     = expires;
             p.memo        = memo;
             p.arb_payment = arb_payment_int;
+            p.is_locked   = false;
         });
     }
 
@@ -82,7 +83,19 @@ namespace eosdac {
 
         check(esc_itr->ext_asset.quantity.amount > 0, "This has not been initialized with a transfer");
 
-        check(esc_itr->sender == approver || esc_itr->arb == approver, "You are not allowed to approve this escrow.");
+        if (esc_itr->arb == approver) {
+            check(esc_itr->is_locked,
+                "ERR::ESCROW_IS_NOT_LOCKED::This escrow is not locked. It can only be approved/disapproved by the arbitrator while it is locked.");
+            asset arbPay = esc_itr->ext_asset.quantity * esc_itr->arb_payment / 100;
+            eosio::action(eosio::permission_level{_self, "active"_n}, esc_itr->ext_asset.contract, "transfer"_n,
+                make_tuple(_self, esc_itr->receiver, arbPay, esc_itr->memo))
+                .send();
+        } else if (esc_itr->sender == approver) {
+            check(!esc_itr->is_locked,
+                "ERR::ESCROW_IS_LOCKED::This escrow is locked and can only be approved/disapproved by the arbitrator.");
+        } else {
+            check(false, "ERR::ESCROW_NOT_ALLOWED_TO_APPROVE::Only the arbitrator or sender can approve an escrow.");
+        }
 
         // send funds to the receiver
         eosio::action(eosio::permission_level{_self, "active"_n}, esc_itr->ext_asset.contract, "transfer"_n,
@@ -101,9 +114,14 @@ namespace eosdac {
         check(esc_itr->ext_asset.quantity.amount > 0, "This has not been initialized with a transfer");
 
         check(disapprover == esc_itr->arb, "Only arbitrator can disapprove");
+        check(esc_itr->is_locked,
+            "ERR::ESCROW_IS_NOT_LOCKED::This escrow is not locked. It can only be approved/disapproved by the arbitrator while it is locked.");
 
         // return funds back to the sender
-        // TODO: Send arbitrator payment too
+        asset arbPay = esc_itr->ext_asset.quantity * esc_itr->arb_payment / 100;
+        eosio::action(eosio::permission_level{_self, "active"_n}, esc_itr->ext_asset.contract, "transfer"_n,
+            make_tuple(_self, esc_itr->receiver, arbPay, esc_itr->memo))
+            .send();
         eosio::action(eosio::permission_level{_self, "active"_n}, esc_itr->ext_asset.contract, "transfer"_n,
             make_tuple(_self, esc_itr->sender, esc_itr->ext_asset.quantity, esc_itr->memo))
             .send();
@@ -136,6 +154,8 @@ namespace eosdac {
         require_auth(esc_itr->sender);
 
         check(esc_itr->ext_asset.quantity.amount > 0, "This has not been initialized with a transfer");
+        check(!esc_itr->is_locked,
+            "ERR::ESCROW_IS_LOCKED::This escrow is locked and can only be approved/disapproved by the arbitrator.");
 
         time_point_sec time_now = time_point_sec(eosio::current_time_point());
 
@@ -146,6 +166,19 @@ namespace eosdac {
             .send();
 
         escrows.erase(esc_itr);
+    }
+
+    ACTION dacescrow::dispute(name key) {
+        auto esc_itr = escrows.find(key.value);
+        check(esc_itr != escrows.end(), "Could not find escrow with that index");
+
+        require_auth(esc_itr->receiver);
+
+        check(esc_itr->ext_asset.quantity.amount > 0, "This has not been initialized with a transfer");
+
+        escrows.modify(esc_itr, same_payer, [&](escrow_info &e) {
+            e.is_locked = true;
+        });
     }
 
     ACTION dacescrow::clean() {
@@ -174,4 +207,4 @@ namespace eosdac {
     }                                                                                                                  \
     }
 
-EOSIO_ABI_EX(eosdac::dacescrow, (transfer)(init)(approve)(disapprove)(refund)(cancel)(clean))
+EOSIO_ABI_EX(eosdac::dacescrow, (transfer)(init)(approve)(disapprove)(refund)(dispute)(cancel)(clean))

@@ -36,7 +36,8 @@ namespace eosdac {
             ProposalStatePending_finalize,
             ProposalStateHas_enough_approvals_votes,
             ProposalStateHas_enough_finalize_votes,
-            ProposalStateExpired
+            ProposalStateExpired,
+            ProposalStateInDispute
         };
 
       public:
@@ -85,11 +86,23 @@ namespace eosdac {
         ACTION delegatecat(name custodian, uint64_t category, name delegatee_custodian, name dac_id);
         ACTION undelegateca(name custodian, uint64_t category, name dac_id);
         ACTION arbapprove(name arbitrator, name proposal_id, name dac_id);
+        ACTION arbdeny(name arbitrator, name proposal_id, name dac_id);
         ACTION startwork(name proposal_id, name dac_id);
+        /**
+         * @brief This action is called from a collection of deferred actions which creates the escrow, it will only
+         * update status. It will fail if the escrow already exists so a worker can call start work many times if the
+         * first fails. This is ony intended to be called as a deferred inline action from this contract therefore will
+         * fail without `get_self()` auth.
+         *
+         * @param proposal_id the ID for the proposal
+         * @param dac_id the Dac ID associated with the DAC that this proposa relates to.
+         */
         ACTION runstartwork(name proposal_id, name dac_id);
         ACTION completework(name proposal_id, name dac_id);
         ACTION finalize(name proposal_id, name dac_id);
-        ACTION cancel(name proposal_id, name dac_id);
+        ACTION cancelprop(name proposal_id, name dac_id);
+        ACTION cancelwip(name proposal_id, name dac_id);
+        ACTION dispute(name proposal_id, name dac_id);
         ACTION comment(name commenter, name proposal_id, string comment, string comment_category, name dac_id);
         ACTION updateconfig(config new_config, name dac_id);
         ACTION clearconfig(name dac_id);
@@ -102,6 +115,7 @@ namespace eosdac {
         void    transferfunds(const proposal &prop, name dac_id);
         void    check_start(name proposal_id, name dac_id);
         int16_t count_votes(proposal prop, VoteType vote_type, name dac_id);
+        void    arbitrator_rule_on_proposal(name arbitrator, name proposal_id, name dac_id);
 
         TABLE proposalvote {
             uint64_t           vote_id;

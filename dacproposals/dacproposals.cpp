@@ -1,9 +1,11 @@
 #include "dacproposals.hpp"
+#include "../dacescrow/dacescrow_shared.hpp"
 #include <algorithm>
 #include <eosio/action.hpp>
 #include <eosio/eosio.hpp>
 #include <eosio/time.hpp>
 #include <eosio/transaction.hpp>
+
 #include <typeinfo>
 
 #include "../_contract-shared-headers/dacdirectory_shared.hpp"
@@ -174,19 +176,15 @@ namespace eosdac {
         by_cat_and_voter.erase(vote_idx);
     }
 
+    ACTION dacproposals::arbdeny(name arbitrator, name proposal_id, name dac_id) {
+        arbitrator_rule_on_proposal(arbitrator, proposal_id, dac_id);
+    }
+
     ACTION dacproposals::arbapprove(name arbitrator, name proposal_id, name dac_id) {
-        require_auth(arbitrator);
-        proposal_table proposals(_self, dac_id.value);
-
-        const proposal &prop = proposals.get(proposal_id.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found.");
-
-        check(prop.arbitrator == arbitrator, "ERR::NOT_ARBITRATOR::You are not the arbitrator for this proposal");
-
-        clearprop(prop, dac_id);
+        arbitrator_rule_on_proposal(arbitrator, proposal_id, dac_id);
     }
 
     ACTION dacproposals::startwork(name proposal_id, name dac_id) {
-        // Check that this proposal can start work
         proposal_table proposals(_self, dac_id.value);
 
         // Check that this proposal can start work
@@ -224,8 +222,6 @@ namespace eosdac {
             uint128_t(proposal_id.value) << 64 | time_point_sec(current_time_point()).sec_since_epoch(), _self);
     }
 
-    // This action is called from a collection of deferred actions which creates the escrow, it will only update status
-    // It will fail if the escrow already exists so a worker can call start work many times if the first fails
     ACTION dacproposals::runstartwork(name proposal_id, name dac_id) {
         require_auth(get_self());
         proposal_table proposals(_self, dac_id.value);
@@ -274,14 +270,58 @@ namespace eosdac {
         transferfunds(prop, dac_id);
     }
 
-    ACTION dacproposals::cancel(name proposal_id, name dac_id) {
+    ACTION dacproposals::cancelprop(name proposal_id, name dac_id) {
 
+        auto escrow = dacdir::dac_for_id(dac_id).account_for_type(dacdir::ESCROW);
+        check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
+
+        proposal_table  proposals(_self, dac_id.value);
+        const proposal &prop = proposals.get(proposal_id.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found.");
+        require_auth(prop.proposer);
+        check(prop.state == ProposalStatePending_approval || prop.state == ProposalStateHas_enough_approvals_votes,
+            "ERR::CANCELPROP_WRONG_STATE::Worker proposal is in the wrong state to be cancelled with cancelprop. Try cancelwip.");
+
+        escrows_table escrows = escrows_table(escrow, escrow.value);
+        auto          esc_itr = escrows.find(proposal_id.value);
+        check(esc_itr == escrows.end(),
+            "ERR::ESCROW_ACTIVE::There should not be an escrow for a proposal. Call cancelwip instead.");
+
+        assertValidMember(prop.proposer, dac_id);
+        clearprop(prop, dac_id);
+    }
+
+    ACTION dacproposals::cancelwip(name proposal_id, name dac_id) {
+        auto escrow = dacdir::dac_for_id(dac_id).account_for_type(dacdir::ESCROW);
+        check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
+
+        proposal_table  proposals(_self, dac_id.value);
+        const proposal &prop = proposals.get(proposal_id.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found.");
+        require_auth(prop.proposer);
+        check(prop.state == ProposalStateWork_in_progress || prop.state == ProposalStatePending_finalize,
+            "ERR::CANCELWIP_WRONG_STATE::Worker proposal is in the wrong state to be cancelled with cancelwip. Try cancelprop.");
+
+        escrows_table escrows = escrows_table(escrow, escrow.value);
+        auto          esc_itr = escrows.find(proposal_id.value);
+        check(esc_itr != escrows.end(),
+            "ERR::ESCROW_ACTIVE::There should be an escrow for a proposal for this action. Call cancelprop instead.");
+
+        assertValidMember(prop.proposer, dac_id);
+        clearprop(prop, dac_id);
+    }
+
+    ACTION dacproposals::dispute(name proposal_id, name dac_id) {
         proposal_table proposals(_self, dac_id.value);
 
         const proposal &prop = proposals.get(proposal_id.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found.");
+
         require_auth(prop.proposer);
         assertValidMember(prop.proposer, dac_id);
-        clearprop(prop, dac_id);
+        check(prop.state == ProposalStatePending_finalize,
+            "ERR::DISPUTE_WRONG_STATE::Worker proposal can only be disputed from Pending_finalize state");
+
+        proposals.modify(prop, prop.proposer, [&](proposal &p) {
+            p.state = ProposalStateInDispute;
+        });
     }
 
     ACTION dacproposals::comment(
@@ -532,6 +572,27 @@ namespace eosdac {
 
         check(approved_count >= configs.proposal_threshold,
             "ERR::STARTWORK_INSUFFICIENT_VOTES::Insufficient votes on worker proposal.");
+    }
+
+    void dacproposals::arbitrator_rule_on_proposal(name arbitrator, name proposal_id, name dac_id) {
+        require_auth(arbitrator);
+        proposal_table proposals(_self, dac_id.value);
+
+        const proposal &prop = proposals.get(proposal_id.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found.");
+
+        auto escrow = dacdir::dac_for_id(dac_id).account_for_type(dacdir::ESCROW);
+        check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
+
+        escrows_table escrows = escrows_table(escrow, dac_id.value);
+        auto          esc_itr = escrows.find(proposal_id.value);
+        check(esc_itr == escrows.end(),
+            "ERR::ESCROW_STILL_ACTIVE::Escrow is still active in escrow contract. It should have been either approved or dissapproved before calling this action.");
+
+        check(prop.arbitrator == arbitrator, "ERR::NOT_ARBITRATOR::You are not the arbitrator for this proposal");
+        check(prop.state == ProposalStateInDispute,
+            "ERR::PROP_NOT_IN_DISPUTE_STATE::A proposal can only be denied by an arbitrator when in dispute state.");
+
+        clearprop(prop, dac_id);
     }
 
     // void dacproposals::assertValidMember(name member, name dac_id) {

@@ -1,5 +1,6 @@
 
 #include "../_contract-shared-headers/migration_helpers.hpp"
+using namespace eosdac;
 
 ACTION daccustodian::migrate(uint16_t batch_size) {
 

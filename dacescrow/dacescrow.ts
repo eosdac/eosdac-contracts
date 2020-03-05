@@ -24,6 +24,10 @@ export interface DacescrowDisapprove {
 	disapprover: string|number;
 }
 
+export interface DacescrowDispute {
+	key: string|number;
+}
+
 export interface DacescrowEscrowInfo {
 	key: string|number;
 	sender: string|number;
@@ -33,6 +37,7 @@ export interface DacescrowEscrowInfo {
 	memo: string;
 	expires: Date;
 	arb_payment: number;
+	is_locked: boolean;
 }
 
 export interface DacescrowInit {
@@ -62,6 +67,7 @@ export interface Dacescrow extends Contract {
 	cancel(key: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	clean(options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	disapprove(key: string|number, disapprover: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	dispute(key: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	init(sender: string|number, receiver: string|number, arb: string|number, expires: Date, memo: string, ext_reference: string|number, arb_payment: string, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	refund(key: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	transfer(from: string|number, to: string|number, quantity: string, memo: string, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
