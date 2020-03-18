@@ -50,10 +50,10 @@ export class SharedTestObjects {
 
   private async initAndGetSharedObjects() {
     console.log('Init eos blockchain');
-    await sleep(4500);
-    EOSManager.initWithDefaults();
+    // await sleep(500);
+    // EOSManager.initWithDefaults();
 
-    await sleep(1600);
+    await sleep(5000);
 
     this.auth_account = await debugPromise(
       AccountManager.createAccount('eosdacauth'),

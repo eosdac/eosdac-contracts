@@ -55,6 +55,7 @@ export interface DacproposalsConfig {
 	proposal_threshold: number;
 	finalize_threshold: number;
 	approval_duration: number;
+	arbitrator_pay: number;
 }
 
 export interface DacproposalsCreateprop {

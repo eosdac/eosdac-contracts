@@ -80,5 +80,7 @@ namespace eosdac {
          * @param key Unique identifer for the escrow to refund
          */
         ACTION clean();
-    };
-}; // namespace eosdac
+
+      private:
+        void pay_arbitrator(const escrows_table::const_iterator esc_itr);
+    }; // namespace eosdac

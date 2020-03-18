@@ -206,8 +206,8 @@ namespace eosdac {
         check(is_account(treasury), "ERR::TREASURY_ACCOUNT_NOT_FOUND::Treasury account not found");
         check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
 
-        auto inittuple = make_tuple(
-            treasury, prop.proposer, prop.arbitrator, time_now + (prop.job_duration * 2), memo, proposal_id, 0);
+        auto inittuple = make_tuple(treasury, prop.proposer, prop.arbitrator, time_now + (prop.job_duration * 2), memo,
+            proposal_id, current_configs(dac_id).arbitrator_pay);
 
         transaction deferredTrans{};
         deferredTrans.actions.emplace_back(eosio::action(eosio::permission_level{get_self(), "active"_n}, get_self(),
@@ -291,8 +291,6 @@ namespace eosdac {
     }
 
     ACTION dacproposals::cancelwip(name proposal_id, name dac_id) {
-        auto escrow = dacdir::dac_for_id(dac_id).account_for_type(dacdir::ESCROW);
-        check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
 
         proposal_table  proposals(_self, dac_id.value);
         const proposal &prop = proposals.get(proposal_id.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found.");
@@ -300,6 +298,8 @@ namespace eosdac {
         check(prop.state == ProposalStateWork_in_progress || prop.state == ProposalStatePending_finalize,
             "ERR::CANCELWIP_WRONG_STATE::Worker proposal is in the wrong state to be cancelled with cancelwip. Try cancelprop.");
 
+        auto escrow = dacdir::dac_for_id(dac_id).account_for_type(dacdir::ESCROW);
+        check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
         escrows_table escrows = escrows_table(escrow, escrow.value);
         auto          esc_itr = escrows.find(proposal_id.value);
         check(esc_itr != escrows.end(),
@@ -310,6 +310,16 @@ namespace eosdac {
     }
 
     ACTION dacproposals::dispute(name proposal_id, name dac_id) {
+        // The escrow should be locked first in a Transaction.
+        auto escrow = dacdir::dac_for_id(dac_id).account_for_type(dacdir::ESCROW);
+        check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
+        escrows_table escrows = escrows_table(escrow, escrow.value);
+        auto          esc_itr = escrows.find(proposal_id.value);
+        check(esc_itr != escrows.end(),
+            "ERR::ESCROW_ACTIVE::There should be an escrow for a proposal for this action. Call cancelprop instead.");
+        check(esc_itr->is_locked,
+            "ERR::ESCROW_NOT_LOCKED::The escrow should be locked before disputing - best done within the same transaction.");
+
         proposal_table proposals(_self, dac_id.value);
 
         const proposal &prop = proposals.get(proposal_id.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found.");
@@ -579,16 +589,16 @@ namespace eosdac {
         proposal_table proposals(_self, dac_id.value);
 
         const proposal &prop = proposals.get(proposal_id.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found.");
+        check(prop.arbitrator == arbitrator, "ERR::NOT_ARBITRATOR::You are not the arbitrator for this proposal");
 
         auto escrow = dacdir::dac_for_id(dac_id).account_for_type(dacdir::ESCROW);
         check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
 
-        escrows_table escrows = escrows_table(escrow, dac_id.value);
+        escrows_table escrows = escrows_table(escrow, escrow.value);
         auto          esc_itr = escrows.find(proposal_id.value);
         check(esc_itr == escrows.end(),
             "ERR::ESCROW_STILL_ACTIVE::Escrow is still active in escrow contract. It should have been either approved or dissapproved before calling this action.");
 
-        check(prop.arbitrator == arbitrator, "ERR::NOT_ARBITRATOR::You are not the arbitrator for this proposal");
         check(prop.state == ProposalStateInDispute,
             "ERR::PROP_NOT_IN_DISPUTE_STATE::A proposal can only be denied by an arbitrator when in dispute state.");
 

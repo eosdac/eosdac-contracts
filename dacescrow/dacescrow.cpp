@@ -86,10 +86,7 @@ namespace eosdac {
         if (esc_itr->arb == approver) {
             check(esc_itr->is_locked,
                 "ERR::ESCROW_IS_NOT_LOCKED::This escrow is not locked. It can only be approved/disapproved by the arbitrator while it is locked.");
-            asset arbPay = esc_itr->ext_asset.quantity * esc_itr->arb_payment / 100;
-            eosio::action(eosio::permission_level{_self, "active"_n}, esc_itr->ext_asset.contract, "transfer"_n,
-                make_tuple(_self, esc_itr->receiver, arbPay, esc_itr->memo))
-                .send();
+            pay_arbitrator(esc_itr);
         } else if (esc_itr->sender == approver) {
             check(!esc_itr->is_locked,
                 "ERR::ESCROW_IS_LOCKED::This escrow is locked and can only be approved/disapproved by the arbitrator.");
@@ -101,7 +98,6 @@ namespace eosdac {
         eosio::action(eosio::permission_level{_self, "active"_n}, esc_itr->ext_asset.contract, "transfer"_n,
             make_tuple(_self, esc_itr->receiver, esc_itr->ext_asset.quantity, esc_itr->memo))
             .send();
-
         escrows.erase(esc_itr);
     }
 
@@ -117,15 +113,11 @@ namespace eosdac {
         check(esc_itr->is_locked,
             "ERR::ESCROW_IS_NOT_LOCKED::This escrow is not locked. It can only be approved/disapproved by the arbitrator while it is locked.");
 
-        // return funds back to the sender
-        asset arbPay = esc_itr->ext_asset.quantity * esc_itr->arb_payment / 100;
-        eosio::action(eosio::permission_level{_self, "active"_n}, esc_itr->ext_asset.contract, "transfer"_n,
-            make_tuple(_self, esc_itr->receiver, arbPay, esc_itr->memo))
-            .send();
         eosio::action(eosio::permission_level{_self, "active"_n}, esc_itr->ext_asset.contract, "transfer"_n,
             make_tuple(_self, esc_itr->sender, esc_itr->ext_asset.quantity, esc_itr->memo))
             .send();
 
+        pay_arbitrator(esc_itr);
         escrows.erase(esc_itr);
     }
 
@@ -187,6 +179,15 @@ namespace eosdac {
         auto itr = escrows.begin();
         while (itr != escrows.end()) {
             itr = escrows.erase(itr);
+        }
+    }
+
+    void dacescrow::pay_arbitrator(const escrows_table::const_iterator esc_itr) {
+        if (esc_itr->arb_payment > 0) {
+            asset arbPay = esc_itr->ext_asset.quantity * esc_itr->arb_payment / 100;
+            eosio::action(eosio::permission_level{_self, "active"_n}, esc_itr->ext_asset.contract, "transfer"_n,
+                make_tuple(_self, esc_itr->arb, arbPay, esc_itr->memo))
+                .send();
         }
     }
 } // namespace eosdac
