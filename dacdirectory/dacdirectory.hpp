@@ -22,6 +22,7 @@ namespace eosdac {
             ACTION regref(name dac_id, string value, uint8_t type);
             ACTION unregref(name dac_id, uint8_t type);
             ACTION setowner(name dac_id, name new_owner);
+            ACTION settitle(name dac_id, string title);
             ACTION setstatus(name dac_id, uint8_t value);
 
           protected:
