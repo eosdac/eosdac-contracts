@@ -156,6 +156,17 @@ namespace eosdac {
             });
         }
 
+        void dacdirectory::settitle(name dac_id, string title) {
+            auto existing_dac = _dacs.find(dac_id.value);
+            check(existing_dac != _dacs.end(), "ERR::DAC_NOT_FOUND::DAC not found in directory");
+
+            require_auth(existing_dac->owner);
+
+            _dacs.modify(existing_dac, same_payer, [&](dac &d) {
+                d.title = title;
+            });
+        }
+
         void dacdirectory::setstatus(name dac_id, uint8_t value) {
             auto dac_inst = _dacs.find(dac_id.value);
             check(dac_inst != _dacs.end(), "ERR::DAC_NOT_FOUND::DAC not found in directory");
