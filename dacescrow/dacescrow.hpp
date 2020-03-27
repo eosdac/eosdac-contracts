@@ -25,8 +25,7 @@ namespace eosdac {
          * Escrow contract
          */
 
-        ACTION init(name sender, name receiver, name arb, time_point_sec expires, string memo, name ext_reference,
-            std::optional<uint16_t> arb_payment);
+        ACTION init(name sender, name receiver, name arb, time_point_sec expires, string memo, name ext_reference);
 
         ACTION transfer(name from, name to, asset quantity, string memo);
         /**
@@ -83,4 +82,5 @@ namespace eosdac {
 
       private:
         void pay_arbitrator(const escrows_table::const_iterator esc_itr);
-    }; // namespace eosdac
+    };
+} // namespace eosdac

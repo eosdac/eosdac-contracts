@@ -8,7 +8,10 @@ import {
   assertEOSErrorIncludesMessage,
   assertRowCount,
   EosioAction,
+  ContractLoader,
 } from 'lamington';
+
+import { EosioToken } from '../external_contracts/eosio.token/eosio.token';
 
 import { SharedTestObjects } from '../TestHelpers';
 import * as chai from 'chai';
@@ -43,7 +46,7 @@ enum ProposalState {
 
 let proposalHash = 'jhsdfkjhsdfkjhkjsdf';
 
-describe('Dacproposals', () => {
+describe.only('Dacproposals', () => {
   let shared: SharedTestObjects;
   let otherAccount: Account;
   let proposer1Account: Account;
@@ -57,12 +60,14 @@ describe('Dacproposals', () => {
   let newpropid = 'newpropid';
   let notfoundpropid = 'notfoundid';
   let otherfoundpropid = 'otherid';
+  let eosiotoken: EosioToken;
 
   before(async () => {
     shared = await chai.expect(SharedTestObjects.getInstance()).to.be.fulfilled;
 
     await shared.initDac(dacId, '4,PROPDAC', '1000000.0000 PROPDAC');
     await shared.updateconfig(dacId, '12.0000 PROPDAC');
+    eosiotoken = await ContractLoader.at('eosio.token');
     await chai.expect(
       shared.dac_token_contract.stakeconfig(
         { enabled: true, min_stake_time: 5, max_stake_time: 20 },
@@ -95,7 +100,6 @@ describe('Dacproposals', () => {
               proposal_threshold: 7,
               finalize_threshold: 5,
               approval_duration: 130,
-              arbitrator_pay: 10,
             },
             dacId,
             { from: otherAccount }
@@ -111,7 +115,6 @@ describe('Dacproposals', () => {
               proposal_threshold: proposeApproveTheshold,
               finalize_threshold: 3,
               approval_duration: 130,
-              arbitrator_pay: 10,
             },
             dacId,
             { from: shared.auth_account }
@@ -126,7 +129,6 @@ describe('Dacproposals', () => {
               proposal_threshold: proposeApproveTheshold,
               finalize_threshold: 3,
               approval_duration: 130,
-              arbitrator_pay: 10,
             },
           ]
         );
@@ -143,6 +145,7 @@ describe('Dacproposals', () => {
             'summary',
             arbitrator.name,
             { quantity: '100.0000 EOS', contract: 'eosio.token' },
+            { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
             proposalHash,
             newpropid,
             category,
@@ -163,6 +166,7 @@ describe('Dacproposals', () => {
               'summary',
               arbitrator.name,
               { quantity: '100.0000 EOS', contract: 'eosio.token' },
+              { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
               proposalHash,
               newpropid,
               category,
@@ -183,6 +187,7 @@ describe('Dacproposals', () => {
               'su',
               arbitrator.name,
               { quantity: '100.0000 EOS', contract: 'eosio.token' },
+              { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
               proposalHash,
               newpropid,
               category,
@@ -203,6 +208,7 @@ describe('Dacproposals', () => {
               'summary',
               arbitrator.name,
               { quantity: '100.0000 sdff', contract: 'eosio.token' },
+              { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
               proposalHash,
               newpropid,
               category,
@@ -223,6 +229,7 @@ describe('Dacproposals', () => {
               'summary',
               arbitrator.name,
               { quantity: '100.0000', contract: 'eosio.token' },
+              { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
               proposalHash,
               newpropid,
               category,
@@ -243,6 +250,7 @@ describe('Dacproposals', () => {
               'summary',
               arbitrator.name,
               { quantity: '-100.0000 EOS', contract: 'eosio.token' },
+              { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
               proposalHash,
               newpropid,
               category,
@@ -250,7 +258,7 @@ describe('Dacproposals', () => {
               dacId,
               { from: proposer1Account }
             ),
-            'CREATEPROP_INVALID_PAY_AMOUNT'
+            'CREATEPROP_INVALID_proposal_pay'
           );
         });
       });
@@ -263,6 +271,7 @@ describe('Dacproposals', () => {
               'summary',
               'randomname',
               { quantity: '100.0000 EOS', contract: 'eosio.token' },
+              { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
               proposalHash,
               newpropid,
               category,
@@ -283,6 +292,7 @@ describe('Dacproposals', () => {
               'summary',
               arbitrator.name,
               { quantity: '100.0000 EOS', contract: 'eosio.token' },
+              { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
               proposalHash,
               newpropid,
               category,
@@ -306,6 +316,8 @@ describe('Dacproposals', () => {
                 quantity: '100.0000 EOS',
                 contract: 'eosio.token',
               },
+              { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+
               proposalHash,
               newpropid,
               category,
@@ -326,6 +338,7 @@ describe('Dacproposals', () => {
               'summary',
               arbitrator.name,
               { quantity: '100.0000 EOS', contract: 'eosio.token' },
+              { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
               proposalHash,
               otherfoundpropid,
               category,
@@ -520,6 +533,7 @@ describe('Dacproposals', () => {
             'startwork_summary',
             arbitrator.name,
             { quantity: '101.0000 EOS', contract: 'eosio.token' },
+            { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
             'asdfasdfasdfasdfasdfasdfasdffdsa',
             delgatepropid, // proposal id
             category,
@@ -642,6 +656,7 @@ describe('Dacproposals', () => {
           'summary',
           arbitrator.name,
           { quantity: '100.0000 EOS', contract: 'eosio.token' },
+          { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
           proposalHash,
           commentPropId,
           category,
@@ -706,31 +721,31 @@ describe('Dacproposals', () => {
       });
     });
 
-  context('with custodian only auth', async () => {
-    it('should succeed', async () => {
-      await chai.expect(
-        shared.dacproposals_contract.comment(
-          propDacCustodians[3].name,
+    context('with custodian only auth', async () => {
+      it('should succeed', async () => {
+        await chai.expect(
+          shared.dacproposals_contract.comment(
+            propDacCustodians[3].name,
             commentPropId, // proposal id
-          'some comment',
-          'a comment category',
-          dacId,
-          {
-            auths: [
-              {
-                actor: propDacCustodians[3].name,
-                permission: 'active',
-              },
-              {
-                actor: shared.auth_account.name,
-                permission: 'active',
-              },
-            ],
-          }
-        )
-      ).eventually.to.be.fulfilled;
+            'some comment',
+            'a comment category',
+            dacId,
+            {
+              auths: [
+                {
+                  actor: propDacCustodians[3].name,
+                  permission: 'active',
+                },
+                {
+                  actor: shared.auth_account.name,
+                  permission: 'active',
+                },
+              ],
+            }
+          )
+        ).eventually.to.be.fulfilled;
+      });
     });
-  });
   });
 
   context('prepare for start work', async () => {
@@ -898,7 +913,7 @@ describe('Dacproposals', () => {
     });
     context('start work with enough votes', async () => {
       before(async () => {
-        let action: EosioAction = {
+        let eosLoadAction: EosioAction = {
           account: 'eosio.token',
           name: 'transfer',
           authorization: [{ actor: 'eosio', permission: 'active' }],
@@ -909,8 +924,25 @@ describe('Dacproposals', () => {
             memo: 'initial funds for proposal payments',
           },
         };
-        chai.expect(EOSManager.transact({ actions: [action] })).to.eventually.be
-          .fulfilled;
+        let propLoadAction: EosioAction = {
+          account: shared.dac_token_contract.account.name,
+          name: 'transfer',
+          authorization: [
+            {
+              actor: shared.dac_token_contract.account.name,
+              permission: 'active',
+            },
+          ],
+          data: {
+            from: shared.dac_token_contract.account.name,
+            to: shared.treasury_account.name,
+            quantity: '100000.0000 PROPDAC',
+            memo: 'initial funds for proposal payments',
+          },
+        };
+        chai.expect(
+          EOSManager.transact({ actions: [eosLoadAction, propLoadAction] })
+        ).to.eventually.be.fulfilled;
       });
 
       it('should succeed', async () => {
@@ -946,12 +978,12 @@ describe('Dacproposals', () => {
           chai.expect(row.sender).to.eq('treasury');
           chai.expect(row.receiver).to.eq(proposer1Account.name);
           chai.expect(row.arb).to.eq(arbitrator.name);
-          chai.expect(row.ext_asset.quantity).to.eq('100.0000 EOS');
+          chai.expect(row.receiver_pay.quantity).to.eq('100.0000 EOS');
           chai
             .expect(row.memo)
             .to.eq(`${proposer1Account.name}:${newpropid}:${proposalHash}`);
           chai.expect(row.expires).to.be.afterTime(new Date(Date.now()));
-          chai.expect(row.arb_payment).to.be.eq(0);
+          chai.expect(row.arbitrator_pay.quantity).to.eq('10.0000 PROPDAC');
         });
         it('should update the proposal state to in_progress', async () => {
           let proposalRow = await shared.dacproposals_contract.proposalsTable({
@@ -1001,7 +1033,6 @@ describe('Dacproposals', () => {
               proposal_threshold: proposeApproveTheshold,
               finalize_threshold: 5,
               approval_duration: 3, // set short for expiry of the
-              arbitrator_pay: 10,
             },
             dacId,
             { from: shared.auth_account }
@@ -1014,6 +1045,7 @@ describe('Dacproposals', () => {
             'startwork_summary',
             arbitrator.name,
             { quantity: '105.0000 EOS', contract: 'eosio.token' },
+            { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
             'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
             propId, // proposal id
             category,
@@ -1240,6 +1272,7 @@ describe('Dacproposals', () => {
             'startwork_summary',
             arbitrator.name,
             { quantity: '101.0000 EOS', contract: 'eosio.token' },
+            { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
             'asdfasdfasdfasdfasdfasdfasdffdsa',
             wrongStateProp, // proposal id
             category,
@@ -1286,7 +1319,7 @@ describe('Dacproposals', () => {
       });
     });
 
-  context('proposal not in pending_finalize state', async () => {
+    context('proposal not in pending_finalize state', async () => {
       let wrongFinProp = 'wrongfinid';
       before(async () => {
         await chai.expect(
@@ -1296,6 +1329,7 @@ describe('Dacproposals', () => {
             'startwork_summary',
             arbitrator.name,
             { quantity: '101.0000 EOS', contract: 'eosio.token' },
+            { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
             'asdfasdfasdfasdfasdfasdfasdffdsa',
             wrongFinProp, // proposal id
             category,
@@ -1306,93 +1340,129 @@ describe('Dacproposals', () => {
           ''
         ).to.eventually.be.fulfilled;
       });
-    before(async () => {
+      before(async () => {
         await shared.dacproposals_contract.updpropvotes(wrongFinProp, dacId, {
-        from: proposer1Account,
-      });
-    });
-    it('should fail with not in pending_finalize state error', async () => {
-      await assertEOSErrorIncludesMessage(
-          shared.dacproposals_contract.finalize(wrongFinProp, dacId, {
           from: proposer1Account,
-        }),
-        'FINALIZE_WRONG_STATE'
-      );
-    });
-  });
-  context('proposal in pending_finalize state', async () => {
-    before(async () => {
-      await shared.dacproposals_contract.updpropvotes(newpropid, dacId, {
-        from: proposer1Account,
+        });
       });
-    });
-    context('without enough votes to approve the finalize', async () => {
-      it('should fail to complete work with not enough votes error', async () => {
+      it('should fail with not in pending_finalize state error', async () => {
         await assertEOSErrorIncludesMessage(
-          shared.dacproposals_contract.finalize(newpropid, dacId, {
+          shared.dacproposals_contract.finalize(wrongFinProp, dacId, {
             from: proposer1Account,
           }),
-          'FINALIZE_INSUFFICIENT_VOTES'
+          'FINALIZE_WRONG_STATE'
         );
       });
     });
+    context('proposal in pending_finalize state', async () => {
+      before(async () => {
+        await shared.dacproposals_contract.updpropvotes(newpropid, dacId, {
+          from: proposer1Account,
+        });
+      });
+      context('without enough votes to approve the finalize', async () => {
+        it('should fail to complete work with not enough votes error', async () => {
+          await assertEOSErrorIncludesMessage(
+            shared.dacproposals_contract.finalize(newpropid, dacId, {
+              from: proposer1Account,
+            }),
+            'FINALIZE_INSUFFICIENT_VOTES'
+          );
+        });
+      });
       context(
         'with enough votes to complete finalize with denial',
         async () => {
-      context('update votes count', async () => {
-        before(async () => {
-          for (const custodian of propDacCustodians) {
-            await shared.dacproposals_contract.voteprop(
-              custodian.name,
-              newpropid,
-              VoteType.finalize_approve,
-              dacId,
-              {
-                auths: [
+          context('before finalize is run', async () => {
+            it('proposer should not yet have been paid', async () => {
+              await assertRowCount(
+                eosiotoken.accountsTable({
+                  scope: proposer1Account.name,
+                }),
+                0
+              );
+            });
+            it('arb should not yet have been paid', async () => {
+              await assertRowsEqual(
+                shared.dac_token_contract.accountsTable({
+                  scope: arbitrator.name,
+                }),
+                [{ balance: '20000.0000 PROPDAC' }]
+              );
+            });
+          });
+          context('with enough finalize_approve votes to approve', async () => {
+            before(async () => {
+              for (const custodian of propDacCustodians) {
+                await shared.dacproposals_contract.voteprop(
+                  custodian.name,
+                  newpropid,
+                  VoteType.finalize_approve,
+                  dacId,
                   {
-                    actor: custodian.name,
-                    permission: 'active',
-                  },
-                  {
-                    actor: shared.auth_account.name,
-                    permission: 'active',
-                  },
-                ],
+                    auths: [
+                      {
+                        actor: custodian.name,
+                        permission: 'active',
+                      },
+                      {
+                        actor: shared.auth_account.name,
+                        permission: 'active',
+                      },
+                    ],
+                  }
+                );
               }
-            );
-          }
-        });
-        it('should succeed', async () => {
-          await chai.expect(
-            shared.dacproposals_contract.finalize(newpropid, dacId, {
-              from: proposer1Account,
-            })
-          ).to.eventually.be.fulfilled;
-        });
-      });
+            });
+            it('finalize should succeed', async () => {
+              await chai.expect(
+                shared.dacproposals_contract.finalize(newpropid, dacId, {
+                  from: proposer1Account,
+                })
+              ).to.eventually.be.fulfilled;
+            });
+          });
+          context('after finalize is run', async () => {
+            it('proposer should have been paid', async () => {
+              await assertRowsEqual(
+                eosiotoken.accountsTable({
+                  scope: proposer1Account.name,
+                }),
+                [{ balance: '100.0000 EOS' }]
+              );
+            });
+            it('arb should not have been paid', async () => {
+              await assertRowsEqual(
+                shared.dac_token_contract.accountsTable({
+                  scope: proposer1Account.name,
+                }),
+                [{ balance: '20000.0000 PROPDAC' }]
+              );
+            });
+          });
         }
       );
-    context('Read the proposals table after finalize', async () => {
-      it('should have removed the finalized proposal', async () => {
-        await assertRowCount(
-          shared.dacproposals_contract.proposalsTable({
-            scope: dacId,
-            lowerBound: newpropid,
-            upperBound: newpropid,
-          }),
-          0
-        );
-      });
-      it('escrow table should contain 0 row after finalize is done', async () => {
-        await assertRowCount(
-          shared.dacescrow_contract.escrowsTable({
-            scope: 'dacescrow',
-          }),
-          0
-        );
+      context('Read the proposals table after finalize', async () => {
+        it('should have removed the finalized proposal', async () => {
+          await assertRowCount(
+            shared.dacproposals_contract.proposalsTable({
+              scope: dacId,
+              lowerBound: newpropid,
+              upperBound: newpropid,
+            }),
+            0
+          );
+        });
+        it('escrow table should contain 0 row after finalize is done', async () => {
+          await assertRowCount(
+            shared.dacescrow_contract.escrowsTable({
+              scope: 'dacescrow',
+            }),
+            0
+          );
+        });
       });
     });
-  });
   });
 
   context('arbapprove', async () => {
@@ -1417,7 +1487,6 @@ describe('Dacproposals', () => {
             proposal_threshold: proposeApproveTheshold,
             finalize_threshold: 5,
             approval_duration: 30,
-            arbitrator_pay: 10,
           },
           dacId,
           { from: shared.auth_account }
@@ -1429,6 +1498,7 @@ describe('Dacproposals', () => {
             'summary',
             arbitrator.name,
             { quantity: '100.0000 EOS', contract: 'eosio.token' },
+            { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
             proposalHash,
             arbApproveId,
             category,
@@ -1552,6 +1622,24 @@ describe('Dacproposals', () => {
           );
         });
       });
+      context('before escrow arb approve', async () => {
+        it('proposer should not yet have been paid', async () => {
+          await assertRowsEqual(
+            eosiotoken.accountsTable({
+              scope: proposer1Account.name,
+            }),
+            [{ balance: '100.0000 EOS' }]
+          );
+        });
+        it('arbitrator should not have been paid', async () => {
+          await assertRowsEqual(
+            shared.dac_token_contract.accountsTable({
+              scope: arbitrator.name,
+            }),
+            [{ balance: '20000.0000 PROPDAC' }]
+          );
+        });
+      });
       context('After the escrow and proposal have been disputed', async () => {
         before(async () => {
           // Dispute the proposal for not getting approved.
@@ -1605,6 +1693,24 @@ describe('Dacproposals', () => {
           ).to.eventually.be.fulfilled;
         });
       });
+      context('after arb approve is run', async () => {
+        it('proposer should have been paid', async () => {
+          await assertRowsEqual(
+            eosiotoken.accountsTable({
+              scope: proposer1Account.name,
+            }),
+            [{ balance: '200.0000 EOS' }]
+          );
+        });
+        it('arbitrator should have been paid', async () => {
+          await assertRowsEqual(
+            shared.dac_token_contract.accountsTable({
+              scope: arbitrator.name,
+            }),
+            [{ balance: '20010.0000 PROPDAC' }]
+          );
+        });
+      });
     });
   });
   context('arbdeny', async () => {
@@ -1629,7 +1735,6 @@ describe('Dacproposals', () => {
             proposal_threshold: proposeApproveTheshold,
             finalize_threshold: 5,
             approval_duration: 30,
-            arbitrator_pay: 10,
           },
           dacId,
           { from: shared.auth_account }
@@ -1641,6 +1746,7 @@ describe('Dacproposals', () => {
             'summary',
             arbitrator.name,
             { quantity: '100.0000 EOS', contract: 'eosio.token' },
+            { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
             proposalHash,
             arbDenyId,
             category,
@@ -1765,6 +1871,24 @@ describe('Dacproposals', () => {
         });
       });
       context('After the escrow and proposal have been disputed', async () => {
+        context('before escrow arb deny', async () => {
+          it('proposer should have been paid', async () => {
+            await assertRowsEqual(
+              eosiotoken.accountsTable({
+                scope: proposer1Account.name,
+              }),
+              [{ balance: '200.0000 EOS' }]
+            );
+          });
+          it('arbitrator should have been paid', async () => {
+            await assertRowsEqual(
+              shared.dac_token_contract.accountsTable({
+                scope: arbitrator.name,
+              }),
+              [{ balance: '20020.0000 PROPDAC' }]
+            );
+          });
+        });
         before(async () => {
           // Dispute the proposal for not getting approved.
           let escrowAction: EosioAction = {
@@ -1816,6 +1940,24 @@ describe('Dacproposals', () => {
             EOSManager.transact({ actions: [escrowAction, proposalAction] })
           ).to.eventually.be.fulfilled;
         });
+        context('after arbdeny is run', async () => {
+          it('proposer should have been paid', async () => {
+            await assertRowsEqual(
+              eosiotoken.accountsTable({
+                scope: proposer1Account.name,
+              }),
+              [{ balance: '200.0000 EOS' }]
+            );
+          });
+          it('arbitrator should have been paid', async () => {
+            await assertRowsEqual(
+              shared.dac_token_contract.accountsTable({
+                scope: arbitrator.name,
+              }),
+              [{ balance: '20020.0000 PROPDAC' }]
+            );
+          });
+        });
       });
     });
   });
@@ -1827,7 +1969,6 @@ describe('Dacproposals', () => {
           proposal_threshold: proposeApproveTheshold,
           finalize_threshold: 5,
           approval_duration: 30,
-          arbitrator_pay: 10,
         },
         dacId,
         { from: shared.auth_account }
@@ -1839,6 +1980,7 @@ describe('Dacproposals', () => {
           'startwork_summary',
           arbitrator.name,
           { quantity: '106.0000 EOS', contract: 'eosio.token' },
+          { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
           'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
           cancelpropid, // proposal id
           category,
@@ -1971,7 +2113,6 @@ describe('Dacproposals', () => {
           proposal_threshold: proposeApproveTheshold,
           finalize_threshold: 5,
           approval_duration: 30,
-          arbitrator_pay: 10,
         },
         dacId,
         { from: shared.auth_account }
@@ -1983,6 +2124,7 @@ describe('Dacproposals', () => {
           'startwork_summary',
           arbitrator.name,
           { quantity: '106.0000 EOS', contract: 'eosio.token' },
+          { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
           'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
           cancelpropid, // proposal id
           category,
@@ -2078,7 +2220,6 @@ describe('Dacproposals', () => {
               proposal_threshold: proposeApproveTheshold,
               finalize_threshold: 5,
               approval_duration: 130,
-              arbitrator_pay: 10,
             },
             dacId,
             { from: shared.auth_account }
@@ -2090,6 +2231,7 @@ describe('Dacproposals', () => {
               'delegate categories_summary',
               arbitrator.name,
               { quantity: '106.0000 EOS', contract: 'eosio.token' },
+              { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
               'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
               propId, // proposal id
               category, // category number
@@ -2297,6 +2439,7 @@ describe('Dacproposals', () => {
               'delegate complex_summary',
               arbitrator.name,
               { quantity: '106.0000 EOS', contract: 'eosio.token' },
+              { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
               'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
               propId, // proposal id
               category, // category number

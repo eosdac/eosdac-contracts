@@ -1,5 +1,6 @@
 #include <eosio/asset.hpp>
 #include <eosio/eosio.hpp>
+#include <eosio/ignore.hpp>
 #include <eosio/singleton.hpp>
 #include <eosio/time.hpp>
 
@@ -46,7 +47,8 @@ namespace eosdac {
             name           proposer;
             name           arbitrator;
             string         content_hash;
-            extended_asset pay_amount;
+            extended_asset proposal_pay;
+            extended_asset arbitrator_pay;
             uint8_t        state;
             time_point_sec expiry;
             uint32_t       job_duration; // job duration in seconds
@@ -73,15 +75,16 @@ namespace eosdac {
             uint16_t proposal_threshold = 4;
             uint16_t finalize_threshold = 1;
             uint32_t approval_duration  = 30 * 24 * 60 * 60;
-            uint32_t arbitrator_pay     = 10;
+            // uint32_t arbitrator_pay     = 10;
         };
 
         typedef eosio::singleton<"config"_n, config> configs_table;
 
         dacproposals(name receiver, name code, datastream<const char *> ds) : contract(receiver, code, ds) {}
 
-        ACTION createprop(name proposer, string title, string summary, name arbitrator, extended_asset pay_amount,
-            string content_hash, name id, uint16_t category, uint32_t job_duration, name dac_id);
+        ACTION createprop(name proposer, string title, string summary, name arbitrator, extended_asset proposal_pay,
+            extended_asset arbitrator_pay, string content_hash, name id, uint16_t category, uint32_t job_duration,
+            name dac_id);
         ACTION voteprop(name custodian, name proposal_id, uint8_t vote, name dac_id);
         ACTION delegatevote(name custodian, name proposal_id, name delegatee_custodian, name dac_id);
         ACTION delegatecat(name custodian, uint64_t category, name delegatee_custodian, name dac_id);

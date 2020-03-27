@@ -20,41 +20,34 @@ namespace eosdac {
 
         require_auth(from);
 
-        auto by_sender = escrows.get_index<"bysender"_n>();
+        size_t separatorIdx = memo.find(":");
+        string paymentType  = memo.substr(0, separatorIdx);
+        string key          = memo.substr(separatorIdx + 1, memo.length() - separatorIdx - 1);
+        name   keyName      = name(key.c_str());
+        auto   esc_itr      = escrows.find(keyName.value);
 
-        uint8_t found = 0;
+        check(esc_itr != escrows.end(), "Could not find existing escrow to deposit to, transfer cancelled");
 
-        for (auto esc_itr = by_sender.lower_bound(from.value), end_itr = by_sender.upper_bound(from.value);
-             esc_itr != end_itr; ++esc_itr) {
-            if (esc_itr->ext_asset.quantity.amount == 0) {
-
-                by_sender.modify(esc_itr, from, [&](escrow_info &e) {
-                    e.ext_asset = extended_asset{quantity, sending_code};
-                });
-
-                found = 1;
-
-                break;
+        escrows.modify(esc_itr, from, [&](escrow_info &e) {
+            if (paymentType == "rec") {
+                check(esc_itr->receiver_pay.quantity.amount == 0,
+                    "ERR::TRANSFER_RECEIVER::This escrow has already paid been into for the recevier.");
+                e.receiver_pay = extended_asset{quantity, sending_code};
+            } else if (paymentType == "arb") {
+                check(esc_itr->arbitrator_pay.quantity.amount == 0,
+                    "ERR::TRANSFER_ARB::This escrow has already paid been into for the arbitrator.");
+                e.arbitrator_pay = extended_asset{quantity, sending_code};
             }
-        }
-
-        check(found, "Could not find existing escrow to deposit to, transfer cancelled");
+        });
     }
 
-    ACTION dacescrow::init(name sender, name receiver, name arb, time_point_sec expires, string memo,
-        name ext_reference, std::optional<uint16_t> arb_payment) {
+    ACTION
+    dacescrow::init(name sender, name receiver, name arb, time_point_sec expires, string memo, name ext_reference) {
         require_auth(sender);
 
         check(receiver != arb, "Receiver cannot be the same as arbitrator");
         check(sender != arb, "Sender cannot be the same as arbitrator");
         check(expires > time_point_sec(eosio::current_time_point()), "Expiry date is in the past");
-
-        uint64_t arb_payment_int = 0;
-
-        if (arb_payment && arb_payment.value() >= 0) {
-            arb_payment_int = arb_payment.value();
-        }
-        check(arb_payment_int <= 20'00, "Arbitrator payment cannot be over 20%");
 
         extended_asset zero_asset{{0, symbol{"EOS", 4}}, "eosio.token"_n};
 
@@ -63,15 +56,15 @@ namespace eosdac {
             escrows.find(ext_reference.value) == escrows.end(), "Already have an escrow with this external reference");
 
         escrows.emplace(sender, [&](escrow_info &p) {
-            p.key         = ext_reference;
-            p.sender      = sender;
-            p.receiver    = receiver;
-            p.arb         = arb;
-            p.ext_asset   = zero_asset;
-            p.expires     = expires;
-            p.memo        = memo;
-            p.arb_payment = arb_payment_int;
-            p.is_locked   = false;
+            p.key            = ext_reference;
+            p.sender         = sender;
+            p.receiver       = receiver;
+            p.arb            = arb;
+            p.receiver_pay   = zero_asset;
+            p.arbitrator_pay = zero_asset;
+            p.expires        = expires;
+            p.memo           = memo;
+            p.is_locked      = false;
         });
     }
 
@@ -81,7 +74,7 @@ namespace eosdac {
         auto esc_itr = escrows.find(key.value);
         check(esc_itr != escrows.end(), "Could not find escrow with that index");
 
-        check(esc_itr->ext_asset.quantity.amount > 0, "This has not been initialized with a transfer");
+        check(esc_itr->receiver_pay.quantity.amount > 0, "This has not been initialized with a transfer");
 
         if (esc_itr->arb == approver) {
             check(esc_itr->is_locked,
@@ -95,8 +88,8 @@ namespace eosdac {
         }
 
         // send funds to the receiver
-        eosio::action(eosio::permission_level{_self, "active"_n}, esc_itr->ext_asset.contract, "transfer"_n,
-            make_tuple(_self, esc_itr->receiver, esc_itr->ext_asset.quantity, esc_itr->memo))
+        eosio::action(eosio::permission_level{_self, "active"_n}, esc_itr->receiver_pay.contract, "transfer"_n,
+            make_tuple(_self, esc_itr->receiver, esc_itr->receiver_pay.quantity, esc_itr->memo))
             .send();
         escrows.erase(esc_itr);
     }
@@ -107,14 +100,14 @@ namespace eosdac {
         auto esc_itr = escrows.find(key.value);
         check(esc_itr != escrows.end(), "Could not find escrow with that index");
 
-        check(esc_itr->ext_asset.quantity.amount > 0, "This has not been initialized with a transfer");
+        check(esc_itr->receiver_pay.quantity.amount > 0, "This has not been initialized with a transfer");
 
         check(disapprover == esc_itr->arb, "Only arbitrator can disapprove");
         check(esc_itr->is_locked,
             "ERR::ESCROW_IS_NOT_LOCKED::This escrow is not locked. It can only be approved/disapproved by the arbitrator while it is locked.");
 
-        eosio::action(eosio::permission_level{_self, "active"_n}, esc_itr->ext_asset.contract, "transfer"_n,
-            make_tuple(_self, esc_itr->sender, esc_itr->ext_asset.quantity, esc_itr->memo))
+        eosio::action(eosio::permission_level{_self, "active"_n}, esc_itr->receiver_pay.contract, "transfer"_n,
+            make_tuple(_self, esc_itr->sender, esc_itr->receiver_pay.quantity, esc_itr->memo))
             .send();
 
         pay_arbitrator(esc_itr);
@@ -131,7 +124,7 @@ namespace eosdac {
 
         require_auth(esc_itr->sender);
 
-        check(0 == esc_itr->ext_asset.quantity.amount, "Amount is not zero, this escrow is locked down");
+        check(0 == esc_itr->receiver_pay.quantity.amount, "Amount is not zero, this escrow is locked down");
 
         escrows.erase(esc_itr);
     }
@@ -145,7 +138,7 @@ namespace eosdac {
 
         require_auth(esc_itr->sender);
 
-        check(esc_itr->ext_asset.quantity.amount > 0, "This has not been initialized with a transfer");
+        check(esc_itr->receiver_pay.quantity.amount > 0, "This has not been initialized with a transfer");
         check(!esc_itr->is_locked,
             "ERR::ESCROW_IS_LOCKED::This escrow is locked and can only be approved/disapproved by the arbitrator.");
 
@@ -153,8 +146,8 @@ namespace eosdac {
 
         check(time_now >= esc_itr->expires, "Escrow has not expired");
 
-        eosio::action(eosio::permission_level{_self, "active"_n}, esc_itr->ext_asset.contract, "transfer"_n,
-            make_tuple(_self, esc_itr->sender, esc_itr->ext_asset.quantity, esc_itr->memo))
+        eosio::action(eosio::permission_level{_self, "active"_n}, esc_itr->receiver_pay.contract, "transfer"_n,
+            make_tuple(_self, esc_itr->sender, esc_itr->receiver_pay.quantity, esc_itr->memo))
             .send();
 
         escrows.erase(esc_itr);
@@ -166,7 +159,7 @@ namespace eosdac {
 
         require_auth(esc_itr->receiver);
 
-        check(esc_itr->ext_asset.quantity.amount > 0, "This has not been initialized with a transfer");
+        check(esc_itr->receiver_pay.quantity.amount > 0, "This has not been initialized with a transfer");
 
         escrows.modify(esc_itr, same_payer, [&](escrow_info &e) {
             e.is_locked = true;
@@ -183,10 +176,9 @@ namespace eosdac {
     }
 
     void dacescrow::pay_arbitrator(const escrows_table::const_iterator esc_itr) {
-        if (esc_itr->arb_payment > 0) {
-            asset arbPay = esc_itr->ext_asset.quantity * esc_itr->arb_payment / 100;
-            eosio::action(eosio::permission_level{_self, "active"_n}, esc_itr->ext_asset.contract, "transfer"_n,
-                make_tuple(_self, esc_itr->arb, arbPay, esc_itr->memo))
+        if (esc_itr->arbitrator_pay.quantity.amount > 0) {
+            eosio::action(eosio::permission_level{_self, "active"_n}, esc_itr->arbitrator_pay.contract, "transfer"_n,
+                make_tuple(_self, esc_itr->arb, esc_itr->arbitrator_pay.quantity, esc_itr->memo))
                 .send();
         }
     }

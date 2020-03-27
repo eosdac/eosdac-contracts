@@ -5,7 +5,6 @@
 #include <eosio/eosio.hpp>
 #include <eosio/time.hpp>
 #include <eosio/transaction.hpp>
-
 #include <typeinfo>
 
 #include "../_contract-shared-headers/dacdirectory_shared.hpp"
@@ -14,8 +13,8 @@
 namespace eosdac {
 
     ACTION dacproposals::createprop(name proposer, string title, string summary, name arbitrator,
-        extended_asset pay_amount, string content_hash, name id, uint16_t category, uint32_t job_duration,
-        name dac_id) {
+        extended_asset proposal_pay, extended_asset arbitrator_pay, string content_hash, name id, uint16_t category,
+        uint32_t job_duration, name dac_id) {
         require_auth(proposer);
         assertValidMember(proposer, dac_id);
         proposal_table proposals(get_self(), dac_id.value);
@@ -27,9 +26,9 @@ namespace eosdac {
 
         check(title.length() > 3, "ERR::CREATEPROP_SHORT_TITLE::Title length is too short.");
         check(summary.length() > 3, "ERR::CREATEPROP_SHORT_SUMMARY::Summary length is too short.");
-        check(pay_amount.quantity.symbol.is_valid(), "ERR::CREATEPROP_INVALID_SYMBOL::Invalid pay amount symbol.");
-        check(pay_amount.quantity.amount > 0,
-            "ERR::CREATEPROP_INVALID_PAY_AMOUNT::Invalid pay amount. Must be greater than 0.");
+        check(proposal_pay.quantity.symbol.is_valid(), "ERR::CREATEPROP_INVALID_SYMBOL::Invalid pay amount symbol.");
+        check(proposal_pay.quantity.amount > 0,
+            "ERR::CREATEPROP_INVALID_proposal_pay::Invalid pay amount. Must be greater than 0.");
         check(is_account(arbitrator), "ERR::CREATEPROP_INVALID_ARBITRATOR::Invalid arbitrator.");
 
         auto dac      = dacdir::dac_for_id(dac_id);
@@ -40,15 +39,16 @@ namespace eosdac {
         uint32_t approval_duration = current_configs(dac_id).approval_duration;
 
         proposals.emplace(proposer, [&](proposal &p) {
-            p.proposal_id  = id;
-            p.proposer     = proposer;
-            p.arbitrator   = arbitrator;
-            p.content_hash = content_hash;
-            p.pay_amount   = pay_amount;
-            p.state        = ProposalStatePending_approval;
-            p.category     = category;
-            p.job_duration = job_duration;
-            p.expiry       = time_point_sec(current_time_point().sec_since_epoch()) + approval_duration;
+            p.proposal_id    = id;
+            p.proposer       = proposer;
+            p.arbitrator     = arbitrator;
+            p.content_hash   = content_hash;
+            p.proposal_pay   = proposal_pay;
+            p.arbitrator_pay = arbitrator_pay;
+            p.state          = ProposalStatePending_approval;
+            p.category       = category;
+            p.job_duration   = job_duration;
+            p.expiry         = time_point_sec(current_time_point().sec_since_epoch()) + approval_duration;
         });
     }
 
@@ -206,17 +206,20 @@ namespace eosdac {
         check(is_account(treasury), "ERR::TREASURY_ACCOUNT_NOT_FOUND::Treasury account not found");
         check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
 
-        auto inittuple = make_tuple(treasury, prop.proposer, prop.arbitrator, time_now + (prop.job_duration * 2), memo,
-            proposal_id, current_configs(dac_id).arbitrator_pay);
-
+        auto inittuple =
+            make_tuple(treasury, prop.proposer, prop.arbitrator, time_now + (prop.job_duration * 2), memo, proposal_id);
+        string      recMemoString = "rec:" + proposal_id.to_string();
         transaction deferredTrans{};
         deferredTrans.actions.emplace_back(eosio::action(eosio::permission_level{get_self(), "active"_n}, get_self(),
             "runstartwork"_n, make_tuple(proposal_id, dac_id)));
         deferredTrans.actions.emplace_back(
             eosio::action(eosio::permission_level{treasury, "escrow"_n}, escrow, "init"_n, inittuple));
         deferredTrans.actions.emplace_back(
-            eosio::action(eosio::permission_level{treasury, "xfer"_n}, prop.pay_amount.contract, "transfer"_n,
-                make_tuple(treasury, escrow, prop.pay_amount.quantity, "payment for wp: " + proposal_id.to_string())));
+            eosio::action(eosio::permission_level{treasury, "xfer"_n}, prop.proposal_pay.contract, "transfer"_n,
+                make_tuple(treasury, escrow, prop.proposal_pay.quantity, recMemoString)));
+        deferredTrans.actions.emplace_back(
+            eosio::action(eosio::permission_level{treasury, "xfer"_n}, prop.arbitrator_pay.contract, "transfer"_n,
+                make_tuple(treasury, escrow, prop.arbitrator_pay.quantity, "arb:" + proposal_id.to_string())));
         deferredTrans.delay_sec = TRANSFER_DELAY;
         deferredTrans.send(
             uint128_t(proposal_id.value) << 64 | time_point_sec(current_time_point()).sec_since_epoch(), _self);
@@ -334,8 +337,8 @@ namespace eosdac {
         });
     }
 
-    ACTION dacproposals::comment(
-        name commenter, name proposal_id, string comment, string comment_category, name dac_id) {
+    ACTION
+    dacproposals::comment(name commenter, name proposal_id, string comment, string comment_category, name dac_id) {
         require_auth(commenter);
         assertValidMember(commenter, dac_id);
 
@@ -495,10 +498,10 @@ namespace eosdac {
                 } else if (direct_vote_itr->vote && direct_vote_itr->vote.value() == vote_type) {
                     approval_proposal_votes.insert(direct_vote_itr->voter);
                 }
+                direct_vote_itr++;
             } else {
-                // TODO: Remove vote since they are no longer a custodian.
+                direct_vote_itr = by_voters.erase(direct_vote_itr);
             }
-            direct_vote_itr++;
         }
 
         print_f("\n direct approval_proposal_votes: ");
@@ -604,19 +607,4 @@ namespace eosdac {
 
         clearprop(prop, dac_id);
     }
-
-    // void dacproposals::assertValidMember(name member, name dac_id) {
-
-    //     auto member_terms_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::TOKEN);
-
-    //     regmembers reg_members(member_terms_account.account_name, member_terms_account.dac_id.value);
-    //     memterms memberterms(member_terms_account.account_name, member_terms_account.dac_id.value);
-
-    //     const auto &regmem = reg_members.get(member.value, "ERR::GENERAL_REG_MEMBER_NOT_FOUND::Account is not
-    //     registered with members."); check((regmem.agreedterms != 0),
-    //     "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_ANY_TERMS::Account has not agreed to any terms"); auto
-    //     latest_member_terms = (--memberterms.end()); check(latest_member_terms->version == regmem.agreedterms,
-    //     "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_LATEST_TERMS::Agreed terms isn't the latest.");
-    // }
-
 } // namespace eosdac

@@ -55,7 +55,6 @@ export interface DacproposalsConfig {
 	proposal_threshold: number;
 	finalize_threshold: number;
 	approval_duration: number;
-	arbitrator_pay: number;
 }
 
 export interface DacproposalsCreateprop {
@@ -63,7 +62,8 @@ export interface DacproposalsCreateprop {
 	title: string;
 	summary: string;
 	arbitrator: string|number;
-	pay_amount: ExtendedAsset;
+	proposal_pay: ExtendedAsset;
+	arbitrator_pay: ExtendedAsset;
 	content_hash: string;
 	id: string|number;
 	category: number;
@@ -100,7 +100,8 @@ export interface DacproposalsProposal {
 	proposer: string|number;
 	arbitrator: string|number;
 	content_hash: string;
-	pay_amount: ExtendedAsset;
+	proposal_pay: ExtendedAsset;
+	arbitrator_pay: ExtendedAsset;
 	state: number;
 	expiry: Date;
 	job_duration: number;
@@ -164,7 +165,7 @@ export interface Dacproposals extends Contract {
 	clearexpprop(proposal_id: string|number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	comment(commenter: string|number, proposal_id: string|number, comment: string, comment_category: string, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	completework(proposal_id: string|number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
-	createprop(proposer: string|number, title: string, summary: string, arbitrator: string|number, pay_amount: ExtendedAsset, content_hash: string, id: string|number, category: number, job_duration: number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	createprop(proposer: string|number, title: string, summary: string, arbitrator: string|number, proposal_pay: ExtendedAsset, arbitrator_pay: ExtendedAsset, content_hash: string, id: string|number, category: number, job_duration: number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	delegatecat(custodian: string|number, category: number, delegatee_custodian: string|number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	delegatevote(custodian: string|number, proposal_id: string|number, delegatee_custodian: string|number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	dispute(proposal_id: string|number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;

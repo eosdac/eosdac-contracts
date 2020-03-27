@@ -570,6 +570,14 @@ export class SharedTestObjects {
     );
 
     await UpdateAuth.execLinkAuth(
+      this.treasury_account.active,
+      this.treasury_account.name,
+      'eosdactokens',
+      'transfer',
+      'xfer'
+    );
+
+    await UpdateAuth.execLinkAuth(
       this.dac_token_contract.account.active,
       this.dac_token_contract.account.name,
       this.daccustodian_contract.account.name,
