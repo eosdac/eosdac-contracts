@@ -102,6 +102,8 @@ namespace eosdac {
          * @param dac_id the Dac ID associated with the DAC that this proposa relates to.
          */
         ACTION runstartwork(name proposal_id, name dac_id);
+        using runstartwork_action = action_wrapper<"runstartwork"_n, &dacproposals::runstartwork>;
+
         ACTION completework(name proposal_id, name dac_id);
         ACTION finalize(name proposal_id, name dac_id);
         ACTION cancelprop(name proposal_id, name dac_id);

@@ -53,13 +53,6 @@ export interface DacescrowRefund {
 	key: string|number;
 }
 
-export interface DacescrowTransfer {
-	from: string|number;
-	to: string|number;
-	quantity: string;
-	memo: string;
-}
-
 export interface Dacescrow extends Contract {
 	// Actions
 	approve(key: string|number, approver: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
@@ -69,7 +62,6 @@ export interface Dacescrow extends Contract {
 	dispute(key: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	init(sender: string|number, receiver: string|number, arb: string|number, expires: Date, memo: string, ext_reference: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	refund(key: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
-	transfer(from: string|number, to: string|number, quantity: string, memo: string, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	
 	// Tables
 	escrowsTable(options?: GetTableRowsOptions): Promise<TableRowsResult<DacescrowEscrowInfo>>;

@@ -26,8 +26,9 @@ namespace eosdac {
          */
 
         ACTION init(name sender, name receiver, name arb, time_point_sec expires, string memo, name ext_reference);
+        using init_action = action_wrapper<"init"_n, &dacescrow::init>;
 
-        ACTION transfer(name from, name to, asset quantity, string memo);
+        [[eosio::on_notify("*::transfer")]] void transfer(name from, name to, asset quantity, string memo);
         /**
          * @brief This action can only be a called by the sender of the escrow or the arbitrator if the escrow is
          * locked. Upon a success the escrow funds wil be sent to the receiver of the escrow funds and the arbitrators

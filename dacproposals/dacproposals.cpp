@@ -1,5 +1,5 @@
 #include "dacproposals.hpp"
-#include "../dacescrow/dacescrow_shared.hpp"
+#include "../dacescrow/dacescrow.hpp"
 #include <algorithm>
 #include <eosio/action.hpp>
 #include <eosio/eosio.hpp>
@@ -206,17 +206,15 @@ namespace eosdac {
         check(is_account(treasury), "ERR::TREASURY_ACCOUNT_NOT_FOUND::Treasury account not found");
         check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
 
-        auto inittuple =
-            make_tuple(treasury, prop.proposer, prop.arbitrator, time_now + (prop.job_duration * 2), memo, proposal_id);
-        string      recMemoString = "rec:" + proposal_id.to_string();
         transaction deferredTrans{};
-        deferredTrans.actions.emplace_back(eosio::action(eosio::permission_level{get_self(), "active"_n}, get_self(),
-            "runstartwork"_n, make_tuple(proposal_id, dac_id)));
         deferredTrans.actions.emplace_back(
-            eosio::action(eosio::permission_level{treasury, "escrow"_n}, escrow, "init"_n, inittuple));
+            dacproposals::runstartwork_action(get_self(), eosio::permission_level{get_self(), "active"_n})
+                .to_action(proposal_id, dac_id));
+        deferredTrans.actions.emplace_back(dacescrow::init_action{escrow, {treasury, "escrow"_n}}.to_action(
+            treasury, prop.proposer, prop.arbitrator, time_now + (prop.job_duration * 2), memo, proposal_id));
         deferredTrans.actions.emplace_back(
             eosio::action(eosio::permission_level{treasury, "xfer"_n}, prop.proposal_pay.contract, "transfer"_n,
-                make_tuple(treasury, escrow, prop.proposal_pay.quantity, recMemoString)));
+                make_tuple(treasury, escrow, prop.proposal_pay.quantity, "rec:" + proposal_id.to_string())));
         deferredTrans.actions.emplace_back(
             eosio::action(eosio::permission_level{treasury, "xfer"_n}, prop.arbitrator_pay.contract, "transfer"_n,
                 make_tuple(treasury, escrow, prop.arbitrator_pay.quantity, "arb:" + proposal_id.to_string())));

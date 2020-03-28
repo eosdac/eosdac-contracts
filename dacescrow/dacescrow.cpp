@@ -14,17 +14,17 @@ namespace eosdac {
 
     ACTION dacescrow::transfer(name from, name to, asset quantity, string memo) {
 
-        if (to != _self) {
+        if (to != get_self() || from == get_self()) {
             return;
         }
 
         require_auth(from);
 
-        size_t separatorIdx = memo.find(":");
-        string paymentType  = memo.substr(0, separatorIdx);
-        string key          = memo.substr(separatorIdx + 1, memo.length() - separatorIdx - 1);
-        name   keyName      = name(key.c_str());
-        auto   esc_itr      = escrows.find(keyName.value);
+        std::size_t separatorIdx = memo.find(":");
+        string      paymentType  = memo.substr(0, separatorIdx);
+        string      key          = memo.substr(separatorIdx + 1, memo.length() - separatorIdx - 1);
+        name        keyName      = name(key.c_str());
+        auto        esc_itr      = escrows.find(keyName.value);
 
         check(esc_itr != escrows.end(), "Could not find existing escrow to deposit to, transfer cancelled");
 
@@ -183,21 +183,3 @@ namespace eosdac {
         }
     }
 } // namespace eosdac
-
-#define EOSIO_ABI_EX(TYPE, MEMBERS)                                                                                    \
-    extern "C" {                                                                                                       \
-    void apply(uint64_t receiver, uint64_t code, uint64_t action) {                                                    \
-        if (action == "onerror"_n.value) {                                                                             \
-            /* onerror is only valid if it is for the "eosio" code account and authorized by "eosio"'s "active         \
-             * permission */                                                                                           \
-            check(code == "eosio"_n.value, "onerror action's are only valid from the \"eosio\" system account");       \
-        }                                                                                                              \
-        auto self = receiver;                                                                                          \
-        if ((code == self && action != "transfer"_n.value) || (action == "transfer"_n.value)) {                        \
-            switch (action) { EOSIO_DISPATCH_HELPER(TYPE, MEMBERS) }                                                   \
-            /* does not allow destructor of thiscontract to run: eosio_exit(0); */                                     \
-        }                                                                                                              \
-    }                                                                                                                  \
-    }
-
-EOSIO_ABI_EX(eosdac::dacescrow, (transfer)(init)(approve)(disapprove)(refund)(dispute)(cancel)(clean))
