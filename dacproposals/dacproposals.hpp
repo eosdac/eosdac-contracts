@@ -75,7 +75,6 @@ namespace eosdac {
             uint16_t proposal_threshold = 4;
             uint16_t finalize_threshold = 1;
             uint32_t approval_duration  = 30 * 24 * 60 * 60;
-            // uint32_t arbitrator_pay     = 10;
         };
 
         typedef eosio::singleton<"config"_n, config> configs_table;

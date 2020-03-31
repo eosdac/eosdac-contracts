@@ -21,8 +21,6 @@ import * as chaiAsPromised from 'chai-as-promised';
 chai.use(chaiAsPromised);
 import { factory } from '../LoggingConfig';
 
-const log = factory.getLogger('Custodian Tests');
-
 enum VoteType {
   none = 0,
   // a vote type to indicate a custodian's approval of a worker proposal.
@@ -1390,6 +1388,22 @@ describe('Dacproposals', () => {
                 [{ balance: '20000.0000 PROPDAC' }]
               );
             });
+            it('dacescrow should be loaded with arbitrator funds', async () => {
+              await assertRowsEqual(
+                shared.dac_token_contract.accountsTable({
+                  scope: shared.dacescrow_contract.account.name,
+                }),
+                [{ balance: '10.0000 PROPDAC' }]
+              );
+            });
+            it('treasury should sent funds to escrow', async () => {
+              await assertRowsEqual(
+                shared.dac_token_contract.accountsTable({
+                  scope: shared.treasury_account.name,
+                }),
+                [{ balance: '99990.0000 PROPDAC' }]
+              );
+            });
           });
           context('with enough finalize_approve votes to approve', async () => {
             before(async () => {
@@ -1439,29 +1453,45 @@ describe('Dacproposals', () => {
                 [{ balance: '20000.0000 PROPDAC' }]
               );
             });
+            it('dacescrow should have returned the arbitrator funds', async () => {
+              await assertRowsEqual(
+                shared.dac_token_contract.accountsTable({
+                  scope: arbitrator.name,
+                }),
+                [{ balance: '20000.0000 PROPDAC' }]
+              );
+            });
+            it('dacescrow arbitrator funds should be returned to treasury', async () => {
+              await assertRowsEqual(
+                shared.dac_token_contract.accountsTable({
+                  scope: shared.treasury_account.name,
+                }),
+                [{ balance: '100000.0000 PROPDAC' }]
+              );
+            });
+          });
+          context('Read the proposals table after finalize', async () => {
+            it('should have removed the finalized proposal', async () => {
+              await assertRowCount(
+                shared.dacproposals_contract.proposalsTable({
+                  scope: dacId,
+                  lowerBound: newpropid,
+                  upperBound: newpropid,
+                }),
+                0
+              );
+            });
+            it('escrow table should contain 0 row after finalize is done', async () => {
+              await assertRowCount(
+                shared.dacescrow_contract.escrowsTable({
+                  scope: 'dacescrow',
+                }),
+                0
+              );
+            });
           });
         }
       );
-      context('Read the proposals table after finalize', async () => {
-        it('should have removed the finalized proposal', async () => {
-          await assertRowCount(
-            shared.dacproposals_contract.proposalsTable({
-              scope: dacId,
-              lowerBound: newpropid,
-              upperBound: newpropid,
-            }),
-            0
-          );
-        });
-        it('escrow table should contain 0 row after finalize is done', async () => {
-          await assertRowCount(
-            shared.dacescrow_contract.escrowsTable({
-              scope: 'dacescrow',
-            }),
-            0
-          );
-        });
-      });
     });
   });
 
@@ -1639,6 +1669,22 @@ describe('Dacproposals', () => {
             [{ balance: '20000.0000 PROPDAC' }]
           );
         });
+        it('dacescrow should be loaded with arbitrator funds', async () => {
+          await assertRowsEqual(
+            shared.dac_token_contract.accountsTable({
+              scope: shared.dacescrow_contract.account.name,
+            }),
+            [{ balance: '10.0000 PROPDAC' }]
+          );
+        });
+        it('treasury should sent funds to escrow', async () => {
+          await assertRowsEqual(
+            shared.dac_token_contract.accountsTable({
+              scope: shared.treasury_account.name,
+            }),
+            [{ balance: '99990.0000 PROPDAC' }]
+          );
+        });
       });
       context('After the escrow and proposal have been disputed', async () => {
         before(async () => {
@@ -1708,6 +1754,15 @@ describe('Dacproposals', () => {
               scope: arbitrator.name,
             }),
             [{ balance: '20010.0000 PROPDAC' }]
+          );
+        });
+
+        it('dacescrow arbitrator funds should not be returned to treasury', async () => {
+          await assertRowsEqual(
+            shared.dac_token_contract.accountsTable({
+              scope: shared.treasury_account.name,
+            }),
+            [{ balance: '99990.0000 PROPDAC' }]
           );
         });
       });
@@ -1888,6 +1943,22 @@ describe('Dacproposals', () => {
               [{ balance: '20020.0000 PROPDAC' }]
             );
           });
+          it('dacescrow should be sent arbitrator funds', async () => {
+            await assertRowsEqual(
+              shared.dac_token_contract.accountsTable({
+                scope: shared.dacescrow_contract.account.name,
+              }),
+              [{ balance: '0.0000 PROPDAC' }]
+            );
+          });
+          it('treasury should sent funds to escrow', async () => {
+            await assertRowsEqual(
+              shared.dac_token_contract.accountsTable({
+                scope: shared.treasury_account.name,
+              }),
+              [{ balance: '99980.0000 PROPDAC' }]
+            );
+          });
         });
         before(async () => {
           // Dispute the proposal for not getting approved.
@@ -1955,6 +2026,15 @@ describe('Dacproposals', () => {
                 scope: arbitrator.name,
               }),
               [{ balance: '20020.0000 PROPDAC' }]
+            );
+          });
+
+          it('dacescrow arbitrator funds should be returned to treasury', async () => {
+            await assertRowsEqual(
+              shared.dac_token_contract.accountsTable({
+                scope: shared.treasury_account.name,
+              }),
+              [{ balance: '99980.0000 PROPDAC' }]
             );
           });
         });

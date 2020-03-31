@@ -83,6 +83,7 @@ namespace eosdac {
         } else if (esc_itr->sender == approver) {
             check(!esc_itr->is_locked,
                 "ERR::ESCROW_IS_LOCKED::This escrow is locked and can only be approved/disapproved by the arbitrator.");
+            refund_arbitrator_pay(esc_itr);
         } else {
             check(false, "ERR::ESCROW_NOT_ALLOWED_TO_APPROVE::Only the arbitrator or sender can approve an escrow.");
         }
@@ -179,6 +180,14 @@ namespace eosdac {
         if (esc_itr->arbitrator_pay.quantity.amount > 0) {
             eosio::action(eosio::permission_level{_self, "active"_n}, esc_itr->arbitrator_pay.contract, "transfer"_n,
                 make_tuple(_self, esc_itr->arb, esc_itr->arbitrator_pay.quantity, esc_itr->memo))
+                .send();
+        }
+    }
+
+    void dacescrow::refund_arbitrator_pay(const escrows_table::const_iterator esc_itr) {
+        if (esc_itr->arbitrator_pay.quantity.amount > 0) {
+            eosio::action(eosio::permission_level{_self, "active"_n}, esc_itr->arbitrator_pay.contract, "transfer"_n,
+                make_tuple(_self, esc_itr->sender, esc_itr->arbitrator_pay.quantity, esc_itr->memo))
                 .send();
         }
     }
