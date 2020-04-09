@@ -64,7 +64,7 @@ namespace eosdac {
             p.arbitrator_pay = zero_asset;
             p.expires        = expires;
             p.memo           = memo;
-            p.is_locked      = false;
+            p.disputed       = false;
         });
     }
 
@@ -77,12 +77,12 @@ namespace eosdac {
         check(esc_itr->receiver_pay.quantity.amount > 0, "This has not been initialized with a transfer");
 
         if (esc_itr->arb == approver) {
-            check(esc_itr->is_locked,
+            check(esc_itr->disputed,
                 "ERR::ESCROW_IS_NOT_LOCKED::This escrow is not locked. It can only be approved/disapproved by the arbitrator while it is locked.");
             pay_arbitrator(esc_itr);
         } else if (esc_itr->sender == approver) {
-            check(!esc_itr->is_locked,
-                "ERR::ESCROW_IS_LOCKED::This escrow is locked and can only be approved/disapproved by the arbitrator.");
+            check(!esc_itr->disputed,
+                "ERR::ESCROW_DISPUTED::This escrow is locked and can only be approved/disapproved by the arbitrator.");
             refund_arbitrator_pay(esc_itr);
         } else {
             check(false, "ERR::ESCROW_NOT_ALLOWED_TO_APPROVE::Only the arbitrator or sender can approve an escrow.");
@@ -104,7 +104,7 @@ namespace eosdac {
         check(esc_itr->receiver_pay.quantity.amount > 0, "This has not been initialized with a transfer");
 
         check(disapprover == esc_itr->arb, "Only arbitrator can disapprove");
-        check(esc_itr->is_locked,
+        check(esc_itr->disputed,
             "ERR::ESCROW_IS_NOT_LOCKED::This escrow is not locked. It can only be approved/disapproved by the arbitrator while it is locked.");
 
         eosio::action(eosio::permission_level{_self, "active"_n}, esc_itr->receiver_pay.contract, "transfer"_n,
@@ -140,8 +140,8 @@ namespace eosdac {
         require_auth(esc_itr->sender);
 
         check(esc_itr->receiver_pay.quantity.amount > 0, "This has not been initialized with a transfer");
-        check(!esc_itr->is_locked,
-            "ERR::ESCROW_IS_LOCKED::This escrow is locked and can only be approved/disapproved by the arbitrator.");
+        check(!esc_itr->disputed,
+            "ERR::ESCROW_DISPUTED::This escrow is locked and can only be approved/disapproved by the arbitrator.");
 
         time_point_sec time_now = time_point_sec(eosio::current_time_point());
 
@@ -163,7 +163,7 @@ namespace eosdac {
         check(esc_itr->receiver_pay.quantity.amount > 0, "This has not been initialized with a transfer");
 
         escrows.modify(esc_itr, same_payer, [&](escrow_info &e) {
-            e.is_locked = true;
+            e.disputed = true;
         });
     }
 

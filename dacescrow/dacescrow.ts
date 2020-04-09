@@ -37,7 +37,7 @@ export interface DacescrowEscrowInfo {
 	arbitrator_pay: ExtendedAsset;
 	memo: string;
 	expires: Date;
-	is_locked: boolean;
+	disputed: boolean;
 }
 
 export interface DacescrowInit {

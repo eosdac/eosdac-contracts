@@ -15,7 +15,7 @@ struct [[eosio::table("escrows"), eosio::contract("dacescrow")]] escrow_info {
     extended_asset arbitrator_pay;
     string         memo;
     time_point_sec expires;
-    bool           is_locked;
+    bool           disputed;
 
     uint64_t primary_key() const { return key.value; }
 

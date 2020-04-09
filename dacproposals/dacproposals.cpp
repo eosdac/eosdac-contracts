@@ -318,7 +318,7 @@ namespace eosdac {
         auto          esc_itr = escrows.find(proposal_id.value);
         check(esc_itr != escrows.end(),
             "ERR::ESCROW_ACTIVE::There should be an escrow for a proposal for this action. Call cancelprop instead.");
-        check(esc_itr->is_locked,
+        check(esc_itr->disputed,
             "ERR::ESCROW_NOT_LOCKED::The escrow should be locked before disputing - best done within the same transaction.");
 
         proposal_table proposals(_self, dac_id.value);
