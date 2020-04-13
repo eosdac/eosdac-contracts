@@ -1,4 +1,5 @@
 #include <eosio/transaction.hpp>
+using namespace eosdac;
 
 void daccustodian::claimpay(uint64_t payid) { check(false, "This action is deprecated call `claimpaye` instead."); }
 

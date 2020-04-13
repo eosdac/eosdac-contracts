@@ -1,4 +1,5 @@
 #include "../_contract-shared-headers/migration_helpers.hpp"
+using namespace eosdac;
 
 void daccustodian::votecust(name voter, vector<name> newvotes) {
     check(false, "This action is deprecated call `votecuste` instead.");

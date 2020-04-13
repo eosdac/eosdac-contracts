@@ -1,4 +1,5 @@
 #include "dacproposals.hpp"
+#include "../dacescrow/dacescrow.hpp"
 #include <algorithm>
 #include <eosio/action.hpp>
 #include <eosio/eosio.hpp>
@@ -12,8 +13,8 @@
 namespace eosdac {
 
     ACTION dacproposals::createprop(name proposer, string title, string summary, name arbitrator,
-        extended_asset pay_amount, string content_hash, name id, uint16_t category, uint32_t job_duration,
-        name dac_id) {
+        extended_asset proposal_pay, extended_asset arbitrator_pay, string content_hash, name id, uint16_t category,
+        uint32_t job_duration, name dac_id) {
         require_auth(proposer);
         assertValidMember(proposer, dac_id);
         proposal_table proposals(get_self(), dac_id.value);
@@ -25,9 +26,9 @@ namespace eosdac {
 
         check(title.length() > 3, "ERR::CREATEPROP_SHORT_TITLE::Title length is too short.");
         check(summary.length() > 3, "ERR::CREATEPROP_SHORT_SUMMARY::Summary length is too short.");
-        check(pay_amount.quantity.symbol.is_valid(), "ERR::CREATEPROP_INVALID_SYMBOL::Invalid pay amount symbol.");
-        check(pay_amount.quantity.amount > 0,
-            "ERR::CREATEPROP_INVALID_PAY_AMOUNT::Invalid pay amount. Must be greater than 0.");
+        check(proposal_pay.quantity.symbol.is_valid(), "ERR::CREATEPROP_INVALID_SYMBOL::Invalid pay amount symbol.");
+        check(proposal_pay.quantity.amount > 0,
+            "ERR::CREATEPROP_INVALID_proposal_pay::Invalid pay amount. Must be greater than 0.");
         check(is_account(arbitrator), "ERR::CREATEPROP_INVALID_ARBITRATOR::Invalid arbitrator.");
 
         auto dac      = dacdir::dac_for_id(dac_id);
@@ -38,15 +39,16 @@ namespace eosdac {
         uint32_t approval_duration = current_configs(dac_id).approval_duration;
 
         proposals.emplace(proposer, [&](proposal &p) {
-            p.proposal_id  = id;
-            p.proposer     = proposer;
-            p.arbitrator   = arbitrator;
-            p.content_hash = content_hash;
-            p.pay_amount   = pay_amount;
-            p.state        = ProposalStatePending_approval;
-            p.category     = category;
-            p.job_duration = job_duration;
-            p.expiry       = time_point_sec(current_time_point().sec_since_epoch()) + approval_duration;
+            p.proposal_id    = id;
+            p.proposer       = proposer;
+            p.arbitrator     = arbitrator;
+            p.content_hash   = content_hash;
+            p.proposal_pay   = proposal_pay;
+            p.arbitrator_pay = arbitrator_pay;
+            p.state          = ProposalStatePending_approval;
+            p.category       = category;
+            p.job_duration   = job_duration;
+            p.expiry         = time_point_sec(current_time_point().sec_since_epoch()) + approval_duration;
         });
     }
 
@@ -174,19 +176,15 @@ namespace eosdac {
         by_cat_and_voter.erase(vote_idx);
     }
 
+    ACTION dacproposals::arbdeny(name arbitrator, name proposal_id, name dac_id) {
+        arbitrator_rule_on_proposal(arbitrator, proposal_id, dac_id);
+    }
+
     ACTION dacproposals::arbapprove(name arbitrator, name proposal_id, name dac_id) {
-        require_auth(arbitrator);
-        proposal_table proposals(_self, dac_id.value);
-
-        const proposal &prop = proposals.get(proposal_id.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found.");
-
-        check(prop.arbitrator == arbitrator, "ERR::NOT_ARBITRATOR::You are not the arbitrator for this proposal");
-
-        clearprop(prop, dac_id);
+        arbitrator_rule_on_proposal(arbitrator, proposal_id, dac_id);
     }
 
     ACTION dacproposals::startwork(name proposal_id, name dac_id) {
-        // Check that this proposal can start work
         proposal_table proposals(_self, dac_id.value);
 
         // Check that this proposal can start work
@@ -208,24 +206,23 @@ namespace eosdac {
         check(is_account(treasury), "ERR::TREASURY_ACCOUNT_NOT_FOUND::Treasury account not found");
         check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
 
-        auto inittuple = make_tuple(
-            treasury, prop.proposer, prop.arbitrator, time_now + (prop.job_duration * 2), memo, proposal_id, 0);
-
         transaction deferredTrans{};
-        deferredTrans.actions.emplace_back(eosio::action(eosio::permission_level{get_self(), "active"_n}, get_self(),
-            "runstartwork"_n, make_tuple(proposal_id, dac_id)));
         deferredTrans.actions.emplace_back(
-            eosio::action(eosio::permission_level{treasury, "escrow"_n}, escrow, "init"_n, inittuple));
+            dacproposals::runstartwork_action(get_self(), eosio::permission_level{get_self(), "active"_n})
+                .to_action(proposal_id, dac_id));
+        deferredTrans.actions.emplace_back(dacescrow::init_action{escrow, {treasury, "escrow"_n}}.to_action(
+            treasury, prop.proposer, prop.arbitrator, time_now + (prop.job_duration * 2), memo, proposal_id));
         deferredTrans.actions.emplace_back(
-            eosio::action(eosio::permission_level{treasury, "xfer"_n}, prop.pay_amount.contract, "transfer"_n,
-                make_tuple(treasury, escrow, prop.pay_amount.quantity, "payment for wp: " + proposal_id.to_string())));
+            eosio::action(eosio::permission_level{treasury, "xfer"_n}, prop.proposal_pay.contract, "transfer"_n,
+                make_tuple(treasury, escrow, prop.proposal_pay.quantity, "rec:" + proposal_id.to_string())));
+        deferredTrans.actions.emplace_back(
+            eosio::action(eosio::permission_level{treasury, "xfer"_n}, prop.arbitrator_pay.contract, "transfer"_n,
+                make_tuple(treasury, escrow, prop.arbitrator_pay.quantity, "arb:" + proposal_id.to_string())));
         deferredTrans.delay_sec = TRANSFER_DELAY;
         deferredTrans.send(
             uint128_t(proposal_id.value) << 64 | time_point_sec(current_time_point()).sec_since_epoch(), _self);
     }
 
-    // This action is called from a collection of deferred actions which creates the escrow, it will only update status
-    // It will fail if the escrow already exists so a worker can call start work many times if the first fails
     ACTION dacproposals::runstartwork(name proposal_id, name dac_id) {
         require_auth(get_self());
         proposal_table proposals(_self, dac_id.value);
@@ -274,18 +271,72 @@ namespace eosdac {
         transferfunds(prop, dac_id);
     }
 
-    ACTION dacproposals::cancel(name proposal_id, name dac_id) {
+    ACTION dacproposals::cancelprop(name proposal_id, name dac_id) {
 
-        proposal_table proposals(_self, dac_id.value);
+        auto escrow = dacdir::dac_for_id(dac_id).account_for_type(dacdir::ESCROW);
+        check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
 
+        proposal_table  proposals(_self, dac_id.value);
         const proposal &prop = proposals.get(proposal_id.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found.");
         require_auth(prop.proposer);
+        check(prop.state == ProposalStatePending_approval || prop.state == ProposalStateHas_enough_approvals_votes,
+            "ERR::CANCELPROP_WRONG_STATE::Worker proposal is in the wrong state to be cancelled with cancelprop. Try cancelwip.");
+
+        escrows_table escrows = escrows_table(escrow, escrow.value);
+        auto          esc_itr = escrows.find(proposal_id.value);
+        check(esc_itr == escrows.end(),
+            "ERR::ESCROW_ACTIVE::There should not be an escrow for a proposal. Call cancelwip instead.");
+
         assertValidMember(prop.proposer, dac_id);
         clearprop(prop, dac_id);
     }
 
-    ACTION dacproposals::comment(
-        name commenter, name proposal_id, string comment, string comment_category, name dac_id) {
+    ACTION dacproposals::cancelwip(name proposal_id, name dac_id) {
+
+        proposal_table  proposals(_self, dac_id.value);
+        const proposal &prop = proposals.get(proposal_id.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found.");
+        require_auth(prop.proposer);
+        check(prop.state == ProposalStateWork_in_progress || prop.state == ProposalStatePending_finalize,
+            "ERR::CANCELWIP_WRONG_STATE::Worker proposal is in the wrong state to be cancelled with cancelwip. Try cancelprop.");
+
+        auto escrow = dacdir::dac_for_id(dac_id).account_for_type(dacdir::ESCROW);
+        check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
+        escrows_table escrows = escrows_table(escrow, escrow.value);
+        auto          esc_itr = escrows.find(proposal_id.value);
+        check(esc_itr != escrows.end(),
+            "ERR::ESCROW_ACTIVE::There should be an escrow for a proposal for this action. Call cancelprop instead.");
+
+        assertValidMember(prop.proposer, dac_id);
+        clearprop(prop, dac_id);
+    }
+
+    ACTION dacproposals::dispute(name proposal_id, name dac_id) {
+        // The escrow should be locked first in a Transaction.
+        auto escrow = dacdir::dac_for_id(dac_id).account_for_type(dacdir::ESCROW);
+        check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
+        escrows_table escrows = escrows_table(escrow, escrow.value);
+        auto          esc_itr = escrows.find(proposal_id.value);
+        check(esc_itr != escrows.end(),
+            "ERR::ESCROW_ACTIVE::There should be an escrow for a proposal for this action. Call cancelprop instead.");
+        check(esc_itr->disputed,
+            "ERR::ESCROW_NOT_LOCKED::The escrow should be locked before disputing - best done within the same transaction.");
+
+        proposal_table proposals(_self, dac_id.value);
+
+        const proposal &prop = proposals.get(proposal_id.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found.");
+
+        require_auth(prop.proposer);
+        assertValidMember(prop.proposer, dac_id);
+        check(prop.state == ProposalStatePending_finalize,
+            "ERR::DISPUTE_WRONG_STATE::Worker proposal can only be disputed from Pending_finalize state");
+
+        proposals.modify(prop, prop.proposer, [&](proposal &p) {
+            p.state = ProposalStateInDispute;
+        });
+    }
+
+    ACTION
+    dacproposals::comment(name commenter, name proposal_id, string comment, string comment_category, name dac_id) {
         require_auth(commenter);
         assertValidMember(commenter, dac_id);
 
@@ -445,10 +496,10 @@ namespace eosdac {
                 } else if (direct_vote_itr->vote && direct_vote_itr->vote.value() == vote_type) {
                     approval_proposal_votes.insert(direct_vote_itr->voter);
                 }
+                direct_vote_itr++;
             } else {
-                // TODO: Remove vote since they are no longer a custodian.
+                direct_vote_itr = by_voters.erase(direct_vote_itr);
             }
-            direct_vote_itr++;
         }
 
         print_f("\n direct approval_proposal_votes: ");
@@ -534,18 +585,24 @@ namespace eosdac {
             "ERR::STARTWORK_INSUFFICIENT_VOTES::Insufficient votes on worker proposal.");
     }
 
-    // void dacproposals::assertValidMember(name member, name dac_id) {
+    void dacproposals::arbitrator_rule_on_proposal(name arbitrator, name proposal_id, name dac_id) {
+        require_auth(arbitrator);
+        proposal_table proposals(_self, dac_id.value);
 
-    //     auto member_terms_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::TOKEN);
+        const proposal &prop = proposals.get(proposal_id.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found.");
+        check(prop.arbitrator == arbitrator, "ERR::NOT_ARBITRATOR::You are not the arbitrator for this proposal");
 
-    //     regmembers reg_members(member_terms_account.account_name, member_terms_account.dac_id.value);
-    //     memterms memberterms(member_terms_account.account_name, member_terms_account.dac_id.value);
+        auto escrow = dacdir::dac_for_id(dac_id).account_for_type(dacdir::ESCROW);
+        check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
 
-    //     const auto &regmem = reg_members.get(member.value, "ERR::GENERAL_REG_MEMBER_NOT_FOUND::Account is not
-    //     registered with members."); check((regmem.agreedterms != 0),
-    //     "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_ANY_TERMS::Account has not agreed to any terms"); auto
-    //     latest_member_terms = (--memberterms.end()); check(latest_member_terms->version == regmem.agreedterms,
-    //     "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_LATEST_TERMS::Agreed terms isn't the latest.");
-    // }
+        escrows_table escrows = escrows_table(escrow, escrow.value);
+        auto          esc_itr = escrows.find(proposal_id.value);
+        check(esc_itr == escrows.end(),
+            "ERR::ESCROW_STILL_ACTIVE::Escrow is still active in escrow contract. It should have been either approved or dissapproved before calling this action.");
 
+        check(prop.state == ProposalStateInDispute,
+            "ERR::PROP_NOT_IN_DISPUTE_STATE::A proposal can only be denied by an arbitrator when in dispute state.");
+
+        clearprop(prop, dac_id);
+    }
 } // namespace eosdac

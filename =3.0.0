@@ -1,4 +1,0 @@
-/usr/local/bin/tsc -> /usr/local/lib/node_modules/typescript/bin/tsc
-/usr/local/bin/tsserver -> /usr/local/lib/node_modules/typescript/bin/tsserver
-+ typescript@3.6.3
-updated 1 package in 0.584s

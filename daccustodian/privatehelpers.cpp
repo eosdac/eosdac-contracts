@@ -1,5 +1,7 @@
 // #include "../_contract-shared-headers/migration_helpers.hpp"
 
+using namespace eosdac;
+
 void daccustodian::updateVoteWeight(name custodian, int64_t weight, name dac_id) {
     if (weight == 0) {
         print("\n Vote has no weight - No need to continue.");

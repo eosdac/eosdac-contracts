@@ -63,6 +63,11 @@ export interface DacdirectorySetstatus {
 	value: number;
 }
 
+export interface DacdirectorySettitle {
+	dac_id: string|number;
+	title: string;
+}
+
 export interface DacdirectoryUnregaccount {
 	dac_id: string|number;
 	type: number;
@@ -84,6 +89,7 @@ export interface Dacdirectory extends Contract {
 	regref(dac_id: string|number, value: string, type: number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	setowner(dac_id: string|number, new_owner: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	setstatus(dac_id: string|number, value: number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	settitle(dac_id: string|number, title: string, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	unregaccount(dac_id: string|number, type: number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	unregdac(dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	unregref(dac_id: string|number, type: number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;

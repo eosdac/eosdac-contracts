@@ -1,6 +1,7 @@
 
 #include "../_contract-shared-headers/dacdirectory_shared.hpp"
 #include "../_contract-shared-headers/migration_helpers.hpp"
+using namespace eosdac;
 
 void daccustodian::balanceobsv(vector<account_balance_delta> account_balance_deltas, name dac_id) {
     auto                         dac       = dacdir::dac_for_id(dac_id);

@@ -2,6 +2,8 @@
 #include "../_contract-shared-headers/migration_helpers.hpp"
 #include <eosio/system.hpp>
 
+using namespace eosdac;
+
 void daccustodian::nominatecand(name cand, asset requestedpay) {
     check(false, "ERR::DEPRECATED_NOMINATECAND::This action is deprecated call `nominatecane` instead.");
 }
