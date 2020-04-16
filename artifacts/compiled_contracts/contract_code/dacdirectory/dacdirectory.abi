@@ -1,0 +1,287 @@
+{
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT ",
+    "version": "eosio::abi/1.1",
+    "types": [],
+    "structs": [
+        {
+            "name": "dac",
+            "base": "",
+            "fields": [
+                {
+                    "name": "owner",
+                    "type": "name"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                },
+                {
+                    "name": "title",
+                    "type": "string"
+                },
+                {
+                    "name": "symbol",
+                    "type": "extended_symbol"
+                },
+                {
+                    "name": "refs",
+                    "type": "pair_uint8_string[]"
+                },
+                {
+                    "name": "accounts",
+                    "type": "pair_uint8_name[]"
+                },
+                {
+                    "name": "dac_state",
+                    "type": "uint8"
+                }
+            ]
+        },
+        {
+            "name": "extended_symbol",
+            "base": "",
+            "fields": [
+                {
+                    "name": "symbol",
+                    "type": "symbol"
+                },
+                {
+                    "name": "contract",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "pair_uint8_name",
+            "base": "",
+            "fields": [
+                {
+                    "name": "key",
+                    "type": "uint8"
+                },
+                {
+                    "name": "value",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "pair_uint8_string",
+            "base": "",
+            "fields": [
+                {
+                    "name": "key",
+                    "type": "uint8"
+                },
+                {
+                    "name": "value",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "regaccount",
+            "base": "",
+            "fields": [
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                },
+                {
+                    "name": "account",
+                    "type": "name"
+                },
+                {
+                    "name": "type",
+                    "type": "uint8"
+                }
+            ]
+        },
+        {
+            "name": "regdac",
+            "base": "",
+            "fields": [
+                {
+                    "name": "owner",
+                    "type": "name"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                },
+                {
+                    "name": "dac_symbol",
+                    "type": "extended_symbol"
+                },
+                {
+                    "name": "title",
+                    "type": "string"
+                },
+                {
+                    "name": "refs",
+                    "type": "pair_uint8_string[]"
+                },
+                {
+                    "name": "accounts",
+                    "type": "pair_uint8_name[]"
+                }
+            ]
+        },
+        {
+            "name": "regref",
+            "base": "",
+            "fields": [
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                },
+                {
+                    "name": "value",
+                    "type": "string"
+                },
+                {
+                    "name": "type",
+                    "type": "uint8"
+                }
+            ]
+        },
+        {
+            "name": "setowner",
+            "base": "",
+            "fields": [
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                },
+                {
+                    "name": "new_owner",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "setstatus",
+            "base": "",
+            "fields": [
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                },
+                {
+                    "name": "value",
+                    "type": "uint8"
+                }
+            ]
+        },
+        {
+            "name": "settitle",
+            "base": "",
+            "fields": [
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                },
+                {
+                    "name": "title",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "unregaccount",
+            "base": "",
+            "fields": [
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                },
+                {
+                    "name": "type",
+                    "type": "uint8"
+                }
+            ]
+        },
+        {
+            "name": "unregdac",
+            "base": "",
+            "fields": [
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "unregref",
+            "base": "",
+            "fields": [
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                },
+                {
+                    "name": "type",
+                    "type": "uint8"
+                }
+            ]
+        }
+    ],
+    "actions": [
+        {
+            "name": "regaccount",
+            "type": "regaccount",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "regdac",
+            "type": "regdac",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "regref",
+            "type": "regref",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "setowner",
+            "type": "setowner",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "setstatus",
+            "type": "setstatus",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "settitle",
+            "type": "settitle",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "unregaccount",
+            "type": "unregaccount",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "unregdac",
+            "type": "unregdac",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "unregref",
+            "type": "unregref",
+            "ricardian_contract": ""
+        }
+    ],
+    "tables": [
+        {
+            "name": "dacs",
+            "type": "dac",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        }
+    ],
+    "ricardian_clauses": [],
+    "variants": []
+}
