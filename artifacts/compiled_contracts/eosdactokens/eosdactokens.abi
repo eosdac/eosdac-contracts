@@ -1,0 +1,662 @@
+{
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT ",
+    "version": "eosio::abi/1.1",
+    "types": [],
+    "structs": [
+        {
+            "name": "account",
+            "base": "",
+            "fields": [
+                {
+                    "name": "balance",
+                    "type": "asset"
+                }
+            ]
+        },
+        {
+            "name": "burn",
+            "base": "",
+            "fields": [
+                {
+                    "name": "from",
+                    "type": "name"
+                },
+                {
+                    "name": "quantity",
+                    "type": "asset"
+                }
+            ]
+        },
+        {
+            "name": "cancel",
+            "base": "",
+            "fields": [
+                {
+                    "name": "unstake_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "token_symbol",
+                    "type": "symbol"
+                }
+            ]
+        },
+        {
+            "name": "clearold",
+            "base": "",
+            "fields": [
+                {
+                    "name": "batch_size",
+                    "type": "uint16"
+                }
+            ]
+        },
+        {
+            "name": "close",
+            "base": "",
+            "fields": [
+                {
+                    "name": "owner",
+                    "type": "name"
+                },
+                {
+                    "name": "symbol",
+                    "type": "symbol"
+                }
+            ]
+        },
+        {
+            "name": "create",
+            "base": "",
+            "fields": [
+                {
+                    "name": "issuer",
+                    "type": "name"
+                },
+                {
+                    "name": "maximum_supply",
+                    "type": "asset"
+                },
+                {
+                    "name": "transfer_locked",
+                    "type": "bool"
+                }
+            ]
+        },
+        {
+            "name": "currency_stats",
+            "base": "",
+            "fields": [
+                {
+                    "name": "supply",
+                    "type": "asset"
+                },
+                {
+                    "name": "max_supply",
+                    "type": "asset"
+                },
+                {
+                    "name": "issuer",
+                    "type": "name"
+                },
+                {
+                    "name": "transfer_locked",
+                    "type": "bool"
+                }
+            ]
+        },
+        {
+            "name": "issue",
+            "base": "",
+            "fields": [
+                {
+                    "name": "to",
+                    "type": "name"
+                },
+                {
+                    "name": "quantity",
+                    "type": "asset"
+                },
+                {
+                    "name": "memo",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "member",
+            "base": "",
+            "fields": [
+                {
+                    "name": "sender",
+                    "type": "name"
+                },
+                {
+                    "name": "agreedtermsversion",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "memberreg",
+            "base": "",
+            "fields": [
+                {
+                    "name": "sender",
+                    "type": "name"
+                },
+                {
+                    "name": "agreedterms",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "memberrege",
+            "base": "",
+            "fields": [
+                {
+                    "name": "sender",
+                    "type": "name"
+                },
+                {
+                    "name": "agreedterms",
+                    "type": "string"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "memberunreg",
+            "base": "",
+            "fields": [
+                {
+                    "name": "sender",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "memberunrege",
+            "base": "",
+            "fields": [
+                {
+                    "name": "sender",
+                    "type": "name"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "migrate",
+            "base": "",
+            "fields": [
+                {
+                    "name": "batch",
+                    "type": "uint16"
+                }
+            ]
+        },
+        {
+            "name": "newmemterms",
+            "base": "",
+            "fields": [
+                {
+                    "name": "terms",
+                    "type": "string"
+                },
+                {
+                    "name": "hash",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "newmemtermse",
+            "base": "",
+            "fields": [
+                {
+                    "name": "terms",
+                    "type": "string"
+                },
+                {
+                    "name": "hash",
+                    "type": "string"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "refund",
+            "base": "",
+            "fields": [
+                {
+                    "name": "unstake_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "token_symbol",
+                    "type": "symbol"
+                }
+            ]
+        },
+        {
+            "name": "stake",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account",
+                    "type": "name"
+                },
+                {
+                    "name": "quantity",
+                    "type": "asset"
+                }
+            ]
+        },
+        {
+            "name": "stake_config",
+            "base": "",
+            "fields": [
+                {
+                    "name": "enabled",
+                    "type": "bool"
+                },
+                {
+                    "name": "min_stake_time",
+                    "type": "uint32"
+                },
+                {
+                    "name": "max_stake_time",
+                    "type": "uint32"
+                }
+            ]
+        },
+        {
+            "name": "stake_info",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account",
+                    "type": "name"
+                },
+                {
+                    "name": "stake",
+                    "type": "asset"
+                }
+            ]
+        },
+        {
+            "name": "stakeconfig",
+            "base": "",
+            "fields": [
+                {
+                    "name": "config",
+                    "type": "stake_config"
+                },
+                {
+                    "name": "token_symbol",
+                    "type": "symbol"
+                }
+            ]
+        },
+        {
+            "name": "staketime",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account",
+                    "type": "name"
+                },
+                {
+                    "name": "unstake_time",
+                    "type": "uint32"
+                },
+                {
+                    "name": "token_symbol",
+                    "type": "symbol"
+                }
+            ]
+        },
+        {
+            "name": "staketime_info",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account",
+                    "type": "name"
+                },
+                {
+                    "name": "delay",
+                    "type": "uint32"
+                }
+            ]
+        },
+        {
+            "name": "termsinfo",
+            "base": "",
+            "fields": [
+                {
+                    "name": "terms",
+                    "type": "string"
+                },
+                {
+                    "name": "hash",
+                    "type": "string"
+                },
+                {
+                    "name": "version",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "transfer",
+            "base": "",
+            "fields": [
+                {
+                    "name": "from",
+                    "type": "name"
+                },
+                {
+                    "name": "to",
+                    "type": "name"
+                },
+                {
+                    "name": "quantity",
+                    "type": "asset"
+                },
+                {
+                    "name": "memo",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "unlock",
+            "base": "",
+            "fields": [
+                {
+                    "name": "unlock",
+                    "type": "asset"
+                }
+            ]
+        },
+        {
+            "name": "unstake",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account",
+                    "type": "name"
+                },
+                {
+                    "name": "quantity",
+                    "type": "asset"
+                }
+            ]
+        },
+        {
+            "name": "unstake_info",
+            "base": "",
+            "fields": [
+                {
+                    "name": "key",
+                    "type": "uint64"
+                },
+                {
+                    "name": "account",
+                    "type": "name"
+                },
+                {
+                    "name": "stake",
+                    "type": "asset"
+                },
+                {
+                    "name": "release_time",
+                    "type": "time_point_sec"
+                }
+            ]
+        },
+        {
+            "name": "updateterms",
+            "base": "",
+            "fields": [
+                {
+                    "name": "termsid",
+                    "type": "uint64"
+                },
+                {
+                    "name": "terms",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "updatetermse",
+            "base": "",
+            "fields": [
+                {
+                    "name": "termsid",
+                    "type": "uint64"
+                },
+                {
+                    "name": "terms",
+                    "type": "string"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "xferstake",
+            "base": "",
+            "fields": [
+                {
+                    "name": "from",
+                    "type": "name"
+                },
+                {
+                    "name": "to",
+                    "type": "name"
+                },
+                {
+                    "name": "quantity",
+                    "type": "asset"
+                },
+                {
+                    "name": "memo",
+                    "type": "string"
+                }
+            ]
+        }
+    ],
+    "actions": [
+        {
+            "name": "burn",
+            "type": "burn",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "cancel",
+            "type": "cancel",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "clearold",
+            "type": "clearold",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "close",
+            "type": "close",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "create",
+            "type": "create",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "issue",
+            "type": "issue",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "memberreg",
+            "type": "memberreg",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "memberrege",
+            "type": "memberrege",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "memberunreg",
+            "type": "memberunreg",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "memberunrege",
+            "type": "memberunrege",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "migrate",
+            "type": "migrate",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "newmemterms",
+            "type": "newmemterms",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "newmemtermse",
+            "type": "newmemtermse",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "refund",
+            "type": "refund",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "stake",
+            "type": "stake",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "stakeconfig",
+            "type": "stakeconfig",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "staketime",
+            "type": "staketime",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "transfer",
+            "type": "transfer",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "unlock",
+            "type": "unlock",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "unstake",
+            "type": "unstake",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "updateterms",
+            "type": "updateterms",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "updatetermse",
+            "type": "updatetermse",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "xferstake",
+            "type": "xferstake",
+            "ricardian_contract": ""
+        }
+    ],
+    "tables": [
+        {
+            "name": "accounts",
+            "type": "account",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "members",
+            "type": "member",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "memberterms",
+            "type": "termsinfo",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "stakeconfig",
+            "type": "stake_config",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "stakes",
+            "type": "stake_info",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "staketime",
+            "type": "staketime_info",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "stat",
+            "type": "currency_stats",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "unstakes",
+            "type": "unstake_info",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        }
+    ],
+    "ricardian_clauses": [],
+    "variants": []
+}
