@@ -1,0 +1,250 @@
+{
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT ",
+    "version": "eosio::abi/1.1",
+    "types": [],
+    "structs": [
+        {
+            "name": "approve",
+            "base": "",
+            "fields": [
+                {
+                    "name": "distri_id",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "claim",
+            "base": "",
+            "fields": [
+                {
+                    "name": "distri_id",
+                    "type": "name"
+                },
+                {
+                    "name": "receiver",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "distri",
+            "base": "",
+            "fields": [
+                {
+                    "name": "receiver",
+                    "type": "name"
+                },
+                {
+                    "name": "amount",
+                    "type": "asset"
+                }
+            ]
+        },
+        {
+            "name": "districonf",
+            "base": "",
+            "fields": [
+                {
+                    "name": "distri_id",
+                    "type": "name"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                },
+                {
+                    "name": "owner",
+                    "type": "name"
+                },
+                {
+                    "name": "approved",
+                    "type": "bool"
+                },
+                {
+                    "name": "distri_type",
+                    "type": "uint8"
+                },
+                {
+                    "name": "approver_account",
+                    "type": "name"
+                },
+                {
+                    "name": "total_amount",
+                    "type": "extended_asset"
+                },
+                {
+                    "name": "total_sent",
+                    "type": "asset"
+                },
+                {
+                    "name": "total_received",
+                    "type": "asset"
+                },
+                {
+                    "name": "memo",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "dropdata",
+            "base": "",
+            "fields": [
+                {
+                    "name": "receiver",
+                    "type": "name"
+                },
+                {
+                    "name": "amount",
+                    "type": "asset"
+                }
+            ]
+        },
+        {
+            "name": "empty",
+            "base": "",
+            "fields": [
+                {
+                    "name": "distri_id",
+                    "type": "name"
+                },
+                {
+                    "name": "batch_size",
+                    "type": "uint8"
+                }
+            ]
+        },
+        {
+            "name": "populate",
+            "base": "",
+            "fields": [
+                {
+                    "name": "distri_id",
+                    "type": "name"
+                },
+                {
+                    "name": "data",
+                    "type": "dropdata[]"
+                },
+                {
+                    "name": "allow_modify",
+                    "type": "bool"
+                }
+            ]
+        },
+        {
+            "name": "regdistri",
+            "base": "",
+            "fields": [
+                {
+                    "name": "distri_id",
+                    "type": "name"
+                },
+                {
+                    "name": "dac_id",
+                    "type": "name"
+                },
+                {
+                    "name": "owner",
+                    "type": "name"
+                },
+                {
+                    "name": "approver_account",
+                    "type": "name"
+                },
+                {
+                    "name": "total_amount",
+                    "type": "extended_asset"
+                },
+                {
+                    "name": "distri_type",
+                    "type": "uint8"
+                },
+                {
+                    "name": "memo",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "send",
+            "base": "",
+            "fields": [
+                {
+                    "name": "distri_id",
+                    "type": "name"
+                },
+                {
+                    "name": "batch_size",
+                    "type": "uint8"
+                }
+            ]
+        },
+        {
+            "name": "unregdistri",
+            "base": "",
+            "fields": [
+                {
+                    "name": "distri_id",
+                    "type": "name"
+                }
+            ]
+        }
+    ],
+    "actions": [
+        {
+            "name": "approve",
+            "type": "approve",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "claim",
+            "type": "claim",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "empty",
+            "type": "empty",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "populate",
+            "type": "populate",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "regdistri",
+            "type": "regdistri",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "send",
+            "type": "send",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "unregdistri",
+            "type": "unregdistri",
+            "ricardian_contract": ""
+        }
+    ],
+    "tables": [
+        {
+            "name": "districonfs",
+            "type": "districonf",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "distris",
+            "type": "distri",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        }
+    ],
+    "ricardian_clauses": [],
+    "variants": []
+}
