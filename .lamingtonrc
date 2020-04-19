@@ -18,6 +18,7 @@
         "eosdactokens.cpp",
         "referendum.cpp",
         "eosio.token.cpp",
-        "stakevote.cpp"
+        "stakevote.cpp",
+        "dacactiontrk.cpp"
     ]
 }

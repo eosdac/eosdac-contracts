@@ -1,0 +1,143 @@
+{
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT ",
+    "version": "eosio::abi/1.1",
+    "types": [],
+    "structs": [
+        {
+            "name": "config_item",
+            "base": "",
+            "fields": [
+                {
+                    "name": "startingScore",
+                    "type": "uint16"
+                },
+                {
+                    "name": "newperiodAdjustment",
+                    "type": "uint16"
+                },
+                {
+                    "name": "numberOmittedPeriods",
+                    "type": "uint8"
+                }
+            ]
+        },
+        {
+            "name": "custodian_score",
+            "base": "",
+            "fields": [
+                {
+                    "name": "custodian",
+                    "type": "name"
+                },
+                {
+                    "name": "score",
+                    "type": "uint32"
+                },
+                {
+                    "name": "periods_omitted",
+                    "type": "uint8"
+                }
+            ]
+        },
+        {
+            "name": "periodend",
+            "base": "",
+            "fields": [
+                {
+                    "name": "currentCustodians",
+                    "type": "name[]"
+                },
+                {
+                    "name": "dacId",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "periodstart",
+            "base": "",
+            "fields": [
+                {
+                    "name": "newCustodians",
+                    "type": "name[]"
+                },
+                {
+                    "name": "dacId",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "trackevent",
+            "base": "",
+            "fields": [
+                {
+                    "name": "custodian",
+                    "type": "name"
+                },
+                {
+                    "name": "score",
+                    "type": "uint8"
+                },
+                {
+                    "name": "dacId",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "updateconfig",
+            "base": "",
+            "fields": [
+                {
+                    "name": "new_config",
+                    "type": "config_item"
+                },
+                {
+                    "name": "dacId",
+                    "type": "name"
+                }
+            ]
+        }
+    ],
+    "actions": [
+        {
+            "name": "periodend",
+            "type": "periodend",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "periodstart",
+            "type": "periodstart",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "trackevent",
+            "type": "trackevent",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "updateconfig",
+            "type": "updateconfig",
+            "ricardian_contract": ""
+        }
+    ],
+    "tables": [
+        {
+            "name": "config",
+            "type": "config_item",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "scores",
+            "type": "custodian_score",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        }
+    ],
+    "ricardian_clauses": [],
+    "variants": []
+}
