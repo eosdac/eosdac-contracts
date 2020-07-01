@@ -3,9 +3,9 @@
 This contract will be in charge of custodian registration and voting for candidates. It will also contain a function which could be called periodically to update the custodian set, and allocate payments.
 
 When a candidate registers, they need to provide a set of configuration variables which will include things like their requested pay. The system will select the median requested pay when choosing the actual pay.
-The median pay is to be paid to elected custodians at the end of each period. If an elected custodian resigns via the `withdrawcand` during a period a new candidate will be chosen to fill the gap on the custodian board from the votes ranking in the candidates at that moment.
+The mean pay is to be paid to elected custodians at the end of each period. If an elected custodian resigns via the `withdrawcand` during a period a new candidate will be chosen to fill the gap on the custodian board from the votes ranking in the candidates at that moment.
 
-Eg. 12 custodians are elected and their median `requestedpay` is 100 EOSDAC If one of the custodians resigns partially through a period they will not be paid for that partial period. The median pay amount will be calculated based on the current elected custodians `requestedpay` value. If a candidate changes their requested pay it will not be included in the pay calculation until the next period if they are re-elected.
+Eg. 12 custodians are elected and their median `requestedpay` is 100 EOSDAC If one of the custodians resigns partially through a period they will not be paid for that partial period. The mean pay amount will be calculated based on the current elected custodians `requestedpay` value. If a candidate changes their requested pay it will not be included in the pay calculation until the next period if they are re-elected.
 
 All of the active actions require a `dac_id (account_name)` parameter to be passed which is used to scope the DAC. This is the mechanism that the contracts use to facilitate hosting multiple DACs within the same codebase and enables all of these DACs to get all the future software updates instantly without having to copy and deploy their own version of the contract code.
 
