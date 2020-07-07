@@ -6,6 +6,7 @@ import {
   generateTypes,
   debugPromise,
   UpdateAuth,
+  ContractLoader,
 } from 'lamington';
 
 // Dac contracts
@@ -15,6 +16,7 @@ import { Eosdactokens } from './eosdactokens/eosdactokens';
 // import { Dacmultisigs } from "./dacmultisigs/dacmultisigs";
 import { Dacproposals } from './dacproposals/dacproposals';
 import { Dacescrow } from './dacescrow/dacescrow';
+import { EosioMsig } from '../external_contracts/eosio.msig/src/eosio.msig';
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -35,6 +37,8 @@ export class SharedTestObjects {
   dac_token_contract: Eosdactokens;
   dacproposals_contract: Dacproposals;
   dacescrow_contract: Dacescrow;
+  // === System Contracts
+  eosio_msig: EosioMsig;
   // === Shared Values
   configured_dac_memberterms: string;
 
@@ -48,10 +52,8 @@ export class SharedTestObjects {
 
   private async initAndGetSharedObjects() {
     console.log('Init eos blockchain');
-    // await sleep(500);
+    await sleep(500);
     // EOSManager.initWithDefaults();
-
-    await sleep(3000);
 
     this.auth_account = await debugPromise(
       AccountManager.createAccount('eosdacauth'),
@@ -61,12 +63,23 @@ export class SharedTestObjects {
       AccountManager.createAccount('treasury'),
       'create treasury account'
     );
+    // Deploy custom msig contract
+    // await debugPromise(
+    //   ContractDeployer.deployToAccount(
+    //     'external_contracts/eosio.msig/eosio.msig',
+    //     new Account('eosio.msig')
+    //   ),
+    //   'deployed custom msig'
+    // );
+
+    this.eosio_msig = await ContractLoader.at('eosio.msig');
 
     // Configure Dac contracts
     this.dacdirectory_contract = await ContractDeployer.deployWithName(
       'dac_contracts/dacdirectory/dacdirectory',
       'dacdirectory'
     );
+    await sleep(1000);
     this.daccustodian_contract = await debugPromise(
       ContractDeployer.deployWithName(
         'dac_contracts/daccustodian/daccustodian',
@@ -74,6 +87,8 @@ export class SharedTestObjects {
       ),
       'created daccustodian'
     );
+    await sleep(1000);
+
     this.dac_token_contract = await debugPromise(
       ContractDeployer.deployWithName(
         'dac_contracts/eosdactokens/eosdactokens',
@@ -81,6 +96,8 @@ export class SharedTestObjects {
       ),
       'created eosdactokens'
     );
+    await sleep(1000);
+
     this.dacproposals_contract = await debugPromise(
       ContractDeployer.deployWithName(
         'dac_contracts/dacproposals/dacproposals',
@@ -88,7 +105,6 @@ export class SharedTestObjects {
       ),
       'created dacproposals'
     );
-    await sleep(2000);
     this.dacescrow_contract = await debugPromise(
       ContractDeployer.deployWithName(
         'dac_contracts/dacescrow/dacescrow',
@@ -96,7 +112,6 @@ export class SharedTestObjects {
       ),
       'created dacescrow'
     );
-    await sleep(2000);
 
     // Other objects
     this.configured_dac_memberterms = 'AgreedMemberTermsHashValue';
@@ -142,7 +157,9 @@ export class SharedTestObjects {
     initialDacAsset: string,
     count: number = NUMBER_OF_REG_MEMBERS
   ): Promise<Account[]> {
-    let newMembers = await AccountManager.createAccounts(count);
+    let newMembers = await AccountManager.createAccounts(count, null, {
+      privateKey: '5KDFWhsMK3fuze6yXgFRmVDEEE5kbQJrJYCBhGKV2KWHCbjsYYy',
+    });
 
     let termsPromises = newMembers
       .map((account) => {
@@ -355,9 +372,22 @@ export class SharedTestObjects {
         this.treasury_account.name,
         'xfer',
         'active',
-        UpdateAuth.AuthorityToSet.forContractCode(
-          this.dacproposals_contract.account
-        )
+        UpdateAuth.AuthorityToSet.explicitAuthorities(1, [
+          {
+            permission: {
+              actor: this.daccustodian_contract.account.name,
+              permission: 'eosio.code',
+            },
+            weight: 1,
+          },
+          {
+            permission: {
+              actor: this.dacproposals_contract.account.name,
+              permission: 'eosio.code',
+            },
+            weight: 1,
+          },
+        ])
       ),
       'add xfer to treasury'
     );
@@ -368,9 +398,22 @@ export class SharedTestObjects {
         this.daccustodian_contract.account.name,
         'pay',
         'active',
-        UpdateAuth.AuthorityToSet.forContractCode(
-          this.dacproposals_contract.account
-        )
+        UpdateAuth.AuthorityToSet.explicitAuthorities(1, [
+          {
+            permission: {
+              actor: this.daccustodian_contract.account.name,
+              permission: 'eosio.code',
+            },
+            weight: 1,
+          },
+          {
+            permission: {
+              actor: this.dacproposals_contract.account.name,
+              permission: 'eosio.code',
+            },
+            weight: 1,
+          },
+        ])
       ),
       'add pay auth to daccustodian'
     );
@@ -507,7 +550,7 @@ export class SharedTestObjects {
         this.daccustodian_contract.account.name,
         'xfer',
         'active',
-        UpdateAuth.AuthorityToSet.explicitAuthorities(2, [
+        UpdateAuth.AuthorityToSet.explicitAuthorities(1, [
           {
             permission: {
               actor: this.daccustodian_contract.account.name,
@@ -579,6 +622,36 @@ export class SharedTestObjects {
     );
 
     await UpdateAuth.execLinkAuth(
+      this.treasury_account.active,
+      this.treasury_account.name,
+      'eosio.msig',
+      'approve',
+      'xfer'
+    );
+
+    await debugPromise(
+      UpdateAuth.execLinkAuth(
+        this.daccustodian_contract.account.active,
+        this.daccustodian_contract.account.name,
+        'eosio.msig',
+        'approve',
+        'pay'
+      ),
+      'link auth for approve on msig'
+    );
+
+    await debugPromise(
+      UpdateAuth.execLinkAuth(
+        this.daccustodian_contract.account.active,
+        this.daccustodian_contract.account.name,
+        this.daccustodian_contract.account.name,
+        'dummyaction',
+        'xfer'
+      ),
+      'link auth for approve on msig'
+    );
+
+    await UpdateAuth.execLinkAuth(
       this.dac_token_contract.account.active,
       this.dac_token_contract.account.name,
       this.daccustodian_contract.account.name,
@@ -621,8 +694,32 @@ export class SharedTestObjects {
     await UpdateAuth.execLinkAuth(
       this.daccustodian_contract.account.active,
       this.daccustodian_contract.account.name,
+      'eosio.msig',
+      'propose',
+      'xfer'
+    );
+
+    await UpdateAuth.execLinkAuth(
+      this.daccustodian_contract.account.active,
+      this.daccustodian_contract.account.name,
+      'eosio.msig',
+      'approve',
+      'xfer'
+    );
+
+    await UpdateAuth.execLinkAuth(
+      this.daccustodian_contract.account.active,
+      this.daccustodian_contract.account.name,
       this.dac_token_contract.account.name,
       'transfer',
+      'xfer'
+    );
+
+    await UpdateAuth.execLinkAuth(
+      this.daccustodian_contract.account.active,
+      this.daccustodian_contract.account.name,
+      this.daccustodian_contract.account.name,
+      'removecuspay',
       'xfer'
     );
 

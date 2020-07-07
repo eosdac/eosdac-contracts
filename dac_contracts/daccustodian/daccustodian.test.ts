@@ -966,6 +966,7 @@ describe('Daccustodian', () => {
     let dacId = 'newperioddac';
     let regMembers: Account[];
     let newUser1: Account;
+    let candidates: Account[];
 
     before(async () => {
       await shared.initDac(dacId, '4,PERDAC', '1000000.0000 PERDAC');
@@ -1006,7 +1007,6 @@ describe('Daccustodian', () => {
           });
         });
         context('with enough INITIAL candidate value voting', async () => {
-          let candidates: Account[];
           before(async () => {
             candidates = await shared.getStakeObservedCandidates(
               dacId,
@@ -1245,7 +1245,7 @@ describe('Daccustodian', () => {
             )
           ).to.eventually.be.fulfilled;
         });
-        it('custodians should have been paid', async () => {
+        it('custodians should have pending pay', async () => {
           await assertRowCount(
             shared.daccustodian_contract.pendingpay2Table({
               scope: dacId,
@@ -1284,6 +1284,40 @@ describe('Daccustodian', () => {
           );
 
           chai.expect(actualPaidAverage).to.equal(expectedAverage);
+        });
+        context('custodian claim pay', async () => {
+          context('with valid auth', async () => {
+            it('should succeed', async () => {
+              const pendingPay = await shared.daccustodian_contract.pendingpay2Table(
+                {
+                  scope: 'newperioddac',
+                }
+              );
+              console.log('log out user' + JSON.stringify(candidates[0]));
+
+              await chai.expect(true).to.be.true;
+
+              await chai.expect(
+                shared.daccustodian_contract.claimpaye(0, dacId, {
+                  from: new Account(pendingPay.rows[0].receiver.toString()),
+                })
+              ).to.eventually.be.fulfilled;
+            });
+            it('Should execute claim', async () => {
+              const proposer = shared.daccustodian_contract.account.name;
+              let props = (
+                await shared.eosio_msig.approvals2Table({ scope: proposer })
+              ).rows;
+
+              let propname = props[0].proposal_name;
+
+              // chai.expect(
+              //   shared.eosio_msig.exec(proposer, propname, regMembers[0].name, {
+              //     from: regMembers[0],
+              //   })
+              // ).to.eventually.be.fulfilled;
+            });
+          });
         });
       }
     );

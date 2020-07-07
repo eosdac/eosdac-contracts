@@ -1,3 +1,5 @@
+#pragma once
+
 #include <eosio/eosio.hpp>
 #include <eosio/multi_index.hpp>
 #include <eosio/permission.hpp>
@@ -183,6 +185,7 @@ namespace eosdac {
         [[eosio::action]] inline void stprofile(name cand, std::string profile, name dac_id) { require_auth(cand); };
 
         [[eosio::action]] inline void stprofileuns(name cand, std::string profile) { require_auth(cand); };
+        [[eosio::action]] inline void dummyaction(std::string profile) { eosio::print("running dummyaction"); };
         ACTION                        updatereqpay(name cand, eosio::asset requestedpay);
         ACTION                        updatereqpae(name cand, eosio::asset requestedpay, name dac_id);
         ACTION                        votecust(name voter, std::vector<name> newvotes);

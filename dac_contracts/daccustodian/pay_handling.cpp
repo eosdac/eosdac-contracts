@@ -1,7 +1,15 @@
+#include "daccustodian.hpp"
+#include <eosio.msig/eosio.msig.hpp>
+#include <eosio/crypto.hpp>
+#include <eosio/eosio.hpp>
 #include <eosio/transaction.hpp>
+
+// using namespace eosdac;
+using namespace eosio;
+using namespace std;
 using namespace eosdac;
 
-void daccustodian::claimpay(uint64_t payid) { check(false, "This action is deprecated call `claimpaye` instead."); }
+void daccustodian::claimpay(uint64_t payid) { check(false, "This action is deprecated call `claimpaye` instead."); };
 
 void daccustodian::claimpaye(uint64_t payid, name dac_id) {
 
@@ -18,7 +26,7 @@ void daccustodian::claimpaye(uint64_t payid, name dac_id) {
 
     require_auth(payClaim.receiver);
 
-    transaction deferredTrans{};
+    eosio::transaction deferredTrans{};
 
     name   payment_destination;
     string memo;
@@ -39,15 +47,43 @@ void daccustodian::claimpaye(uint64_t payid, name dac_id) {
         payment_destination = payClaim.receiver;
     }
 
-    deferredTrans.actions.emplace_back(
-        action(permission_level{token_holder, "xfer"_n}, configs.requested_pay_max.contract, "transfer"_n,
-            std::make_tuple(token_holder, payment_destination, payClaim.quantity.quantity, memo)));
+    permission_level tokenHolderXferPerm{token_holder, "xfer"_n};
+    // permission_level selfPayPerm{get_self(), "pay"_n};
+    permission_level selfXferPerm{get_self(), "xfer"_n};
 
-    deferredTrans.actions.emplace_back(
-        action(permission_level{get_self(), "pay"_n}, get_self(), "removecuspay"_n, std::make_tuple(payid, dac_id)));
+    auto transferAction = action(tokenHolderXferPerm, configs.requested_pay_max.contract, "transfer"_n,
+        make_tuple(token_holder, payment_destination, payClaim.quantity.quantity, memo));
 
-    deferredTrans.delay_sec = TRANSFER_DELAY;
-    deferredTrans.send(uint128_t(payid) << 64 | time_point_sec(current_time_point()).sec_since_epoch(), get_self());
+    auto removeCustPayAction = action(selfXferPerm, get_self(), "removecuspay"_n, make_tuple(payid, dac_id));
+    auto dummyAction         = action(selfXferPerm, get_self(), "dummyaction"_n, make_tuple("payid"));
+
+    // deferredTrans.actions.emplace_back(transferAction);
+    // deferredTrans.actions.emplace_back(removeCustPayAction);
+    deferredTrans.actions.emplace_back(dummyAction);
+
+    deferredTrans.expiration = time_point_sec(current_time_point()) + 30 * 60 * 60;
+
+    eosio::name proposalName = name(name("claimpay").value | current_time_point().sec_since_epoch());
+
+    eosio::multisig::propose_action proposeAction("eosio.msig"_n, selfXferPerm);
+
+    vector<eosio::permission_level> requiredPermissions{tokenHolderXferPerm, selfXferPerm};
+
+    proposeAction.send(get_self(), proposalName, requiredPermissions, deferredTrans);
+
+    action(tokenHolderXferPerm, "eosio.msig"_n, "approve"_n, make_tuple(get_self(), proposalName, tokenHolderXferPerm))
+        .send();
+    action(selfXferPerm, "eosio.msig"_n, "approve"_n, make_tuple(get_self(), proposalName, selfXferPerm)).send();
+
+    // // eosio::multisig::approve_action
+    // eosio::multisig::approve_action approve2("eosio.msig"_n, permission2);
+    // approve2.send(get_self(), proposalName, permission2);
+
+    // action(permission_level{get_self(), "xfer"_n}, "eosio.msig"_n, "propose"_n, payload).send();
+
+    // action(permission_level{get_self(), "random"_n}, RNG_CONTRACT_ACCOUNT, "requestrand"_n,
+    //     make_tuple(matchRoundId, signing_value, get_self()))
+    //     .send();
 
     pending_pay.modify(payClaim, same_payer, [&](pay &p) {
         p.due_date = time_point_sec(current_time_point().sec_since_epoch()) + TRANSFER_DELAY;
@@ -120,6 +156,8 @@ bool daccustodian::claimoldpaye_if_found(uint64_t payid, name dac_id) {
             permission_level{get_self(), "pay"_n}, get_self(), "removecuspay"_n, std::make_tuple(payid, get_self())));
 
         deferredTrans.delay_sec = TRANSFER_DELAY;
+        // Change here
+
         deferredTrans.send(uint128_t(payid) << 64 | time_point_sec(current_time_point()).sec_since_epoch(), get_self());
         return true;
     } else {

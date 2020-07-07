@@ -219,6 +219,8 @@ namespace eosdac {
             eosio::action(eosio::permission_level{treasury, "xfer"_n}, prop.arbitrator_pay.contract, "transfer"_n,
                 make_tuple(treasury, escrow, prop.arbitrator_pay.quantity, "arb:" + proposal_id.to_string())));
         deferredTrans.delay_sec = current_configs(dac_id).transfer_delay;
+        // Change here
+
         deferredTrans.send(
             uint128_t(proposal_id.value) << 64 | time_point_sec(current_time_point()).sec_since_epoch(), _self);
     }
@@ -386,6 +388,8 @@ namespace eosdac {
             deferredTrans.actions.emplace_back(eosio::action(eosio::permission_level{_self, "active"_n}, _self,
                 "updpropvotes"_n, std::make_tuple(props_itr.proposal_id, dac_id)));
             deferredTrans.delay_sec = delay++;
+            // Change here
+
             auto sender_id =
                 uint128_t(props_itr.proposal_id.value) << 64 | time_point_sec(current_time_point()).sec_since_epoch();
             deferredTrans.send(sender_id, _self);

@@ -89,6 +89,10 @@ export interface DaccustodianCustodian {
 	total_votes: number;
 }
 
+export interface DaccustodianDummyaction {
+	profile: string;
+}
+
 export interface DaccustodianFirecand {
 	cand: string|number;
 	lockupStake: boolean;
@@ -296,6 +300,7 @@ export interface Daccustodian extends Contract {
 	claimpay(payid: number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	claimpaye(payid: number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	clearold(batch_size: number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	dummyaction(profile: string, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	firecand(cand: string|number, lockupStake: boolean, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	firecande(cand: string|number, lockupStake: boolean, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	firecust(cust: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
