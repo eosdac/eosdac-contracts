@@ -212,11 +212,11 @@ describe('Daccustodian', () => {
       let newUser1: Account;
 
       before(async () => {
-        await shared.initDac(dacId, '4,NOMDAC', '1000000.0000 NOMDAC');
-        await shared.updateconfig(dacId, '12.0000 NOMDAC');
+        await shared.initDac(dacId, '2,NOMDAC', '1000000.00 NOMDAC');
+        await shared.updateconfig(dacId, '12.00 NOMDAC');
         await shared.dac_token_contract.stakeconfig(
           { enabled: true, min_stake_time: 5, max_stake_time: 20 },
-          '4,NOMDAC',
+          '2,NOMDAC',
           { from: shared.auth_account }
         );
         newUser1 = await debugPromise(
@@ -266,14 +266,14 @@ describe('Daccustodian', () => {
               shared.dac_token_contract.transfer(
                 shared.dac_token_contract.account.name,
                 newUser1.name,
-                '1000.0000 NOMDAC',
+                '1000.00 NOMDAC',
                 '',
                 { from: shared.dac_token_contract.account }
               ),
               'failed to preload the user with enough tokens for staking'
             );
             await debugPromise(
-              shared.dac_token_contract.stake(newUser1.name, '12.0000 NOMDAC', {
+              shared.dac_token_contract.stake(newUser1.name, '12.00 NOMDAC', {
                 from: newUser1,
               }),
               'failed staking'
@@ -297,8 +297,8 @@ describe('Daccustodian', () => {
       let newUser1: Account;
 
       before(async () => {
-        await shared.initDac(dacId, '4,NOSDAC', '1000000.0000 NOSDAC');
-        await shared.updateconfig(dacId, '0.0000 NOSDAC');
+        await shared.initDac(dacId, '0,NOSDAC', '1000000 NOSDAC');
+        await shared.updateconfig(dacId, '0 NOSDAC');
         newUser1 = await debugPromise(
           AccountManager.createAccount(),
           'create account for capture stake'
@@ -339,7 +339,7 @@ describe('Daccustodian', () => {
         });
         it('should fail to unstake', async () => {
           await assertEOSErrorIncludesMessage(
-            shared.dac_token_contract.unstake(newUser1.name, '1.0000 NOSDAC', {
+            shared.dac_token_contract.unstake(newUser1.name, '1 NOSDAC', {
               from: newUser1,
             }),
             'ERR::STAKING_NOT_ENABLED'
@@ -347,7 +347,7 @@ describe('Daccustodian', () => {
         });
         it('should fail to unstake zero amount', async () => {
           await assertEOSErrorIncludesMessage(
-            shared.dac_token_contract.unstake(newUser1.name, '0.0000 NOSDAC', {
+            shared.dac_token_contract.unstake(newUser1.name, '0 NOSDAC', {
               from: newUser1,
             }),
             'ERR::STAKING_NOT_ENABLED'
@@ -1073,7 +1073,7 @@ describe('Daccustodian', () => {
         before(async () => {
           // Removing 1000 EOSDAC from each member to get under the initial voting threshold
           // but still above the ongoing voting threshold to check the newperiode still succeeds.
-          let transfers = regMembers.map(member => {
+          let transfers = regMembers.map((member) => {
             return shared.dac_token_contract.transfer(
               member.name,
               shared.dac_token_contract.account.name,
@@ -1117,10 +1117,10 @@ describe('Daccustodian', () => {
             }
           );
           let pays = custodianRows.rows
-            .map(cand => {
+            .map((cand) => {
               return Number(cand.requestedpay.split(' ')[0]);
             })
-            .filter(val => {
+            .filter((val) => {
               return val <= 23; // filter out pays that over 23 because they should be filtered by the requested pay calc.
             });
 
@@ -1405,19 +1405,19 @@ describe('Daccustodian', () => {
 
       unregisteredCandidate = await shared
         .getRegMembers(dacId, '12.0000 FCANDAC')
-        .then(accounts => {
+        .then((accounts) => {
           return accounts[1];
         });
 
       electedCandidateToFire = await shared
         .getStakeObservedCandidates(dacId, '12.0000 FCANDAC')
-        .then(accounts => {
+        .then((accounts) => {
           return accounts[0];
         });
 
       unelectedCandidateToFire = await shared
         .getStakeObservedCandidates(dacId, '12.0000 FCANDAC')
-        .then(accounts => {
+        .then((accounts) => {
           return accounts[0];
         });
     });
@@ -1687,7 +1687,7 @@ describe('Daccustodian', () => {
     it('should fail without correct auth', async () => {
       await assertMissingAuthority(
         shared.daccustodian_contract.appointcust(
-          accountsToRegister.map(account => {
+          accountsToRegister.map((account) => {
             return account.name;
           }),
           dacId,
@@ -1698,7 +1698,7 @@ describe('Daccustodian', () => {
     it('should succeed with correct auth', async () => {
       await chai.expect(
         shared.daccustodian_contract.appointcust(
-          accountsToRegister.map(account => {
+          accountsToRegister.map((account) => {
             return account.name;
           }),
           dacId,
@@ -1731,7 +1731,7 @@ describe('Daccustodian', () => {
     it('should fail with existing custodians appointed', async () => {
       await assertEOSErrorIncludesMessage(
         shared.daccustodian_contract.appointcust(
-          accountsToRegister.map(account => {
+          accountsToRegister.map((account) => {
             return account.name;
           }),
           dacId,

@@ -29,7 +29,8 @@ namespace eosdac {
             auto symbol_idx          = _dacs.get_index<"bysymbol"_n>();
             auto matching_symbol_itr = symbol_idx.find(eosdac::raw_from_extended_symbol(dac_symbol));
             if (existing == _dacs.end()) {
-                eosio::check(matching_symbol_itr == symbol_idx.end() && matching_symbol_itr->symbol != dac_symbol,
+                eosio::check(matching_symbol_itr == symbol_idx.end() ||
+                                 matching_symbol_itr->symbol.get_symbol().code() != dac_symbol.get_symbol().code(),
                     "ERR::DAC_EXISTS_SYMBOL::A dac already exists for the provided symbol.");
             }
 
