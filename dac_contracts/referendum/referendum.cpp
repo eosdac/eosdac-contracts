@@ -172,7 +172,7 @@ void referendum::vote(name voter, name referendum_id, uint8_t vote, name dac_id)
     }
 
     // get vote weight from token (staked balance - unstaking balance)
-    asset    weightAsset = get_staked(voter, dac.symbol.get_contract(), dac.symbol.get_symbol().code());
+    asset    weightAsset = get_staked(voter, dac.symbol.get_contract(), dac.symbol.get_symbol());
     uint64_t weight      = weightAsset.amount;
     uint8_t  old_vote    = vote_choice::VOTE_REMOVE;
     // get existing vote

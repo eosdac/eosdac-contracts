@@ -250,10 +250,12 @@ describe('EOSDacTokens', () => {
             shared.dac_token_contract.stake(
               staker.name,
               `${10 + 2 ** 62}` + ' ABC',
-              { from: staker }
+              {
+                from: staker,
+              }
             ),
-            'DAC_NOT_FOUND_SYMBOL'
-          ); // This is not testable because a DAC cannot be found with in invalid quantity first
+            'ERR::STAKE_INVALID_QTY'
+          ); // Since all matching token codes (ABC) will match in dacdirectory this will be found even with the wrong precision.
         });
         it('with negative quantity should fail with non-posistive error', async () => {
           await l.assertEOSErrorIncludesMessage(
