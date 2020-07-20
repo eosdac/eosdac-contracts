@@ -63,6 +63,8 @@ int64_t daccustodian::get_vote_weight(name voter, name dac_id) {
             return ac->balance.amount;
         }
     }
+
+    return 0;
 }
 
 void daccustodian::modifyVoteWeights(int64_t vote_weight, vector<name> oldVotes, vector<name> newVotes, name dac_id) {
