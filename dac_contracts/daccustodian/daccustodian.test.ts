@@ -150,6 +150,151 @@ describe('Daccustodian', () => {
         []
       );
     });
+    it('Should fail for invalid num elected', async () => {
+      await assertEOSErrorIncludesMessage(
+        shared.daccustodian_contract.updateconfige(
+          {
+            numelected: 68,
+            maxvotes: 4,
+            requested_pay_max: {
+              contract: 'eosio.token',
+              quantity: '30.0000 EOS',
+            },
+            periodlength: 5,
+            initial_vote_quorum_percent: 31,
+            vote_quorum_percent: 15,
+            auth_threshold_high: 4,
+            auth_threshold_mid: 3,
+            auth_threshold_low: 2,
+            lockupasset: {
+              contract: shared.dac_token_contract.account.name,
+              quantity: '12.0000 CUSDAC',
+            },
+            should_pay_via_service_provider: true,
+            lockup_release_time_delay: 1233,
+          },
+          dacId,
+          { from: shared.auth_account }
+        ),
+        'ERR::UPDATECONFIG_INVALID_NUM_ELECTED'
+      );
+    });
+    it('Should fail for invalid max votes', async () => {
+      await assertEOSErrorIncludesMessage(
+        shared.daccustodian_contract.updateconfige(
+          {
+            numelected: 12,
+            maxvotes: 13,
+            requested_pay_max: {
+              contract: 'eosio.token',
+              quantity: '30.0000 EOS',
+            },
+            periodlength: 5,
+            initial_vote_quorum_percent: 31,
+            vote_quorum_percent: 15,
+            auth_threshold_high: 4,
+            auth_threshold_mid: 3,
+            auth_threshold_low: 2,
+            lockupasset: {
+              contract: shared.dac_token_contract.account.name,
+              quantity: '12.0000 CUSDAC',
+            },
+            should_pay_via_service_provider: true,
+            lockup_release_time_delay: 1233,
+          },
+          dacId,
+          { from: shared.auth_account }
+        ),
+        'ERR::UPDATECONFIG_INVALID_MAX_VOTES'
+      );
+    });
+    it('Should fail for invalid period length', async () => {
+      await assertEOSErrorIncludesMessage(
+        shared.daccustodian_contract.updateconfige(
+          {
+            numelected: 12,
+            maxvotes: 5,
+            requested_pay_max: {
+              contract: 'eosio.token',
+              quantity: '30.0000 EOS',
+            },
+            periodlength: 4 * 365 * 24 * 60 * 60,
+            initial_vote_quorum_percent: 31,
+            vote_quorum_percent: 15,
+            auth_threshold_high: 4,
+            auth_threshold_mid: 3,
+            auth_threshold_low: 2,
+            lockupasset: {
+              contract: shared.dac_token_contract.account.name,
+              quantity: '12.0000 CUSDAC',
+            },
+            should_pay_via_service_provider: true,
+            lockup_release_time_delay: 1233,
+          },
+          dacId,
+          { from: shared.auth_account }
+        ),
+        'ERR::UPDATECONFIG_PERIOD_LENGTH'
+      );
+    });
+    it('Should fail for invalid initial quorum percent', async () => {
+      await assertEOSErrorIncludesMessage(
+        shared.daccustodian_contract.updateconfige(
+          {
+            numelected: 12,
+            maxvotes: 5,
+            requested_pay_max: {
+              contract: 'eosio.token',
+              quantity: '30.0000 EOS',
+            },
+            periodlength: 7 * 24 * 60 * 60,
+            initial_vote_quorum_percent: 100,
+            vote_quorum_percent: 15,
+            auth_threshold_high: 4,
+            auth_threshold_mid: 3,
+            auth_threshold_low: 2,
+            lockupasset: {
+              contract: shared.dac_token_contract.account.name,
+              quantity: '12.0000 CUSDAC',
+            },
+            should_pay_via_service_provider: true,
+            lockup_release_time_delay: 1233,
+          },
+          dacId,
+          { from: shared.auth_account }
+        ),
+        'ERR::UPDATECONFIG_INVALID_INITIAL_VOTE_QUORUM_PERCENT'
+      );
+    });
+    it('Should fail for invalid quorum percent', async () => {
+      await assertEOSErrorIncludesMessage(
+        shared.daccustodian_contract.updateconfige(
+          {
+            numelected: 12,
+            maxvotes: 5,
+            requested_pay_max: {
+              contract: 'eosio.token',
+              quantity: '30.0000 EOS',
+            },
+            periodlength: 7 * 24 * 60 * 60,
+            initial_vote_quorum_percent: 31,
+            vote_quorum_percent: 101,
+            auth_threshold_high: 4,
+            auth_threshold_mid: 3,
+            auth_threshold_low: 2,
+            lockupasset: {
+              contract: shared.dac_token_contract.account.name,
+              quantity: '12.0000 CUSDAC',
+            },
+            should_pay_via_service_provider: true,
+            lockup_release_time_delay: 1233,
+          },
+          dacId,
+          { from: shared.auth_account }
+        ),
+        'ERR::UPDATECONFIG_INVALID_VOTE_QUORUM_PERCENT'
+      );
+    });
     it('Should succeed with valid params', async () => {
       await shared.daccustodian_contract.updateconfige(
         {
