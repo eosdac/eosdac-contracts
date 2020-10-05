@@ -1,10 +1,12 @@
 #include "dacproposals.hpp"
 #include "../dacescrow/dacescrow.hpp"
 #include <algorithm>
+#include <eosio.msig/eosio.msig.hpp>
 #include <eosio/action.hpp>
 #include <eosio/eosio.hpp>
 #include <eosio/time.hpp>
 #include <eosio/transaction.hpp>
+
 #include <typeinfo>
 
 #include "../../contract-shared-headers/dacdirectory_shared.hpp"
@@ -84,7 +86,7 @@ namespace eosdac {
         auto                by_prop_and_voter = prop_votes.get_index<"propandvoter"_n>();
         uint128_t           joint_id          = combine_ids(proposal_id.value, custodian.value);
         auto                vote_idx          = by_prop_and_voter.find(joint_id);
-        if (vote_idx == by_prop_and_voter.end()) {
+        if (vote_idx == by_prop_and_voter.end() || vote_idx->voter != custodian) {
             prop_votes.emplace(_self, [&](proposalvote &v) {
                 v.vote_id     = prop_votes.available_primary_key();
                 v.proposal_id = proposal_id;
@@ -119,7 +121,7 @@ namespace eosdac {
         auto                by_prop_and_voter = prop_votes.get_index<"propandvoter"_n>();
         uint128_t           joint_id          = combine_ids(proposal_id.value, custodian.value);
         auto                vote_idx          = by_prop_and_voter.find(joint_id);
-        if (vote_idx == by_prop_and_voter.end()) {
+        if (vote_idx == by_prop_and_voter.end() || vote_idx->voter != custodian) {
             prop_votes.emplace(_self, [&](proposalvote &v) {
                 v.vote_id     = prop_votes.available_primary_key();
                 v.proposal_id = proposal_id;
@@ -149,7 +151,8 @@ namespace eosdac {
         auto      by_cat_and_voter = prop_votes.get_index<"catandvoter"_n>();
         uint128_t joint_id         = combine_ids(category, custodian.value);
         auto      vote_idx         = by_cat_and_voter.find(joint_id);
-        if (vote_idx == by_cat_and_voter.end()) {
+        if (vote_idx == by_cat_and_voter.end() || vote_idx->voter != custodian) {
+            print("creating new delegatecat record: custodian");
             prop_votes.emplace(_self, [&](proposalvote &v) {
                 v.vote_id     = prop_votes.available_primary_key();
                 v.category_id = category;
@@ -157,6 +160,7 @@ namespace eosdac {
                 v.delegatee   = delegatee_custodian;
             });
         } else {
+            print("updating exisitng delegatecat record: custodian");
             by_cat_and_voter.modify(vote_idx, _self, [&](proposalvote &v) {
                 v.delegatee = delegatee_custodian;
             });
@@ -171,7 +175,7 @@ namespace eosdac {
 
         uint128_t joint_id = combine_ids(category, custodian.value);
         auto      vote_idx = by_cat_and_voter.find(joint_id);
-        check(vote_idx != by_cat_and_voter.end(),
+        check(vote_idx != by_cat_and_voter.end() && vote_idx->voter == custodian,
             "ERR::UNDELEGATECA_NO_EXISTING_VOTE::Cannot undelegate category vote with pre-existing vote.");
         by_cat_and_voter.erase(vote_idx);
     }
@@ -206,23 +210,35 @@ namespace eosdac {
         check(is_account(treasury), "ERR::TREASURY_ACCOUNT_NOT_FOUND::Treasury account not found");
         check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
 
+        permission_level codeExecPermission{get_self(), "codeexec"_n};
+
         transaction deferredTrans{};
         deferredTrans.actions.emplace_back(
-            dacproposals::runstartwork_action(get_self(), eosio::permission_level{get_self(), "active"_n})
-                .to_action(proposal_id, dac_id));
-        deferredTrans.actions.emplace_back(dacescrow::init_action{escrow, {treasury, "escrow"_n}}.to_action(
-            treasury, prop.proposer, prop.arbitrator, time_now + (prop.job_duration * 2), memo, proposal_id));
+            dacproposals::runstartwork_action(get_self(), codeExecPermission).to_action(proposal_id, dac_id));
+
+        deferredTrans.actions.emplace_back(eosio::action(permission_level{treasury, "escrow"_n}, escrow, "init"_n,
+            make_tuple(
+                treasury, prop.proposer, prop.arbitrator, time_now + (prop.job_duration * 2), memo, proposal_id)));
         deferredTrans.actions.emplace_back(
             eosio::action(eosio::permission_level{treasury, "xfer"_n}, prop.proposal_pay.contract, "transfer"_n,
                 make_tuple(treasury, escrow, prop.proposal_pay.quantity, "rec:" + proposal_id.to_string())));
         deferredTrans.actions.emplace_back(
             eosio::action(eosio::permission_level{treasury, "xfer"_n}, prop.arbitrator_pay.contract, "transfer"_n,
                 make_tuple(treasury, escrow, prop.arbitrator_pay.quantity, "arb:" + proposal_id.to_string())));
-        deferredTrans.delay_sec = current_configs(dac_id).transfer_delay;
+        deferredTrans.delay_sec  = TRANSFER_DELAY;
+        deferredTrans.expiration = time_point_sec(current_time_point()) + TRANSFER_EXPIRATION;
         // Change here
+        eosio::name proposalName = name(name("proposal").value | current_time_point().sec_since_epoch());
 
-        deferredTrans.send(
-            uint128_t(proposal_id.value) << 64 | time_point_sec(current_time_point()).sec_since_epoch(), _self);
+        // deferredTrans.send(
+        //     uint128_t(proposal_id.value) << 64 | time_point_sec(current_time_point()).sec_since_epoch(), _self);
+
+        eosio::multisig::propose_action proposeAction("eosio.msig"_n, codeExecPermission);
+        vector<eosio::permission_level> requiredPermissions{codeExecPermission};
+        proposeAction.send(get_self(), proposalName, requiredPermissions, deferredTrans);
+        action(
+            codeExecPermission, "eosio.msig"_n, "approve"_n, make_tuple(get_self(), proposalName, codeExecPermission))
+            .send();
     }
 
     ACTION dacproposals::runstartwork(name proposal_id, name dac_id) {
@@ -392,7 +408,7 @@ namespace eosdac {
 
             auto sender_id =
                 uint128_t(props_itr.proposal_id.value) << 64 | time_point_sec(current_time_point()).sec_since_epoch();
-            deferredTrans.send(sender_id, _self);
+            // deferredTrans.send(sender_id, _self);
             print("\n adding transaction: ", sender_id, "delay: ", deferredTrans.delay_sec.value);
         }
     }

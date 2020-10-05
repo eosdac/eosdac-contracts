@@ -254,6 +254,16 @@
             ]
         },
         {
+            "name": "dummyaction",
+            "base": "",
+            "fields": [
+                {
+                    "name": "profile",
+                    "type": "string"
+                }
+            ]
+        },
+        {
             "name": "firecand",
             "base": "",
             "fields": [
@@ -844,6 +854,11 @@
         {
             "name": "clearold",
             "type": "clearold",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "dummyaction",
+            "type": "dummyaction",
             "ricardian_contract": ""
         },
         {

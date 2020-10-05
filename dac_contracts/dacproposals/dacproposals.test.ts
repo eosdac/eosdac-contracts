@@ -13,7 +13,11 @@ import {
 
 import { EosioToken } from '../external_contracts/eosio.token/eosio.token';
 
-import { SharedTestObjects } from '../TestHelpers';
+import {
+  NUMBER_OF_CANDIDATES,
+  NUMBER_OF_REG_MEMBERS,
+  SharedTestObjects,
+} from '../TestHelpers';
 import * as chai from 'chai';
 
 import * as chaiAsPromised from 'chai-as-promised';
@@ -61,7 +65,6 @@ describe('Dacproposals', () => {
 
   before(async () => {
     shared = await chai.expect(SharedTestObjects.getInstance()).to.be.fulfilled;
-
     await shared.initDac(dacId, '4,PROPDAC', '1000000.0000 PROPDAC');
     await shared.updateconfig(dacId, '12.0000 PROPDAC');
     eosiotoken = await ContractLoader.at('eosio.token');
@@ -73,11 +76,24 @@ describe('Dacproposals', () => {
       )
     ).to.eventually.be.fulfilled;
 
-    regMembers = await shared.getRegMembers(dacId, '20000.0000 PROPDAC');
+    regMembers = await shared.getRegMembers(
+      dacId,
+      '20000.0000 PROPDAC',
+      NUMBER_OF_REG_MEMBERS,
+      {
+        namePrefix: 'propdac',
+      }
+    );
+
     propDacCustodians = await shared.getStakeObservedCandidates(
       dacId,
-      '20.0000 PROPDAC'
+      '20.0000 PROPDAC',
+      NUMBER_OF_REG_MEMBERS,
+      {
+        namePrefix: 'cust',
+      }
     );
+
     await shared.voteForCustodians(regMembers, propDacCustodians, dacId);
     await shared.daccustodian_contract.newperiode('propDac', dacId, {
       from: regMembers[0],
@@ -965,10 +981,43 @@ describe('Dacproposals', () => {
           )
         ).to.eventually.be.fulfilled;
       });
-      context('After time delay for deferred transaction', async () => {
+      context('execute pending msig', async () => {
+        let proposer: string;
         before(async () => {
-          await sleep(6000);
+          proposer = shared.dacproposals_contract.account.name;
         });
+        it('Should fail if too soon', async () => {
+          let props = (
+            await shared.eosio_msig.approvals2Table({ scope: proposer })
+          ).rows;
+
+          let propname = props[0].proposal_name;
+
+          await assertEOSErrorIncludesMessage(
+            shared.eosio_msig.exec(proposer, propname, regMembers[0].name, {
+              from: regMembers[0],
+            }),
+            'too early to execute'
+          );
+        });
+
+        it('Should succeed after enough time has passed', async () => {
+          await sleep(30_000);
+          let props = (
+            await shared.eosio_msig.approvals2Table({ scope: proposer })
+          ).rows;
+
+          let propname = props[0].proposal_name;
+
+          await chai.expect(
+            shared.eosio_msig.exec(proposer, propname, regMembers[0].name, {
+              from: regMembers[0],
+            })
+          ).to.eventually.be.fulfilled;
+        });
+      });
+
+      context('After time delay for deferred transaction', async () => {
         it('should populate the escrow table', async () => {
           let proposalRow = await shared.dacescrow_contract.escrowsTable({
             scope: 'dacescrow',
@@ -1519,7 +1568,7 @@ describe('Dacproposals', () => {
           {
             proposal_threshold: proposeApproveTheshold,
             finalize_threshold: 5,
-            approval_duration: 30,
+            approval_duration: 300,
             transfer_delay: 3,
           },
           dacId,
@@ -1593,7 +1642,20 @@ describe('Dacproposals', () => {
             ],
           })
         ).to.eventually.be.fulfilled;
-        await sleep(6000);
+
+        let proposer = shared.dacproposals_contract.account.name;
+        await sleep(30_000);
+        let props = (
+          await shared.eosio_msig.approvals2Table({ scope: proposer })
+        ).rows;
+
+        let propname = props[0].proposal_name;
+
+        await chai.expect(
+          shared.eosio_msig.exec(proposer, propname, regMembers[0].name, {
+            from: regMembers[0],
+          })
+        ).to.eventually.be.fulfilled;
       });
       context('called by user other than arbitrator', async () => {
         it('It should not arbitrator error', async () => {
@@ -1793,7 +1855,7 @@ describe('Dacproposals', () => {
           {
             proposal_threshold: proposeApproveTheshold,
             finalize_threshold: 5,
-            approval_duration: 30,
+            approval_duration: 300,
             transfer_delay: 3,
           },
           dacId,
@@ -1867,7 +1929,20 @@ describe('Dacproposals', () => {
             ],
           })
         ).to.eventually.be.fulfilled;
-        await sleep(6000);
+
+        let proposer = shared.dacproposals_contract.account.name;
+        await sleep(30_000);
+        let props = (
+          await shared.eosio_msig.approvals2Table({ scope: proposer })
+        ).rows;
+
+        let propname = props[0].proposal_name;
+
+        await chai.expect(
+          shared.eosio_msig.exec(proposer, propname, regMembers[0].name, {
+            from: regMembers[0],
+          })
+        ).to.eventually.be.fulfilled;
       });
       context('called by user other than arbitrator', async () => {
         it('It should not arbitrator error', async () => {
@@ -2053,7 +2128,7 @@ describe('Dacproposals', () => {
         {
           proposal_threshold: proposeApproveTheshold,
           finalize_threshold: 5,
-          approval_duration: 30,
+          approval_duration: 300,
           transfer_delay: 3,
         },
         dacId,
@@ -2127,7 +2202,20 @@ describe('Dacproposals', () => {
             await shared.dacproposals_contract.startwork(cancelpropid, dacId, {
               from: proposer1Account,
             });
-            await sleep(6000); // wait for the escrow to be loaded.
+
+            let proposer = shared.dacproposals_contract.account.name;
+            await sleep(30_000);
+            let props = (
+              await shared.eosio_msig.approvals2Table({ scope: proposer })
+            ).rows;
+
+            let propname = props[0].proposal_name;
+
+            await chai.expect(
+              shared.eosio_msig.exec(proposer, propname, regMembers[0].name, {
+                from: regMembers[0],
+              })
+            ).to.eventually.be.fulfilled;
           });
           it('should initially contain proposal', async () => {
             await assertRowCount(
@@ -2198,7 +2286,7 @@ describe('Dacproposals', () => {
         {
           proposal_threshold: proposeApproveTheshold,
           finalize_threshold: 5,
-          approval_duration: 30,
+          approval_duration: 300,
           transfer_delay: 3,
         },
         dacId,
@@ -2454,7 +2542,7 @@ describe('Dacproposals', () => {
             await debugPromise(
               shared.dacproposals_contract.delegatecat(
                 propDacCustodians[3].name,
-                category, // non-matching category
+                category, // matching category
                 propDacCustodians[2].name,
                 dacId,
                 {
@@ -2496,25 +2584,23 @@ describe('Dacproposals', () => {
         });
       }
     );
-    // context(
-    //   'created a proposal but still need one vote for approval for categories',
-    //   async () => {
-    //     context(
-    //       'delegated category with already voted custodian should have no effect',
-    //       async () => {
-    //         it('should fail with insufficient votes', async () => {
-    //           chai.expect(false).to.eq(true);
-    //         });
-    //       }
-    //     );
-    //     context('delegated category with non-matching category', async () => {
-    //       it('should fail with insufficient votes', async () => {});
-    //     });
-    //     context('delegated category with matching category', async () => {
-    //       it('should succeed', async () => {});
-    //     });
-    //   }
-    // );
+    context('execute pending msig', async () => {
+      it('Should succeed after enough time has passed', async () => {
+        let proposer = shared.dacproposals_contract.account.name;
+        await sleep(30_000);
+        let props = (
+          await shared.eosio_msig.approvals2Table({ scope: proposer })
+        ).rows;
+
+        let propname = props[0].proposal_name;
+
+        await chai.expect(
+          shared.eosio_msig.exec(proposer, propname, regMembers[0].name, {
+            from: regMembers[0],
+          })
+        ).to.eventually.be.fulfilled;
+      });
+    });
     context(
       'created a proposal but still need 2 votes for approval for complex case',
       async () => {
@@ -2566,7 +2652,7 @@ describe('Dacproposals', () => {
           'delegated vote with matching proposal and category',
           async () => {
             before(async () => {
-              await chai.expect(
+              await debugPromise(
                 shared.dacproposals_contract.delegatecat(
                   propDacCustodians[2].name,
                   category, // matching category
@@ -2584,10 +2670,11 @@ describe('Dacproposals', () => {
                       },
                     ],
                   }
-                )
-              ).to.eventually.be.fulfilled;
+                ),
+                'delegating cat: '
+              );
 
-              await chai.expect(
+              await debugPromise(
                 shared.dacproposals_contract.delegatevote(
                   propDacCustodians[3].name,
                   propId,
@@ -2605,11 +2692,12 @@ describe('Dacproposals', () => {
                       },
                     ],
                   }
-                )
-              ).eventually.be.fulfilled;
+                ),
+                'delegate last vote:'
+              );
             });
             it('should succeed when attempting start work', async () => {
-              chai.expect(
+              await chai.expect(
                 shared.dacproposals_contract.startwork(
                   propId, // proposal id
                   dacId,
@@ -2627,6 +2715,21 @@ describe('Dacproposals', () => {
                   }
                 )
               ).to.be.fulfilled;
+            });
+            it('execute pending msig should succeed after enough time has passed', async () => {
+              let proposer = shared.dacproposals_contract.account.name;
+              await sleep(30_000);
+              let props = (
+                await shared.eosio_msig.approvals2Table({ scope: proposer })
+              ).rows;
+
+              let propname = props[0].proposal_name;
+
+              await chai.expect(
+                shared.eosio_msig.exec(proposer, propname, regMembers[0].name, {
+                  from: regMembers[0],
+                })
+              ).to.eventually.be.fulfilled;
             });
             it('propvotes should contain 3 votes for this proposal - one as a delegated vote', async () => {
               await assertRowCount(

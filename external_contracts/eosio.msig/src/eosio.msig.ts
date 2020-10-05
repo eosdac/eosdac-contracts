@@ -73,6 +73,7 @@ export interface EosioMsigPermissionLevel {
 export interface EosioMsigProposal {
 	proposal_name: string|number;
 	packed_transaction: string;
+	earliest_exec_time: string;
 }
 
 export interface EosioMsigPropose {

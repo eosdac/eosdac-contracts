@@ -19,8 +19,10 @@ namespace eosdac {
     const eosio::name HIGH_PERMISSION   = "high"_n;
 
 #ifndef TRANSFER_DELAY
-#define TRANSFER_DELAY 60 * 60
+#define TRANSFER_DELAY 30
 #endif
+
+#define TRANSFER_EXPIRATION 30 * 24 * 60 * 60
 
     struct contr_config;
     typedef eosio::singleton<"config2"_n, contr_config> configscontainer;
@@ -129,7 +131,7 @@ namespace eosdac {
         name           receiver;
         extended_asset quantity;
         time_point_sec due_date; // If there is a value here that indicates that a deferred transaction has been
-                                 // scheduled and that other new amounts should be added to this record.
+                                 // scheduled and that other new amounts should be added to a new record.
 
         static checksum256 getIndex(const name &receiver, const extended_symbol &symbol) {
             return combine_ids(receiver.value, symbol.get_contract().value, symbol.get_symbol().code().raw(), 0);

@@ -22,6 +22,11 @@ void daccustodian::claimpaye(uint64_t payid, name dac_id) {
 
     contr_config configs  = contr_config::get_current_configs(get_self(), dac_id);
     const pay &  payClaim = pending_pay.get(payid, "ERR::CLAIMPAY_INVALID_CLAIM_ID::Invalid pay claim id.");
+
+    // Ensure claimpaye has been run previously within an unexpired timeframe.
+    check(payClaim.due_date < time_point_sec(current_time_point()),
+        "An earlier claimpaye is still within an unexpired timeframe with an associated msig. Try again after due_date has passed.");
+
     assertValidMember(payClaim.receiver, dac_id);
 
     require_auth(payClaim.receiver);
@@ -48,45 +53,31 @@ void daccustodian::claimpaye(uint64_t payid, name dac_id) {
     }
 
     permission_level tokenHolderXferPerm{token_holder, "xfer"_n};
-    // permission_level selfPayPerm{get_self(), "pay"_n};
-    permission_level selfXferPerm{get_self(), "xfer"_n};
+    permission_level codeExecPermission{get_self(), "codeexec"_n};
 
     auto transferAction = action(tokenHolderXferPerm, configs.requested_pay_max.contract, "transfer"_n,
         make_tuple(token_holder, payment_destination, payClaim.quantity.quantity, memo));
 
-    auto removeCustPayAction = action(selfXferPerm, get_self(), "removecuspay"_n, make_tuple(payid, dac_id));
-    auto dummyAction         = action(selfXferPerm, get_self(), "dummyaction"_n, make_tuple("payid"));
+    auto removeCustPayAction = action(codeExecPermission, get_self(), "removecuspay"_n, make_tuple(payid, dac_id));
 
-    // deferredTrans.actions.emplace_back(transferAction);
-    // deferredTrans.actions.emplace_back(removeCustPayAction);
-    deferredTrans.actions.emplace_back(dummyAction);
+    deferredTrans.actions.emplace_back(transferAction);
+    deferredTrans.actions.emplace_back(removeCustPayAction);
 
-    deferredTrans.expiration = time_point_sec(current_time_point()) + 30 * 60 * 60;
+    time_point_sec expiration = time_point_sec(current_time_point()) + TRANSFER_EXPIRATION;
+
+    deferredTrans.delay_sec  = TRANSFER_DELAY;
+    deferredTrans.expiration = expiration;
 
     eosio::name proposalName = name(name("claimpay").value | current_time_point().sec_since_epoch());
 
-    eosio::multisig::propose_action proposeAction("eosio.msig"_n, selfXferPerm);
-
-    vector<eosio::permission_level> requiredPermissions{tokenHolderXferPerm, selfXferPerm};
-
+    eosio::multisig::propose_action proposeAction("eosio.msig"_n, codeExecPermission);
+    vector<eosio::permission_level> requiredPermissions{codeExecPermission};
     proposeAction.send(get_self(), proposalName, requiredPermissions, deferredTrans);
-
-    action(tokenHolderXferPerm, "eosio.msig"_n, "approve"_n, make_tuple(get_self(), proposalName, tokenHolderXferPerm))
+    action(codeExecPermission, "eosio.msig"_n, "approve"_n, make_tuple(get_self(), proposalName, codeExecPermission))
         .send();
-    action(selfXferPerm, "eosio.msig"_n, "approve"_n, make_tuple(get_self(), proposalName, selfXferPerm)).send();
-
-    // // eosio::multisig::approve_action
-    // eosio::multisig::approve_action approve2("eosio.msig"_n, permission2);
-    // approve2.send(get_self(), proposalName, permission2);
-
-    // action(permission_level{get_self(), "xfer"_n}, "eosio.msig"_n, "propose"_n, payload).send();
-
-    // action(permission_level{get_self(), "random"_n}, RNG_CONTRACT_ACCOUNT, "requestrand"_n,
-    //     make_tuple(matchRoundId, signing_value, get_self()))
-    //     .send();
 
     pending_pay.modify(payClaim, same_payer, [&](pay &p) {
-        p.due_date = time_point_sec(current_time_point().sec_since_epoch()) + TRANSFER_DELAY;
+        p.due_date = expiration;
     });
 }
 

@@ -112,11 +112,11 @@ export interface DacproposalsProposal {
 export interface DacproposalsProposalvote {
 	vote_id: number;
 	voter: string|number;
-	proposal_id: string;
-	category_id: string;
-	vote: string;
-	delegatee: string;
-	comment_hash: string;
+	proposal_id: string|number|null;
+	category_id: number|null;
+	vote: number|null;
+	delegatee: string|number|null;
+	comment_hash: string|null;
 }
 
 export interface DacproposalsRunstartwork {

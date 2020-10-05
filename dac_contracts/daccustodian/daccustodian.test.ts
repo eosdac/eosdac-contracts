@@ -15,7 +15,11 @@ import {
 import { SharedTestObjects, NUMBER_OF_CANDIDATES } from '../TestHelpers';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
-import { DaccustodianCandidate } from './daccustodian';
+import {
+  Daccustodian,
+  DaccustodianCandidate,
+  DaccustodianPay,
+} from './daccustodian';
 chai.use(chaiAsPromised);
 
 describe('Daccustodian', () => {
@@ -988,23 +992,23 @@ describe('Daccustodian', () => {
     context('without an activation account', async () => {
       context('before a dac has commenced periods', async () => {
         context('without enough INITIAL candidate value voting', async () => {
-          it('should fail with voter engagement too low error', async () => {
-            await assertEOSErrorIncludesMessage(
-              shared.daccustodian_contract.newperiode(
-                'initial new period',
-                dacId,
-                {
-                  auths: [
-                    {
-                      actor: shared.daccustodian_contract.account.name,
-                      permission: 'owner',
-                    },
-                  ],
-                }
-              ),
-              'NEWPERIOD_VOTER_ENGAGEMENT_LOW_ACTIVATE'
-            );
-          });
+            it('should fail with voter engagement too low error', async () => {
+              await assertEOSErrorIncludesMessage(
+                shared.daccustodian_contract.newperiode(
+                  'initial new period',
+                  dacId,
+                  {
+                    auths: [
+                      {
+                        actor: shared.daccustodian_contract.account.name,
+                        permission: 'owner',
+                      },
+                    ],
+                  }
+                ),
+                'NEWPERIOD_VOTER_ENGAGEMENT_LOW_ACTIVATE'
+              );
+            });
         });
         context('with enough INITIAL candidate value voting', async () => {
           before(async () => {
@@ -1203,14 +1207,14 @@ describe('Daccustodian', () => {
       });
     });
     context('Calling newperiode before the next period is due', async () => {
-      it('should fail with too calling newperiod too early error', async () => {
-        await assertEOSErrorIncludesMessage(
+        it('should fail with too calling newperiod too early error', async () => {
+          await assertEOSErrorIncludesMessage(
           shared.daccustodian_contract.newperiode('initial new period', dacId, {
-            from: shared.auth_account, // could be any account to auth this.
+                from: shared.auth_account, // could be any account to auth this.
           }),
-          'ERR::NEWPERIOD_EARLY'
-        );
-      });
+            'ERR::NEWPERIOD_EARLY'
+          );
+        });
     });
     context(
       'Calling new period after the period time has expired',
@@ -1231,6 +1235,17 @@ describe('Daccustodian', () => {
           await debugPromise(
             Promise.all(transfers),
             'transferring 1000 PERDAC away for voting threshold'
+          );
+
+          await debugPromise(
+            shared.eosio_token.transfer(
+              EOSManager.adminAccount.name,
+              shared.treasury_account.name,
+              '1234.0000 EOS',
+              'Seed EOS into treasury',
+              { from: EOSManager.adminAccount }
+            ),
+            'Creating a balance object on the treasury account'
           );
           await sleep(4_000);
         });
@@ -1287,35 +1302,88 @@ describe('Daccustodian', () => {
         });
         context('custodian claim pay', async () => {
           context('with valid auth', async () => {
-            it('should succeed', async () => {
-              const pendingPay = await shared.daccustodian_contract.pendingpay2Table(
+            let pendingPay: DaccustodianPay;
+
+            before(async () => {
+              const pendingPayRows = await shared.daccustodian_contract.pendingpay2Table(
                 {
                   scope: 'newperioddac',
                 }
               );
-              console.log('log out user' + JSON.stringify(candidates[0]));
+              pendingPay = pendingPayRows.rows[0];
+            });
 
-              await chai.expect(true).to.be.true;
-
+            it('should succeed', async () => {
               await chai.expect(
                 shared.daccustodian_contract.claimpaye(0, dacId, {
-                  from: new Account(pendingPay.rows[0].receiver.toString()),
+                  from: new Account(pendingPay.receiver.toString()),
                 })
               ).to.eventually.be.fulfilled;
             });
-            it('Should execute claim', async () => {
-              const proposer = shared.daccustodian_contract.account.name;
-              let props = (
-                await shared.eosio_msig.approvals2Table({ scope: proposer })
-              ).rows;
+            context('Trying to repeat the same claimpaye', async () => {
+              it('should fail', async () => {
+                await sleep(600); // sleep to avoid duplicate transaction error.
+                await assertEOSErrorIncludesMessage(
+                  shared.daccustodian_contract.claimpaye(0, dacId, {
+                    from: new Account(pendingPay.receiver.toString()),
+                  }),
+                  'An earlier claimpaye is still within an unexpired timeframe with an associated msig'
+                );
+              });
+            });
+            context('execute pending msig', async () => {
+              it('Should fail if too soon', async () => {
+                const proposer = shared.daccustodian_contract.account.name;
+                let props = (
+                  await shared.eosio_msig.approvals2Table({ scope: proposer })
+                ).rows;
 
-              let propname = props[0].proposal_name;
+                let propname = props[0].proposal_name;
+                console.log('prop name: ' + propname);
 
-              // chai.expect(
-              //   shared.eosio_msig.exec(proposer, propname, regMembers[0].name, {
-              //     from: regMembers[0],
-              //   })
-              // ).to.eventually.be.fulfilled;
+                await assertEOSErrorIncludesMessage(
+                  shared.eosio_msig.exec(
+                    proposer,
+                    propname,
+                    regMembers[0].name,
+                    {
+                      from: regMembers[0],
+                    }
+                  ),
+                  'too early to execute'
+                );
+              });
+
+              it('Should succeed after enough time has passed', async () => {
+                await sleep(30_000);
+                const proposer = shared.daccustodian_contract.account.name;
+                let props = (
+                  await shared.eosio_msig.approvals2Table({ scope: proposer })
+                ).rows;
+
+                let propname = props[0].proposal_name;
+                console.log('prop name: ' + propname);
+
+                await chai.expect(
+                  shared.eosio_msig.exec(
+                    proposer,
+                    propname,
+                    regMembers[0].name,
+                    {
+                      from: regMembers[0],
+                    }
+                  )
+                ).to.eventually.be.fulfilled;
+              });
+              it('should remove the pending pay after processing the payment msig', async () => {
+                await assertRowCount(
+                  shared.daccustodian_contract.pendingpay2Table({
+                    scope: dacId,
+                    limit: 12,
+                  }),
+                  4
+                );
+              });
             });
           });
         });

@@ -1,1 +1,1 @@
--DTRANSFER_DELAY=3
+-I=/opt/eosio/bin/project/external_contracts/eosio.msig/include

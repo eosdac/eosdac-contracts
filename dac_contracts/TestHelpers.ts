@@ -7,6 +7,7 @@ import {
   debugPromise,
   UpdateAuth,
   ContractLoader,
+  EOSManager,
 } from 'lamington';
 
 // Dac contracts
@@ -17,12 +18,18 @@ import { Eosdactokens } from './eosdactokens/eosdactokens';
 import { Dacproposals } from './dacproposals/dacproposals';
 import { Dacescrow } from './dacescrow/dacescrow';
 import { EosioMsig } from '../external_contracts/eosio.msig/src/eosio.msig';
+import { EosioToken } from '../external_contracts/eosio.token/eosio.token';
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { add_token_contract_permissions } from './UpdateAuths';
 
 export var NUMBER_OF_REG_MEMBERS = 16;
 export var NUMBER_OF_CANDIDATES = 7;
+
+export type GetRegMembersOptions = {
+  namePrefix?: string;
+};
 
 export class SharedTestObjects {
   // Shared Instances to use between tests.
@@ -31,6 +38,7 @@ export class SharedTestObjects {
 
   auth_account: Account;
   treasury_account: Account;
+  service_Account: Account;
   // === Dac Contracts
   dacdirectory_contract: Dacdirectory;
   daccustodian_contract: Daccustodian;
@@ -39,6 +47,7 @@ export class SharedTestObjects {
   dacescrow_contract: Dacescrow;
   // === System Contracts
   eosio_msig: EosioMsig;
+  eosio_token: EosioToken;
   // === Shared Values
   configured_dac_memberterms: string;
 
@@ -46,6 +55,7 @@ export class SharedTestObjects {
     if (!SharedTestObjects.instance) {
       SharedTestObjects.instance = new SharedTestObjects();
       await SharedTestObjects.instance.initAndGetSharedObjects();
+      await add_token_contract_permissions(SharedTestObjects.instance);
     }
     return SharedTestObjects.instance;
   }
@@ -53,7 +63,8 @@ export class SharedTestObjects {
   private async initAndGetSharedObjects() {
     console.log('Init eos blockchain');
     await sleep(500);
-    // EOSManager.initWithDefaults();
+    EOSManager.initWithDefaults();
+    await sleep(4500);
 
     this.auth_account = await debugPromise(
       AccountManager.createAccount('eosdacauth'),
@@ -63,16 +74,21 @@ export class SharedTestObjects {
       AccountManager.createAccount('treasury'),
       'create treasury account'
     );
+    this.service_Account = await debugPromise(
+      AccountManager.createAccount('service'),
+      'create service account'
+    );
     // Deploy custom msig contract
-    // await debugPromise(
-    //   ContractDeployer.deployToAccount(
-    //     'external_contracts/eosio.msig/eosio.msig',
-    //     new Account('eosio.msig')
-    //   ),
-    //   'deployed custom msig'
-    // );
+    await debugPromise(
+      ContractDeployer.deployToAccount(
+        'external_contracts/eosio.msig/eosio.msig',
+        new Account('eosio.msig')
+      ),
+      'deployed custom msig'
+    );
 
     this.eosio_msig = await ContractLoader.at('eosio.msig');
+    this.eosio_token = await ContractLoader.at('eosio.token');
 
     // Configure Dac contracts
     this.dacdirectory_contract = await ContractDeployer.deployWithName(
@@ -115,7 +131,6 @@ export class SharedTestObjects {
 
     // Other objects
     this.configured_dac_memberterms = 'AgreedMemberTermsHashValue';
-    await this.add_token_contract_permissions();
   }
 
   async initDac(dacId: string, symbol: string, initialAsset: string) {
@@ -155,10 +170,18 @@ export class SharedTestObjects {
   async getRegMembers(
     dacId: string,
     initialDacAsset: string,
-    count: number = NUMBER_OF_REG_MEMBERS
+    count: number = NUMBER_OF_REG_MEMBERS,
+    options?: GetRegMembersOptions
   ): Promise<Account[]> {
-    let newMembers = await AccountManager.createAccounts(count, null, {
-      privateKey: '5KDFWhsMK3fuze6yXgFRmVDEEE5kbQJrJYCBhGKV2KWHCbjsYYy',
+    let _names: string[] = [];
+    if (options && options.namePrefix) {
+      for (let i = 0; i < count; i++) {
+        _names.push(`${options.namePrefix}${i.toString(5)}`.replace('0', 'a'));
+      }
+    }
+    let names = _names.length > 0 ? _names : null;
+    let newMembers = await AccountManager.createAccounts(count, names, {
+      privateKey: EOSManager.adminAccount.privateKey,
     });
 
     let termsPromises = newMembers
@@ -195,9 +218,15 @@ export class SharedTestObjects {
   async getStakeObservedCandidates(
     dacId: string,
     dacStakeAsset: string,
-    count: number = NUMBER_OF_CANDIDATES
+    count: number = NUMBER_OF_CANDIDATES,
+    options?: GetRegMembersOptions
   ): Promise<Account[]> {
-    let newCandidates = await this.getRegMembers(dacId, dacStakeAsset, count);
+    let newCandidates = await this.getRegMembers(
+      dacId,
+      dacStakeAsset,
+      count,
+      options
+    );
     for (let { candidate, index } of newCandidates.map((candidate, index) => ({
       candidate,
       index,
@@ -302,7 +331,7 @@ export class SharedTestObjects {
           key: Account_type.TREASURY,
           value: this.treasury_account.name,
         },
-        { key: Account_type.SERVICE, value: '' },
+        { key: Account_type.SERVICE, value: this.service_Account.name },
       ],
       {
         auths: [
@@ -310,425 +339,6 @@ export class SharedTestObjects {
           { actor: this.treasury_account.name, permission: 'active' },
         ],
       }
-    );
-  }
-
-  private async add_token_contract_permissions() {
-    await debugPromise(
-      UpdateAuth.execUpdateAuth(
-        this.dac_token_contract.account.active,
-        this.dac_token_contract.account.name,
-        'issue',
-        'active',
-        UpdateAuth.AuthorityToSet.forContractCode(
-          this.dac_token_contract.account
-        )
-      ),
-      'add issue auth'
-    );
-
-    await debugPromise(
-      UpdateAuth.execUpdateAuth(
-        this.dac_token_contract.account.active,
-        this.dac_token_contract.account.name,
-        'notify',
-        'active',
-        UpdateAuth.AuthorityToSet.forContractCode(
-          this.dac_token_contract.account
-        )
-      ),
-      'add notify auth'
-    );
-
-    await debugPromise(
-      UpdateAuth.execUpdateAuth(
-        this.dac_token_contract.account.active,
-        this.dac_token_contract.account.name,
-        'xfer',
-        'active',
-        UpdateAuth.AuthorityToSet.forContractCode(
-          this.dac_token_contract.account
-        )
-      ),
-      'add xfer auth to eosdactoken'
-    );
-
-    await debugPromise(
-      UpdateAuth.execUpdateAuth(
-        this.treasury_account.active,
-        this.treasury_account.name,
-        'escrow',
-        'active',
-        UpdateAuth.AuthorityToSet.forContractCode(
-          this.dacproposals_contract.account
-        )
-      ),
-      'add escrow auth'
-    );
-
-    await debugPromise(
-      UpdateAuth.execUpdateAuth(
-        this.treasury_account.active,
-        this.treasury_account.name,
-        'xfer',
-        'active',
-        UpdateAuth.AuthorityToSet.explicitAuthorities(1, [
-          {
-            permission: {
-              actor: this.daccustodian_contract.account.name,
-              permission: 'eosio.code',
-            },
-            weight: 1,
-          },
-          {
-            permission: {
-              actor: this.dacproposals_contract.account.name,
-              permission: 'eosio.code',
-            },
-            weight: 1,
-          },
-        ])
-      ),
-      'add xfer to treasury'
-    );
-
-    await debugPromise(
-      UpdateAuth.execUpdateAuth(
-        this.daccustodian_contract.account.active,
-        this.daccustodian_contract.account.name,
-        'pay',
-        'active',
-        UpdateAuth.AuthorityToSet.explicitAuthorities(1, [
-          {
-            permission: {
-              actor: this.daccustodian_contract.account.name,
-              permission: 'eosio.code',
-            },
-            weight: 1,
-          },
-          {
-            permission: {
-              actor: this.dacproposals_contract.account.name,
-              permission: 'eosio.code',
-            },
-            weight: 1,
-          },
-        ])
-      ),
-      'add pay auth to daccustodian'
-    );
-
-    await debugPromise(
-      UpdateAuth.execUpdateAuth(
-        this.auth_account.owner,
-        this.auth_account.name,
-        'high',
-        'active',
-        UpdateAuth.AuthorityToSet.forContractCode(
-          this.daccustodian_contract.account
-        )
-      ),
-      'add high auth'
-    );
-
-    await debugPromise(
-      UpdateAuth.execUpdateAuth(
-        this.auth_account.owner,
-        this.auth_account.name,
-        'owner',
-        '',
-        UpdateAuth.AuthorityToSet.forContractCode(
-          this.daccustodian_contract.account
-        )
-      ),
-      'change owner of auth_account'
-    );
-
-    await debugPromise(
-      UpdateAuth.execUpdateAuth(
-        this.daccustodian_contract.account.owner,
-        this.daccustodian_contract.account.name,
-        'owner',
-        '',
-        UpdateAuth.AuthorityToSet.forAccount(this.auth_account, 'active')
-      ),
-      'changing owner of daccustodian'
-    );
-
-    await debugPromise(
-      UpdateAuth.execUpdateAuth(
-        this.daccustodian_contract.account.owner,
-        this.daccustodian_contract.account.name,
-        'active',
-        'owner',
-        UpdateAuth.AuthorityToSet.forAccount(this.auth_account, 'active')
-      ),
-      'change active of daccustodian'
-    );
-
-    await debugPromise(
-      UpdateAuth.execUpdateAuth(
-        this.dacescrow_contract.account.owner,
-        this.dacescrow_contract.account.name,
-        'active',
-        'owner',
-        UpdateAuth.AuthorityToSet.forContractCode(
-          this.dacescrow_contract.account
-        )
-      ),
-      'change active of escrow to daccustodian'
-    );
-
-    await debugPromise(
-      UpdateAuth.execUpdateAuth(
-        this.dacproposals_contract.account.owner,
-        this.dacproposals_contract.account.name,
-        'active',
-        'owner',
-        UpdateAuth.AuthorityToSet.forContractCode(
-          this.dacproposals_contract.account
-        )
-      ),
-      'change active of escrow to dacproposals'
-    );
-
-    await debugPromise(
-      UpdateAuth.execUpdateAuth(
-        this.auth_account.active,
-        this.auth_account.name,
-        'med',
-        'high',
-        UpdateAuth.AuthorityToSet.forContractCode(
-          this.daccustodian_contract.account
-        )
-      ),
-      'add med auth'
-    );
-
-    await debugPromise(
-      UpdateAuth.execUpdateAuth(
-        this.auth_account.active,
-        this.auth_account.name,
-        'low',
-        'med',
-        UpdateAuth.AuthorityToSet.forContractCode(
-          this.daccustodian_contract.account
-        )
-      ),
-      'add low auth'
-    );
-
-    await debugPromise(
-      UpdateAuth.execUpdateAuth(
-        this.auth_account.active,
-        this.auth_account.name,
-        'one',
-        'low',
-        UpdateAuth.AuthorityToSet.forContractCode(
-          this.daccustodian_contract.account
-        )
-      ),
-      'add one auth'
-    );
-
-    await debugPromise(
-      UpdateAuth.execUpdateAuth(
-        this.auth_account.active,
-        this.auth_account.name,
-        'admin',
-        'one',
-        UpdateAuth.AuthorityToSet.forContractCode(
-          this.daccustodian_contract.account
-        )
-      ),
-      'add admin auth'
-    );
-
-    await debugPromise(
-      UpdateAuth.execUpdateAuth(
-        this.daccustodian_contract.account.active,
-        this.daccustodian_contract.account.name,
-        'xfer',
-        'active',
-        UpdateAuth.AuthorityToSet.explicitAuthorities(1, [
-          {
-            permission: {
-              actor: this.daccustodian_contract.account.name,
-              permission: 'eosio.code',
-            },
-            weight: 1,
-          },
-          {
-            permission: {
-              actor: this.auth_account.name,
-              permission: 'med',
-            },
-            weight: 1,
-          },
-        ])
-      ),
-      'add xfer to daccustodian'
-    );
-
-    await UpdateAuth.execLinkAuth(
-      this.dac_token_contract.account.active,
-      this.dac_token_contract.account.name,
-      this.dac_token_contract.account.name,
-      'issue',
-      'issue'
-    );
-
-    await UpdateAuth.execLinkAuth(
-      this.dac_token_contract.account.active,
-      this.dac_token_contract.account.name,
-      this.dac_token_contract.account.name,
-      'weightobsv',
-      'notify'
-    );
-
-    await UpdateAuth.execLinkAuth(
-      this.treasury_account.active,
-      this.treasury_account.name,
-      this.dacescrow_contract.account.name,
-      'init',
-      'escrow'
-    );
-
-    await debugPromise(
-      UpdateAuth.execLinkAuth(
-        this.treasury_account.active,
-        this.treasury_account.name,
-        this.dacescrow_contract.account.name,
-        'approve',
-        'escrow'
-      ),
-      'linking escrow perm to treasury'
-    );
-
-    await UpdateAuth.execLinkAuth(
-      this.treasury_account.active,
-      this.treasury_account.name,
-      'eosio.token',
-      'transfer',
-      'xfer'
-    );
-
-    await UpdateAuth.execLinkAuth(
-      this.treasury_account.active,
-      this.treasury_account.name,
-      'eosdactokens',
-      'transfer',
-      'xfer'
-    );
-
-    await UpdateAuth.execLinkAuth(
-      this.treasury_account.active,
-      this.treasury_account.name,
-      'eosio.msig',
-      'approve',
-      'xfer'
-    );
-
-    await debugPromise(
-      UpdateAuth.execLinkAuth(
-        this.daccustodian_contract.account.active,
-        this.daccustodian_contract.account.name,
-        'eosio.msig',
-        'approve',
-        'pay'
-      ),
-      'link auth for approve on msig'
-    );
-
-    await debugPromise(
-      UpdateAuth.execLinkAuth(
-        this.daccustodian_contract.account.active,
-        this.daccustodian_contract.account.name,
-        this.daccustodian_contract.account.name,
-        'dummyaction',
-        'xfer'
-      ),
-      'link auth for approve on msig'
-    );
-
-    await UpdateAuth.execLinkAuth(
-      this.dac_token_contract.account.active,
-      this.dac_token_contract.account.name,
-      this.daccustodian_contract.account.name,
-      'stakeobsv',
-      'notify'
-    );
-
-    await UpdateAuth.execLinkAuth(
-      this.dac_token_contract.account.active,
-      this.dac_token_contract.account.name,
-      this.dac_token_contract.account.name,
-      'refund',
-      'notify'
-    );
-
-    await UpdateAuth.execLinkAuth(
-      this.dac_token_contract.account.active,
-      this.dac_token_contract.account.name,
-      this.daccustodian_contract.account.name,
-      'balanceobsv',
-      'notify'
-    );
-
-    await UpdateAuth.execLinkAuth(
-      this.dac_token_contract.account.active,
-      this.dac_token_contract.account.name,
-      this.daccustodian_contract.account.name,
-      'capturestake',
-      'notify'
-    );
-
-    await UpdateAuth.execLinkAuth(
-      this.dac_token_contract.account.active,
-      this.dac_token_contract.account.name,
-      this.dac_token_contract.account.name,
-      'transfer',
-      'xfer'
-    );
-
-    await UpdateAuth.execLinkAuth(
-      this.daccustodian_contract.account.active,
-      this.daccustodian_contract.account.name,
-      'eosio.msig',
-      'propose',
-      'xfer'
-    );
-
-    await UpdateAuth.execLinkAuth(
-      this.daccustodian_contract.account.active,
-      this.daccustodian_contract.account.name,
-      'eosio.msig',
-      'approve',
-      'xfer'
-    );
-
-    await UpdateAuth.execLinkAuth(
-      this.daccustodian_contract.account.active,
-      this.daccustodian_contract.account.name,
-      this.dac_token_contract.account.name,
-      'transfer',
-      'xfer'
-    );
-
-    await UpdateAuth.execLinkAuth(
-      this.daccustodian_contract.account.active,
-      this.daccustodian_contract.account.name,
-      this.daccustodian_contract.account.name,
-      'removecuspay',
-      'xfer'
-    );
-
-    await UpdateAuth.execLinkAuth(
-      this.daccustodian_contract.account.active,
-      this.daccustodian_contract.account.name,
-      this.daccustodian_contract.account.name,
-      'clearstake',
-      'pay'
     );
   }
 

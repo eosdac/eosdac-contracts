@@ -11,6 +11,9 @@
 using namespace eosio;
 using namespace std;
 
+#define TRANSFER_EXPIRATION 30 * 24 * 60 * 60
+#define TRANSFER_DELAY 30
+
 namespace eosdac {
 
     CONTRACT dacproposals : public contract {
