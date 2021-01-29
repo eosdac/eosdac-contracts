@@ -168,9 +168,11 @@ void daccustodian::validateMinStake(name account, name dac_id) {
     contr_config   configs        = contr_config::get_current_configs(get_self(), dac_id);
     extended_asset required_stake = configs.lockupasset;
 
-    asset staked = eosdac::get_staked(account, required_stake.contract, required_stake.quantity.symbol);
-    print("Staked : ", staked, "\nRequired : ", required_stake.quantity);
-    check(staked.amount >= required_stake.quantity.amount, "ERR::VALIDATEMINSTAKE_NOT_ENOUGH::Not staked enough");
+    if (required_stake.quantity.amount > 0){
+        asset staked = eosdac::get_staked(account, required_stake.contract, required_stake.quantity.symbol);
+        print("Staked : ", staked, "\nRequired : ", required_stake.quantity);
+        check(staked.amount >= required_stake.quantity.amount, "ERR::VALIDATEMINSTAKE_NOT_ENOUGH::Not staked enough");
+    }
 }
 
 void daccustodian::removeCustodian(name cust, name dac_id) {
