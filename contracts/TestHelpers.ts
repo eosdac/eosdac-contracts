@@ -64,26 +64,26 @@ export class SharedTestObjects {
 
     // Configure Dac contracts
     this.dacdirectory_contract = await ContractDeployer.deployWithName(
-      'dac_contracts/dacdirectory/dacdirectory',
+      'contracts/dacdirectory/dacdirectory',
       'dacdirectory'
     );
     this.daccustodian_contract = await debugPromise(
       ContractDeployer.deployWithName(
-        'dac_contracts/daccustodian/daccustodian',
+        'contracts/daccustodian/daccustodian',
         'daccustodian'
       ),
       'created daccustodian'
     );
     this.dac_token_contract = await debugPromise(
       ContractDeployer.deployWithName(
-        'dac_contracts/eosdactokens/eosdactokens',
+        'contracts/eosdactokens/eosdactokens',
         'eosdactokens'
       ),
       'created eosdactokens'
     );
     this.dacproposals_contract = await debugPromise(
       ContractDeployer.deployWithName(
-        'dac_contracts/dacproposals/dacproposals',
+        'contracts/dacproposals/dacproposals',
         'dacproposals'
       ),
       'created dacproposals'
@@ -91,7 +91,7 @@ export class SharedTestObjects {
     await sleep(2000);
     this.dacescrow_contract = await debugPromise(
       ContractDeployer.deployWithName(
-        'dac_contracts/dacescrow/dacescrow',
+        'contracts/dacescrow/dacescrow',
         'dacescrow'
       ),
       'created dacescrow'
