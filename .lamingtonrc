@@ -1,7 +1,7 @@
 {
-    "cdt": "https://github.com/EOSIO/eosio.cdt/releases/download/v1.6.3/eosio.cdt_1.6.3-1-ubuntu-18.04_amd64.deb",
+    "cdt": "https://github.com/EOSIO/eosio.cdt/releases/download/v1.8.1/eosio.cdt_1.8.1-1-ubuntu-18.04_amd64.deb",
     "eos": "https://github.com/EOSIO/eos/releases/download/v2.0.13/eosio_2.0.13-1-ubuntu-18.04_amd64.deb",
-    "contracts": "v1.8.3",
+    "contracts": "v1.9.2",
     "debug": 0,
     "debugTransactions": false,
     "keepAlive": false,
