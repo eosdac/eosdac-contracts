@@ -267,7 +267,7 @@ export class SharedTestObjects {
       dacId,
       {
         contract: this.dac_token_contract.account.name,
-        symbol: tokenSymbol,
+        sym: tokenSymbol,
       },
       'dac_title',
       [],
