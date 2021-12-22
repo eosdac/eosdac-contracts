@@ -542,13 +542,17 @@ namespace eosdac {
 
     void eosdactokens::send_balance_notification(vector<account_balance_delta> account_weights, dacdir::dac dac_inst) {
 
-        eosio::name custodian_contract = dac_inst.account_for_type(dacdir::CUSTODIAN);
-        eosio::name vote_contract      = dac_inst.account_for_type(dacdir::VOTE_WEIGHT);
-
-        eosio::name balance_obsv_contract = custodian_contract;
-        if (vote_contract && is_account(vote_contract)) {
-            balance_obsv_contract = vote_contract;
+        const auto custodian_contract = dac_inst.account_for_type_maybe(dacdir::CUSTODIAN);
+        const auto vote_contract      = dac_inst.account_for_type_maybe(dacdir::VOTE_WEIGHT);
+        
+        eosio::name balance_obsv_contract;
+        if(vote_contract && is_account(*vote_contract)) {
+          balance_obsv_contract = *vote_contract;
+        } else {
+          check(custodian_contract.has_value(), "Neither vote_contract nor custodian_contract set");
+          balance_obsv_contract = *custodian_contract;
         }
+        
 
         eosio::action(eosio::permission_level{get_self(), "notify"_n}, balance_obsv_contract, "balanceobsv"_n,
             make_tuple(account_weights, dac_inst.dac_id))
