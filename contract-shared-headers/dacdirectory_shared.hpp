@@ -53,7 +53,9 @@ namespace eosdac {
 
             eosio::name account_for_type(uint8_t type) const {
                 eosio::print("\ngetting account for type: ", type, "\n");
-                return accounts.at(type);
+                const auto x = accounts.find(type);
+                check(x != accounts.end(), "Err:account_for_type: Account not found!");
+                return x->second;
             }
 
             uint64_t  primary_key() const { return dac_id.value; }
