@@ -35,3 +35,4 @@ node_modules
 /artifacts/compiled_contracts/contracts/daccustodian/daccustodian.abi
 /yarn-error.log
 /yarn.lock
+.DS_Store
