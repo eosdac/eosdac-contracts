@@ -212,26 +212,25 @@ void daccustodian::setCustodianAuths(name dac_id) {
 void daccustodian::newperiod(string message) { check(false, "This action is deprecated call `newperiode` instead."); }
 
 void daccustodian::newperiode(string message, name dac_id) {
-    name auth_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::AUTH);
-
+    const auto auth_account = dacdir::dac_for_id(dac_id).account_for_type_maybe(dacdir::AUTH);
+    const auto sender = auth_account ? *auth_account : get_self();
     eosio::action(
-        eosio::permission_level{auth_account, "owner"_n}, get_self(), "runnewperiod"_n, make_tuple(message, dac_id))
+        eosio::permission_level{sender, "owner"_n}, get_self(), "runnewperiod"_n, make_tuple(message, dac_id))
         .send();
 }
 
 void daccustodian::runnewperiod(string message, name dac_id) {
-
     contr_config configs      = contr_config::get_current_configs(get_self(), dac_id);
     contr_state  currentState = contr_state::get_current_state(get_self(), dac_id);
     assertPeriodTime(configs, currentState);
 
     dacdir::dac found_dac          = dacdir::dac_for_id(dac_id);
-    name        activation_account = found_dac.account_for_type(dacdir::ACTIVATION);
+    const auto activation_account = found_dac.account_for_type_maybe(dacdir::ACTIVATION);
 
     if (activation_account) {
-        print("\n\nSending notification to ", activation_account, "::assertunlock");
+        print("\n\nSending notification to ", *activation_account, "::assertunlock");
 
-        action(permission_level{activation_account, "notify"_n}, activation_account, "assertunlock"_n,
+        action(permission_level{*activation_account, "notify"_n}, *activation_account, "assertunlock"_n,
             std::make_tuple(dac_id))
             .send();
     } else {

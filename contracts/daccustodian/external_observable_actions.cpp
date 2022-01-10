@@ -20,9 +20,9 @@ void daccustodian::weightobsv(vector<account_weight_delta> account_weight_deltas
     auto dac            = dacdir::dac_for_id(dac_id);
     auto token_contract = dac.symbol.get_contract();
 
-    auto router_account = dac.account_for_type(dacdir::VOTE_WEIGHT);
-
-    check(has_auth(token_contract) || has_auth(router_account),
+    const auto router_account = dac.account_for_type_maybe(dacdir::VOTE_WEIGHT);
+    
+    check(has_auth(token_contract) || (router_account && has_auth(*router_account) ),
         "Must have auth of token or router contract to call weightobsv");
 
     votes_table votes_cast_by_members(get_self(), dac_id.value);
@@ -43,9 +43,9 @@ void daccustodian::stakeobsv(vector<account_stake_delta> account_stake_deltas, n
     auto dac            = dacdir::dac_for_id(dac_id);
     auto token_contract = dac.symbol.get_contract();
 
-    auto router_account = dac.account_for_type(dacdir::VOTE_WEIGHT);
+    const auto router_account = dac.account_for_type_maybe(dacdir::VOTE_WEIGHT);
 
-    check(has_auth(token_contract) || has_auth(router_account),
+    check(has_auth(token_contract) || (router_account && has_auth(*router_account)),
         "Must have auth of token or router contract to call stakeobsv");
 
     // check if the custodian is allowed to unstake beyond the minimum

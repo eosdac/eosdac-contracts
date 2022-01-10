@@ -327,7 +327,6 @@ namespace eosdac {
     void eosdactokens::stake(name account, asset quantity) {
         require_auth(account);
         dacdir::dac dac                = dacdir::dac_for_symbol(extended_symbol{quantity.symbol, get_self()});
-        eosio::name custodian_contract = dac.account_for_type(dacdir::CUSTODIAN);
 
         stake_config config = stake_config::get_current_configs(get_self(), dac.dac_id);
         check(config.enabled, "ERR::STAKING_NOT_ENABLED::Staking is not enabled for this token");
@@ -515,15 +514,15 @@ namespace eosdac {
     }
 
     void eosdactokens::send_stake_notification(name account, asset stake, dacdir::dac dac_inst) {
-        name custodian_contract  = dac_inst.account_for_type(dacdir::CUSTODIAN);
-        name vote_contract       = dac_inst.account_for_type(dacdir::VOTE_WEIGHT);
-        name referendum_contract = dac_inst.account_for_type(dacdir::REFERENDUM);
-        name notify_contract     = (vote_contract) ? vote_contract : custodian_contract;
-
+        const auto custodian_contract  = dac_inst.account_for_type_maybe(dacdir::CUSTODIAN);
+        const auto vote_contract       = dac_inst.account_for_type_maybe(dacdir::VOTE_WEIGHT);
+        const auto referendum_contract = dac_inst.account_for_type_maybe(dacdir::REFERENDUM);
+        name notify_contract     = (vote_contract) ? *vote_contract : *custodian_contract;
         stake_config     config        = stake_config::get_current_configs(get_self(), dac_inst.dac_id);
         uint32_t         unstake_delay = config.min_stake_time;
         staketimes_table staketimes(get_self(), dac_inst.dac_id.value);
         auto             existing_staketime = staketimes.find(account.value);
+        
         if (existing_staketime != staketimes.end()) {
             unstake_delay = existing_staketime->delay;
         }
@@ -532,9 +531,9 @@ namespace eosdac {
         action(permission_level{get_self(), "notify"_n}, notify_contract, "stakeobsv"_n,
             make_tuple(stake_deltas, dac_inst.dac_id))
             .send();
-
-        if (referendum_contract && is_account(referendum_contract)) {
-            action(permission_level{get_self(), "notify"_n}, referendum_contract, "stakeobsv"_n,
+        
+        if (referendum_contract && is_account(*referendum_contract)) {
+            action(permission_level{get_self(), "notify"_n}, *referendum_contract, "stakeobsv"_n,
                 make_tuple(stake_deltas, dac_inst.dac_id))
                 .send();
         }
