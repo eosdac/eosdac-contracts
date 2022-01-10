@@ -12,18 +12,10 @@ namespace eosdac {
         void dacdirectory::regdac(eosio::name owner, eosio::name dac_id, extended_symbol dac_symbol, string title,
             map<uint8_t, string> refs, map<uint8_t, eosio::name> accounts) {
             require_auth(owner);
-
-            vector<name> forbidden(6);
-            forbidden.push_back("admin"_n);
-            forbidden.push_back("builder"_n);
-            forbidden.push_back("members"_n);
-            forbidden.push_back("dacauthority"_n);
-            forbidden.push_back("daccustodian"_n);
-            forbidden.push_back("eosdactokens"_n);
-
+            
+            const vector<name> forbidden{"admin"_n, "builder"_n, "members"_n, "dacauthority"_n, "daccustodian"_n, "eosdactokens"_n};
             check(std::find(forbidden.begin(), forbidden.end(), dac_id) == forbidden.end(),
                 "ERR::DAC_FORBIDDEN_NAME::DAC ID is forbidden");
-
             auto existing = _dacs.find(dac_id.value);
 
             auto symbol_idx          = _dacs.get_index<"bysymbol"_n>();
@@ -53,10 +45,10 @@ namespace eosdac {
                 }
                 check(length > 4, "ERR::DAC_ID_SHORT::DAC ID must be at least 5 characters");
 
-                if (accounts.at(AUTH)) {
+                if (accounts.find(AUTH) != accounts.end()) {
                     require_auth(accounts.at(AUTH));
                 }
-                if (accounts.at(TREASURY)) {
+                if (accounts.find(TREASURY) != accounts.end()) {
                     require_auth(accounts.at(TREASURY));
                 }
 

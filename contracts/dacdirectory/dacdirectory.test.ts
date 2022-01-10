@@ -19,7 +19,7 @@ describe('Dacdirectory', () => {
         shared.dacdirectory_contract.regdac(
           shared.auth_account.name,
           'admin',
-          { contract: shared.dac_token_contract.account.name, symbol: '4,DAO' },
+          { contract: shared.dac_token_contract.account.name, sym: '4,DAO' },
           'dactitle',
           [],
           [],
@@ -35,7 +35,7 @@ describe('Dacdirectory', () => {
         shared.dacdirectory_contract.regdac(
           shared.auth_account.name,
           'builder',
-          { contract: shared.dac_token_contract.account.name, symbol: '4,DAO' },
+          { contract: shared.dac_token_contract.account.name, sym: '4,DAO' },
           'dactitle',
           [],
           [],
@@ -51,7 +51,7 @@ describe('Dacdirectory', () => {
         shared.dacdirectory_contract.regdac(
           shared.auth_account.name,
           'members',
-          { contract: shared.dac_token_contract.account.name, symbol: '4,DAO' },
+          { contract: shared.dac_token_contract.account.name, sym: '4,DAO' },
           'dactitle',
           [],
           [],
@@ -67,7 +67,7 @@ describe('Dacdirectory', () => {
         shared.dacdirectory_contract.regdac(
           shared.auth_account.name,
           'dacauthority',
-          { contract: shared.dac_token_contract.account.name, symbol: '4,DAO' },
+          { contract: shared.dac_token_contract.account.name, sym: '4,DAO' },
           'dactitle',
           [],
           [],
@@ -83,7 +83,7 @@ describe('Dacdirectory', () => {
         shared.dacdirectory_contract.regdac(
           shared.auth_account.name,
           'daccustodian',
-          { contract: shared.dac_token_contract.account.name, symbol: '4,DAO' },
+          { contract: shared.dac_token_contract.account.name, sym: '4,DAO' },
           'dactitle',
           [],
           [],
@@ -99,7 +99,7 @@ describe('Dacdirectory', () => {
         shared.dacdirectory_contract.regdac(
           shared.auth_account.name,
           'eosdactokens',
-          { contract: shared.dac_token_contract.account.name, symbol: '4,DAO' },
+          { contract: shared.dac_token_contract.account.name, sym: '4,DAO' },
           'dactitle',
           [],
           [],
@@ -115,7 +115,7 @@ describe('Dacdirectory', () => {
         shared.dacdirectory_contract.regdac(
           shared.auth_account.name,
           'ot.herdac',
-          { contract: shared.dac_token_contract.account.name, symbol: '4,DAO' },
+          { contract: shared.dac_token_contract.account.name, sym: '4,DAO' },
           'dactitle',
           [],
           [],
@@ -131,7 +131,7 @@ describe('Dacdirectory', () => {
         shared.dacdirectory_contract.regdac(
           shared.auth_account.name,
           'othe',
-          { contract: shared.dac_token_contract.account.name, symbol: '4,DAO' },
+          { contract: shared.dac_token_contract.account.name, sym: '4,DAO' },
           'dactitle',
           [],
           [],
@@ -147,7 +147,7 @@ describe('Dacdirectory', () => {
         shared.dacdirectory_contract.regdac(
           shared.auth_account.name,
           'othe',
-          { contract: shared.dac_token_contract.account.name, symbol: '4,DAO' },
+          { contract: shared.dac_token_contract.account.name, sym: '4,DAO' },
           'dactitle',
           [],
           [],
@@ -162,7 +162,7 @@ describe('Dacdirectory', () => {
       await shared.dacdirectory_contract.regdac(
         shared.auth_account.name,
         'legaldacid',
-        { contract: shared.dac_token_contract.account.name, symbol: '4,DAO' },
+        { contract: shared.dac_token_contract.account.name, sym: '4,DAO' },
         'dactitle',
         [],
         [],
@@ -185,14 +185,14 @@ describe('Dacdirectory', () => {
       chai
         .expect(dac.symbol.contract)
         .to.equal(shared.dac_token_contract.account.name);
-      chai.expect(dac.symbol.symbol).to.equal('4,DAO');
+      chai.expect(dac.symbol.sym).to.equal('4,DAO');
       chai.expect(dac.title).to.equal('dactitle');
     });
     it('Should fail for a token that already has a DAC', async () => {
       await shared.dacdirectory_contract.regdac(
         shared.auth_account.name,
         legaldacid,
-        { contract: shared.dac_token_contract.account.name, symbol: '4,DAO' },
+        { contract: shared.dac_token_contract.account.name, sym: '4,DAO' },
         'dactitle',
         [],
         [],
@@ -205,7 +205,7 @@ describe('Dacdirectory', () => {
         shared.dacdirectory_contract.regdac(
           shared.auth_account.name,
           'otherdac',
-          { contract: shared.dac_token_contract.account.name, symbol: '4,DAO' },
+          { contract: shared.dac_token_contract.account.name, sym: '4,DAO' },
           'dactitle',
           [],
           [],
