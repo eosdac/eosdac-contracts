@@ -10,7 +10,6 @@
 
 #include "config.cpp"
 #include "external_observable_actions.cpp"
-#include "migration.cpp"
 #include "newperiod_components.cpp"
 #include "pay_handling.cpp"
 #include "paycpu.cpp"

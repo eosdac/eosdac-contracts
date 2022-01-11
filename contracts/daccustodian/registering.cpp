@@ -4,10 +4,6 @@
 
 using namespace eosdac;
 
-void daccustodian::nominatecand(name cand, asset requestedpay) {
-    check(false, "ERR::DEPRECATED_NOMINATECAND::This action is deprecated call `nominatecane` instead.");
-}
-
 void daccustodian::nominatecane(name cand, asset requestedpay, name dac_id) {
     require_auth(cand);
     assertValidMember(cand, dac_id);
@@ -50,17 +46,9 @@ void daccustodian::nominatecane(name cand, asset requestedpay, name dac_id) {
     }
 }
 
-void daccustodian::withdrawcand(name cand) {
-    check(false, "ERR::DEPRECATED_WITHDRAWCAND::This action is deprecated call `withdrawcane` instead.");
-}
-
 void daccustodian::withdrawcane(name cand, name dac_id) {
     require_auth(cand);
     removeCandidate(cand, false, dac_id);
-}
-
-void daccustodian::firecand(name cand, bool lockupStake) {
-    check(false, "ERR::DEPRECATED_FIRECAND::This action is deprecated call `firecande` instead.");
 }
 
 void daccustodian::firecande(name cand, bool lockupStake, name dac_id) {
@@ -69,25 +57,9 @@ void daccustodian::firecande(name cand, bool lockupStake, name dac_id) {
     removeCandidate(cand, lockupStake, dac_id);
 }
 
-void daccustodian::unstake(name cand) {
-    check(false, "ERR::DEPRECATED_UNSTAKE::This action is deprecated call `unstakee` instead.");
-}
-
-void daccustodian::unstakee(name cand, name dac_id) {
-    check(false, "ERR::UNSTAKING_TOKEN::Unstake via the token contract unstake action");
-}
-
-void daccustodian::resigncust(name cust) {
-    check(false, "ERR::DEPRECATED_RESIGNCUST::This action is deprecated call `resigncuste` instead.");
-}
-
 void daccustodian::resigncuste(name cust, name dac_id) {
     require_auth(cust);
     removeCustodian(cust, dac_id);
-}
-
-void daccustodian::firecust(name cust) {
-    check(false, "ERR::DEPRECATED_FIRECUST::This action is deprecated call `firecuste` instead.");
 }
 
 void daccustodian::firecuste(name cust, name dac_id) {

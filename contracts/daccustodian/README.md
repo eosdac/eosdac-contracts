@@ -61,108 +61,105 @@ All of the active actions require a `dac_id (account_name)` parameter to be pass
 ## Actions
 
 ---
+
 ### appointcust
 
 ##### Assertions:
 
 ##### Parameters:
 
-	cust 	- Custodian account name
-	dac_id	- The ID for the DAC that is appointing custodian	
+    cust 	- Custodian account name
+    dac_id	- The ID for the DAC that is appointing custodian
 
 ##### Post Condition:
-
 
 ### balanceobsv
 
 ##### Assertions:
 
 ##### Parameters:
-	account_balance_deltas	-
-	dac_id			-
+
+    account_balance_deltas	-
+    dac_id			-
 
 ##### Post Condition:
-
-
 
 ### capturestake
 
 ##### Assertions:
 
 ##### Parameters:
-	from		-
-	quantity	-	
-	dac_id		-
+
+    from		-
+    quantity	-
+    dac_id		-
 
 ##### Post Condition:
-
 
 ### clearold
 
 ##### Assertions:
 
 ##### Parameters:
-	batch_size	-
+
+    batch_size	-
 
 ##### Post Condition:
-
 
 ### clearstake
 
 ##### Assertions:
 
 ##### Parameters:
-	cand		- The account id for the candidate nominating.
-	new_value	-
-	dac_id		- The ID for the DAC
+
+    cand		- The account id for the candidate nominating.
+    new_value	-
+    dac_id		- The ID for the DAC
 
 ##### Post Condition:
-
 
 ### migrate
 
 ##### Assertions:
 
 ##### Parameters:
-	batch_size	-
+
+    batch_size	-
 
 ##### Post Condition:
-
 
 ### rejectcuspay
 
 ##### Assertions:
 
 ##### Parameters:
-	payid 		-
-	dac_id		-
+
+    payid 		-
+    dac_id		-
 
 ##### Post Condition:
-
 
 ### removecuspay
 
 ##### Assertions:
 
 ##### Parameters:
-	payid 		-
-	dac_id		-
 
-	
+    payid 		-
+    dac_id		-
 
 ##### Post Condition:
-
 
 ### runnewperiod
 
 ##### Assertions:
 
 ##### Parameters:
-	message		-
-	dac_id		-
+
+    message		-
+    dac_id		-
 
 ##### Post Condition:
-
 
 ### setperm
 
@@ -170,45 +167,45 @@ All of the active actions require a `dac_id (account_name)` parameter to be pass
 
 ##### Parameters:
 
-	cand		- The account id for the candidate nominating.
-	permission	-
-	dac_id		- The ID for the DAC
-##### Post Condition:
+    cand		- The account id for the candidate nominating.
+    permission	-
+    dac_id		- The ID for the DAC
 
+##### Post Condition:
 
 ### stakeobsv
 
 ##### Assertions:
 
 ##### Parameters:
-	account_stake_deltas	-
-	dac_id			- The ID for the DAC
+
+    account_stake_deltas	-
+    dac_id			- The ID for the DAC
 
 ##### Post Condition:
-
 
 ### stprofile
 
 ##### Assertions:
 
 ##### Parameters:
-	cand		- The account id for the candidate nominating.
-	profile		-
-	dac_id		- The ID for the DAC
+
+    cand		- The account id for the candidate nominating.
+    profile		-
+    dac_id		- The ID for the DAC
 
 ##### Post Condition:
-
 
 ### stprofileuns
 
 ##### Assertions:
 
 ##### Parameters:
-	cand 		- The account id for the candidate nominating.
-	profile		- 
+
+    cand 		- The account id for the candidate nominating.
+    profile		-
 
 ##### Post Condition:
-
 
 ### transferobsv
 
@@ -216,25 +213,23 @@ All of the active actions require a `dac_id (account_name)` parameter to be pass
 
 ##### Parameters:
 
-	from		-
-	to		-
-	quantity	-
-	dac_id		- The ID for the DAC
+    from		-
+    to		-
+    quantity	-
+    dac_id		- The ID for the DAC
 
 ##### Post Condition:
-
 
 ### weightobsv
 
 ##### Assertions:
 
 ##### Parameters:
-	account_weight_deltas	-
-	dac_id			- The ID for the DAC
+
+    account_weight_deltas	-
+    dac_id			- The ID for the DAC
 
 ##### Post Condition:
-
-
 
 ### nominatecane
 
@@ -414,6 +409,7 @@ This action asserts:
 If successful a new record should be added to the proxy table which is then used to track cumulative proxy weight from proxy voters.
 
 ---
+
 ### updateconfige
 
 ## unregproxy
@@ -476,13 +472,13 @@ This action is to be run to end and begin each period in the DAC life cycle. It 
 - After the initial vote quorum percent has been reached subsequent calls to this action will require a minimum of `vote_quorum_percent` to vote for the votes to be considered sufficient to trigger a new period with new custodians.
 
 ##### Parameters:
+
 ##### Assertions:
 
 ##### Parameters:
 
      message 	- a string that is used to log a message in the chain history logs. It serves no function in the contract logic.
      dac_id  	- The ID for the DAC
-
 
 ##### Post Condition:
 
@@ -570,6 +566,7 @@ This action is used to remove a custodian.
 The custodian will be removed from the active custodians and should still be present in the candidates table but will be set to inactive. Their staked tokens will be locked up for the time delay added from the moment this action was called so they will not able to unstake until that time has passed. A replacement custodian will be selected from the candidates to fill the missing place (based on vote ranking) then the auths for the controlling dac auth account will be set for the custodian board.
 
 ---
+
 ### paycpu
 
 This action does nothing except check that it has the authorisation of the authority account and that the `max_cpu_usage_ms` of the transaction is less than 5 but not 0.
@@ -590,7 +587,6 @@ If this action is the first in a transaction then the authority account of the D
 ---
 
 # Compile
-
 
 The contract code has some compile time constants used for configuration. As a compile time constant the code has more flexibility for reuse on other DACs, and an extra layer of safety over exposing another configuration variable which could be changed after the code has been set and the ability to unit test the code without needing to modify the source just for testing.
 The available compile time flags are:

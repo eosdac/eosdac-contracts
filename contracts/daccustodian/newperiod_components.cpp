@@ -209,8 +209,6 @@ void daccustodian::setCustodianAuths(name dac_id) {
     print("Got to the end of setting permissions.");
 }
 
-void daccustodian::newperiod(string message) { check(false, "This action is deprecated call `newperiode` instead."); }
-
 void daccustodian::newperiode(string message, name dac_id) {
     const auto auth_account = dacdir::dac_for_id(dac_id).account_for_type_maybe(dacdir::AUTH);
     const auto sender = auth_account ? *auth_account : get_self();

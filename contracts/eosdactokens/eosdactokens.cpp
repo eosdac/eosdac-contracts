@@ -166,10 +166,6 @@ namespace eosdac {
         }
     }
 
-    void eosdactokens::newmemterms(string terms, string hash) {
-        check(false, "This action is deprecated. Call `newmemtermse` instead.");
-    }
-
     void eosdactokens::newmemtermse(string terms, string hash, name dac_id) {
 
         dacdir::dac dac          = dacdir::dac_for_id(dac_id);
@@ -203,10 +199,6 @@ namespace eosdac {
         });
     }
 
-    void eosdactokens::memberreg(name sender, string agreedterms) {
-        check(false, "This action is deprecated. Call `memberrege` instead.");
-    }
-
     void eosdactokens::memberrege(name sender, string agreedterms, name dac_id) {
         // agreedterms is expected to be the member terms document hash
         require_auth(sender);
@@ -233,10 +225,6 @@ namespace eosdac {
         }
     }
 
-    void eosdactokens::updateterms(uint64_t termsid, string terms) {
-        check(false, "This action is deprecated. Call `updatetermse` instead.");
-    }
-
     void eosdactokens::updatetermse(uint64_t termsid, string terms, name dac_id) {
 
         dacdir::dac dac          = dacdir::dac_for_id(dac_id);
@@ -255,10 +243,6 @@ namespace eosdac {
         memberterms.modify(existingterms, same_payer, [&](termsinfo &t) {
             t.terms = terms;
         });
-    }
-
-    void eosdactokens::memberunreg(name sender) {
-        check(false, "This action is deprecated. Call `memberunrege` instead.");
     }
 
     void eosdactokens::memberunrege(name sender, name dac_id) {
@@ -555,13 +539,5 @@ namespace eosdac {
             .send();
 
         print("notifying balance change to ", balance_obsv_contract, "::balanceobsv");
-    }
-
-    ACTION eosdactokens::migrate(uint16_t batch_size) {}
-
-    ACTION eosdactokens::clearold(uint16_t batch_size) {
-        require_auth(_self);
-        cleanTable<regmembers>(_self, _self.value, batch_size);
-        cleanTable<memterms>(_self, _self.value, batch_size);
     }
 } // namespace eosdac

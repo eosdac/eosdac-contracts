@@ -2,10 +2,6 @@
 
 using namespace eosdac;
 
-void daccustodian::updatebio(name cand, string bio) {
-    check(false, "This action is deprecated call `updatebioe` instead.");
-}
-
 void daccustodian::updatebioe(name cand, string bio, name dac_id) {
 
     require_auth(cand);
@@ -15,10 +11,6 @@ void daccustodian::updatebioe(name cand, string bio, name dac_id) {
     const auto &reg_candidate = registered_candidates.get(
         cand.value, "ERR::UPDATEBIO_NOT_CURRENT_REG_CANDIDATE::Candidate is not already registered.");
     check(bio.size() < 256, "ERR::UPDATEBIO_BIO_SIZE_TOO_LONG::The bio should be less than 256 characters.");
-}
-
-void daccustodian::updatereqpay(name cand, asset requestedpay) {
-    check(false, "This action is deprecated call `updatereqpae` instead.");
 }
 
 void daccustodian::updatereqpae(name cand, asset requestedpay, name dac_id) {

@@ -33,13 +33,9 @@ namespace eosdac {
         ACTION burn(name from, asset quantity);
         ACTION transfer(name from, name to, asset quantity, string memo);
         ACTION newmemtermse(string terms, string hash, name dac_id);
-        ACTION newmemterms(string terms, string hash);
         ACTION memberrege(name sender, string agreedterms, name dac_id);
-        ACTION memberreg(name sender, string agreedterms);
         ACTION memberunrege(name sender, name dac_id);
-        ACTION memberunreg(name sender);
         ACTION updatetermse(uint64_t termsid, string terms, name dac_id);
-        ACTION updateterms(uint64_t termsid, string terms);
         ACTION close(name owner, const symbol &symbol);
 
         // staking
@@ -50,9 +46,6 @@ namespace eosdac {
         ACTION stakeconfig(stake_config config, symbol token_symbol);
         ACTION refund(uint64_t unstake_id, symbol token_symbol);
         ACTION cancel(uint64_t unstake_id, symbol token_symbol);
-
-        ACTION migrate(uint16_t batch);
-        ACTION clearold(uint16_t batch_size);
 
         TABLE stake_info {
             name  account;
