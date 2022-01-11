@@ -159,31 +159,31 @@ namespace eosdac {
       public:
         daccustodian(name s, name code, datastream<const char *> ds) : contract(s, code, ds) {}
 
-        ACTION updateconfige(contr_config newconfig, name dac_id);
+        ACTION updateconfig(contr_config newconfig, name dac_id);
         // ACTION transferobsv(name from, name to, asset quantity, name dac_id);
         ACTION balanceobsv(vector<account_balance_delta> account_balance_deltas, name dac_id);
         ACTION stakeobsv(vector<account_stake_delta> account_stake_deltas, name dac_id);
         ACTION weightobsv(vector<account_weight_delta> account_weight_deltas, name dac_id);
 
-        ACTION nominatecane(name cand, eosio::asset requestedpay, name dac_id);
-        ACTION withdrawcane(name cand, name dac_id);
-        ACTION firecande(name cand, bool lockupStake, name dac_id);
-        ACTION resigncuste(name cust, name dac_id);
-        ACTION firecuste(name cust, name dac_id);
+        ACTION nominatecand(name cand, eosio::asset requestedpay, name dac_id);
+        ACTION withdrawcand(name cand, name dac_id);
+        ACTION firecand(name cand, bool lockupStake, name dac_id);
+        ACTION resigncust(name cust, name dac_id);
+        ACTION firecust(name cust, name dac_id);
         ACTION appointcust(vector<name> cust, name dac_id);
-        ACTION updatebioe(name cand, std::string bio, name dac_id);
+        ACTION updatebio(name cand, std::string bio, name dac_id);
 
         [[eosio::action]] inline void stprofile(name cand, std::string profile, name dac_id) { require_auth(cand); };
 
         [[eosio::action]] inline void stprofileuns(name cand, std::string profile) { require_auth(cand); };
-        ACTION                        updatereqpae(name cand, eosio::asset requestedpay, name dac_id);
-        ACTION                        votecuste(name voter, std::vector<name> newvotes, name dac_id);
+        ACTION                        updatereqpay(name cand, eosio::asset requestedpay, name dac_id);
+        ACTION                        votecust(name voter, std::vector<name> newvotes, name dac_id);
         ACTION                        voteproxy(name voter, name proxy, name dac_id);
         ACTION                        regproxy(name proxy, name dac_id);
         ACTION                        unregproxy(name proxy, name dac_id);
-        ACTION                        newperiode(std::string message, name dac_id);
+        ACTION                        newperiod(std::string message, name dac_id);
         ACTION                        runnewperiod(std::string message, name dac_id);
-        ACTION                        claimpaye(uint64_t payid, name dac_id);
+        ACTION                        claimpay(uint64_t payid, name dac_id);
         ACTION                        removecuspay(uint64_t payid, name dac_id);
         ACTION                        rejectcuspay(uint64_t payid, name dac_id);
         ACTION                        paycpu(name dac_id);

@@ -2,7 +2,7 @@
 using namespace eosdac;
 
 
-void daccustodian::updateconfige(contr_config new_config, name dac_id) {
+void daccustodian::updateconfig(contr_config new_config, name dac_id) {
 
     dacdir::dac dacForScope  = dacdir::dac_for_id(dac_id);
     auto        auth_account = dacForScope.account_for_type(dacdir::AUTH);

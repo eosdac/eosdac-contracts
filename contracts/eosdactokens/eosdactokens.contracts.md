@@ -113,7 +113,7 @@ The intent of {{ burn }} is to allow a user to burn {{ quantity }} tokens that b
 
 
 <h1 class="contract">
-   memberrege
+   memberreg
 </h1>
 
 ---
@@ -128,7 +128,7 @@ Agree to the terms and condition using the hash provided ({{ agreedterms }}).  T
 This action can be called multiple times if the terms and conditions are updated.  You will be registered as a member in the on-chain database.
 
 <h1 class="contract">
-   memberunrege
+   memberunreg
 </h1>
 
 ---
@@ -141,7 +141,7 @@ icon: https://eosdac.io/assets/contracts/generic.png#00da1afc6464028359b3a02ffbd
 This action indicates that you no longer agree to the terms and conditions.  Your account will be marked as no longer a member.
 
 <h1 class="contract">
-   newmemtermse
+   newmemterms
 </h1>
 
 ---

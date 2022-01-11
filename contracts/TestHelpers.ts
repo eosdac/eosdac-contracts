@@ -111,7 +111,7 @@ export class SharedTestObjects {
   }
 
   async updateconfig(dacId: string, lockupAsset: string) {
-    await this.daccustodian_contract.updateconfige(
+    await this.daccustodian_contract.updateconfig(
       {
         numelected: 5,
         maxvotes: 4,
@@ -147,7 +147,7 @@ export class SharedTestObjects {
     let termsPromises = newMembers
       .map((account) => {
         return debugPromise(
-          this.dac_token_contract.memberrege(
+          this.dac_token_contract.memberreg(
             account.name,
             this.configured_dac_memberterms,
             dacId,
@@ -201,7 +201,7 @@ export class SharedTestObjects {
         payAmount = '25.0000 EOS';
       }
       await debugPromise(
-        this.daccustodian_contract.nominatecane(
+        this.daccustodian_contract.nominatecand(
           candidate.name,
           payAmount,
           dacId,
@@ -216,7 +216,7 @@ export class SharedTestObjects {
   }
 
   async configureCustodianConfig(lockupAsset: string, dacId: string) {
-    await this.daccustodian_contract.updateconfige(
+    await this.daccustodian_contract.updateconfig(
       {
         numelected: 5,
         maxvotes: 4,
@@ -637,7 +637,7 @@ export class SharedTestObjects {
 
   async setup_dac_memberterms(dacId: string, dacAuth: Account) {
     await debugPromise(
-      this.dac_token_contract.newmemtermse(
+      this.dac_token_contract.newmemterms(
         'teermsstring',
         this.configured_dac_memberterms,
         dacId,
@@ -657,7 +657,7 @@ export class SharedTestObjects {
     for (let index = 0; index < 8; index++) {
       const mbr = regMembers[index];
       await debugPromise(
-        this.daccustodian_contract.votecuste(
+        this.daccustodian_contract.votecust(
           mbr.name,
           [
             electedCandidates[0].name,
@@ -674,7 +674,7 @@ export class SharedTestObjects {
     for (let index = 8; index < 16; index++) {
       const mbr = regMembers[index];
       await debugPromise(
-        this.daccustodian_contract.votecuste(
+        this.daccustodian_contract.votecust(
           mbr.name,
           [
             electedCandidates[0].name,

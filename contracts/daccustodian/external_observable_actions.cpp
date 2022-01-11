@@ -70,7 +70,7 @@ void daccustodian::validateUnstakeAmount(name code, name cand, asset unstake_amo
 
         print(" Current stake : ", current_stake, ", Unstake amount : ", unstake_amount);
         check(!reg_candidate->is_active,
-            "ERR::CANNOT_UNSTAKE_REGISTERED::Cannot unstake because you are registered as a candidate, use withdrawcane to unregister.");
+            "ERR::CANNOT_UNSTAKE_REGISTERED::Cannot unstake because you are registered as a candidate, use withdrawcand to unregister.");
 
         if (reg_candidate->custodian_end_time_stamp > time_point_sec(eosio::current_time_point())) {
             // Still under restrictions

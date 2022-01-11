@@ -1,7 +1,7 @@
 #include <eosio/transaction.hpp>
 using namespace eosdac;
 
-void daccustodian::claimpaye(uint64_t payid, name dac_id) {
+void daccustodian::claimpay(uint64_t payid, name dac_id) {
 
     if (claimoldpaye_if_found(payid, dac_id)) {
         return; // if the condition returns true the action has been handled already

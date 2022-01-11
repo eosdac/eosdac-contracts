@@ -79,7 +79,7 @@ describe('Dacproposals', () => {
       '20.0000 PROPDAC'
     );
     await shared.voteForCustodians(regMembers, propDacCustodians, dacId);
-    await shared.daccustodian_contract.newperiode('propDac', dacId, {
+    await shared.daccustodian_contract.newperiod('propDac', dacId, {
       from: regMembers[0],
     });
 

@@ -32,10 +32,10 @@ namespace eosdac {
         ACTION unlock(asset unlock);
         ACTION burn(name from, asset quantity);
         ACTION transfer(name from, name to, asset quantity, string memo);
-        ACTION newmemtermse(string terms, string hash, name dac_id);
-        ACTION memberrege(name sender, string agreedterms, name dac_id);
-        ACTION memberunrege(name sender, name dac_id);
-        ACTION updatetermse(uint64_t termsid, string terms, name dac_id);
+        ACTION newmemterms(string terms, string hash, name dac_id);
+        ACTION memberreg(name sender, string agreedterms, name dac_id);
+        ACTION memberunreg(name sender, name dac_id);
+        ACTION updateterms(uint64_t termsid, string terms, name dac_id);
         ACTION close(name owner, const symbol &symbol);
 
         // staking

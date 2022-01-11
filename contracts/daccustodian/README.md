@@ -231,7 +231,7 @@ All of the active actions require a `dac_id (account_name)` parameter to be pass
 
 ##### Post Condition:
 
-### nominatecane
+### nominatecand
 
 ### nominatecande
 
@@ -279,7 +279,7 @@ The candidate should still be present in the candidates table and be set to inac
 
 ---
 
-### resigncuste
+### resigncust
 
 This action is used to resign as a custodian.
 
@@ -299,7 +299,7 @@ The custodian will be removed from the active custodians and should still be pre
 
 ---
 
-### updatebioe
+### updatebio
 
 Update the bio for this candidate / custodian. This will be available on the account immediately in preparation for the next election cycle.
 
@@ -340,7 +340,7 @@ The requested pay for the candidate should be updated to the new asset.
 
 ---
 
-### votecuste
+### votecust
 
 This action is to facilitate voting for candidates to become custodians of the DAC. Each member will be able to vote a configurable number of custodians set by the contract configuration. When a voter calls this action either a new vote will be recorded or the existing vote for that voter will be modified. If an empty array of candidates is passed to the action an existing vote for that voter will be removed.
 
@@ -410,7 +410,7 @@ If successful a new record should be added to the proxy table which is then used
 
 ---
 
-### updateconfige
+### updateconfig
 
 ## unregproxy
 
@@ -432,7 +432,7 @@ If successful a the existing proxy record will be removed from the proxy table a
 
 ---
 
-### updateconfige
+### updateconfig
 
 Updates the contract configuration parameters to allow changes without needing to redeploy the source code.
 
@@ -460,7 +460,7 @@ The parameters are:
 
 ---
 
-### newperiode
+### newperiod
 
 This action is to be run to end and begin each period in the DAC life cycle. It performs multiple tasks for the DAC including:
 
@@ -484,7 +484,7 @@ This action is to be run to end and begin each period in the DAC life cycle. It 
 
 ---
 
-### claimpaye
+### claimpay
 
 This action is to claim pay as a custodian.
 
@@ -526,7 +526,7 @@ The candidate should still be present in the candidates table and should be stil
 
 ---
 
-### firecande
+### firecand
 
 This action is used to remove a candidate from being a candidate for custodian elections.
 
@@ -547,7 +547,7 @@ The candidate should still be present in the candidates table and be set to inac
 
 ---
 
-### firecuste
+### firecust
 
 This action is used to remove a custodian.
 

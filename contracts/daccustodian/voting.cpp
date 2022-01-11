@@ -1,7 +1,7 @@
 #include "../../contract-shared-headers/migration_helpers.hpp"
 using namespace eosdac;
 
-void daccustodian::votecuste(name voter, vector<name> newvotes, name dac_id) {
+void daccustodian::votecust(name voter, vector<name> newvotes, name dac_id) {
 
     candidates_table registered_candidates(_self, dac_id.value);
     contr_config     configs = contr_config::get_current_configs(_self, dac_id);

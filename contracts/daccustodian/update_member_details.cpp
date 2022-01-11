@@ -2,7 +2,7 @@
 
 using namespace eosdac;
 
-void daccustodian::updatebioe(name cand, string bio, name dac_id) {
+void daccustodian::updatebio(name cand, string bio, name dac_id) {
 
     require_auth(cand);
     assertValidMember(cand, dac_id);
@@ -13,7 +13,7 @@ void daccustodian::updatebioe(name cand, string bio, name dac_id) {
     check(bio.size() < 256, "ERR::UPDATEBIO_BIO_SIZE_TOO_LONG::The bio should be less than 256 characters.");
 }
 
-void daccustodian::updatereqpae(name cand, asset requestedpay, name dac_id) {
+void daccustodian::updatereqpay(name cand, asset requestedpay, name dac_id) {
 
     require_auth(cand);
     assertValidMember(cand, dac_id);

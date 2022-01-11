@@ -166,7 +166,7 @@ namespace eosdac {
         }
     }
 
-    void eosdactokens::newmemtermse(string terms, string hash, name dac_id) {
+    void eosdactokens::newmemterms(string terms, string hash, name dac_id) {
 
         dacdir::dac dac          = dacdir::dac_for_id(dac_id);
         eosio::name auth_account = dac.account_for_type(dacdir::AUTH);
@@ -199,7 +199,7 @@ namespace eosdac {
         });
     }
 
-    void eosdactokens::memberrege(name sender, string agreedterms, name dac_id) {
+    void eosdactokens::memberreg(name sender, string agreedterms, name dac_id) {
         // agreedterms is expected to be the member terms document hash
         require_auth(sender);
 
@@ -225,7 +225,7 @@ namespace eosdac {
         }
     }
 
-    void eosdactokens::updatetermse(uint64_t termsid, string terms, name dac_id) {
+    void eosdactokens::updateterms(uint64_t termsid, string terms, name dac_id) {
 
         dacdir::dac dac          = dacdir::dac_for_id(dac_id);
         eosio::name auth_account = dac.account_for_type(dacdir::AUTH);
@@ -245,7 +245,7 @@ namespace eosdac {
         });
     }
 
-    void eosdactokens::memberunrege(name sender, name dac_id) {
+    void eosdactokens::memberunreg(name sender, name dac_id) {
         require_auth(sender);
 
         dacdir::dac dac               = dacdir::dac_for_id(dac_id);
