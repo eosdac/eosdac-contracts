@@ -154,11 +154,31 @@ describe('EOSDacTokens', () => {
         [{ balance: '1000.0000 ABC' }]
       );
     });
+    context('to account other than the issuer', async () => {
+      it('should fail with assertion', async () => {
+        await l.assertEOSErrorIncludesMessage(
+          shared.dac_token_contract.issue(
+            otherAccount.name,
+            `1200.0000 ABC`,
+            'some memo',
+            validAuths
+          ),
+          'tokens can only be issued to issuer account'
+        );
+      });
+    });
     context('to other', async () => {
       context('without a dac', async () => {
         it('should fail with DAC not found for symbol error', async () => {
+          await shared.dac_token_contract.issue(
+            issuer.name,
+            `1200.0000 ABC`,
+            'some memo',
+            validAuths
+          );
           await l.assertEOSErrorIncludesMessage(
-            shared.dac_token_contract.issue(
+            shared.dac_token_contract.transfer(
+              issuer.name,
               otherAccount.name,
               `1200.0000 ABC`,
               'some memo',
@@ -175,7 +195,7 @@ describe('EOSDacTokens', () => {
             'abcdac',
             {
               contract: shared.dac_token_contract.account.name,
-              symbol: '4,ABC',
+              sym: '4,ABC',
             },
             'abc dac_title',
             [],
@@ -195,6 +215,13 @@ describe('EOSDacTokens', () => {
         });
         it('should increase the other balance', async () => {
           await shared.dac_token_contract.issue(
+            issuer.name,
+            `1200.0000 ABC`,
+            'some memo',
+            validAuths
+          );
+          await shared.dac_token_contract.transfer(
+            issuer.name,
             otherAccount.name,
             `1200.0000 ABC`,
             'some memo',
@@ -220,9 +247,16 @@ describe('EOSDacTokens', () => {
     before(async () => {
       staker = await l.AccountManager.createAccount();
       await shared.dac_token_contract.issue(
-        staker.name,
+        issuer.name,
         '1000.0000 ABC',
         'initial issued tokens',
+        validAuths
+      );
+      await shared.dac_token_contract.transfer(
+        issuer.name,
+        staker.name,
+        '1000.0000 ABC',
+        'please take these tokens for staking',
         validAuths
       );
     });
@@ -394,9 +428,16 @@ describe('EOSDacTokens', () => {
       sender = await l.AccountManager.createAccount();
       receiver = await l.AccountManager.createAccount();
       await shared.dac_token_contract.issue(
-        sender.name,
+        issuer.name,
         '1000.0000 ABC',
         'initial issued tokens',
+        { from: issuer }
+      );
+      await shared.dac_token_contract.transfer(
+        issuer.name,
+        sender.name,
+        '1000.0000 ABC',
+        'here are your issued tokens',
         { from: issuer }
       );
     });
