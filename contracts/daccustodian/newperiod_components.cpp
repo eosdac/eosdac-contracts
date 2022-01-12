@@ -177,7 +177,7 @@ void daccustodian::setCustodianAuths(name dac_id) {
     print("Got to the end of setting permissions.");
 }
 
-void daccustodian::newperiod(string message, name dac_id) {
+ACTION daccustodian::newperiod(const string& message, const name& dac_id) {
     const auto auth_account = dacdir::dac_for_id(dac_id).account_for_type_maybe(dacdir::AUTH);
     const auto sender = auth_account ? *auth_account : get_self();
     eosio::action(
@@ -185,7 +185,7 @@ void daccustodian::newperiod(string message, name dac_id) {
         .send();
 }
 
-void daccustodian::runnewperiod(string message, name dac_id) {
+ACTION daccustodian::runnewperiod(const string& message, const name& dac_id) {
     contr_config configs      = contr_config::get_current_configs(get_self(), dac_id);
     contr_state  currentState = contr_state::get_current_state(get_self(), dac_id);
     assertPeriodTime(configs, currentState);

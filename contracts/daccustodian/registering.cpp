@@ -3,7 +3,7 @@
 
 using namespace eosdac;
 
-void daccustodian::nominatecand(name cand, asset requestedpay, name dac_id) {
+ACTION daccustodian::nominatecand(const name& cand, const asset& requestedpay, const name& dac_id) {
     require_auth(cand);
     assertValidMember(cand, dac_id);
     contr_state  currentState = contr_state::get_current_state(_self, dac_id);
@@ -45,29 +45,29 @@ void daccustodian::nominatecand(name cand, asset requestedpay, name dac_id) {
     }
 }
 
-void daccustodian::withdrawcand(name cand, name dac_id) {
+ACTION daccustodian::withdrawcand(const name& cand, const name& dac_id) {
     require_auth(cand);
     removeCandidate(cand, false, dac_id);
 }
 
-void daccustodian::firecand(name cand, bool lockupStake, name dac_id) {
+ACTION daccustodian::firecand(const name& cand, const bool lockupStake, const name& dac_id) {
     auto dac = dacdir::dac_for_id(dac_id);
     require_auth(dac.account_for_type(dacdir::AUTH));
     removeCandidate(cand, lockupStake, dac_id);
 }
 
-void daccustodian::resigncust(name cust, name dac_id) {
+ACTION daccustodian::resigncust(const name& cust, const name& dac_id) {
     require_auth(cust);
     removeCustodian(cust, dac_id);
 }
 
-void daccustodian::firecust(name cust, name dac_id) {
+ACTION daccustodian::firecust(const name& cust, const name& dac_id) {
     auto dac = dacdir::dac_for_id(dac_id);
     require_auth(dac.account_for_type(dacdir::AUTH));
     removeCustodian(cust, dac_id);
 }
 
-void daccustodian::setperm(name cand, name permission, name dac_id) {
+ACTION daccustodian::setperm(const name& cand, const name& permission, const name& dac_id) {
     require_auth(cand);
     assertValidMember(cand, dac_id);
 
@@ -95,7 +95,7 @@ void daccustodian::setperm(name cand, name permission, name dac_id) {
     }
 }
 
-void daccustodian::appointcust(vector<name> custs, name dac_id) {
+ACTION daccustodian::appointcust(const vector<name>& custs, const name& dac_id) {
     dacdir::dac dac          = dacdir::dac_for_id(dac_id);
     name        auth_account = dac.account_for_type(dacdir::AUTH);
     require_auth(auth_account);
@@ -198,7 +198,7 @@ void daccustodian::removeCandidate(name cand, bool lockupStake, name dac_id) {
     });
 }
 
-void daccustodian::regproxy(name proxy_member, name dac_id) {
+ACTION daccustodian::regproxy(const name& proxy_member, const name& dac_id) {
     require_auth(proxy_member);
     assertValidMember(proxy_member, dac_id);
 
@@ -212,7 +212,7 @@ void daccustodian::regproxy(name proxy_member, name dac_id) {
     });
 }
 
-void daccustodian::unregproxy(name proxy_member, name dac_id) {
+ACTION daccustodian::unregproxy(const name& proxy_member, const name& dac_id) {
     require_auth(proxy_member);
 
     proxies_table proxies(get_self(), dac_id.value);

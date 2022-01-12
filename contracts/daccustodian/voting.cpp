@@ -1,6 +1,6 @@
 using namespace eosdac;
 
-void daccustodian::votecust(name voter, vector<name> newvotes, name dac_id) {
+ACTION daccustodian::votecust(const name& voter, const vector<name>& newvotes, const name& dac_id) {
 
     candidates_table registered_candidates(_self, dac_id.value);
     contr_config     configs = contr_config::get_current_configs(_self, dac_id);
@@ -82,7 +82,7 @@ void daccustodian::modifyProxiesWeight(int64_t vote_weight, name oldProxy, name 
     modifyVoteWeights(vote_weight, oldProxyVotes, newProxyVotes, dac_id);
 }
 
-void daccustodian::voteproxy(name voter, name proxyName, name dac_id) {
+ACTION daccustodian::voteproxy(const name& voter, const name& proxyName, const name& dac_id) {
 
     require_auth(voter);
     assertValidMember(voter, dac_id);

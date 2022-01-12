@@ -2,7 +2,7 @@
 #include "../../contract-shared-headers/dacdirectory_shared.hpp"
 using namespace eosdac;
 
-void daccustodian::balanceobsv(vector<account_balance_delta> account_balance_deltas, name dac_id) {
+ACTION daccustodian::balanceobsv(const vector<account_balance_delta>& account_balance_deltas, const name& dac_id) {
     auto                         dac       = dacdir::dac_for_id(dac_id);
     auto                         dacSymbol = dac.symbol.get_symbol();
     vector<account_weight_delta> weightDeltas;
@@ -15,7 +15,7 @@ void daccustodian::balanceobsv(vector<account_balance_delta> account_balance_del
     weightobsv(weightDeltas, dac_id);
 }
 
-void daccustodian::weightobsv(vector<account_weight_delta> account_weight_deltas, name dac_id) {
+ACTION daccustodian::weightobsv(const vector<account_weight_delta>& account_weight_deltas, const name& dac_id) {
     auto dac            = dacdir::dac_for_id(dac_id);
     auto token_contract = dac.symbol.get_contract();
 
@@ -38,7 +38,7 @@ void daccustodian::weightobsv(vector<account_weight_delta> account_weight_deltas
     }
 }
 
-void daccustodian::stakeobsv(vector<account_stake_delta> account_stake_deltas, name dac_id) {
+ACTION daccustodian::stakeobsv(const vector<account_stake_delta>& account_stake_deltas, const name& dac_id) {
     auto dac            = dacdir::dac_for_id(dac_id);
     auto token_contract = dac.symbol.get_contract();
 
@@ -55,7 +55,7 @@ void daccustodian::stakeobsv(vector<account_stake_delta> account_stake_deltas, n
     }
 }
 
-void daccustodian::validateUnstakeAmount(name code, name cand, asset unstake_amount, name dac_id) {
+void daccustodian::validateUnstakeAmount(const name& code, const name& cand, const asset& unstake_amount, const name& dac_id) {
     // Will assert if adc_id not found
     check(unstake_amount.amount > 0, "ERR::NEGATIVE_UNSTAKE::Unstake amount must be positive");
     auto dac            = dacdir::dac_for_id(dac_id);

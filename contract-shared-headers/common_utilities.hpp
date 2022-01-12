@@ -1,5 +1,4 @@
-#ifndef COMMON_UTILITIES_H
-#define COMMON_UTILITIES_H
+#pragma once
 #include <eosio/eosio.hpp>
 #include <eosio/symbol.hpp>
 #include <eosio/asset.hpp>
@@ -78,4 +77,3 @@ inline void check(bool pred, const string& format, Args const& ... args) {
   }
 }
 
-#endif

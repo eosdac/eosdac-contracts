@@ -1,5 +1,4 @@
-#ifndef DACDIRECTORY_SHARED_H
-#define DACDIRECTORY_SHARED_H
+#pragma once
 
 #include "common_utilities.hpp"
 #include <eosio/eosio.hpp>
@@ -97,4 +96,3 @@ namespace eosdac {
     } // namespace dacdir
 } // namespace eosdac
 
-#endif

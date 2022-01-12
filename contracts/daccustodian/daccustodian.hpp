@@ -21,7 +21,7 @@ namespace eosdac {
 #endif
 
     struct contr_config;
-    typedef eosio::singleton<"config"_n, contr_config> configscontainer;
+    using configscontainer = eosio::singleton<"config"_n, contr_config>;
 
     struct [[eosio::table("config"), eosio::contract("daccustodian")]] contr_config {
         //    The amount of assets that are locked up by each candidate applying for election.
@@ -64,7 +64,7 @@ namespace eosdac {
     };
 
     struct contr_state;
-    typedef eosio::singleton<"state"_n, contr_state> statecontainer;
+    using statecontainer = eosio::singleton<"state"_n, contr_state>;
 
     struct [[eosio::table("state"), eosio::contract("daccustodian")]] contr_state {
         eosio::time_point_sec lastperiodtime              = time_point_sec(0);
@@ -92,8 +92,7 @@ namespace eosdac {
         uint64_t by_proxy() const { return proxy.value; }
     };
 
-    typedef eosio::multi_index<"votes"_n, vote, indexed_by<"byproxy"_n, const_mem_fun<vote, uint64_t, &vote::by_proxy>>>
-        votes_table;
+    using votes_table = eosio::multi_index<"votes"_n, vote, indexed_by<"byproxy"_n, const_mem_fun<vote, uint64_t, &vote::by_proxy>>>;
 
     struct [[eosio::table("proxies"), eosio::contract("daccustodian")]] proxy {
         name    proxy;
@@ -102,7 +101,7 @@ namespace eosdac {
         uint64_t primary_key() const { return proxy.value; }
     };
 
-    typedef eosio::multi_index<"proxies"_n, proxy> proxies_table;
+    using proxies_table = eosio::multi_index<"proxies"_n, proxy>;
 
     struct [[eosio::table("pendingpay"), eosio::contract("daccustodian")]] pay {
         uint64_t       key;
@@ -122,10 +121,8 @@ namespace eosdac {
         EOSLIB_SERIALIZE(pay, (key)(receiver)(quantity)(due_date))
     };
 
-    typedef multi_index<"pendingpay"_n, pay,
-        indexed_by<"byreceiver"_n, const_mem_fun<pay, uint64_t, &pay::byreceiver>>,
-        indexed_by<"receiversym"_n, const_mem_fun<pay, checksum256, &pay::byreceiver_and_symbol>>>
-        pending_pay_table;
+    using pending_pay_table = multi_index<"pendingpay"_n, pay, indexed_by<"byreceiver"_n, const_mem_fun<pay, uint64_t, &pay::byreceiver>>,
+        indexed_by<"receiversym"_n, const_mem_fun<pay, checksum256, &pay::byreceiver_and_symbol>>>;
 
     struct [[eosio::table("candperms"), eosio::contract("daccustodian")]] candperm {
         name cand;
@@ -134,44 +131,44 @@ namespace eosdac {
         uint64_t primary_key() const { return cand.value; }
     };
 
-    typedef multi_index<"candperms"_n, candperm> candperms_table;
+    using candperms_table = multi_index<"candperms"_n, candperm>;
 
     class daccustodian : public contract {
 
       public:
         daccustodian(name s, name code, datastream<const char *> ds) : contract(s, code, ds) {}
 
-        ACTION updateconfig(contr_config newconfig, name dac_id);
+        ACTION updateconfig(const contr_config& newconfig, const name& dac_id);
         // ACTION transferobsv(name from, name to, asset quantity, name dac_id);
-        ACTION balanceobsv(vector<account_balance_delta> account_balance_deltas, name dac_id);
-        ACTION stakeobsv(vector<account_stake_delta> account_stake_deltas, name dac_id);
-        ACTION weightobsv(vector<account_weight_delta> account_weight_deltas, name dac_id);
+        ACTION balanceobsv(const vector<account_balance_delta>& account_balance_deltas, const name& dac_id);
+        ACTION stakeobsv(const vector<account_stake_delta>& account_stake_deltas, const name& dac_id);
+        ACTION weightobsv(const vector<account_weight_delta>& account_weight_deltas, const name& dac_id);
 
-        ACTION nominatecand(name cand, eosio::asset requestedpay, name dac_id);
-        ACTION withdrawcand(name cand, name dac_id);
-        ACTION firecand(name cand, bool lockupStake, name dac_id);
-        ACTION resigncust(name cust, name dac_id);
-        ACTION firecust(name cust, name dac_id);
-        ACTION appointcust(vector<name> cust, name dac_id);
-        ACTION updatebio(name cand, std::string bio, name dac_id);
+        ACTION nominatecand(const name& cand, const eosio::asset& requestedpay, const name& dac_id);
+        ACTION withdrawcand(const name& cand, const name& dac_id);
+        ACTION firecand(const name& cand, const bool lockupStake, const name& dac_id);
+        ACTION resigncust(const name& cust, const name& dac_id);
+        ACTION firecust(const name& cust, const name& dac_id);
+        ACTION appointcust(const vector<name>& cust, const name& dac_id);
+        ACTION updatebio(const name& cand, const std::string& bio, const name& dac_id);
 
-        [[eosio::action]] inline void stprofile(name cand, std::string profile, name dac_id) { require_auth(cand); };
+        [[eosio::action]] inline void stprofile(const name& cand, const std::string& profile, const name& dac_id) { require_auth(cand); };
 
-        [[eosio::action]] inline void stprofileuns(name cand, std::string profile) { require_auth(cand); };
-        ACTION                        updatereqpay(name cand, eosio::asset requestedpay, name dac_id);
-        ACTION                        votecust(name voter, std::vector<name> newvotes, name dac_id);
-        ACTION                        voteproxy(name voter, name proxy, name dac_id);
-        ACTION                        regproxy(name proxy, name dac_id);
-        ACTION                        unregproxy(name proxy, name dac_id);
-        ACTION                        newperiod(std::string message, name dac_id);
-        ACTION                        runnewperiod(std::string message, name dac_id);
-        ACTION                        claimpay(uint64_t payid, name dac_id);
-        ACTION                        removecuspay(uint64_t payid, name dac_id);
-        ACTION                        rejectcuspay(uint64_t payid, name dac_id);
-        ACTION                        paycpu(name dac_id);
+        [[eosio::action]] inline void stprofileuns(const name& cand, const std::string& profile) { require_auth(cand); };
+        ACTION                        updatereqpay(const name& cand, const eosio::asset& requestedpay, const name& dac_id);
+        ACTION                        votecust(const name& voter, const std::vector<name>& newvotes, const name& dac_id);
+        ACTION                        voteproxy(const name& voter, const name& proxy, const name& dac_id);
+        ACTION                        regproxy(const name& proxy, const name& dac_id);
+        ACTION                        unregproxy(const name& proxy, const name& dac_id);
+        ACTION                        newperiod(const std::string& message, const name& dac_id);
+        ACTION                        runnewperiod(const std::string& message, const name& dac_id);
+        ACTION                        claimpay(const uint64_t payid, const name& dac_id);
+        ACTION                        removecuspay(const uint64_t payid, const name& dac_id);
+        ACTION                        rejectcuspay(const uint64_t payid, const name& dac_id);
+        ACTION                        paycpu(const name& dac_id);
 #ifdef DEBUG
-        ACTION resetvotes(name voter, name dac_id);
-        ACTION resetcands(name dac_id);
+        ACTION resetvotes(const name& voter, const name& dac_id);
+        ACTION resetcands(const name& dac_id);
 #endif
 
         /**
@@ -188,7 +185,7 @@ namespace eosdac {
          * ### Post Condition:
          * The candidate will have a record entered into the database indicating the custom permission to use.
          */
-        ACTION setperm(name cand, name permission, name dac_id);
+        ACTION setperm(const name& cand, const name& permission, const name& dac_id);
 
       private: // Private helper methods used by other actions.
         void    updateVoteWeight(name custodian, int64_t weight, name internal_dac_id);
@@ -208,7 +205,7 @@ namespace eosdac {
 
         permission_level getCandidatePermission(name account, name internal_dac_id);
         void             validateUnstake(name code, name cand, name dac_id);
-        void             validateUnstakeAmount(name code, name cand, asset unstake_amount, name dac_id);
+        void             validateUnstakeAmount(const name& code, const name& cand, const asset& unstake_amount, const name& dac_id);
         void             validateMinStake(name account, name dac_id);
     };
 }; // namespace eosdac

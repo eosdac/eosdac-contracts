@@ -1,5 +1,4 @@
-#ifndef DACCUSTODIAN_SHARED_H
-#define DACCUSTODIAN_SHARED_H
+#pragma once
 
 namespace eosdac {
 
@@ -18,10 +17,10 @@ namespace eosdac {
         uint64_t by_requested_pay() const { return static_cast<uint64_t>(requestedpay.amount); }
     };
 
-    typedef eosio::multi_index<"custodians"_n, custodian,
+    using custodians_table = eosio::multi_index<"custodians"_n, custodian,
             eosio::indexed_by<"byvotesrank"_n, eosio::const_mem_fun<custodian, uint64_t, &custodian::by_votes_rank> >,
             eosio::indexed_by<"byreqpay"_n, eosio::const_mem_fun<custodian, uint64_t, &custodian::by_requested_pay> >
-    > custodians_table;
+    >;
 
     struct [[eosio::table("candidates"), eosio::contract("daccustodian")]] candidate {
         eosio::name candidate_name;
@@ -37,12 +36,12 @@ namespace eosdac {
         uint64_t by_requested_pay() const { return static_cast<uint64_t>(requestedpay.amount); }
     };
 
-    typedef eosio::multi_index<"candidates"_n, candidate,
+    using candidates_table = eosio::multi_index<"candidates"_n, candidate,
             eosio::indexed_by<"bycandidate"_n, eosio::const_mem_fun<candidate, uint64_t, &candidate::primary_key> >,
             eosio::indexed_by<"byvotes"_n, eosio::const_mem_fun<candidate, uint64_t, &candidate::by_number_votes> >,
             eosio::indexed_by<"byvotesrank"_n, eosio::const_mem_fun<candidate, uint64_t, &candidate::by_votes_rank> >,
             eosio::indexed_by<"byreqpay"_n, eosio::const_mem_fun<candidate, uint64_t, &candidate::by_requested_pay> >
-    > candidates_table;
+    >;
 
 
 
@@ -52,7 +51,6 @@ namespace eosdac {
 
         uint64_t primary_key()const { return voter.value; }
     };
-    typedef eosio::multi_index< "weights"_n, vote_weight > weights;
+    using weights = eosio::multi_index< "weights"_n, vote_weight >;
 }
 
-#endif

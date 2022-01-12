@@ -1,7 +1,7 @@
 
 using namespace eosdac;
 
-void daccustodian::paycpu(name dac_id) {
+ACTION daccustodian::paycpu(const name& dac_id) {
     dacdir::dac dac_inst     = dacdir::dac_for_id(dac_id);
     auto        auth_account = dac_inst.account_for_type(dacdir::AUTH);
     require_auth(auth_account);

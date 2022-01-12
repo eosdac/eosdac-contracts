@@ -1,5 +1,4 @@
-#ifndef EOSDACTOKENS_SHARED_H
-#define EOSDACTOKENS_SHARED_H
+#pragma once
 
 #include "common_utilities.hpp"
 #include "dacdirectory_shared.hpp"
@@ -163,4 +162,3 @@ namespace eosdac {
     }
 } // namespace eosdac
 
-#endif
