@@ -53,7 +53,7 @@ describe('Daccustodian', () => {
         'ERR::DAC_NOT_FOUND'
       );
       await assertRowsEqual(
-        shared.daccustodian_contract.config2Table({
+        shared.daccustodian_contract.configTable({
           scope: 'unknowndac',
           limit: 1,
         }),
@@ -83,7 +83,7 @@ describe('Daccustodian', () => {
         'ERR::UPDATECONFIG_INVALID_AUTH_HIGH_TO_NUM_ELECTED'
       );
       await assertRowsEqual(
-        shared.daccustodian_contract.config2Table({
+        shared.daccustodian_contract.configTable({
           scope: dacId,
           limit: 2,
         }),
@@ -113,7 +113,7 @@ describe('Daccustodian', () => {
         'ERR::UPDATECONFIG_INVALID_AUTH_HIGH_TO_MID_AUTH'
       );
       await assertRowsEqual(
-        shared.daccustodian_contract.config2Table({
+        shared.daccustodian_contract.configTable({
           scope: dacId,
           limit: 2,
         }),
@@ -143,7 +143,7 @@ describe('Daccustodian', () => {
         'ERR::UPDATECONFIG_INVALID_AUTH_MID_TO_LOW_AUTH'
       );
       await assertRowsEqual(
-        shared.daccustodian_contract.config2Table({
+        shared.daccustodian_contract.configTable({
           scope: dacId,
           limit: 2,
         }),
@@ -321,7 +321,7 @@ describe('Daccustodian', () => {
         { from: shared.auth_account }
       );
       await assertRowsEqual(
-        shared.daccustodian_contract.config2Table({
+        shared.daccustodian_contract.configTable({
           scope: dacId,
           limit: 1,
         }),
@@ -1126,7 +1126,7 @@ describe('Daccustodian', () => {
             });
             it('Custodians should not yet be paid', async () => {
               await assertRowCount(
-                shared.daccustodian_contract.pendingpay2Table({
+                shared.daccustodian_contract.pendingpayTable({
                   scope: dacId,
                   limit: 12,
                 }),
@@ -1247,7 +1247,7 @@ describe('Daccustodian', () => {
         });
         it('custodians should have been paid', async () => {
           await assertRowCount(
-            shared.daccustodian_contract.pendingpay2Table({
+            shared.daccustodian_contract.pendingpayTable({
               scope: dacId,
               limit: 12,
             }),
@@ -1274,7 +1274,7 @@ describe('Daccustodian', () => {
               return a + b;
             }) / custodianRows.rows.length;
 
-          let payRows = await shared.daccustodian_contract.pendingpay2Table({
+          let payRows = await shared.daccustodian_contract.pendingpayTable({
             scope: dacId,
             limit: 12,
           });

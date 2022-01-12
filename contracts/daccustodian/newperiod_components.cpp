@@ -1,36 +1,4 @@
-#include "../../contract-shared-headers/migration_helpers.hpp"
-
 using namespace eosdac;
-
-// void daccustodian::distributePay(name dac_id) {
-//     custodians_table custodians(_self, dac_id.value);
-//     pending_pay_table pending_pay(_self, dac_id.value);
-
-//     //Find the median pay using a temporary vector to hold the requestedpay amounts.
-//     std::vector<asset> reqpays;
-//     for (auto cust: custodians) {
-//         reqpays.push_back(cust.requestedpay);
-//     }
-
-//     // Using nth_element to just sort for the entry we need for the median value.
-//     size_t mid = reqpays.size() / 2;
-//     std::nth_element(reqpays.begin(), reqpays.begin() + mid, reqpays.end());
-
-//     asset medianAsset = reqpays[mid];
-
-//     if (medianAsset.amount > 0) {
-//         for (auto cust: custodians) {
-//             pending_pay.emplace(_self, [&](pay &p) {
-//                 p.key = pending_pay.available_primary_key();
-//                 p.receiver = cust.cust_name;
-//                 p.quantity = medianAsset;
-//                 p.memo = "Custodian pay. Thank you.";
-//             });
-//         }
-//     }
-
-//     print("distribute pay");
-// }
 
 void daccustodian::distributeMeanPay(name dac_id) {
     custodians_table  custodians(get_self(), dac_id.value);

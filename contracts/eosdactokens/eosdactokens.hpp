@@ -12,7 +12,6 @@ using namespace std;
 #include "../../contract-shared-headers/daccustodian_shared.hpp"
 #include "../../contract-shared-headers/dacdirectory_shared.hpp"
 #include "../../contract-shared-headers/eosdactokens_shared.hpp"
-#include "../../contract-shared-headers/migration_helpers.hpp"
 
 namespace eosiosystem {
     class system_contract;

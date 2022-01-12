@@ -1,4 +1,3 @@
-#include "../../contract-shared-headers/migration_helpers.hpp"
 using namespace eosdac;
 
 void daccustodian::votecust(name voter, vector<name> newvotes, name dac_id) {

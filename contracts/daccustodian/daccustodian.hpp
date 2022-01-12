@@ -21,9 +21,9 @@ namespace eosdac {
 #endif
 
     struct contr_config;
-    typedef eosio::singleton<"config2"_n, contr_config> configscontainer;
+    typedef eosio::singleton<"config"_n, contr_config> configscontainer;
 
-    struct [[eosio::table("config2"), eosio::contract("daccustodian")]] contr_config {
+    struct [[eosio::table("config"), eosio::contract("daccustodian")]] contr_config {
         //    The amount of assets that are locked up by each candidate applying for election.
         eosio::extended_asset lockupasset;
         //    The maximum number of votes that each member can make for a candidate.
@@ -104,25 +104,7 @@ namespace eosdac {
 
     typedef eosio::multi_index<"proxies"_n, proxy> proxies_table;
 
-    // Old table start
-
-    struct [[eosio::table("pendingpay"), eosio::contract("daccustodian")]] payold {
-        uint64_t key;
-        name     receiver;
-        asset    quantity;
-        string   memo;
-
-        uint64_t primary_key() const { return key; }
-        uint64_t byreceiver() const { return receiver.value; }
-    };
-
-    typedef multi_index<"pendingpay"_n, payold,
-        indexed_by<"byreceiver"_n, const_mem_fun<payold, uint64_t, &payold::byreceiver>>>
-        pending_pay_table_old;
-
-    // old table end
-
-    struct [[eosio::table("pendingpay2"), eosio::contract("daccustodian")]] pay {
+    struct [[eosio::table("pendingpay"), eosio::contract("daccustodian")]] pay {
         uint64_t       key;
         name           receiver;
         extended_asset quantity;
@@ -140,7 +122,7 @@ namespace eosdac {
         EOSLIB_SERIALIZE(pay, (key)(receiver)(quantity)(due_date))
     };
 
-    typedef multi_index<"pendingpay2"_n, pay,
+    typedef multi_index<"pendingpay"_n, pay,
         indexed_by<"byreceiver"_n, const_mem_fun<pay, uint64_t, &pay::byreceiver>>,
         indexed_by<"receiversym"_n, const_mem_fun<pay, checksum256, &pay::byreceiver_and_symbol>>>
         pending_pay_table;
@@ -228,11 +210,5 @@ namespace eosdac {
         void             validateUnstake(name code, name cand, name dac_id);
         void             validateUnstakeAmount(name code, name cand, asset unstake_amount, name dac_id);
         void             validateMinStake(name account, name dac_id);
-
-        // Temporary actions for old pay processing
-        bool claimoldpaye_if_found(uint64_t payid, name dac_id);
-        bool removeoldpay_if_found(uint64_t payid, name dac_id);
-        bool rejectoldpay_if_found(uint64_t payid, name dac_id);
-        // end Temporary code for old payments processing
     };
 }; // namespace eosdac
