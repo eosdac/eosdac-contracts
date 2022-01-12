@@ -109,7 +109,7 @@ describe('msigworlds', () => {
                 actions: [],
                 context_free_actions: [],
                 delay_sec: '0',
-                expiration: new Date(Date.now() - 10000),
+                expiration: new Date(Date.now() - 25 * 3600 * 1000),
                 max_cpu_usage_ms: 0,
                 max_net_usage_words: '0',
                 ref_block_num: 12345,
