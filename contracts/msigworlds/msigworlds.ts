@@ -4,7 +4,7 @@
 // Any changes you make will be overwritten by Lamington
 // =====================================================
 
-import { Account, Contract, GetTableRowsOptions, ExtendedAsset, ExtendedSymbol, ActorPermission } from 'lamington';
+import { Account, Contract, GetTableRowsOptions, ExtendedAsset, ExtendedSymbol, ActorPermission, TableRowsResult } from 'lamington';
 
 // Table row types
 export interface MsigworldsAction {
@@ -14,11 +14,34 @@ export interface MsigworldsAction {
 	data: string;
 }
 
+export interface MsigworldsApproval {
+	level: MsigworldsPermissionLevel;
+	time: string;
+}
+
+export interface MsigworldsApprovalsInfo {
+	proposal_name: string|number;
+	requested_approvals: Array<MsigworldsApproval>;
+	provided_approvals: Array<MsigworldsApproval>;
+}
+
 export interface MsigworldsApprove {
 	proposal_name: string|number;
 	level: MsigworldsPermissionLevel;
 	dac_id: string|number;
-	proposal_hash: string;
+	proposal_hash: string|null;
+}
+
+export interface MsigworldsBlockaction {
+	account: string|number;
+	action: string|number;
+	dac_id: string|number;
+}
+
+export interface MsigworldsBlockedAction {
+	id: number|string;
+	account: string|number;
+	action: string|number;
 }
 
 export interface MsigworldsCancel {
@@ -48,6 +71,11 @@ export interface MsigworldsInvalidate {
 	dac_id: string|number;
 }
 
+export interface MsigworldsInvalidation {
+	account: string|number;
+	last_invalidation_time: string;
+}
+
 export interface MsigworldsPairStringString {
 	key: string;
 	value: string;
@@ -56,6 +84,16 @@ export interface MsigworldsPairStringString {
 export interface MsigworldsPermissionLevel {
 	actor: string|number;
 	permission: string|number;
+}
+
+export interface MsigworldsProposal {
+	proposal_name: string|number;
+	proposer: string|number;
+	packed_transaction: string;
+	earliest_exec_time: string|null;
+	modified_date: Date;
+	state: number;
+	metadata: Array<{ first: string; second: string }>;
 }
 
 export interface MsigworldsPropose {
@@ -94,7 +132,8 @@ export interface MsigworldsUnapprove {
 
 export interface Msigworlds extends Contract {
 	// Actions
-	approve(proposal_name: string|number, level: MsigworldsPermissionLevel, dac_id: string|number, proposal_hash: string, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	approve(proposal_name: string|number, level: MsigworldsPermissionLevel, dac_id: string|number, proposal_hash: string|null, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	blockaction(account: string|number, action: string|number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	cancel(proposal_name: string|number, canceler: string|number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	cleanup(proposal_name: string|number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	exec(proposal_name: string|number, executer: string|number, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
@@ -102,14 +141,19 @@ export interface Msigworlds extends Contract {
 	propose(proposer: string|number, proposal_name: string|number, requested: Array<MsigworldsPermissionLevel>, dac_id: string|number, metadata: Array<{ first: string; second: string }>, trx: MsigworldsTransaction, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	unapprove(proposal_name: string|number, level: MsigworldsPermissionLevel, dac_id: string|number, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	// Actions with object params. (This is WIP and not ready for use)
-	approveO(params: {proposal_name: string|number, level: MsigworldsPermissionLevel, dac_id: string|number, proposal_hash: string}, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
-	cancelO(params: {proposal_name: string|number, canceler: string|number, dac_id: string|number}, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
-	cleanupO(params: {proposal_name: string|number, dac_id: string|number}, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
-	execO(params: {proposal_name: string|number, executer: string|number, dac_id: string|number}, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
-	invalidateO(params: {account: string|number, dac_id: string|number}, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
-	proposeO(params: {proposer: string|number, proposal_name: string|number, requested: Array<MsigworldsPermissionLevel>, dac_id: string|number, metadata: Array<{ first: string; second: string }>, trx: MsigworldsTransaction}, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
-	unapproveO(params: {proposal_name: string|number, level: MsigworldsPermissionLevel, dac_id: string|number}, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	approve_object_params(params: {proposal_name: string|number, level: MsigworldsPermissionLevel, dac_id: string|number, proposal_hash: string|null}, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	blockaction_object_params(params: {account: string|number, action: string|number, dac_id: string|number}, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	cancel_object_params(params: {proposal_name: string|number, canceler: string|number, dac_id: string|number}, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	cleanup_object_params(params: {proposal_name: string|number, dac_id: string|number}, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	exec_object_params(params: {proposal_name: string|number, executer: string|number, dac_id: string|number}, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	invalidate_object_params(params: {account: string|number, dac_id: string|number}, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	propose_object_params(params: {proposer: string|number, proposal_name: string|number, requested: Array<MsigworldsPermissionLevel>, dac_id: string|number, metadata: Array<{ first: string; second: string }>, trx: MsigworldsTransaction}, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
+	unapprove_object_params(params: {proposal_name: string|number, level: MsigworldsPermissionLevel, dac_id: string|number}, options?: { from?: Account, auths?: ActorPermission[] }): Promise<any>;
 	
 	// Tables
+	approvalsTable(options?: GetTableRowsOptions): Promise<TableRowsResult<MsigworldsApprovalsInfo>>;
+	blockedactnsTable(options?: GetTableRowsOptions): Promise<TableRowsResult<MsigworldsBlockedAction>>;
+	invalsTable(options?: GetTableRowsOptions): Promise<TableRowsResult<MsigworldsInvalidation>>;
+	proposalsTable(options?: GetTableRowsOptions): Promise<TableRowsResult<MsigworldsProposal>>;
 }
 
