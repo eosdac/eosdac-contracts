@@ -7,6 +7,7 @@ import {
   assertMissingAuthority,
   EOSManager,
   sleep,
+  debugPromise,
 } from 'lamington';
 
 const api = EOSManager.api;
@@ -36,7 +37,7 @@ describe('msigworlds', () => {
   context('block actions', async () => {
     context('with wrong auth', async () => {
       it('should fail with auth error', async () => {
-        assertMissingAuthority(
+        await assertMissingAuthority(
           msigworlds.blockaction(eosioToken.account.name, 'close', 'dac1', {
             from: owner1,
           })
@@ -45,7 +46,7 @@ describe('msigworlds', () => {
     });
     context('with correct auth', async () => {
       it('should succeed', async () => {
-        msigworlds.blockaction(eosioToken.account.name, 'close', 'dac1', {
+        await msigworlds.blockaction(eosioToken.account.name, 'close', 'dac1', {
           from: msigworlds.account,
         });
       });
@@ -98,7 +99,7 @@ describe('msigworlds', () => {
           await assertEOSErrorIncludesMessage(
             msigworlds.propose(
               owner1.name,
-              'prop1',
+              'propexp1',
               [
                 { actor: owner1.name, permission: 'active' },
                 { actor: owner2.name, permission: 'active' },
@@ -124,7 +125,7 @@ describe('msigworlds', () => {
       });
       context('with context free actions included', async () => {
         it('should fail with context free actions error', async () => {
-          assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             msigworlds.propose(
               owner1.name,
               'prop1',
@@ -183,7 +184,7 @@ describe('msigworlds', () => {
       });
       context('with blocked action', async () => {
         it('should fail with blocked action error', async () => {
-          assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             msigworlds.propose(
               owner1.name,
               'prop1',
@@ -361,7 +362,7 @@ describe('msigworlds', () => {
   context('approve', async () => {
     context('with wrong auth', async () => {
       it('should fail with auth error', async () => {
-        assertMissingAuthority(
+        await assertMissingAuthority(
           msigworlds.approve_object_params(
             {
               proposal_name: 'prop1',
@@ -377,7 +378,7 @@ describe('msigworlds', () => {
     context('with correct auth', async () => {
       context('with non-existing proposal', async () => {
         it('should fail with prop not found error', async () => {
-          assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             msigworlds.approve(
               'prop11',
               { actor: owner1.name, permission: 'active' },
@@ -393,7 +394,7 @@ describe('msigworlds', () => {
     context('with existing proposal', async () => {
       context('for unrequested auth', async () => {
         it('should fail with approval not on list found error', async () => {
-          assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             msigworlds.approve(
               'prop1',
               { actor: owner3.name, permission: 'active' },
@@ -448,7 +449,7 @@ describe('msigworlds', () => {
   context('unapprove', async () => {
     context('with wrong auth', async () => {
       it('should fail with auth error', async () => {
-        assertMissingAuthority(
+        await assertMissingAuthority(
           msigworlds.unapprove_object_params(
             {
               proposal_name: 'prop1',
@@ -463,7 +464,7 @@ describe('msigworlds', () => {
     context('with correct auth', async () => {
       context('with non-existing proposal', async () => {
         it('should fail with prop not found error', async () => {
-          assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             msigworlds.unapprove(
               'prop11',
               { actor: owner1.name, permission: 'active' },
@@ -479,7 +480,7 @@ describe('msigworlds', () => {
       context('with existing proposal', async () => {
         context('for previously unapproved auth', async () => {
           it('should fail with approval not on list found error', async () => {
-            assertEOSErrorIncludesMessage(
+            await assertEOSErrorIncludesMessage(
               msigworlds.unapprove(
                 'prop1',
                 { actor: owner3.name, permission: 'active' },
@@ -534,7 +535,7 @@ describe('msigworlds', () => {
   context('cancel', async () => {
     context('with wrong auth', async () => {
       it('should fail with auth error', async () => {
-        assertMissingAuthority(
+        await assertMissingAuthority(
           msigworlds.cancel(
             'prop1',
             owner1.name,
@@ -548,7 +549,7 @@ describe('msigworlds', () => {
     context('with correct auth', async () => {
       context('with non-existing proposal', async () => {
         it('should fail with prop not found error', async () => {
-          assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             msigworlds.cancel('prop11', owner1.name, 'dac1', {
               from: owner1,
             }),
@@ -561,7 +562,7 @@ describe('msigworlds', () => {
       context('with existing proposal', async () => {
         context('for proposal from different creator auth', async () => {
           it('should fail with approval not on list found error', async () => {
-            assertEOSErrorIncludesMessage(
+            await assertEOSErrorIncludesMessage(
               msigworlds.cancel('prop1', owner3.name, 'dac1', {
                 from: owner3,
               }),
@@ -606,7 +607,7 @@ describe('msigworlds', () => {
         });
         context('after proposal has already been cancelled', async () => {
           it('should fail with state error', async () => {
-            assertEOSErrorIncludesMessage(
+            await assertEOSErrorIncludesMessage(
               msigworlds.cancel('prop1', owner1.name, 'dac1', {
                 from: owner1,
               }),
@@ -659,7 +660,7 @@ describe('msigworlds', () => {
     });
     context('with wrong auth', async () => {
       it('should fail with auth error', async () => {
-        assertMissingAuthority(
+        await assertMissingAuthority(
           msigworlds.exec(
             'prop2',
             owner1.name,
@@ -673,7 +674,7 @@ describe('msigworlds', () => {
     context('with correct auth', async () => {
       context('with non-existing proposal', async () => {
         it('should fail with prop not found error', async () => {
-          assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             msigworlds.exec('prop11', owner1.name, 'dac1', {
               from: owner1,
             }),
@@ -685,7 +686,7 @@ describe('msigworlds', () => {
     context('with correct auth', async () => {
       context('for proposal from that is already cancelled', async () => {
         it('should fail with proposal not in pending state.', async () => {
-          assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             msigworlds.exec('prop1', owner3.name, 'dac1', {
               from: owner3,
             }),
@@ -696,7 +697,7 @@ describe('msigworlds', () => {
 
       context('without sufficient auth to approve', async () => {
         it('should fail with transaction auth error', async () => {
-          assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             msigworlds.exec('prop2', owner1.name, 'dac1', {
               from: owner1,
             }),
@@ -743,11 +744,11 @@ describe('msigworlds', () => {
             },
             { from: owner1 }
           );
-          await sleep(2000);
+          await sleep(2001);
         });
 
         it('should fail with expired error', async () => {
-          assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             msigworlds.exec('propexp', owner1.name, 'dac1', {
               from: owner1,
             }),
@@ -758,56 +759,65 @@ describe('msigworlds', () => {
     });
     context('with sufficient auth for transaction', async () => {
       before(async () => {
-        await msigworlds.propose(
-          owner1.name,
-          'propgood',
-          [
-            { actor: owner1.name, permission: 'active' },
-            { actor: owner2.name, permission: 'active' },
-          ],
-          'dac1',
-          [],
-          {
-            actions: await api.serializeActions([
-              {
-                account: 'alienworlds',
-                authorization: [
-                  { actor: owner1.name, permission: 'active' },
-                  { actor: owner2.name, permission: 'active' },
-                ],
-                name: 'transfer',
-                data: {
-                  from: owner1.name,
-                  to: owner2.name,
-                  quantity: '10.0000 TLM',
-                  memo: 'testing',
+        await debugPromise(
+          msigworlds.propose(
+            owner1.name,
+            'propgood',
+            [
+              { actor: owner1.name, permission: 'active' },
+              { actor: owner2.name, permission: 'active' },
+            ],
+            'dac1',
+            [],
+            {
+              actions: await api.serializeActions([
+                {
+                  account: 'alienworlds',
+                  authorization: [
+                    { actor: owner1.name, permission: 'active' },
+                    { actor: owner2.name, permission: 'active' },
+                  ],
+                  name: 'transfer',
+                  data: {
+                    from: owner1.name,
+                    to: owner2.name,
+                    quantity: '10.0000 TLM',
+                    memo: 'testing',
+                  },
                 },
-              },
-            ]),
-            context_free_actions: [],
-            delay_sec: '0',
-            expiration: new Date(Date.now() + 10000),
-            max_cpu_usage_ms: 0,
-            max_net_usage_words: '0',
-            ref_block_num: 12345,
-            ref_block_prefix: 123,
-            transaction_extensions: [],
-          },
-          { from: owner1 }
+              ]),
+              context_free_actions: [],
+              delay_sec: '0',
+              expiration: new Date(Date.now() + 10000),
+              max_cpu_usage_ms: 0,
+              max_net_usage_words: '0',
+              ref_block_num: 12345,
+              ref_block_prefix: 123,
+              transaction_extensions: [],
+            },
+            { from: owner1 }
+          ),
+          'msigworlds.propose failed'
         );
-        await msigworlds.approve(
-          'propgood',
-          { actor: owner1.name, permission: 'active' },
-          'dac1',
-          null,
-          { from: owner1 }
+        await debugPromise(
+          msigworlds.approve(
+            'propgood',
+            { actor: owner1.name, permission: 'active' },
+            'dac1',
+            null,
+            { from: owner1 }
+          ),
+          'msigworlds.approve 1 failed'
         );
-        await msigworlds.approve(
-          'propgood',
-          { actor: owner2.name, permission: 'active' },
-          'dac1',
-          null,
-          { from: owner2 }
+        await debugPromise(
+          msigworlds.approve(
+            'propgood',
+            { actor: owner2.name, permission: 'active' },
+            'dac1',
+            null,
+            { from: owner2 }
+          ),
+          'msigworlds.approve 2 failed'
         );
       });
       it('should succeed', async () => {
@@ -843,7 +853,7 @@ describe('msigworlds', () => {
     });
     context('after proposal has already been executed', async () => {
       it('should fail with state error', async () => {
-        assertEOSErrorIncludesMessage(
+        await assertEOSErrorIncludesMessage(
           msigworlds.exec('propgood', owner1.name, 'dac1', {
             from: owner1,
           }),
