@@ -126,7 +126,7 @@ void multisig::approve(
         auto table_op = [](auto &&, auto &&) {};
         if (trx_is_authorized(
                 get_approvals_and_adjust_table(get_self(), proposal_name, table_op, dac_id), prop.packed_transaction)) {
-            proptable.modify(prop, same_payer, [&](auto &p) {
+            proptable.modify(prop, get_self(), [&](auto &p) {
                 p.earliest_exec_time =
                     std::optional<time_point>{current_time_point() + eosio::seconds(trx_header.delay_sec.value)};
             });
