@@ -3,7 +3,7 @@
 
 using namespace eosdac;
 
-ACTION daccustodian::nominatecand(const name& cand, const asset& requestedpay, const name& dac_id) {
+ACTION daccustodian::nominatecand(const name &cand, const asset &requestedpay, const name &dac_id) {
     require_auth(cand);
     assertValidMember(cand, dac_id);
     contr_state  currentState = contr_state::get_current_state(_self, dac_id);
@@ -45,29 +45,29 @@ ACTION daccustodian::nominatecand(const name& cand, const asset& requestedpay, c
     }
 }
 
-ACTION daccustodian::withdrawcand(const name& cand, const name& dac_id) {
+ACTION daccustodian::withdrawcand(const name &cand, const name &dac_id) {
     require_auth(cand);
     removeCandidate(cand, false, dac_id);
 }
 
-ACTION daccustodian::firecand(const name& cand, const bool lockupStake, const name& dac_id) {
+ACTION daccustodian::firecand(const name &cand, const bool lockupStake, const name &dac_id) {
     auto dac = dacdir::dac_for_id(dac_id);
     require_auth(dac.account_for_type(dacdir::AUTH));
     removeCandidate(cand, lockupStake, dac_id);
 }
 
-ACTION daccustodian::resigncust(const name& cust, const name& dac_id) {
+ACTION daccustodian::resigncust(const name &cust, const name &dac_id) {
     require_auth(cust);
     removeCustodian(cust, dac_id);
 }
 
-ACTION daccustodian::firecust(const name& cust, const name& dac_id) {
+ACTION daccustodian::firecust(const name &cust, const name &dac_id) {
     auto dac = dacdir::dac_for_id(dac_id);
     require_auth(dac.account_for_type(dacdir::AUTH));
     removeCustodian(cust, dac_id);
 }
 
-ACTION daccustodian::setperm(const name& cand, const name& permission, const name& dac_id) {
+ACTION daccustodian::setperm(const name &cand, const name &permission, const name &dac_id) {
     require_auth(cand);
     assertValidMember(cand, dac_id);
 
@@ -95,7 +95,7 @@ ACTION daccustodian::setperm(const name& cand, const name& permission, const nam
     }
 }
 
-ACTION daccustodian::appointcust(const vector<name>& custs, const name& dac_id) {
+ACTION daccustodian::appointcust(const vector<name> &custs, const name &dac_id) {
     dacdir::dac dac          = dacdir::dac_for_id(dac_id);
     name        auth_account = dac.account_for_type(dacdir::AUTH);
     require_auth(auth_account);
@@ -139,7 +139,7 @@ void daccustodian::validateMinStake(name account, name dac_id) {
     contr_config   configs        = contr_config::get_current_configs(get_self(), dac_id);
     extended_asset required_stake = configs.lockupasset;
 
-    if (required_stake.quantity.amount > 0){
+    if (required_stake.quantity.amount > 0) {
         asset staked = eosdac::get_staked(account, required_stake.contract, required_stake.quantity.symbol);
         print("Staked : ", staked, "\nRequired : ", required_stake.quantity);
         check(staked.amount >= required_stake.quantity.amount, "ERR::VALIDATEMINSTAKE_NOT_ENOUGH::Not staked enough");
@@ -198,7 +198,7 @@ void daccustodian::removeCandidate(name cand, bool lockupStake, name dac_id) {
     });
 }
 
-ACTION daccustodian::regproxy(const name& proxy_member, const name& dac_id) {
+ACTION daccustodian::regproxy(const name &proxy_member, const name &dac_id) {
     require_auth(proxy_member);
     assertValidMember(proxy_member, dac_id);
 
@@ -212,7 +212,7 @@ ACTION daccustodian::regproxy(const name& proxy_member, const name& dac_id) {
     });
 }
 
-ACTION daccustodian::unregproxy(const name& proxy_member, const name& dac_id) {
+ACTION daccustodian::unregproxy(const name &proxy_member, const name &dac_id) {
     require_auth(proxy_member);
 
     proxies_table proxies(get_self(), dac_id.value);

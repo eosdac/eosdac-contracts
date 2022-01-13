@@ -1,5 +1,5 @@
 
-void daccustodian::resetvotes(const name& voter, const name& dac_id) {
+void daccustodian::resetvotes(const name &voter, const name &dac_id) {
     require_auth(get_self());
 
     votes_table votes_cast_by_members(_self, dac_id.value);
@@ -10,7 +10,7 @@ void daccustodian::resetvotes(const name& voter, const name& dac_id) {
     votes_cast_by_members.erase(existingVote);
 }
 
-void daccustodian::resetcands(const name& dac_id) {
+void daccustodian::resetcands(const name &dac_id) {
     require_auth(get_self());
 
     candidates_table candidates(_self, dac_id.value);

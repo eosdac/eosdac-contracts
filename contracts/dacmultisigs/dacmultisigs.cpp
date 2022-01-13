@@ -23,7 +23,7 @@ void dacmultisigs::proposede(name proposer, name proposal_name, string metadata,
     msig_proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND_MSIG::Proposal not found in eosio.msig");
 
     auto     size   = transaction_size();
-    char *   buffer = (char *)(512 < size ? malloc(size) : alloca(size));
+    char    *buffer = (char *)(512 < size ? malloc(size) : alloca(size));
     uint32_t read   = read_transaction(buffer, size);
     check(size == read, "ERR::READ_TRANSACTION_FAILED::read_transaction failed");
 
@@ -53,7 +53,7 @@ void dacmultisigs::approvede(name proposer, name proposal_name, name approver, n
     msig_proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND_MSIG::Proposal not found in eosio.msig");
 
     proposals_table proposals(_self, dac_id.value);
-    auto &          proposal = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
+    auto           &proposal = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
     proposals.modify(proposal, same_payer, [&](storedproposal &p) {
         p.modifieddate = time_point_sec(eosio::current_time_point());
     });
@@ -72,7 +72,7 @@ void dacmultisigs::unapprovede(name proposer, name proposal_name, name unapprove
     msig_proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND_MSIG::Proposal not found in eosio.msig");
 
     proposals_table proposals(_self, dac_id.value);
-    auto &          proposal = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
+    auto           &proposal = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
     proposals.modify(proposal, same_payer, [&](storedproposal &p) {
         p.modifieddate = time_point_sec(eosio::current_time_point());
     });
@@ -124,7 +124,7 @@ void dacmultisigs::cleane(name proposer, name proposal_name, name dac_id) {
     uint32_t       two_weeks = 60 * 60 * 24 * 14;
 
     proposals_table proposals(_self, dac_id.value);
-    auto &          proposal = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
+    auto           &proposal = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
 
     check(dtnow > (proposal.modifieddate + two_weeks), "ERR::PROPOSAL_STILL_ACTIVE::This proposal is still active");
 

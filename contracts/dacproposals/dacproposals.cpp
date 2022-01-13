@@ -409,16 +409,16 @@ namespace eosdac {
             } else {
                 approved_count = count_votes(prop, proposal_approve, dac_id);
                 newPropState   = (approved_count >= current_configs(dac_id).proposal_threshold)
-                                   ? ProposalStateHas_enough_approvals_votes
-                                   : ProposalStatePending_approval;
+                                     ? ProposalStateHas_enough_approvals_votes
+                                     : ProposalStatePending_approval;
             }
             break;
         case ProposalStatePending_finalize:
         case ProposalStateHas_enough_finalize_votes:
             approved_count = count_votes(prop, finalize_approve, dac_id);
             newPropState   = (approved_count >= current_configs(dac_id).finalize_threshold)
-                               ? ProposalStateHas_enough_finalize_votes
-                               : ProposalStatePending_finalize;
+                                 ? ProposalStateHas_enough_finalize_votes
+                                 : ProposalStatePending_finalize;
             break;
         }
         if (prop.state != newPropState) {
@@ -517,7 +517,7 @@ namespace eosdac {
         // Find the difference between current custodians and the ones that have already voted to avoid double votes.
         std::vector<name> nonvoting_custodians(current_custodians.size());
         auto              end_itr = std::set_difference(current_custodians.begin(), current_custodians.end(),
-            voted_custodians.begin(), voted_custodians.end(), nonvoting_custodians.begin());
+                         voted_custodians.begin(), voted_custodians.end(), nonvoting_custodians.begin());
 
         nonvoting_custodians.resize(end_itr - nonvoting_custodians.begin());
 

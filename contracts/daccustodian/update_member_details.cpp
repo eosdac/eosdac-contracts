@@ -1,6 +1,6 @@
 using namespace eosdac;
 
-ACTION daccustodian::updatebio(const name& cand, const string& bio, const name& dac_id) {
+ACTION daccustodian::updatebio(const name &cand, const string &bio, const name &dac_id) {
     require_auth(cand);
     assertValidMember(cand, dac_id);
     candidates_table registered_candidates(_self, dac_id.value);
@@ -10,7 +10,7 @@ ACTION daccustodian::updatebio(const name& cand, const string& bio, const name& 
     check(bio.size() < 256, "ERR::UPDATEBIO_BIO_SIZE_TOO_LONG::The bio should be less than 256 characters.");
 }
 
-ACTION daccustodian::updatereqpay(const name& cand, const asset& requestedpay, const name& dac_id) {
+ACTION daccustodian::updatereqpay(const name &cand, const asset &requestedpay, const name &dac_id) {
     require_auth(cand);
     assertValidMember(cand, dac_id);
 

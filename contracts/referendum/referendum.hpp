@@ -122,8 +122,8 @@ CONTRACT referendum : public contract {
         uint64_t by_proposer() const { return proposer.value; }
     };
     /* Have to use EOSLIB_SERIALIZE to work around problems with boost deserialization */
-    EOSLIB_SERIALIZE(referendum_data, (referendum_id)(proposer)(type)(voting_type)(status)(title)(content_ref)(
-                                          token_votes)(account_votes)(expires)(acts));
+    EOSLIB_SERIALIZE(referendum_data,
+        (referendum_id)(proposer)(type)(voting_type)(status)(title)(content_ref)(token_votes)(account_votes)(expires)(acts));
     typedef eosio::multi_index<"referendums"_n, referendum_data,
         indexed_by<"byproposer"_n, const_mem_fun<referendum_data, uint64_t, &referendum_data::by_proposer>>>
         referenda_table;

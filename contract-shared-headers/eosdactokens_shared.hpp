@@ -161,4 +161,3 @@ namespace eosdac {
             "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_LATEST_TERMS::Agreed terms isn't the latest.");
     }
 } // namespace eosdac
-

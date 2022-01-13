@@ -45,7 +45,7 @@ int64_t daccustodian::get_vote_weight(name voter, name dac_id) {
 
     dacdir::dac found_dac = dacdir::dac_for_id(dac_id);
 
-    const auto            vote_contract = found_dac.account_for_type_maybe(dacdir::VOTE_WEIGHT);
+    const auto      vote_contract = found_dac.account_for_type_maybe(dacdir::VOTE_WEIGHT);
     extended_symbol token_symbol  = found_dac.symbol;
 
     if (vote_contract) {

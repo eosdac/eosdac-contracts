@@ -2,7 +2,7 @@
 #include "../../contract-shared-headers/dacdirectory_shared.hpp"
 using namespace eosdac;
 
-ACTION daccustodian::balanceobsv(const vector<account_balance_delta>& account_balance_deltas, const name& dac_id) {
+ACTION daccustodian::balanceobsv(const vector<account_balance_delta> &account_balance_deltas, const name &dac_id) {
     auto                         dac       = dacdir::dac_for_id(dac_id);
     auto                         dacSymbol = dac.symbol.get_symbol();
     vector<account_weight_delta> weightDeltas;
@@ -15,13 +15,13 @@ ACTION daccustodian::balanceobsv(const vector<account_balance_delta>& account_ba
     weightobsv(weightDeltas, dac_id);
 }
 
-ACTION daccustodian::weightobsv(const vector<account_weight_delta>& account_weight_deltas, const name& dac_id) {
+ACTION daccustodian::weightobsv(const vector<account_weight_delta> &account_weight_deltas, const name &dac_id) {
     auto dac            = dacdir::dac_for_id(dac_id);
     auto token_contract = dac.symbol.get_contract();
 
     const auto router_account = dac.account_for_type_maybe(dacdir::VOTE_WEIGHT);
-    
-    check(has_auth(token_contract) || (router_account && has_auth(*router_account) ),
+
+    check(has_auth(token_contract) || (router_account && has_auth(*router_account)),
         "Must have auth of token or router contract to call weightobsv");
 
     votes_table votes_cast_by_members(get_self(), dac_id.value);
@@ -38,7 +38,7 @@ ACTION daccustodian::weightobsv(const vector<account_weight_delta>& account_weig
     }
 }
 
-ACTION daccustodian::stakeobsv(const vector<account_stake_delta>& account_stake_deltas, const name& dac_id) {
+ACTION daccustodian::stakeobsv(const vector<account_stake_delta> &account_stake_deltas, const name &dac_id) {
     auto dac            = dacdir::dac_for_id(dac_id);
     auto token_contract = dac.symbol.get_contract();
 
@@ -55,7 +55,8 @@ ACTION daccustodian::stakeobsv(const vector<account_stake_delta>& account_stake_
     }
 }
 
-void daccustodian::validateUnstakeAmount(const name& code, const name& cand, const asset& unstake_amount, const name& dac_id) {
+void daccustodian::validateUnstakeAmount(
+    const name &code, const name &cand, const asset &unstake_amount, const name &dac_id) {
     // Will assert if adc_id not found
     check(unstake_amount.amount > 0, "ERR::NEGATIVE_UNSTAKE::Unstake amount must be positive");
     auto dac            = dacdir::dac_for_id(dac_id);

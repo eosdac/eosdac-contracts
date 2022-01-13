@@ -1,13 +1,13 @@
 #include <eosio/transaction.hpp>
 using namespace eosdac;
 
-ACTION daccustodian::claimpay(const uint64_t payid, const name& dac_id) {
+ACTION daccustodian::claimpay(const uint64_t payid, const name &dac_id) {
     pending_pay_table pending_pay(get_self(), dac_id.value);
 
     dacdir::dac dac = dacdir::dac_for_id(dac_id);
 
     contr_config configs  = contr_config::get_current_configs(get_self(), dac_id);
-    const pay &  payClaim = pending_pay.get(payid, "ERR::CLAIMPAY_INVALID_CLAIM_ID::Invalid pay claim id.");
+    const pay   &payClaim = pending_pay.get(payid, "ERR::CLAIMPAY_INVALID_CLAIM_ID::Invalid pay claim id.");
     assertValidMember(payClaim.receiver, dac_id);
 
     require_auth(payClaim.receiver);
@@ -48,18 +48,18 @@ ACTION daccustodian::claimpay(const uint64_t payid, const name& dac_id) {
     });
 }
 
-ACTION daccustodian::removecuspay(const uint64_t payid, const name& dac_id) {
+ACTION daccustodian::removecuspay(const uint64_t payid, const name &dac_id) {
     require_auth(get_self());
 
     pending_pay_table pending_pay(get_self(), dac_id.value);
-    const pay &       payClaim = pending_pay.get(payid, "ERR::CLAIMPAY_INVALID_CLAIM_ID::Invalid pay claim id.");
+    const pay        &payClaim = pending_pay.get(payid, "ERR::CLAIMPAY_INVALID_CLAIM_ID::Invalid pay claim id.");
 
     pending_pay.erase(payClaim);
 }
 
-ACTION daccustodian::rejectcuspay(const uint64_t payid, const name& dac_id) {
+ACTION daccustodian::rejectcuspay(const uint64_t payid, const name &dac_id) {
     pending_pay_table pending_pay(get_self(), dac_id.value);
-    const pay &       payClaim = pending_pay.get(payid, "ERR::CLAIMPAY_INVALID_CLAIM_ID::Invalid pay claim id.");
+    const pay        &payClaim = pending_pay.get(payid, "ERR::CLAIMPAY_INVALID_CLAIM_ID::Invalid pay claim id.");
     assertValidMember(payClaim.receiver, dac_id);
 
     require_auth(payClaim.receiver);

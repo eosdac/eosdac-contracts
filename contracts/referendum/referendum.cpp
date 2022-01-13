@@ -60,7 +60,7 @@ void referendum::propose(name proposer, name referendum_id, uint8_t type, uint8_
 
     // Get transaction hash for content_ref and next id
     auto     size   = transaction_size();
-    char *   buffer = (char *)(512 < size ? malloc(size) : alloca(size));
+    char    *buffer = (char *)(512 < size ? malloc(size) : alloca(size));
     uint32_t read   = read_transaction(buffer, size);
     check(size == read, "ERR::READ_TRANSACTION_FAILED::read_transaction failed");
     checksum256 trx_id = sha256(buffer, read);

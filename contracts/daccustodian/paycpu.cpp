@@ -1,13 +1,13 @@
 
 using namespace eosdac;
 
-ACTION daccustodian::paycpu(const name& dac_id) {
+ACTION daccustodian::paycpu(const name &dac_id) {
     dacdir::dac dac_inst     = dacdir::dac_for_id(dac_id);
     auto        auth_account = dac_inst.account_for_type(dacdir::AUTH);
     require_auth(auth_account);
 
     auto     size   = transaction_size();
-    char *   buffer = (char *)(512 < size ? malloc(size) : alloca(size));
+    char    *buffer = (char *)(512 < size ? malloc(size) : alloca(size));
     uint32_t read   = read_transaction(buffer, size);
     check(size == read, "ERR::READ_TRANSACTION_FAILED::read_transaction failed");
 
