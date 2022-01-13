@@ -14,7 +14,7 @@ CONTRACT stakevote : public contract {
     using contract::contract;
 
     struct config_item;
-    typedef eosio::singleton<"config"_n, config_item> config_container;
+    using config_container = eosio::singleton<"config"_n, config_item>;
     struct [[eosio::table("config"), eosio::contract("stakevote")]] config_item {
         // time multiplier is measured in 10^-8 1 == 0.00000001
         uint16_t time_multiplier = (uint16_t)100000000;
@@ -34,7 +34,7 @@ CONTRACT stakevote : public contract {
 
         uint64_t primary_key() const { return voter.value; }
     };
-    typedef eosio::multi_index<"weights"_n, vote_weight> weight_table;
+    using weight_table = eosio::multi_index<"weights"_n, vote_weight>;
 
     ACTION stakeobsv(vector<account_stake_delta> stake_deltas, name dac_id);
     ACTION balanceobsv(vector<account_balance_delta> balance_deltas, name dac_id);

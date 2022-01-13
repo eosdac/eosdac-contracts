@@ -9,4 +9,4 @@ struct msig_proposal {
     uint64_t primary_key() const { return proposal_name.value; }
 };
 
-typedef multi_index<"proposal"_n, msig_proposal> msig_proposals_table;
+using msig_proposals_table = multi_index<"proposal"_n, msig_proposal>;

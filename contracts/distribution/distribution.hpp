@@ -49,10 +49,9 @@ CONTRACT distribution : public contract {
         uint64_t by_dac_id() const { return dac_id.value; }
         uint64_t by_owner() const { return owner.value; }
     };
-    typedef eosio::multi_index<"districonfs"_n, districonf,
+    using districonf_table = eosio::multi_index<"districonfs"_n, districonf,
         eosio::indexed_by<"bydacid"_n, eosio::const_mem_fun<districonf, uint64_t, &districonf::by_dac_id>>,
-        eosio::indexed_by<"byowner"_n, eosio::const_mem_fun<districonf, uint64_t, &districonf::by_owner>>>
-        districonf_table;
+        eosio::indexed_by<"byowner"_n, eosio::const_mem_fun<districonf, uint64_t, &districonf::by_owner>>>;
 
     // scoped table by distri_id
     TABLE distri {
@@ -61,5 +60,5 @@ CONTRACT distribution : public contract {
         uint64_t primary_key() const { return receiver.value; }
     };
 
-    typedef eosio::multi_index<"distris"_n, distri> distri_table;
+    using distri_table = eosio::multi_index<"distris"_n, distri>;
 };

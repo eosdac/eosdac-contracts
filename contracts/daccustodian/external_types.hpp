@@ -10,7 +10,7 @@ struct currency_stats {
     uint64_t primary_key() const { return supply.symbol.code().raw(); }
 };
 
-typedef eosio::multi_index<"stat"_n, currency_stats> stats;
+using stats = eosio::multi_index<"stat"_n, currency_stats>;
 
 // Authority Structs
 namespace eosiosystem {

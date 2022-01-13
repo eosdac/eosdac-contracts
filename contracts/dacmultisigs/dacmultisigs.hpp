@@ -30,7 +30,7 @@ CONTRACT dacmultisigs : public contract {
         uint64_t primary_key() const { return proposalname.value; }
     };
 
-    typedef multi_index<"proposals"_n, storedproposal> proposals_table;
+    using proposals_table = multi_index<"proposals"_n, storedproposal>;
 
   public:
     using contract::contract;

@@ -61,11 +61,10 @@ namespace eosdac {
             }
         };
 
-        typedef eosio::multi_index<"proposals"_n, proposal,
+        using proposal_table = eosio::multi_index<"proposals"_n, proposal,
             eosio::indexed_by<"proposer"_n, eosio::const_mem_fun<proposal, uint64_t, &proposal::proposer_key>>,
             eosio::indexed_by<"arbitrator"_n, eosio::const_mem_fun<proposal, uint64_t, &proposal::arbitrator_key>>,
-            eosio::indexed_by<"category"_n, eosio::const_mem_fun<proposal, uint64_t, &proposal::category_key>>>
-            proposal_table;
+            eosio::indexed_by<"category"_n, eosio::const_mem_fun<proposal, uint64_t, &proposal::category_key>>>;
 
         TABLE config {
             uint16_t proposal_threshold = 4;
@@ -74,7 +73,7 @@ namespace eosdac {
             uint32_t transfer_delay     = 60 * 60;
         };
 
-        typedef eosio::singleton<"config"_n, config> configs_table;
+        using configs_table = eosio::singleton<"config"_n, config>;
 
         dacproposals(name receiver, name code, datastream<const char *> ds) : contract(receiver, code, ds) {}
 
@@ -143,15 +142,14 @@ namespace eosdac {
             EOSLIB_SERIALIZE(proposalvote, (vote_id)(voter)(proposal_id)(category_id)(vote)(delegatee)(comment_hash))
         };
 
-        typedef eosio::multi_index<"propvotes"_n, proposalvote,
+        using proposal_vote_table = eosio::multi_index<"propvotes"_n, proposalvote,
             indexed_by<"voter"_n, eosio::const_mem_fun<proposalvote, uint64_t, &proposalvote::voter_key>>,
             indexed_by<"proposal"_n, eosio::const_mem_fun<proposalvote, uint64_t, &proposalvote::proposal_key>>,
             indexed_by<"category"_n, eosio::const_mem_fun<proposalvote, uint64_t, &proposalvote::category_key>>,
             indexed_by<"propandvoter"_n,
                 eosio::const_mem_fun<proposalvote, uint128_t, &proposalvote::get_prop_and_voter>>,
             indexed_by<"catandvoter"_n,
-                eosio::const_mem_fun<proposalvote, uint128_t, &proposalvote::get_category_and_voter>>>
-            proposal_vote_table;
+                eosio::const_mem_fun<proposalvote, uint128_t, &proposalvote::get_category_and_voter>>>;
 
         config current_configs(name dac_id) {
             configs_table configs(_self, dac_id.value);

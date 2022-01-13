@@ -31,7 +31,7 @@ CONTRACT referendum : public contract {
 
   public:
     struct contr_config;
-    typedef eosio::singleton<"config2"_n, contr_config> configscontainer;
+    using configscontainer = eosio::singleton<"config2"_n, contr_config>;
 
     struct [[eosio::table("config2"), eosio::contract("daccustodian")]] contr_config {
         eosio::extended_asset lockupasset;
@@ -63,7 +63,7 @@ CONTRACT referendum : public contract {
         uint64_t primary_key() const { return cand.value; }
     };
 
-    typedef multi_index<"candperms"_n, candperm> candperms_table;
+    using candperms_table = multi_index<"candperms"_n, candperm>;
 
     // End custodian structs
 
@@ -85,7 +85,7 @@ CONTRACT referendum : public contract {
     };
 
     struct config_item;
-    typedef eosio::singleton<"config"_n, config_item> config_container;
+    using config_container = eosio::singleton<"config"_n, config_item>;
     struct [[eosio::table("config"), eosio::contract("referendum")]] config_item {
         uint32_t duration;
         // Key for all the maps is vote_type
@@ -124,9 +124,8 @@ CONTRACT referendum : public contract {
     /* Have to use EOSLIB_SERIALIZE to work around problems with boost deserialization */
     EOSLIB_SERIALIZE(referendum_data,
         (referendum_id)(proposer)(type)(voting_type)(status)(title)(content_ref)(token_votes)(account_votes)(expires)(acts));
-    typedef eosio::multi_index<"referendums"_n, referendum_data,
-        indexed_by<"byproposer"_n, const_mem_fun<referendum_data, uint64_t, &referendum_data::by_proposer>>>
-        referenda_table;
+    using referenda_table = eosio::multi_index<"referendums"_n, referendum_data,
+        indexed_by<"byproposer"_n, const_mem_fun<referendum_data, uint64_t, &referendum_data::by_proposer>>>;
 
     struct [[eosio::table("votes"), eosio::contract("referendum")]] vote_info {
         name                    voter;
@@ -134,7 +133,7 @@ CONTRACT referendum : public contract {
 
         uint64_t primary_key() const { return voter.value; }
     };
-    typedef eosio::multi_index<"votes"_n, vote_info> votes_table;
+    using votes_table = eosio::multi_index<"votes"_n, vote_info>;
 
     struct [[eosio::table("deposits"), eosio::contract("referendum")]] deposit_info {
         name           account;
@@ -145,9 +144,8 @@ CONTRACT referendum : public contract {
             return (uint128_t{deposit.contract.value} << 64) | deposit.get_extended_symbol().get_symbol().raw();
         };
     };
-    typedef eosio::multi_index<"deposits"_n, deposit_info,
-        indexed_by<"bysym"_n, const_mem_fun<deposit_info, uint128_t, &deposit_info::by_sym>>>
-        deposits_table;
+    using deposits_table = eosio::multi_index<"deposits"_n, deposit_info,
+        indexed_by<"bysym"_n, const_mem_fun<deposit_info, uint128_t, &deposit_info::by_sym>>>;
 
     /*
      * TODO : replace with the native function once cdt 1.7.0 is released

@@ -52,7 +52,7 @@ namespace eosdac {
 
             uint64_t primary_key() const { return account.value; }
         };
-        typedef multi_index<"stakes"_n, stake_info> stakes_table;
+        using stakes_table = multi_index<"stakes"_n, stake_info>;
 
         TABLE unstake_info {
             uint64_t       key;
@@ -63,9 +63,8 @@ namespace eosdac {
             uint64_t primary_key() const { return key; }
             uint64_t by_account() const { return account.value; }
         };
-        typedef multi_index<"unstakes"_n, unstake_info,
-            indexed_by<"byaccount"_n, const_mem_fun<unstake_info, uint64_t, &unstake_info::by_account>>>
-            unstakes_table;
+        using unstakes_table = multi_index<"unstakes"_n, unstake_info,
+            indexed_by<"byaccount"_n, const_mem_fun<unstake_info, uint64_t, &unstake_info::by_account>>>;
 
         TABLE staketime_info {
             name     account;
@@ -73,9 +72,9 @@ namespace eosdac {
 
             uint64_t primary_key() const { return account.value; }
         };
-        typedef multi_index<"staketime"_n, staketime_info> staketimes_table;
+        using staketimes_table = multi_index<"staketime"_n, staketime_info>;
 
-        typedef eosio::singleton<"stakeconfig"_n, stake_config> stateconfig_container;
+        using stateconfig_container = eosio::singleton<"stakeconfig"_n, stake_config>;
         struct [[eosio::table("stakeconfig"), eosio::contract("eosdactokens")]] stake_config {
             bool     enabled        = false;
             uint32_t min_stake_time = uint32_t(60 * 60 * 24 * 3);
@@ -98,7 +97,7 @@ namespace eosdac {
             uint64_t primary_key() const { return sender.value; }
         };
 
-        typedef multi_index<"members"_n, member> regmembers;
+        using regmembers = multi_index<"members"_n, member>;
 
         TABLE termsinfo {
             string   terms;
@@ -115,9 +114,8 @@ namespace eosdac {
             EOSLIB_SERIALIZE(termsinfo, (terms)(hash)(version))
         };
 
-        typedef multi_index<"memberterms"_n, termsinfo,
-            indexed_by<"bylatestver"_n, const_mem_fun<termsinfo, uint64_t, &termsinfo::by_latest_version>>>
-            memterms;
+        using memterms = multi_index<"memberterms"_n, termsinfo,
+            indexed_by<"bylatestver"_n, const_mem_fun<termsinfo, uint64_t, &termsinfo::by_latest_version>>>;
 
         friend eosiosystem::system_contract;
 
@@ -140,8 +138,8 @@ namespace eosdac {
             uint64_t primary_key() const { return supply.symbol.code().raw(); }
         };
 
-        typedef eosio::multi_index<"accounts"_n, account>    accounts;
-        typedef eosio::multi_index<"stat"_n, currency_stats> stats;
+        using accounts = eosio::multi_index<"accounts"_n, account>;
+        using stats    = eosio::multi_index<"stat"_n, currency_stats>;
 
         void sub_balance(name owner, asset value);
         void add_balance(name owner, asset value, name payer);

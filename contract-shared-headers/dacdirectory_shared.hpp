@@ -74,10 +74,9 @@ namespace eosdac {
             uint128_t by_symbol() const { return eosdac::raw_from_extended_symbol(symbol); }
         };
 
-        typedef eosio::multi_index<"dacs"_n, dac,
+        using dac_table = eosio::multi_index<"dacs"_n, dac,
             eosio::indexed_by<"byowner"_n, eosio::const_mem_fun<dac, uint64_t, &dac::by_owner>>,
-            eosio::indexed_by<"bysymbol"_n, eosio::const_mem_fun<dac, uint128_t, &dac::by_symbol>>>
-            dac_table;
+            eosio::indexed_by<"bysymbol"_n, eosio::const_mem_fun<dac, uint128_t, &dac::by_symbol>>>;
 
         const dac dac_for_id(eosio::name id) {
             dac_table dactable = dac_table("dacdirectory"_n, "dacdirectory"_n.value);
