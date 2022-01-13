@@ -1,14 +1,13 @@
 #pragma once
+#include <eosio/asset.hpp>
 #include <eosio/eosio.hpp>
 #include <eosio/symbol.hpp>
-#include <eosio/asset.hpp>
+#include <experimental/type_traits>
 
 using namespace eosio;
 using namespace std;
 
 namespace eosdac {
-
-    
 
     // Utility to combine ids to help with indexing.
     uint128_t combine_ids(const uint8_t &boolvalue, const uint64_t &longValue) {
@@ -35,45 +34,47 @@ namespace eosdac {
     static const __uint128_t raw_from_extended_symbol(const extended_symbol &symbol) {
         return (uint128_t{symbol.get_contract().value} << 64) | symbol.get_symbol().code().raw();
     }
-    
-  
 
-    
 } // namespace eosdac
+
+/*
+ * Helper functions to build more helpful error and debug messages:
+ */
+
+/* Helpers to detect if a type has the "to_string" method */
+template <typename T> using to_string_t = decltype(std::declval<T>().to_string());
+
+template <typename T> using has_to_string = std::experimental::is_detected<to_string_t, T>;
 
 /*
  * Polymorphic helper to convert common EOS.IO types to string
  */
-template<typename T>
-inline string toString(const T& x) {
-  if constexpr(is_same<T, string>::value) {
-    return x;
-  } else if constexpr(is_same<T, eosio::name>::value || is_same<T, eosio::asset>::value){
-    return x.to_string();
-  } else if constexpr(is_same<T, eosio::symbol>::value) {
-    return x.code().to_string();
-  } else {
-    return to_string(x);
-  }
-} 
+template <typename T> inline string toString(const T &x) {
+    if constexpr (is_same<T, string>::value) {
+        return x;
+    } else if constexpr (is_same<T, eosio::symbol>::value) {
+        return x.code().to_string();
+    } else if constexpr (has_to_string<T>::value) {
+        return x.to_string();
+    } else {
+        return to_string(x);
+    }
+}
 
 /*
  * C++'s missing format string function :-)
  */
-template<typename... Args>
-inline string fmt(const string& format, Args const& ... args){
-  char buf[512];
-  snprintf(buf, sizeof(buf), format.c_str(), toString(args).c_str()...);
-  return buf;
+template <typename... Args> inline string fmt(const string &format, Args const &...args) {
+    char buf[512];
+    snprintf(buf, sizeof(buf), format.c_str(), toString(args).c_str()...);
+    return buf;
 }
-/* eosio::check overload that allows passing a format string for more 
+/* eosio::check overload that allows passing a format string for more
  * helpful error messages.
  */
-template<typename... Args>
-inline void check(bool pred, const string& format, Args const& ... args) {
-  if(!pred) {
-    const auto msg = fmt(format, args...);
-    check(pred, msg.c_str());    
-  }
+template <typename... Args> inline void check(bool pred, const string &format, Args const &...args) {
+    if (!pred) {
+        const auto msg = fmt(format, args...);
+        check(pred, msg.c_str());
+    }
 }
-
