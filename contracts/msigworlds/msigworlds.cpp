@@ -235,7 +235,9 @@ void multisig::exec(name proposal_name, name executer, name dac_id) {
     }
 
     for (const auto &act : actions) {
-        action(permission_level{get_self(), "eosio.code"_n}, act.account, act.name, act.data).send();
+        auto toSend = action(permission_level{get_self(), "active"_n}, act.account, act.name, act.data);
+        // print(act.account, act.name);
+        toSend.send();
     }
 
     auto prop_itr = proptable.iterator_to(prop);

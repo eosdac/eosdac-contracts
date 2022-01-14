@@ -28,6 +28,13 @@ let owner5: Account;
 
 let modDate: Date;
 
+const currentHeadTimeWithAddedSeconds = async (seconds: number) => {
+  const { head_block_time } = await EOSManager.api.rpc.get_info();
+  const date = new Date(new Date(head_block_time).getTime() + seconds * 1000);
+  console.log(date, head_block_time);
+  return date;
+};
+
 describe('msigworlds', () => {
   before(async () => {
     await seedAccounts();
@@ -80,7 +87,7 @@ describe('msigworlds', () => {
               actions: [],
               context_free_actions: [],
               delay_sec: '0',
-              expiration: new Date(Date.now() + 3600),
+              expiration: await currentHeadTimeWithAddedSeconds(3600),
               max_cpu_usage_ms: 0,
               max_net_usage_words: '0',
               ref_block_num: 12345,
@@ -110,7 +117,7 @@ describe('msigworlds', () => {
                 actions: [],
                 context_free_actions: [],
                 delay_sec: '0',
-                expiration: new Date(Date.now() - 25 * 3600 * 1000),
+                expiration: await currentHeadTimeWithAddedSeconds(-25 * 3600),
                 max_cpu_usage_ms: 0,
                 max_net_usage_words: '0',
                 ref_block_num: 12345,
@@ -169,7 +176,7 @@ describe('msigworlds', () => {
                   },
                 ]),
                 delay_sec: '0',
-                expiration: new Date(Date.now() + 3600 * 1000),
+                expiration: await currentHeadTimeWithAddedSeconds(3600),
                 max_cpu_usage_ms: 0,
                 max_net_usage_words: '0',
                 ref_block_num: 12345,
@@ -225,7 +232,7 @@ describe('msigworlds', () => {
                 ]),
                 context_free_actions: [],
                 delay_sec: '0',
-                expiration: new Date(Date.now() + 3600 * 1000),
+                expiration: await currentHeadTimeWithAddedSeconds(3600),
                 max_cpu_usage_ms: 0,
                 max_net_usage_words: '0',
                 ref_block_num: 12345,
@@ -268,7 +275,7 @@ describe('msigworlds', () => {
               ]),
               context_free_actions: [],
               delay_sec: '0',
-              expiration: new Date(Date.now() + 3600 * 1000),
+              expiration: await currentHeadTimeWithAddedSeconds(3600),
               max_cpu_usage_ms: 0,
               max_net_usage_words: '0',
               ref_block_num: 12345,
@@ -344,7 +351,7 @@ describe('msigworlds', () => {
                 ]),
                 context_free_actions: [],
                 delay_sec: '0',
-                expiration: new Date(Date.now() + 3600 * 1000),
+                expiration: await currentHeadTimeWithAddedSeconds(3600),
                 max_cpu_usage_ms: 0,
                 max_net_usage_words: '0',
                 ref_block_num: 12345,
@@ -648,7 +655,7 @@ describe('msigworlds', () => {
           ]),
           context_free_actions: [],
           delay_sec: '0',
-          expiration: new Date(Date.now() + 3600 * 1000),
+          expiration: await currentHeadTimeWithAddedSeconds(3600),
           max_cpu_usage_ms: 0,
           max_net_usage_words: '0',
           ref_block_num: 12345,
@@ -682,8 +689,7 @@ describe('msigworlds', () => {
           );
         });
       });
-    });
-    context('with correct auth', async () => {
+
       context('for proposal from that is already cancelled', async () => {
         it('should fail with proposal not in pending state.', async () => {
           await assertEOSErrorIncludesMessage(
@@ -694,135 +700,130 @@ describe('msigworlds', () => {
           );
         });
       });
+    });
 
-      context('without sufficient auth to approve', async () => {
-        it('should fail with transaction auth error', async () => {
-          await assertEOSErrorIncludesMessage(
-            msigworlds.exec('prop2', owner1.name, 'dac1', {
-              from: owner1,
-            }),
-            'transaction authorization failed'
-          );
-        });
-      });
-      context('with expired transaction', async () => {
-        before(async () => {
-          await msigworlds.propose(
-            owner1.name,
-            'propexp',
-            [
-              { actor: owner1.name, permission: 'active' },
-              { actor: owner2.name, permission: 'active' },
-            ],
-            'dac1',
-            [],
-            {
-              actions: await api.serializeActions([
-                {
-                  account: 'alienworlds',
-                  authorization: [
-                    { actor: owner1.name, permission: 'active' },
-                    { actor: owner2.name, permission: 'active' },
-                  ],
-                  name: 'transfer',
-                  data: {
-                    from: owner1.name,
-                    to: owner2.name,
-                    quantity: '10.0000 TLM',
-                    memo: 'testing',
-                  },
-                },
-              ]),
-              context_free_actions: [],
-              delay_sec: '0',
-              expiration: new Date(Date.now() + 2000),
-              max_cpu_usage_ms: 0,
-              max_net_usage_words: '0',
-              ref_block_num: 12345,
-              ref_block_prefix: 123,
-              transaction_extensions: [],
-            },
-            { from: owner1 }
-          );
-          await sleep(2001);
-        });
-
-        it('should fail with expired error', async () => {
-          await assertEOSErrorIncludesMessage(
-            msigworlds.exec('propexp', owner1.name, 'dac1', {
-              from: owner1,
-            }),
-            'transaction expired'
-          );
-        });
+    context('without sufficient auth to approve', async () => {
+      it('should fail with transaction auth error', async () => {
+        await assertEOSErrorIncludesMessage(
+          msigworlds.exec('prop2', owner1.name, 'dac1', {
+            from: owner1,
+          }),
+          'transaction authorization failed'
+        );
       });
     });
+
+    context('with expired transaction', async () => {
+      before(async () => {
+        await msigworlds.propose(
+          owner1.name,
+          'propexp',
+          [
+            { actor: owner1.name, permission: 'active' },
+            { actor: owner2.name, permission: 'active' },
+          ],
+          'dac1',
+          [],
+          {
+            actions: await api.serializeActions([
+              {
+                account: 'alienworlds',
+                authorization: [
+                  { actor: owner1.name, permission: 'active' },
+                  { actor: owner2.name, permission: 'active' },
+                ],
+                name: 'transfer',
+                data: {
+                  from: owner1.name,
+                  to: owner2.name,
+                  quantity: '10.0000 TLM',
+                  memo: 'testing',
+                },
+              },
+            ]),
+            context_free_actions: [],
+            delay_sec: '0',
+            expiration: await currentHeadTimeWithAddedSeconds(1),
+            max_cpu_usage_ms: 0,
+            max_net_usage_words: '0',
+            ref_block_num: 12345,
+            ref_block_prefix: 123,
+            transaction_extensions: [],
+          },
+          { from: owner1 }
+        );
+        await sleep(2001);
+      });
+
+      it('should fail with expired error', async () => {
+        await assertEOSErrorIncludesMessage(
+          msigworlds.exec('propexp', owner1.name, 'dac1', {
+            from: owner1,
+          }),
+          'transaction expired'
+        );
+      });
+    });
+
     context('with sufficient auth for transaction', async () => {
       before(async () => {
-        await debugPromise(
-          msigworlds.propose(
-            owner1.name,
-            'propgood',
-            [
-              { actor: owner1.name, permission: 'active' },
-              { actor: owner2.name, permission: 'active' },
-            ],
-            'dac1',
-            [],
-            {
-              actions: await api.serializeActions([
-                {
-                  account: 'alienworlds',
-                  authorization: [
-                    { actor: owner1.name, permission: 'active' },
-                    { actor: owner2.name, permission: 'active' },
-                  ],
-                  name: 'transfer',
-                  data: {
-                    from: owner1.name,
-                    to: owner2.name,
-                    quantity: '10.0000 TLM',
-                    memo: 'testing',
-                  },
-                },
-              ]),
-              context_free_actions: [],
-              delay_sec: '0',
-              expiration: new Date(Date.now() + 10000),
-              max_cpu_usage_ms: 0,
-              max_net_usage_words: '0',
-              ref_block_num: 12345,
-              ref_block_prefix: 123,
-              transaction_extensions: [],
-            },
-            { from: owner1 }
-          ),
-          'msigworlds.propose failed'
-        );
-        await debugPromise(
-          msigworlds.approve(
-            'propgood',
+        await msigworlds.propose(
+          owner1.name,
+          'propgood',
+          [
             { actor: owner1.name, permission: 'active' },
-            'dac1',
-            null,
-            { from: owner1 }
-          ),
-          'msigworlds.approve 1 failed'
-        );
-        await debugPromise(
-          msigworlds.approve(
-            'propgood',
             { actor: owner2.name, permission: 'active' },
-            'dac1',
-            null,
-            { from: owner2 }
-          ),
-          'msigworlds.approve 2 failed'
+          ],
+          'dac1',
+          [],
+          {
+            actions: await api.serializeActions([
+              {
+                account: 'alienworlds',
+                authorization: [
+                  { actor: owner1.name, permission: 'active' },
+                  { actor: owner2.name, permission: 'active' },
+                ],
+                name: 'transfer',
+                data: {
+                  from: owner1.name,
+                  to: owner2.name,
+                  quantity: '10.0000 TLM',
+                  memo: 'testing',
+                },
+              },
+            ]),
+            context_free_actions: [],
+            delay_sec: '0',
+            expiration: await currentHeadTimeWithAddedSeconds(10),
+            max_cpu_usage_ms: 0,
+            max_net_usage_words: '0',
+            ref_block_num: 12345,
+            ref_block_prefix: 123,
+            transaction_extensions: [],
+          },
+          { from: owner1 }
+        );
+
+        await msigworlds.approve(
+          'propgood',
+          { actor: owner1.name, permission: 'active' },
+          'dac1',
+          null,
+          { from: owner1 }
+        );
+
+        await msigworlds.approve(
+          'propgood',
+          { actor: owner2.name, permission: 'active' },
+          'dac1',
+          null,
+          { from: owner2 }
         );
       });
       it('should succeed', async () => {
-        await msigworlds.exec('propgood', owner2.name, 'dac1', {
-          from: owner2,
+        await msigworlds.exec('propgood', owner1.name, 'dac1', {
+          from: owner1,
         });
       });
 
@@ -876,6 +877,32 @@ async function configureAuths() {
         {
           permission: {
             actor: msigworlds.account.name,
+            permission: 'active',
+          },
+          weight: 1,
+        },
+      ],
+      [
+        {
+          key: owner1.publicKey,
+          weight: 1,
+        },
+      ],
+      []
+    )
+  );
+
+  await UpdateAuth.execUpdateAuth(
+    [{ actor: msigworlds.account.name, permission: 'owner' }],
+    msigworlds.account.name,
+    'active',
+    'owner',
+    UpdateAuth.AuthorityToSet.explicitAuthorities(
+      1,
+      [
+        {
+          permission: {
+            actor: msigworlds.account.name,
             permission: 'eosio.code',
           },
           weight: 1,
@@ -883,7 +910,7 @@ async function configureAuths() {
       ],
       [
         {
-          key: EOSManager.adminAccount.publicKey,
+          key: msigworlds.account.publicKey,
           weight: 1,
         },
       ],
