@@ -24,7 +24,7 @@
     "chai": "^4.2.0",
     "eosjs": "^20.0.0",
     "eosjs-ecc": "^4.0.4",
-    "lamington": "^1.0.0-alpha.5",
+    "lamington": "https://github.com/Alien-Worlds/lamington.git",
     "typescript": "^3.6.3"
   },
   "dependencies": {

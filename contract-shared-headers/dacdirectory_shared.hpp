@@ -1,5 +1,4 @@
-#ifndef DACDIRECTORY_SHARED_H
-#define DACDIRECTORY_SHARED_H
+#pragma once
 
 #include "common_utilities.hpp"
 #include <eosio/eosio.hpp>
@@ -53,7 +52,21 @@ namespace eosdac {
 
             eosio::name account_for_type(uint8_t type) const {
                 eosio::print("\ngetting account for type: ", type, "\n");
-                return accounts.at(type);
+                const auto x = accounts.find(type);
+                check(x != accounts.end(),
+                    "ERR:ACC_NOT_FOUND: Account for type %s not found in dac with dac_id %s owned by %s",
+                    std::to_string(type), dac_id, owner);
+                return x->second;
+            }
+
+            std::optional<eosio::name> account_for_type_maybe(uint8_t type) const {
+                eosio::print("\ngetting account for type: ", type, "\n");
+                const auto x = accounts.find(type);
+                if (x != accounts.end()) {
+                    return x->second;
+                } else {
+                    return {};
+                }
             }
 
             uint64_t  primary_key() const { return dac_id.value; }
@@ -61,10 +74,9 @@ namespace eosdac {
             uint128_t by_symbol() const { return eosdac::raw_from_extended_symbol(symbol); }
         };
 
-        typedef eosio::multi_index<"dacs"_n, dac,
+        using dac_table = eosio::multi_index<"dacs"_n, dac,
             eosio::indexed_by<"byowner"_n, eosio::const_mem_fun<dac, uint64_t, &dac::by_owner>>,
-            eosio::indexed_by<"bysymbol"_n, eosio::const_mem_fun<dac, uint128_t, &dac::by_symbol>>>
-            dac_table;
+            eosio::indexed_by<"bysymbol"_n, eosio::const_mem_fun<dac, uint128_t, &dac::by_symbol>>>;
 
         const dac dac_for_id(eosio::name id) {
             dac_table dactable = dac_table("dacdirectory"_n, "dacdirectory"_n.value);
@@ -81,5 +93,3 @@ namespace eosdac {
         }
     } // namespace dacdir
 } // namespace eosdac
-
-#endif

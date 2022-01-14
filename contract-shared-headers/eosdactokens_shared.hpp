@@ -1,5 +1,4 @@
-#ifndef EOSDACTOKENS_SHARED_H
-#define EOSDACTOKENS_SHARED_H
+#pragma once
 
 #include "common_utilities.hpp"
 #include "dacdirectory_shared.hpp"
@@ -43,7 +42,7 @@ namespace eosdac {
         uint64_t primary_key() const { return version; }
     };
 
-    typedef eosio::multi_index<"memberterms"_n, termsinfo> memterms;
+    using memterms = eosio::multi_index<"memberterms"_n, termsinfo>;
 
     struct account {
         eosio::asset balance;
@@ -60,9 +59,9 @@ namespace eosdac {
         uint64_t primary_key() const { return supply.symbol.code().raw(); }
     };
 
-    typedef eosio::multi_index<"stat"_n, currency_stats> stats;
-    typedef eosio::multi_index<"members"_n, member>      regmembers;
-    typedef eosio::multi_index<"accounts"_n, account>    accounts;
+    using stats      = eosio::multi_index<"stat"_n, currency_stats>;
+    using regmembers = eosio::multi_index<"members"_n, member>;
+    using accounts   = eosio::multi_index<"accounts"_n, account>;
 
     TABLE stake_info {
         name  account;
@@ -70,7 +69,7 @@ namespace eosdac {
 
         uint64_t primary_key() const { return account.value; }
     };
-    typedef multi_index<"stakes"_n, stake_info> stakes_table;
+    using stakes_table = multi_index<"stakes"_n, stake_info>;
 
     TABLE unstake_info {
         uint64_t       key;
@@ -81,9 +80,8 @@ namespace eosdac {
         uint64_t primary_key() const { return key; }
         uint64_t by_account() const { return account.value; }
     };
-    typedef multi_index<"unstakes"_n, unstake_info,
-        indexed_by<"byaccount"_n, const_mem_fun<unstake_info, uint64_t, &unstake_info::by_account>>>
-        unstakes_table;
+    using unstakes_table = multi_index<"unstakes"_n, unstake_info,
+        indexed_by<"byaccount"_n, const_mem_fun<unstake_info, uint64_t, &unstake_info::by_account>>>;
 
     TABLE staketime_info {
         name     account;
@@ -91,7 +89,7 @@ namespace eosdac {
 
         uint64_t primary_key() const { return account.value; }
     };
-    typedef multi_index<"staketime"_n, staketime_info> staketimes_table;
+    using staketimes_table = multi_index<"staketime"_n, staketime_info>;
 
     asset get_supply(name code, symbol_code sym) {
         stats       statstable(code, sym.raw());
@@ -162,5 +160,3 @@ namespace eosdac {
             "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_LATEST_TERMS::Agreed terms isn't the latest.");
     }
 } // namespace eosdac
-
-#endif
