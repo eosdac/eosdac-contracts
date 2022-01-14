@@ -1285,6 +1285,53 @@ describe('Daccustodian', () => {
 
           chai.expect(actualPaidAverage).to.equal(expectedAverage);
         });
+        it("claimpay should fail without receiver's authority", async () => {
+          let payRows = await shared.daccustodian_contract.pendingpayTable({
+            scope: dacId,
+            limit: 1,
+          });
+
+          const payId = payRows.rows[0].key;
+          await assertMissingAuthority(
+            shared.daccustodian_contract.claimpay(payId, dacId)
+          );
+        });
+        it('claimpay should transfer the money', async () => {
+          let payRows = await shared.daccustodian_contract.pendingpayTable({
+            scope: dacId,
+            limit: 12,
+          });
+          for (const payout of payRows.rows) {
+            const payId = payout.key;
+            const receiver = payout.receiver;
+            const amount = payout.quantity;
+
+            await shared.daccustodian_contract.claimpay(payId, dacId, {
+              auths: [
+                {
+                  actor: receiver,
+                  permission: 'active',
+                },
+              ],
+            });
+
+            // check if money did indeed arrive
+            const results = await EOSManager.rpc.get_table_rows({
+              code: amount.contract,
+              scope: receiver,
+              table: 'accounts',
+            });
+            chai.expect(results.rows[0].balance).to.equal(amount.quantity);
+          }
+          // After all payouts are made, the table should be empty
+          await assertRowCount(
+            shared.daccustodian_contract.pendingpayTable({
+              scope: dacId,
+              limit: 12,
+            }),
+            0
+          );
+        });
       }
     );
   });

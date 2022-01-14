@@ -1,6 +1,7 @@
 import {
   Account,
   AccountManager,
+  EOSManager,
   ContractDeployer,
   sleep,
   generateTypes,
@@ -61,6 +62,27 @@ export class SharedTestObjects {
       AccountManager.createAccount('treasury'),
       'create treasury account'
     );
+
+    await EOSManager.transact({
+      actions: [
+        {
+          account: 'eosio.token',
+          name: 'transfer',
+          authorization: [
+            {
+              actor: 'eosio',
+              permission: 'active',
+            },
+          ],
+          data: {
+            from: 'eosio',
+            to: 'treasury',
+            quantity: '1000.0000 EOS',
+            memo: 'Some money for the treasury',
+          },
+        },
+      ],
+    });
 
     // Configure Dac contracts
     this.dacdirectory_contract = await ContractDeployer.deployWithName(
@@ -363,6 +385,19 @@ export class SharedTestObjects {
 
     await debugPromise(
       UpdateAuth.execUpdateAuth(
+        this.treasury_account.active,
+        this.treasury_account.name,
+        'xfer',
+        'active',
+        UpdateAuth.AuthorityToSet.forContractCode(
+          this.daccustodian_contract.account
+        )
+      ),
+      'add xfer to daccustodian'
+    );
+
+    await debugPromise(
+      UpdateAuth.execUpdateAuth(
         this.daccustodian_contract.account.active,
         this.daccustodian_contract.account.name,
         'pay',
@@ -636,17 +671,6 @@ export class SharedTestObjects {
         'xfer'
       ),
       'link xfer to transfer dac_token_contract'
-    );
-
-    await debugPromise(
-      UpdateAuth.execLinkAuth(
-        this.daccustodian_contract.account.active,
-        this.daccustodian_contract.account.name,
-        this.dac_token_contract.account.name,
-        'transfer',
-        'xfercust'
-      ),
-      'link xfercust to transfer daccustodian_contract'
     );
 
     await debugPromise(
