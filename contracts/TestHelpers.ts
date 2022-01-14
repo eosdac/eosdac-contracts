@@ -561,76 +561,103 @@ export class SharedTestObjects {
       'linking escrow perm to treasury'
     );
 
-    await UpdateAuth.execLinkAuth(
-      this.treasury_account.active,
-      this.treasury_account.name,
-      'eosio.token',
-      'transfer',
-      'xfer'
+    await debugPromise(
+      UpdateAuth.execLinkAuth(
+        this.treasury_account.active,
+        this.treasury_account.name,
+        'eosio.token',
+        'transfer',
+        'xfer'
+      ),
+      'link xfer to eosio.token'
     );
 
-    await UpdateAuth.execLinkAuth(
-      this.treasury_account.active,
-      this.treasury_account.name,
-      'eosdactokens',
-      'transfer',
-      'xfer'
+    await debugPromise(
+      UpdateAuth.execLinkAuth(
+        this.treasury_account.active,
+        this.treasury_account.name,
+        'eosdactokens',
+        'transfer',
+        'xfer'
+      ),
+      'link xfer to eosdactokens'
     );
 
-    await UpdateAuth.execLinkAuth(
-      this.dac_token_contract.account.active,
-      this.dac_token_contract.account.name,
-      this.daccustodian_contract.account.name,
-      'stakeobsv',
-      'notify'
+    await debugPromise(
+      UpdateAuth.execLinkAuth(
+        this.dac_token_contract.account.active,
+        this.dac_token_contract.account.name,
+        this.daccustodian_contract.account.name,
+        'stakeobsv',
+        'notify'
+      ),
+      'link notify to stakeobsv'
     );
 
-    await UpdateAuth.execLinkAuth(
-      this.dac_token_contract.account.active,
-      this.dac_token_contract.account.name,
-      this.dac_token_contract.account.name,
-      'refund',
-      'notify'
+    await debugPromise(
+      UpdateAuth.execLinkAuth(
+        this.dac_token_contract.account.active,
+        this.dac_token_contract.account.name,
+        this.dac_token_contract.account.name,
+        'refund',
+        'notify'
+      ),
+      'link notify to refund'
     );
 
-    await UpdateAuth.execLinkAuth(
-      this.dac_token_contract.account.active,
-      this.dac_token_contract.account.name,
-      this.daccustodian_contract.account.name,
-      'balanceobsv',
-      'notify'
+    await debugPromise(
+      UpdateAuth.execLinkAuth(
+        this.dac_token_contract.account.active,
+        this.dac_token_contract.account.name,
+        this.daccustodian_contract.account.name,
+        'balanceobsv',
+        'notify'
+      ),
+      'link notify to balanceobsv dac_token_contract'
     );
 
-    await UpdateAuth.execLinkAuth(
-      this.dac_token_contract.account.active,
-      this.dac_token_contract.account.name,
-      this.daccustodian_contract.account.name,
-      'capturestake',
-      'notify'
+    await debugPromise(
+      UpdateAuth.execLinkAuth(
+        this.dac_token_contract.account.active,
+        this.dac_token_contract.account.name,
+        this.daccustodian_contract.account.name,
+        'capturestake',
+        'notify'
+      ),
+      'link notify to capturestake'
     );
 
-    await UpdateAuth.execLinkAuth(
-      this.dac_token_contract.account.active,
-      this.dac_token_contract.account.name,
-      this.dac_token_contract.account.name,
-      'transfer',
-      'xfer'
+    await debugPromise(
+      UpdateAuth.execLinkAuth(
+        this.dac_token_contract.account.active,
+        this.dac_token_contract.account.name,
+        this.dac_token_contract.account.name,
+        'transfer',
+        'xfer'
+      ),
+      'link xfer to transfer dac_token_contract'
     );
 
-    await UpdateAuth.execLinkAuth(
-      this.daccustodian_contract.account.active,
-      this.daccustodian_contract.account.name,
-      this.dac_token_contract.account.name,
-      'transfer',
-      'xfer'
+    await debugPromise(
+      UpdateAuth.execLinkAuth(
+        this.daccustodian_contract.account.active,
+        this.daccustodian_contract.account.name,
+        this.dac_token_contract.account.name,
+        'transfer',
+        'xfercust'
+      ),
+      'link xfercust to transfer daccustodian_contract'
     );
 
-    await UpdateAuth.execLinkAuth(
-      this.daccustodian_contract.account.active,
-      this.daccustodian_contract.account.name,
-      this.daccustodian_contract.account.name,
-      'clearstake',
-      'pay'
+    await debugPromise(
+      UpdateAuth.execLinkAuth(
+        this.daccustodian_contract.account.active,
+        this.daccustodian_contract.account.name,
+        this.daccustodian_contract.account.name,
+        'clearstake',
+        'pay'
+      ),
+      'link pay to clearstake'
     );
   }
 
