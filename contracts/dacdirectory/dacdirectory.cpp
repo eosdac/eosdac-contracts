@@ -52,7 +52,9 @@ namespace eosdac {
                 if (accounts.find(TREASURY) != accounts.end()) {
                     require_auth(accounts.at(TREASURY));
                 }
-
+                for (const auto &[key, account] : accounts) {
+                    check(is_account(account), "ERR::ACCOUNT_DOES_NOT_EXIST: Account '%s' does not exist", account);
+                }
                 _dacs.emplace(owner, [&](dac &d) {
                     d.owner    = owner;
                     d.dac_id   = dac_id;

@@ -285,7 +285,6 @@ export class SharedTestObjects {
           key: Account_type.TREASURY,
           value: this.treasury_account.name,
         },
-        { key: Account_type.SERVICE, value: '' },
       ],
       {
         auths: [
