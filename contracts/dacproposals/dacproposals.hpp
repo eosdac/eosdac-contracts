@@ -97,7 +97,6 @@ namespace eosdac {
         ACTION clearconfig(name dac_id);
         ACTION clearexpprop(name proposal_id, name dac_id);
         ACTION updpropvotes(name proposal_id, name dac_id);
-        ACTION updallprops(name dac_id);
 
       private:
         void    clearprop(const proposal &proposal, name dac_id);

@@ -362,22 +362,6 @@ namespace eosdac {
         clearprop(prop, dac_id);
     }
 
-    ACTION dacproposals::updallprops(name dac_id) {
-        proposal_table proposals(_self, dac_id.value);
-        auto           props_itr = proposals.begin();
-        uint32_t       delay     = 1;
-        for (auto props_itr : proposals) {
-            transaction deferredTrans{};
-            deferredTrans.actions.emplace_back(eosio::action(eosio::permission_level{_self, "active"_n}, _self,
-                "updpropvotes"_n, std::make_tuple(props_itr.proposal_id, dac_id)));
-            deferredTrans.delay_sec = delay++;
-            auto sender_id =
-                uint128_t(props_itr.proposal_id.value) << 64 | time_point_sec(current_time_point()).sec_since_epoch();
-            deferredTrans.send(sender_id, _self);
-            print("\n adding transaction: ", sender_id, "delay: ", deferredTrans.delay_sec.value);
-        }
-    }
-
     ACTION dacproposals::updpropvotes(name proposal_id, name dac_id) {
         proposal_table proposals(_self, dac_id.value);
 
