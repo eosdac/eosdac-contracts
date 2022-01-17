@@ -37,6 +37,8 @@ namespace eosdac {
                 check(esc_itr->arbitrator_pay.quantity.amount == 0,
                     "ERR::TRANSFER_ARB::This escrow has already paid been into for the arbitrator.");
                 e.arbitrator_pay = extended_asset{quantity, sending_code};
+            } else {
+                check(false, "dacescrow::init invalid payment type %s", paymentType);
             }
         });
     }

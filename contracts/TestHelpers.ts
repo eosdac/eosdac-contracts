@@ -398,6 +398,19 @@ export class SharedTestObjects {
 
     await debugPromise(
       UpdateAuth.execUpdateAuth(
+        this.treasury_account.active,
+        this.treasury_account.name,
+        'xfer',
+        'active',
+        UpdateAuth.AuthorityToSet.forContractCode(
+          this.dacproposals_contract.account
+        )
+      ),
+      'add xfer to dacproposals'
+    );
+
+    await debugPromise(
+      UpdateAuth.execUpdateAuth(
         this.daccustodian_contract.account.active,
         this.daccustodian_contract.account.name,
         'pay',

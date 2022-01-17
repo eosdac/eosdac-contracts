@@ -1,3 +1,4 @@
+#include "../../contract-shared-headers/common_utilities.hpp"
 #include "dacescrow_shared.hpp"
 #include <eosio/asset.hpp>
 #include <eosio/eosio.hpp>
