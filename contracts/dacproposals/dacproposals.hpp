@@ -14,8 +14,12 @@ using namespace std;
 namespace eosdac {
 
     CONTRACT dacproposals : public contract {
-
-        enum VoteType {
+        enum VoteTypePublic : uint8_t {
+            vote_abstain = 0,
+            vote_approve,
+            vote_deny,
+        };
+        enum VoteType : uint8_t {
             none = 0,
             // a vote type to indicate a custodian's approval of a worker proposal.
             proposal_approve,
@@ -27,7 +31,7 @@ namespace eosdac {
             finalize_deny
         };
 
-        enum ProposalState {
+        enum ProposalState : uint8_t {
             ProposalStatePending_approval = 0,
             ProposalStateWork_in_progress,
             ProposalStatePending_finalize,
@@ -80,7 +84,10 @@ namespace eosdac {
         ACTION createprop(name proposer, string title, string summary, name arbitrator, extended_asset proposal_pay,
             extended_asset arbitrator_pay, string content_hash, name id, uint16_t category, uint32_t job_duration,
             name dac_id);
+
         ACTION voteprop(name custodian, name proposal_id, uint8_t vote, name dac_id);
+        ACTION votepropfin(name custodian, name proposal_id, uint8_t vote, name dac_id);
+
         ACTION delegatevote(name custodian, name proposal_id, name delegatee_custodian, name dac_id);
         ACTION delegatecat(name custodian, uint64_t category, name delegatee_custodian, name dac_id);
         ACTION undelegateca(name custodian, uint64_t category, name dac_id);
@@ -117,6 +124,7 @@ namespace eosdac {
         void    check_start(name proposal_id, name dac_id);
         int16_t count_votes(proposal prop, VoteType vote_type, name dac_id);
         void    arbitrator_rule_on_proposal(name arbitrator, name proposal_id, name dac_id);
+        void    _voteprop(name custodian, name proposal_id, uint8_t vote, name dac_id);
 
         TABLE proposalvote {
             uint64_t           vote_id;
