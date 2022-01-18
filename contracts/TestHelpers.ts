@@ -375,6 +375,21 @@ export class SharedTestObjects {
       'add pay auth to daccustodian'
     );
 
+    // FIXME: Uncomment this in order for daccustodian to work, leave it commented out if you want daccustodian to work
+
+    // await debugPromise(
+    //   UpdateAuth.execUpdateAuth(
+    //     this.treasury_account.active,
+    //     this.treasury_account.name,
+    //     'xfer',
+    //     'active',
+    //     UpdateAuth.AuthorityToSet.forContractCode(
+    //       this.daccustodian_contract.account
+    //     )
+    //   ),
+    //   'add xfer to daccustodian'
+    // );
+
     await debugPromise(
       UpdateAuth.execUpdateAuth(
         this.auth_account.owner,
