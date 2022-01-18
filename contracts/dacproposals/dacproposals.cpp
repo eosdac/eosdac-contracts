@@ -53,6 +53,38 @@ namespace eosdac {
     }
 
     ACTION dacproposals::voteprop(name custodian, name proposal_id, uint8_t vote, name dac_id) {
+        switch (vote) {
+        case vote_approve:
+            _voteprop(custodian, proposal_id, proposal_approve, dac_id);
+            break;
+        case vote_deny:
+            _voteprop(custodian, proposal_id, proposal_deny, dac_id);
+            break;
+        case vote_abstain:
+            _voteprop(custodian, proposal_id, none, dac_id);
+            break;
+        default:
+            check(false, "voteprop called with invalid vote type %s", to_string(vote));
+        }
+    }
+
+    ACTION dacproposals::votepropfin(name custodian, name proposal_id, uint8_t vote, name dac_id) {
+        switch (vote) {
+        case vote_approve:
+            _voteprop(custodian, proposal_id, finalize_approve, dac_id);
+            break;
+        case vote_deny:
+            _voteprop(custodian, proposal_id, finalize_deny, dac_id);
+            break;
+        case vote_abstain:
+            _voteprop(custodian, proposal_id, none, dac_id);
+            break;
+        default:
+            check(false, "votepropfin called with invalid vote type %s", to_string(vote));
+        }
+    }
+
+    void dacproposals::_voteprop(name custodian, name proposal_id, uint8_t vote, name dac_id) {
         require_auth(custodian);
 
         auto auth_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::AUTH);
@@ -60,7 +92,7 @@ namespace eosdac {
 
         assertValidMember(custodian, dac_id);
 
-        proposal_table proposals(_self, dac_id.value);
+        auto proposals = proposal_table{_self, dac_id.value};
 
         const proposal &prop =
             proposals.get(proposal_id.value, "ERR::VOTEPROP_PROPOSAL_NOT_FOUND::Proposal not found.﻿");

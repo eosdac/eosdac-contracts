@@ -21,15 +21,9 @@ import * as chaiAsPromised from 'chai-as-promised';
 chai.use(chaiAsPromised);
 
 enum VoteType {
-  none = 0,
-  // a vote type to indicate a custodian's approval of a worker proposal.
-  proposal_approve,
-  // a vote type to indicate a custodian's denial of a worker proposal.
-  proposal_deny,
-  // a vote type to indicate a custodian's acceptance of a worker proposal as completed.
-  finalize_approve,
-  // a vote type to indicate a custodian's rejection of a worker proposal as completed.
-  finalize_deny,
+  vote_abstain = 0,
+  vote_approve,
+  vote_deny,
 }
 
 enum ProposalState {
@@ -358,7 +352,7 @@ describe('Dacproposals', () => {
           shared.dacproposals_contract.voteprop(
             propDacCustodians[0].name,
             newpropid,
-            VoteType.proposal_approve,
+            VoteType.vote_approve,
             dacId,
             {
               auths: [
@@ -379,7 +373,7 @@ describe('Dacproposals', () => {
             shared.dacproposals_contract.voteprop(
               propDacCustodians[0].name,
               notfoundpropid,
-              VoteType.proposal_approve,
+              VoteType.vote_approve,
               dacId,
               {
                 auths: [
@@ -405,7 +399,7 @@ describe('Dacproposals', () => {
               shared.dacproposals_contract.voteprop(
                 propDacCustodians[0].name,
                 newpropid,
-                VoteType.proposal_approve,
+                VoteType.vote_approve,
                 dacId,
                 {
                   auths: [
@@ -429,7 +423,7 @@ describe('Dacproposals', () => {
               shared.dacproposals_contract.voteprop(
                 propDacCustodians[0].name,
                 newpropid,
-                VoteType.proposal_deny,
+                VoteType.vote_deny,
                 dacId,
                 {
                   auths: [
@@ -453,7 +447,7 @@ describe('Dacproposals', () => {
               shared.dacproposals_contract.voteprop(
                 propDacCustodians[0].name,
                 newpropid,
-                VoteType.proposal_approve,
+                VoteType.vote_approve,
                 dacId,
                 {
                   auths: [
@@ -477,7 +471,7 @@ describe('Dacproposals', () => {
               shared.dacproposals_contract.voteprop(
                 propDacCustodians[0].name,
                 otherfoundpropid,
-                VoteType.proposal_approve,
+                VoteType.vote_approve,
                 dacId,
                 {
                   auths: [
@@ -501,7 +495,7 @@ describe('Dacproposals', () => {
               shared.dacproposals_contract.voteprop(
                 propDacCustodians[0].name,
                 newpropid,
-                VoteType.proposal_deny,
+                VoteType.vote_deny,
                 dacId,
                 {
                   auths: [
@@ -807,7 +801,7 @@ describe('Dacproposals', () => {
             await shared.dacproposals_contract.voteprop(
               custodian.name,
               newpropid,
-              VoteType.proposal_deny,
+              VoteType.vote_deny,
               dacId,
               {
                 auths: [
@@ -854,7 +848,7 @@ describe('Dacproposals', () => {
           await shared.dacproposals_contract.voteprop(
             custodian.name,
             newpropid,
-            VoteType.proposal_approve,
+            VoteType.vote_approve,
             dacId,
             {
               auths: [
@@ -1062,7 +1056,7 @@ describe('Dacproposals', () => {
           shared.dacproposals_contract.voteprop(
             propDacCustodians[0].name,
             propId,
-            VoteType.proposal_deny,
+            VoteType.vote_deny,
             dacId,
             {
               auths: [
@@ -1203,7 +1197,7 @@ describe('Dacproposals', () => {
             shared.dacproposals_contract.voteprop(
               propDacCustodians[0].name,
               newpropid,
-              VoteType.proposal_approve,
+              VoteType.vote_approve,
               dacId,
               {
                 auths: [
@@ -1225,7 +1219,7 @@ describe('Dacproposals', () => {
             shared.dacproposals_contract.voteprop(
               propDacCustodians[0].name,
               newpropid,
-              VoteType.proposal_deny,
+              VoteType.vote_deny,
               dacId,
               {
                 auths: [
@@ -1411,10 +1405,10 @@ describe('Dacproposals', () => {
           context('with enough finalize_approve votes to approve', async () => {
             before(async () => {
               for (const custodian of propDacCustodians) {
-                await shared.dacproposals_contract.voteprop(
+                await shared.dacproposals_contract.votepropfin(
                   custodian.name,
                   newpropid,
-                  VoteType.finalize_approve,
+                  VoteType.vote_approve,
                   dacId,
                   {
                     auths: [
@@ -1548,7 +1542,7 @@ describe('Dacproposals', () => {
           await shared.dacproposals_contract.voteprop(
             custodian.name,
             arbApproveId,
-            VoteType.proposal_approve,
+            VoteType.vote_approve,
             dacId,
             {
               auths: [
@@ -1822,7 +1816,7 @@ describe('Dacproposals', () => {
           await shared.dacproposals_contract.voteprop(
             custodian.name,
             arbDenyId,
-            VoteType.proposal_approve,
+            VoteType.vote_approve,
             dacId,
             {
               auths: [
@@ -2082,7 +2076,7 @@ describe('Dacproposals', () => {
           shared.dacproposals_contract.voteprop(
             custodian.name,
             cancelpropid, // proposal id
-            VoteType.proposal_approve,
+            VoteType.vote_approve,
             dacId,
             {
               auths: [
@@ -2335,7 +2329,7 @@ describe('Dacproposals', () => {
               shared.dacproposals_contract.voteprop(
                 custodian.name,
                 propId, // proposal id
-                VoteType.proposal_approve,
+                VoteType.vote_approve,
                 dacId,
                 {
                   auths: [
@@ -2543,7 +2537,7 @@ describe('Dacproposals', () => {
               shared.dacproposals_contract.voteprop(
                 custodian.name,
                 propId, // proposal id
-                VoteType.proposal_approve,
+                VoteType.vote_approve,
                 dacId,
                 {
                   auths: [
