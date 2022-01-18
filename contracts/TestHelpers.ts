@@ -1,6 +1,7 @@
 import {
   Account,
   AccountManager,
+  EOSManager,
   ContractDeployer,
   sleep,
   generateTypes,
@@ -61,6 +62,27 @@ export class SharedTestObjects {
       AccountManager.createAccount('treasury'),
       'create treasury account'
     );
+
+    await EOSManager.transact({
+      actions: [
+        {
+          account: 'eosio.token',
+          name: 'transfer',
+          authorization: [
+            {
+              actor: 'eosio',
+              permission: 'active',
+            },
+          ],
+          data: {
+            from: 'eosio',
+            to: 'treasury',
+            quantity: '1000.0000 EOS',
+            memo: 'Some money for the treasury',
+          },
+        },
+      ],
+    });
 
     // Configure Dac contracts
     this.dacdirectory_contract = await ContractDeployer.deployWithName(
@@ -129,7 +151,7 @@ export class SharedTestObjects {
           contract: this.dac_token_contract.account.name,
           quantity: lockupAsset,
         },
-        should_pay_via_service_provider: true,
+        should_pay_via_service_provider: false,
         lockup_release_time_delay: 1233,
       },
       dacId,
@@ -234,7 +256,7 @@ export class SharedTestObjects {
           contract: this.dac_token_contract.account.name,
           quantity: lockupAsset,
         },
-        should_pay_via_service_provider: true,
+        should_pay_via_service_provider: false,
         lockup_release_time_delay: 1233,
       },
       dacId,
@@ -285,7 +307,6 @@ export class SharedTestObjects {
           key: Account_type.TREASURY,
           value: this.treasury_account.name,
         },
-        { key: Account_type.SERVICE, value: '' },
       ],
       {
         auths: [
@@ -355,8 +376,26 @@ export class SharedTestObjects {
         this.treasury_account.name,
         'xfer',
         'active',
-        UpdateAuth.AuthorityToSet.forContractCode(
-          this.dacproposals_contract.account
+        UpdateAuth.AuthorityToSet.explicitAuthorities(
+          1,
+          [
+            {
+              permission: {
+                actor: this.daccustodian_contract.account.name,
+                permission: 'eosio.code',
+              },
+              weight: 1,
+            },
+            {
+              permission: {
+                actor: this.dacproposals_contract.account.name,
+                permission: 'eosio.code',
+              },
+              weight: 1,
+            },
+          ],
+          [],
+          []
         )
       ),
       'add xfer to treasury'

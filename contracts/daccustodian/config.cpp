@@ -28,6 +28,10 @@ ACTION daccustodian::updateconfig(const contr_config &new_config, const name &da
     check(new_config.auth_threshold_low <= new_config.auth_threshold_mid,
         "ERR::UPDATECONFIG_INVALID_AUTH_MID_TO_LOW_AUTH::The low auth threshold cannot be greater than the mid auth threshold.");
 
+    if (new_config.should_pay_via_service_provider) {
+        check(dacForScope.account_for_type_maybe(dacdir::SERVICE).has_value(),
+            "ERR::UPDATECONFIG_NO_SERVICE_ACCOUNT should_pay_via_service_provider is true, but no SERVICE account is set.");
+    }
     configscontainer config_singleton(_self, dac_id.value);
     config_singleton.set(new_config, auth_account);
 

@@ -959,10 +959,7 @@ describe('Dacproposals', () => {
           )
         ).to.eventually.be.fulfilled;
       });
-      context('After time delay for deferred transaction', async () => {
-        before(async () => {
-          await sleep(6000);
-        });
+      context('Without delay', async () => {
         it('should populate the escrow table', async () => {
           let proposalRow = await shared.dacescrow_contract.escrowsTable({
             scope: 'dacescrow',

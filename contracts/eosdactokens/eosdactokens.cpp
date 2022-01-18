@@ -131,8 +131,9 @@ namespace eosdac {
         if (stakeconfig.enabled) {
             asset liquid = eosdac::get_liquid(from, get_self(), quantity.symbol);
 
-            check(
-                quantity <= liquid, "ERR::BALANCE_STAKED::Attempt to transfer more than liquid balance, unstake first");
+            check(quantity <= liquid,
+                "ERR::BALANCE_STAKED::Attempting to transfer %s but liquid balance is only %s, unstake first", quantity,
+                liquid);
         }
 
         auto payer = has_auth(to) ? to : from;
@@ -362,13 +363,6 @@ namespace eosdac {
 
         // Remove from stake
         sub_stake(account, quantity, dac.dac_id);
-
-        // deferred transaction to refund
-        transaction trx;
-        trx.actions.push_back(action(
-            permission_level{get_self(), "notify"_n}, get_self(), "refund"_n, make_tuple(next_id, quantity.symbol)));
-        trx.delay_sec = unstake_delay;
-        trx.send(uint128_t(next_id) << 64 | time_point_sec(current_time_point()).sec_since_epoch(), get_self());
     }
 
     void eosdactokens::staketime(name account, uint32_t unstake_time, symbol token_symbol) {
@@ -430,21 +424,6 @@ namespace eosdac {
         require_auth(auth_account);
 
         config.save(get_self(), dac.dac_id, get_self());
-    }
-
-    void eosdactokens::refund(uint64_t unstake_id, symbol token_symbol) {
-        dacdir::dac    dac = dacdir::dac_for_symbol(extended_symbol{token_symbol, get_self()});
-        unstakes_table unstakes(get_self(), dac.dac_id.value);
-        stakes_table   stakes(get_self(), dac.dac_id.value);
-
-        auto us = unstakes.find(unstake_id);
-        check(us != unstakes.end(), "ERR::UNSTAKE_NOT_FOUND::Unstake not found");
-
-        uint32_t time_now = current_time_point().sec_since_epoch();
-        check(time_now >= us->release_time.sec_since_epoch(), "ERR::REFUND_NOT_DUE::Refund is not due yet");
-
-        // just removing the unstake will change the liquid balance, stake was removed at time of unstake
-        unstakes.erase(us);
     }
 
     void eosdactokens::cancel(uint64_t unstake_id, symbol token_symbol) {

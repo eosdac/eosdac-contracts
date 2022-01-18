@@ -44,7 +44,7 @@ describe('Daccustodian', () => {
             auth_threshold_high: 4,
             auth_threshold_low: 3,
             lockupasset: { contract: 'sdfsdf', quantity: '12.0000 EOS' },
-            should_pay_via_service_provider: true,
+            should_pay_via_service_provider: false,
             lockup_release_time_delay: 1233,
           },
           'unknowndac',
@@ -74,7 +74,7 @@ describe('Daccustodian', () => {
             auth_threshold_mid: 6,
             auth_threshold_low: 3,
             lockupasset: { contract: 'sdfsdf', quantity: '12.0000 EOS' },
-            should_pay_via_service_provider: true,
+            should_pay_via_service_provider: false,
             lockup_release_time_delay: 1233,
           },
           dacId,
@@ -104,7 +104,7 @@ describe('Daccustodian', () => {
             auth_threshold_mid: 10,
             auth_threshold_low: 4,
             lockupasset: { contract: 'sdfsdf', quantity: '12.0000 EOS' },
-            should_pay_via_service_provider: true,
+            should_pay_via_service_provider: false,
             lockup_release_time_delay: 1233,
           },
           dacId,
@@ -134,7 +134,7 @@ describe('Daccustodian', () => {
             auth_threshold_mid: 7,
             auth_threshold_low: 8,
             lockupasset: { contract: 'sdfsdf', quantity: '12.0000 EOS' },
-            should_pay_via_service_provider: true,
+            should_pay_via_service_provider: false,
             lockup_release_time_delay: 1233,
           },
           dacId,
@@ -170,7 +170,7 @@ describe('Daccustodian', () => {
               contract: shared.dac_token_contract.account.name,
               quantity: '12.0000 CUSDAC',
             },
-            should_pay_via_service_provider: true,
+            should_pay_via_service_provider: false,
             lockup_release_time_delay: 1233,
           },
           dacId,
@@ -199,7 +199,7 @@ describe('Daccustodian', () => {
               contract: shared.dac_token_contract.account.name,
               quantity: '12.0000 CUSDAC',
             },
-            should_pay_via_service_provider: true,
+            should_pay_via_service_provider: false,
             lockup_release_time_delay: 1233,
           },
           dacId,
@@ -228,7 +228,7 @@ describe('Daccustodian', () => {
               contract: shared.dac_token_contract.account.name,
               quantity: '12.0000 CUSDAC',
             },
-            should_pay_via_service_provider: true,
+            should_pay_via_service_provider: false,
             lockup_release_time_delay: 1233,
           },
           dacId,
@@ -257,7 +257,7 @@ describe('Daccustodian', () => {
               contract: shared.dac_token_contract.account.name,
               quantity: '12.0000 CUSDAC',
             },
-            should_pay_via_service_provider: true,
+            should_pay_via_service_provider: false,
             lockup_release_time_delay: 1233,
           },
           dacId,
@@ -286,7 +286,7 @@ describe('Daccustodian', () => {
               contract: shared.dac_token_contract.account.name,
               quantity: '12.0000 CUSDAC',
             },
-            should_pay_via_service_provider: true,
+            should_pay_via_service_provider: false,
             lockup_release_time_delay: 1233,
           },
           dacId,
@@ -314,7 +314,7 @@ describe('Daccustodian', () => {
             contract: shared.dac_token_contract.account.name,
             quantity: '12.0000 CUSDAC',
           },
-          should_pay_via_service_provider: true,
+          should_pay_via_service_provider: false,
           lockup_release_time_delay: 1233,
         },
         dacId,
@@ -343,7 +343,7 @@ describe('Daccustodian', () => {
               contract: shared.dac_token_contract.account.name,
               quantity: '12.0000 CUSDAC',
             },
-            should_pay_via_service_provider: true,
+            should_pay_via_service_provider: false,
             lockup_release_time_delay: 1233,
           },
         ]
@@ -1076,7 +1076,7 @@ describe('Daccustodian', () => {
                       contract: shared.dac_token_contract.account.name,
                       quantity: '12.0000 PERDAC',
                     },
-                    should_pay_via_service_provider: true,
+                    should_pay_via_service_provider: false,
                     lockup_release_time_delay: 1233,
                   },
                   dacId,
@@ -1284,6 +1284,53 @@ describe('Daccustodian', () => {
           );
 
           chai.expect(actualPaidAverage).to.equal(expectedAverage);
+        });
+        it("claimpay should fail without receiver's authority", async () => {
+          let payRows = await shared.daccustodian_contract.pendingpayTable({
+            scope: dacId,
+            limit: 1,
+          });
+
+          const payId = payRows.rows[0].key;
+          await assertMissingAuthority(
+            shared.daccustodian_contract.claimpay(payId, dacId)
+          );
+        });
+        it('claimpay should transfer the money', async () => {
+          let payRows = await shared.daccustodian_contract.pendingpayTable({
+            scope: dacId,
+            limit: 12,
+          });
+          for (const payout of payRows.rows) {
+            const payId = payout.key;
+            const receiver = payout.receiver;
+            const amount = payout.quantity;
+
+            await shared.daccustodian_contract.claimpay(payId, dacId, {
+              auths: [
+                {
+                  actor: receiver,
+                  permission: 'active',
+                },
+              ],
+            });
+
+            // check if money did indeed arrive
+            const results = await EOSManager.rpc.get_table_rows({
+              code: amount.contract,
+              scope: receiver,
+              table: 'accounts',
+            });
+            chai.expect(results.rows[0].balance).to.equal(amount.quantity);
+          }
+          // After all payouts are made, the table should be empty
+          await assertRowCount(
+            shared.daccustodian_contract.pendingpayTable({
+              scope: dacId,
+              limit: 12,
+            }),
+            0
+          );
         });
       }
     );
@@ -1819,7 +1866,7 @@ describe('Daccustodian', () => {
               contract: shared.dac_token_contract.account.name,
               quantity: '12.0000 APPDAC',
             },
-            should_pay_via_service_provider: true,
+            should_pay_via_service_provider: false,
             lockup_release_time_delay: 1233,
           },
           dacId,

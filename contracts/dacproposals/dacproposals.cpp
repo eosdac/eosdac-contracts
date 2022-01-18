@@ -217,12 +217,10 @@ namespace eosdac {
     }
 
     ACTION dacproposals::startwork(name proposal_id, name dac_id) {
-        proposal_table proposals(_self, dac_id.value);
+        check_proposal_can_start(proposal_id, dac_id);
 
-        // Check that this proposal can start work
-        check_start(proposal_id, dac_id);
-
-        const proposal &prop = proposals.get(proposal_id.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found.");
+        auto        proposals = proposal_table{get_self(), dac_id.value};
+        const auto &prop      = proposals.get(proposal_id.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found.");
 
         require_auth(prop.proposer);
         assertValidMember(prop.proposer, dac_id);
@@ -232,40 +230,27 @@ namespace eosdac {
 
         time_point_sec time_now = time_point_sec(current_time_point().sec_since_epoch());
 
-        auto treasury = dacdir::dac_for_id(dac_id).account_for_type(dacdir::TREASURY);
-        auto escrow   = dacdir::dac_for_id(dac_id).account_for_type(dacdir::ESCROW);
+        const auto treasury = dacdir::dac_for_id(dac_id).account_for_type(dacdir::TREASURY);
+        const auto escrow   = dacdir::dac_for_id(dac_id).account_for_type(dacdir::ESCROW);
 
         check(is_account(treasury), "ERR::TREASURY_ACCOUNT_NOT_FOUND::Treasury account not found");
         check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
 
-        transaction deferredTrans{};
-        deferredTrans.actions.emplace_back(
-            dacproposals::runstartwork_action(get_self(), eosio::permission_level{get_self(), "active"_n})
-                .to_action(proposal_id, dac_id));
-        deferredTrans.actions.emplace_back(dacescrow::init_action{escrow, {treasury, "escrow"_n}}.to_action(
-            treasury, prop.proposer, prop.arbitrator, time_now + (prop.job_duration * 2), memo, proposal_id));
-        deferredTrans.actions.emplace_back(
-            eosio::action(eosio::permission_level{treasury, "xfer"_n}, prop.proposal_pay.contract, "transfer"_n,
-                make_tuple(treasury, escrow, prop.proposal_pay.quantity, "rec:" + proposal_id.to_string())));
-        deferredTrans.actions.emplace_back(
-            eosio::action(eosio::permission_level{treasury, "xfer"_n}, prop.arbitrator_pay.contract, "transfer"_n,
-                make_tuple(treasury, escrow, prop.arbitrator_pay.quantity, "arb:" + proposal_id.to_string())));
-        deferredTrans.delay_sec = current_configs(dac_id).transfer_delay;
-        deferredTrans.send(
-            uint128_t(proposal_id.value) << 64 | time_point_sec(current_time_point()).sec_since_epoch(), _self);
-    }
-
-    ACTION dacproposals::runstartwork(name proposal_id, name dac_id) {
-        require_auth(get_self());
-        proposal_table proposals(_self, dac_id.value);
-
-        // Check that this proposal can start work
-        check_start(proposal_id, dac_id);
-        const proposal &prop = proposals.get(proposal_id.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found.");
-
-        proposals.modify(prop, same_payer, [&](proposal &p) {
+        proposals.modify(prop, same_payer, [&](auto &p) {
             p.state = ProposalStateWork_in_progress;
         });
+
+        dacescrow::init_action{escrow, {treasury, "escrow"_n}}
+            .to_action(treasury, prop.proposer, prop.arbitrator, time_now + (prop.job_duration * 2), memo, proposal_id)
+            .send();
+
+        action(eosio::permission_level{treasury, "xfer"_n}, prop.proposal_pay.contract, "transfer"_n,
+            make_tuple(treasury, escrow, prop.proposal_pay.quantity, "rec:" + proposal_id.to_string()))
+            .send();
+
+        action(eosio::permission_level{treasury, "xfer"_n}, prop.arbitrator_pay.contract, "transfer"_n,
+            make_tuple(treasury, escrow, prop.arbitrator_pay.quantity, "arb:" + proposal_id.to_string()))
+            .send();
     }
 
     ACTION dacproposals::completework(name proposal_id, name dac_id) {
@@ -407,22 +392,6 @@ namespace eosdac {
         check(!prop.has_not_expired(),
             "ERR::PROPOSAL_NOT_EXPIRED::The proposal has not expired so cannot be cleared yet.");
         clearprop(prop, dac_id);
-    }
-
-    ACTION dacproposals::updallprops(name dac_id) {
-        proposal_table proposals(_self, dac_id.value);
-        auto           props_itr = proposals.begin();
-        uint32_t       delay     = 1;
-        for (auto props_itr : proposals) {
-            transaction deferredTrans{};
-            deferredTrans.actions.emplace_back(eosio::action(eosio::permission_level{_self, "active"_n}, _self,
-                "updpropvotes"_n, std::make_tuple(props_itr.proposal_id, dac_id)));
-            deferredTrans.delay_sec = delay++;
-            auto sender_id =
-                uint128_t(props_itr.proposal_id.value) << 64 | time_point_sec(current_time_point()).sec_since_epoch();
-            deferredTrans.send(sender_id, _self);
-            print("\n adding transaction: ", sender_id, "delay: ", deferredTrans.delay_sec.value);
-        }
     }
 
     ACTION dacproposals::updpropvotes(name proposal_id, name dac_id) {
@@ -599,7 +568,7 @@ namespace eosdac {
         return approved_count;
     }
 
-    void dacproposals::check_start(name proposal_id, name dac_id) {
+    void dacproposals::check_proposal_can_start(name proposal_id, name dac_id) {
         proposal_table proposals(_self, dac_id.value);
 
         const proposal &prop = proposals.get(proposal_id.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found.");

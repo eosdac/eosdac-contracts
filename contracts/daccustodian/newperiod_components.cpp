@@ -34,11 +34,9 @@ void daccustodian::distributeMeanPay(name dac_id) {
             print("\ncreated a joint index : ", idx);
             auto itrr = pendingPayReceiverSymbolIndex.find(idx);
             if (itrr != pendingPayReceiverSymbolIndex.end() && itrr->receiver == cust.cust_name &&
-                itrr->quantity.get_extended_symbol() == total.get_extended_symbol() &&
-                itrr->due_date == time_point_sec{0}) {
+                itrr->quantity.get_extended_symbol() == total.get_extended_symbol()) {
                 pendingPayReceiverSymbolIndex.modify(itrr, same_payer, [&](pay &p) {
                     print("\nAdding to existing amount with : ", extended_asset(meanAsset, total.contract));
-
                     p.quantity += extended_asset(meanAsset, total.contract);
                 });
             } else {
@@ -48,7 +46,6 @@ void daccustodian::distributeMeanPay(name dac_id) {
                     p.key      = pending_pay.available_primary_key();
                     p.receiver = cust.cust_name;
                     p.quantity = extended_asset(meanAsset, total.contract);
-                    p.due_date = time_point_sec{0};
                 });
             }
         }
@@ -178,6 +175,7 @@ void daccustodian::setCustodianAuths(name dac_id) {
 }
 
 ACTION daccustodian::newperiod(const string &message, const name &dac_id) {
+    /* This is a housekeeping method, it can be called by anyone by design */
     const auto auth_account = dacdir::dac_for_id(dac_id).account_for_type_maybe(dacdir::AUTH);
     const auto sender       = auth_account ? *auth_account : get_self();
     eosio::action(eosio::permission_level{sender, "owner"_n}, get_self(), "runnewperiod"_n, make_tuple(message, dac_id))
@@ -185,6 +183,7 @@ ACTION daccustodian::newperiod(const string &message, const name &dac_id) {
 }
 
 ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
+    /* This is a housekeeping method, it can be called by anyone by design */
     contr_config configs      = contr_config::get_current_configs(get_self(), dac_id);
     contr_state  currentState = contr_state::get_current_state(get_self(), dac_id);
     assertPeriodTime(configs, currentState);

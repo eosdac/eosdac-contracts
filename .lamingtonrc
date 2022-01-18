@@ -1,24 +1,24 @@
 {
-    "cdt": "https://github.com/EOSIO/eosio.cdt/releases/download/v1.8.1/eosio.cdt_1.8.1-1-ubuntu-18.04_amd64.deb",
-    "eos": "https://github.com/EOSIO/eos/releases/download/v2.1.0/eosio_2.1.0-1-ubuntu-18.04_amd64.deb",
-    "contracts": "v1.9.2",
-    "debug": 0,
-    "debugTransactions": false,
-    "keepAlive": false,
-    "outDir": "artifacts",
-    "reporter": "List",
-    "bailOnFailure": true,
-    "include": [
-        "daccustodian.cpp",
-        "dacdirectory.cpp",
-        "dacescrow.cpp",
-        "dacmultisigs.cpp",
-        "dacproposals.cpp",
-        "distribution.cpp",
-        "eosdactokens.cpp",
-        "referendum.cpp",
-        "eosio.token.cpp",
-        "eosio.msig.cpp_",
-        "stakevote.cpp"
-    ]
+  "cdt": "https://github.com/EOSIO/eosio.cdt/releases/download/v1.8.1/eosio.cdt_1.8.1-1-ubuntu-18.04_amd64.deb",
+  "eos": "https://github.com/EOSIO/eos/releases/download/v2.1.0/eosio_2.1.0-1-ubuntu-18.04_amd64.deb",
+  "contracts": "v1.9.2",
+  "debug": 0,
+  "debugTransactions": false,
+  "keepAlive": true,
+  "outDir": "artifacts",
+  "reporter": "List",
+  "bailOnFailure": true,
+  "include": [
+    "daccustodian.cpp",
+    "dacdirectory.cpp",
+    "dacescrow.cpp",
+    "dacmultisigs.cpp",
+    "dacproposals.cpp",
+    "distribution.cpp",
+    "eosdactokens.cpp",
+    "referendum.cpp",
+    "eosio.token.cpp",
+    "eosio.msig.cpp_",
+    "stakevote.cpp"
+  ]
 }

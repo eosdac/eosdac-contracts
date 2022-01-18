@@ -108,8 +108,6 @@ namespace eosdac {
         uint64_t       key;
         name           receiver;
         extended_asset quantity;
-        time_point_sec due_date; // If there is a value here that indicates that a deferred transaction has been
-                                 // scheduled and that other new amounts should be added to this record.
 
         static checksum256 getIndex(const name &receiver, const extended_symbol &symbol) {
             return combine_ids(receiver.value, symbol.get_contract().value, symbol.get_symbol().code().raw(), 0);
@@ -119,7 +117,7 @@ namespace eosdac {
         uint64_t    byreceiver() const { return receiver.value; }
         checksum256 byreceiver_and_symbol() const { return getIndex(receiver, quantity.get_extended_symbol()); }
 
-        EOSLIB_SERIALIZE(pay, (key)(receiver)(quantity)(due_date))
+        EOSLIB_SERIALIZE(pay, (key)(receiver)(quantity))
     };
 
     using pending_pay_table =

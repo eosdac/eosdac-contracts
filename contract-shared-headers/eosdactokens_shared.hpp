@@ -79,6 +79,10 @@ namespace eosdac {
 
         uint64_t primary_key() const { return key; }
         uint64_t by_account() const { return account.value; }
+        bool     released() const {
+            const auto now = time_point_sec(current_time_point());
+            return now > release_time;
+        }
     };
     using unstakes_table = multi_index<"unstakes"_n, unstake_info,
         indexed_by<"byaccount"_n, const_mem_fun<unstake_info, uint64_t, &unstake_info::by_account>>>;
@@ -119,9 +123,17 @@ namespace eosdac {
         }
         auto unstakes_itr = unstakes_idx.find(owner.value);
         while (unstakes_itr != unstakes_idx.end()) {
-            liquid -= unstakes_itr->stake;
+            if (unstakes_itr->released()) {
+                print("this is already released, erasing");
+                // if this unstake is already released, it can be safely deleted
+                unstakes_itr = unstakes_idx.erase(unstakes_itr);
+            } else {
+                print("NOT yet released");
 
-            unstakes_itr++;
+                // otherwise it still negatively impacts the liquid balance
+                liquid -= unstakes_itr->stake;
+                unstakes_itr++;
+            }
         }
 
         return liquid;

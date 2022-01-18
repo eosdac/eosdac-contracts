@@ -417,6 +417,30 @@ describe('EOSDacTokens', () => {
           chai.expect(releaseDate).beforeTime(futureDate);
           chai.expect(unstakeRow.rows.length).to.equal(2);
         });
+        it('transfer should fail if not yet released', async () => {
+          const receiver = await l.AccountManager.createAccount();
+          await l.assertEOSErrorIncludesMessage(
+            shared.dac_token_contract.transfer(
+              staker.name,
+              receiver.name,
+              '954.0000 ABC',
+              'memo',
+              { from: staker }
+            ),
+            'ERR::BALANCE_STAKED'
+          );
+        });
+        it('transfer should succeed once released', async () => {
+          await l.sleep(6000);
+          const receiver = await l.AccountManager.createAccount();
+          await shared.dac_token_contract.transfer(
+            staker.name,
+            receiver.name,
+            '954.0000 ABC',
+            'memo 2',
+            { from: staker }
+          );
+        });
       });
     });
   });
