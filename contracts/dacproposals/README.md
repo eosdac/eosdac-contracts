@@ -50,7 +50,7 @@ Vote for a proposal, this can either be `abstain` for abstain vote, `vote_approv
 
 ### votepropfin
 
-Vote for a proposal once it is finalized.
+Vote for a proposal once it is finalized. Votes can either be `abstain` for abstain vote, `vote_approve` or `vote_deny`.
 
 ### delegatevote and delegatecat
 
