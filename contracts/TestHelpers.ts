@@ -376,8 +376,26 @@ export class SharedTestObjects {
         this.treasury_account.name,
         'xfer',
         'active',
-        UpdateAuth.AuthorityToSet.forContractCode(
-          this.dacproposals_contract.account
+        UpdateAuth.AuthorityToSet.explicitAuthorities(
+          1,
+          [
+            {
+              permission: {
+                actor: this.daccustodian_contract.account.name,
+                permission: 'eosio.code',
+              },
+              weight: 1,
+            },
+            {
+              permission: {
+                actor: this.dacproposals_contract.account.name,
+                permission: 'eosio.code',
+              },
+              weight: 1,
+            },
+          ],
+          [],
+          []
         )
       ),
       'add xfer to treasury'
@@ -394,19 +412,6 @@ export class SharedTestObjects {
         )
       ),
       'add pay auth to daccustodian'
-    );
-
-    await debugPromise(
-      UpdateAuth.execUpdateAuth(
-        this.treasury_account.active,
-        this.treasury_account.name,
-        'xfer',
-        'active',
-        UpdateAuth.AuthorityToSet.forContractCode(
-          this.daccustodian_contract.account
-        )
-      ),
-      'add xfer to daccustodian'
     );
 
     await debugPromise(
