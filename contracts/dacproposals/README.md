@@ -46,7 +46,11 @@ This allows a user to create a proposal. To create a proposal a user must also l
 
 ### voteprop
 
-Vote for a proposal, this can either be `none` for abstain vote, `proposal_approve` or `proposal_deny` for a new proposal, or `finalize_approve` or `finalize_deny` for a completed work proposal. This means the the same action is used in two different contexts for a proposal. At the time of voting the votes count for the given proposal are also updated so that if there are enough votes to approve a new proposal the state will be updated to `ProposalStateHas_enough_approvals_votes` or if there are enough votes to approve a completed work proposal the state will be updated to `ProposalStateHas_enough_finalize_votes`. The benefit of these extra states is that the current voting state of the proposal can be read directly from the chain state without having to count the votes each time a query is needed or replicating the vote counting algorythm offchain (which could be a source of business logic inconstentecy).
+Vote for a proposal, this can either be `abstain` for abstain vote, `vote_approve` or `vote_deny` for work proposal. Once enough approval votes have been given, the proposer can start work on the proposal using the `startwork` action. At the time of voting the votes count for the given proposal are also updated so that if there are enough votes to approve a new proposal the state will be updated to `ProposalStateHas_enough_approvals_votes`. The benefit of these extra states is that the current voting state of the proposal can be read directly from the chain state without having to count the votes each time a query is needed or replicating the vote counting algorithm off-chain (which could be a source of business logic inconsistency).
+
+### votepropfin
+
+Vote for a proposal once it is finalized.
 
 ### delegatevote and delegatecat
 
