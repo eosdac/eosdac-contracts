@@ -1335,7 +1335,79 @@ describe('Daccustodian', () => {
       }
     );
   });
+  context('Dac with 0 payment for custodians', async () => {
+    let dacId = 'zeropaydac';
+    let regMembers: Account[];
+    let newUser1: Account;
+    let candidates: Account[];
 
+    before(async () => {
+      await shared.initDac(dacId, '4,ZERODAC', '1000000.0000 ZERODAC');
+      await shared.updateconfig(dacId, '12.0000 ZERODAC');
+      await shared.dac_token_contract.stakeconfig(
+        { enabled: true, min_stake_time: 5, max_stake_time: 20 },
+        '4,ZERODAC',
+        { from: shared.auth_account }
+      );
+
+      // With 16 voting members with 2000 each and a threshold of 31 percent
+      // this will total to 320_000 vote value which will be enough to start the DAC
+      regMembers = await shared.getRegMembers(dacId, '20000.0000 ZERODAC');
+      candidates = await shared.getStakeObservedCandidates(
+        dacId,
+        '12.0000 ZERODAC'
+      );
+      await shared.voteForCustodians(regMembers, candidates, dacId);
+
+      await shared.daccustodian_contract.updateconfig(
+        {
+          numelected: 5,
+          maxvotes: 4,
+          requested_pay_max: {
+            contract: 'eosio.token',
+            quantity: '0.0000 EOS',
+          },
+          periodlength: 5,
+          initial_vote_quorum_percent: 31,
+          vote_quorum_percent: 15,
+          auth_threshold_high: 4,
+          auth_threshold_mid: 3,
+          auth_threshold_low: 2,
+          lockupasset: {
+            contract: shared.dac_token_contract.account.name,
+            quantity: '12.0000 ZERODAC',
+          },
+          should_pay_via_service_provider: false,
+          lockup_release_time_delay: 1233,
+        },
+        dacId,
+        { from: shared.auth_account }
+      );
+
+      await shared.daccustodian_contract.newperiod(
+        'initial new period',
+        dacId,
+        {
+          from: regMembers[0], // Could be run by anyone.
+        }
+      );
+      await sleep(6_000);
+    });
+    it('newperiod should succeed', async () => {
+      await shared.daccustodian_contract.newperiod('second new period', dacId, {
+        from: regMembers[0], // Could be run by anyone.
+      });
+    });
+    it('custodians should not have been paid', async () => {
+      await assertRowCount(
+        shared.daccustodian_contract.pendingpayTable({
+          scope: dacId,
+          limit: 12,
+        }),
+        0
+      );
+    });
+  });
   context('resign custodian', () => {
     let dacId = 'resigndac';
     let regMembers: Account[];
