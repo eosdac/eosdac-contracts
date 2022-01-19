@@ -58,7 +58,8 @@ void daccustodian::assertPeriodTime(contr_config &configs, contr_state &currentS
     time_point_sec timestamp        = time_point_sec(eosio::current_time_point());
     uint32_t       periodBlockCount = (timestamp - currentState.lastperiodtime.sec_since_epoch()).sec_since_epoch();
     check(periodBlockCount > configs.periodlength,
-        "ERR::NEWPERIOD_EARLY::New period is being called too soon. Wait until the period has completed.");
+        "ERR::NEWPERIOD_EARLY::New period is being called too soon. Period length is %s periodBlockCount: %s",
+        configs.periodlength, periodBlockCount);
 }
 
 void daccustodian::allocateCustodians(bool early_election, name dac_id) {
