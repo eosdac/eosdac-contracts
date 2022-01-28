@@ -8,6 +8,8 @@ import {
   EOSManager,
   sleep,
   debugPromise,
+  assertRowsEqualStrict,
+  assertRowCount,
 } from 'lamington';
 
 const api = EOSManager.api;
@@ -23,8 +25,7 @@ let tokenIssuer: Account;
 let owner1: Account;
 let owner2: Account;
 let owner3: Account;
-let owner4: Account;
-let owner5: Account;
+let msigowned: Account;
 
 let modDate: Date;
 
@@ -40,6 +41,14 @@ describe('msigworlds', () => {
     await seedAccounts();
     await configureAuths();
     await issueTokens();
+
+    await eosioToken.transfer(
+      tokenIssuer.name,
+      msigowned.name,
+      '100000.0000 TLM',
+      'starter blanace.',
+      { from: tokenIssuer }
+    );
   });
   context('block actions', async () => {
     context('with wrong auth', async () => {
@@ -781,12 +790,11 @@ describe('msigworlds', () => {
               {
                 account: 'alienworlds',
                 authorization: [
-                  { actor: owner1.name, permission: 'active' },
-                  { actor: owner2.name, permission: 'active' },
+                  { actor: msigowned.name, permission: 'active' },
                 ],
                 name: 'transfer',
                 data: {
-                  from: owner1.name,
+                  from: msigowned.name,
                   to: owner2.name,
                   quantity: '10.0000 TLM',
                   memo: 'testing',
@@ -858,7 +866,94 @@ describe('msigworlds', () => {
           msigworlds.exec('propgood', owner1.name, 'dac1', {
             from: owner1,
           }),
-          'ERR::PROP_NOT_PENDING'
+          'ERR::PROP_EXEC_NOT_PENDING'
+        );
+      });
+    });
+  });
+  context('cleanup', async () => {
+    context('with non exisitant proposal', async () => {
+      it('should fail with not found error', async () => {
+        await assertEOSErrorIncludesMessage(
+          msigworlds.cleanup('fakeprop', 'dac1'),
+          'PROPOSAL_NOT_FOUND'
+        );
+      });
+    });
+    context('before being executed or cancelled', async () => {
+      before(async () => {
+        await msigworlds.propose(
+          owner1.name,
+          'propclean',
+          [
+            { actor: owner1.name, permission: 'active' },
+            { actor: owner2.name, permission: 'active' },
+          ],
+          'dac1',
+          [],
+          {
+            actions: await api.serializeActions([
+              {
+                account: 'alienworlds',
+                authorization: [
+                  { actor: msigowned.name, permission: 'active' },
+                ],
+                name: 'transfer',
+                data: {
+                  from: msigowned.name,
+                  to: owner2.name,
+                  quantity: '10.0000 TLM',
+                  memo: 'testing',
+                },
+              },
+            ]),
+            context_free_actions: [],
+            delay_sec: '0',
+            expiration: await currentHeadTimeWithAddedSeconds(10),
+            max_cpu_usage_ms: 0,
+            max_net_usage_words: '0',
+            ref_block_num: 12345,
+            ref_block_prefix: 123,
+            transaction_extensions: [],
+          },
+          { from: owner1 }
+        );
+
+        await msigworlds.approve(
+          'propclean',
+          { actor: owner1.name, permission: 'active' },
+          'dac1',
+          null,
+          { from: owner1 }
+        );
+
+        await msigworlds.approve(
+          'propclean',
+          { actor: owner2.name, permission: 'active' },
+          'dac1',
+          null,
+          { from: owner2 }
+        );
+      });
+      it('shoul fail with wrong state error', async () => {
+        await assertEOSErrorIncludesMessage(
+          msigworlds.cleanup('propclean', 'dac1'),
+          'ERR::PROPOSAL_CLEANUP_STILL_PENDING'
+        );
+      });
+    });
+    context('with completed proposal', async () => {
+      it('should succeed', async () => {
+        await msigworlds.cleanup('propgood', 'dac1');
+      });
+      it('should erase the proposals and approvals record', async () => {
+        await assertRowCount(
+          msigworlds.proposalsTable({ scope: 'dac1', lowerBound: 'propgood' }),
+          0
+        );
+        await assertRowCount(
+          msigworlds.approvalsTable({ scope: 'dac1', lowerBound: 'propgood' }),
+          0
         );
       });
     });
@@ -867,26 +962,36 @@ describe('msigworlds', () => {
 
 async function configureAuths() {
   await UpdateAuth.execUpdateAuth(
-    [{ actor: owner1.name, permission: 'owner' }],
-    owner1.name,
+    [{ actor: msigowned.name, permission: 'owner' }],
+    msigowned.name,
     'active',
     'owner',
     UpdateAuth.AuthorityToSet.explicitAuthorities(
-      1,
+      3,
       [
         {
           permission: {
             actor: msigworlds.account.name,
             permission: 'active',
           },
-          weight: 1,
+          weight: 3,
         },
+        { permission: { actor: owner1.name, permission: 'active' }, weight: 2 },
+        { permission: { actor: owner2.name, permission: 'active' }, weight: 1 },
       ],
       [
-        {
-          key: owner1.publicKey,
-          weight: 1,
-        },
+        //   {
+        //     key: owner1.publicKey,
+        //     weight: 2,
+        //   },
+        //   {
+        //     key: owner2.publicKey,
+        //     weight: 1,
+        //   },
+        // ].sort((a, b) => {
+        //   // ensure keys are sorted alphabetically to avoid invalid auth error.
+        //   return a.key < b.key ? -1 : 1;
+        // }),
       ],
       []
     )
@@ -936,8 +1041,7 @@ async function seedAccounts() {
   owner1 = await AccountManager.createAccount('owner1');
   owner2 = await AccountManager.createAccount('owner2');
   owner3 = await AccountManager.createAccount('owner3');
-  owner4 = await AccountManager.createAccount('owner4');
-  owner5 = await AccountManager.createAccount('owner5');
+  msigowned = await AccountManager.createAccount('msigowned');
 }
 
 async function issueTokens() {

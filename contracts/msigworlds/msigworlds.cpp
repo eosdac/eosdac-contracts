@@ -235,9 +235,9 @@ void multisig::exec(name proposal_name, name executer, name dac_id) {
     }
 
     for (const auto &act : actions) {
-        auto toSend = action(permission_level{get_self(), "active"_n}, act.account, act.name, act.data);
-        // print(act.account, act.name);
-        toSend.send();
+        print(act.account, act.name);
+        // auto toSend = action(permission_level{get_self(), "active"_n}, act.account, act.name, act.data);
+        act.send();
     }
 
     auto prop_itr = proptable.iterator_to(prop);
@@ -249,7 +249,7 @@ void multisig::exec(name proposal_name, name executer, name dac_id) {
 
 void multisig::cleanup(name proposal_name, name dac_id) {
     proposals proptable(get_self(), dac_id.value);
-    auto &    prop = proptable.get(proposal_name.value, "proposal not found");
+    auto &    prop = proptable.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::proposal not found");
     check(prop.state != PropState::PENDING,
         "ERR::PROPOSAL_CLEANUP_STILL_PENDING::proposal cannot be cleared before being executed or cancelled.");
 
