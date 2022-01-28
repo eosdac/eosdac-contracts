@@ -32,7 +32,6 @@ let modDate: Date;
 const currentHeadTimeWithAddedSeconds = async (seconds: number) => {
   const { head_block_time } = await EOSManager.api.rpc.get_info();
   const date = new Date(new Date(head_block_time).getTime() + seconds * 1000);
-  console.log(date, head_block_time);
   return date;
 };
 
