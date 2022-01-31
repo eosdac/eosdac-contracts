@@ -13,9 +13,11 @@ import {
 import { Dacdirectory } from './dacdirectory/dacdirectory';
 import { Daccustodian } from './daccustodian/daccustodian';
 import { Eosdactokens } from './eosdactokens/eosdactokens';
-// import { Dacmultisigs } from "./dacmultisigs/dacmultisigs";
+import { Msigworlds } from './msigworlds/msigworlds';
 import { Dacproposals } from './dacproposals/dacproposals';
 import { Dacescrow } from './dacescrow/dacescrow';
+import { Dacmultisigs } from './dacmultisigs/dacmultisigs';
+import { EosioToken } from '../../external_contracts/eosio.token/eosio.token';
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -36,6 +38,9 @@ export class SharedTestObjects {
   dac_token_contract: Eosdactokens;
   dacproposals_contract: Dacproposals;
   dacescrow_contract: Dacescrow;
+  msigworlds_contract: Msigworlds;
+  eosio_token_contract: EosioToken;
+  dacmultisigs_contract: Dacmultisigs;
   // === Shared Values
   configured_dac_memberterms: string;
 
@@ -120,9 +125,26 @@ export class SharedTestObjects {
     );
     await sleep(2000);
 
+    this.msigworlds_contract = await debugPromise(
+      ContractDeployer.deployWithName<Msigworlds>(
+        'contracts/msigworlds/msigworlds',
+        'msigworlds'
+      ),
+      'created msigworlds_contract'
+    );
+
+    this.dacmultisigs_contract = await debugPromise(
+      ContractDeployer.deployWithName<Dacmultisigs>(
+        'contracts/dacmultisigs/dacmultisigs',
+        'dacmultisigs'
+      ),
+      'created dacmultisigs_contract'
+    );
+
     // Other objects
     this.configured_dac_memberterms = 'AgreedMemberTermsHashValue';
     await this.add_token_contract_permissions();
+    await this.configTokenContract();
   }
 
   async initDac(dacId: string, symbol: string, initialAsset: string) {
@@ -742,6 +764,30 @@ export class SharedTestObjects {
         'voting custodian for new period'
       );
     }
+  }
+
+  async configTokenContract() {
+    this.eosio_token_contract = await ContractDeployer.deployWithName<
+      EosioToken
+    >('external_contracts/eosio.token/eosio.token', 'alienworlds');
+
+    this.tokenIssuer = await AccountManager.createAccount('tokenissuer');
+
+    await this.eosio_token_contract.create(
+      this.tokenIssuer.name,
+      '1000000000.0000 TLM',
+      {
+        from: this.eosio_token_contract.account,
+      }
+    );
+    await this.eosio_token_contract.issue(
+      this.tokenIssuer.name,
+      '10000000.0000 TLM',
+      'initial deposit',
+      {
+        from: this.tokenIssuer,
+      }
+    );
   }
 }
 
