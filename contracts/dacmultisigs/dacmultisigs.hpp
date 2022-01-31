@@ -13,7 +13,7 @@
 #define MSIG_CONTRACT STRINGIZE(MSIGCONTRACT)
 #endif
 #ifndef MSIG_CONTRACT
-#define MSIG_CONTRACT "eosio.msig"
+#define MSIG_CONTRACT "msigworlds"
 #endif
 
 using namespace eosio;
@@ -35,21 +35,25 @@ CONTRACT dacmultisigs : public contract {
   public:
     using contract::contract;
 
-    ACTION proposed(name proposer, name proposal_name, string metadata);
-    ACTION proposede(name proposer, name proposal_name, string metadata, name dac_id);
+    ACTION proposed(name proposer, name proposal_name, string metadata, name dac_id);
 
-    ACTION approved(name proposer, name proposal_name, name approver);
-    ACTION approvede(name proposer, name proposal_name, name approver, name dac_id);
+    ACTION approved(name proposer, name proposal_name, name approver, name dac_id);
 
-    ACTION unapproved(name proposer, name proposal_name, name unapprover);
-    ACTION unapprovede(name proposer, name proposal_name, name unapprover, name dac_id);
+    ACTION unapproved(name proposer, name proposal_name, name unapprover, name dac_id);
 
-    ACTION cancelled(name proposer, name proposal_name, name canceler);
-    ACTION cancellede(name proposer, name proposal_name, name canceler, name dac_id);
+    ACTION cancelled(name proposer, name proposal_name, name canceler, name dac_id);
 
-    ACTION executed(name proposer, name proposal_name, name executer);
-    ACTION executede(name proposer, name proposal_name, name executer, name dac_id);
+    ACTION executed(name proposer, name proposal_name, name executer, name dac_id);
 
-    ACTION clean(name proposer, name proposal_name);
-    ACTION cleane(name proposer, name proposal_name, name dac_id);
+    ACTION clean(name proposer, name proposal_name, name dac_id);
+
+  private:
+    checksum256 get_trx_id() {
+        const auto     size   = transaction_size();
+        char          *buffer = (char *)malloc(size);
+        const uint32_t read   = read_transaction(buffer, size);
+        check(size == read, "ERR::READ_TRANSACTION_FAILED::read_transaction failed");
+
+        return sha256(buffer, read);
+    }
 };
