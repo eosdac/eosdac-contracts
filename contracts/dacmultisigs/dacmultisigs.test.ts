@@ -50,7 +50,7 @@ describe('dacmultisigs', () => {
             authorization: [{ actor: msigowned.name, permission: 'active' }],
             name: 'transfer',
             data: {
-              from: user1.name,
+              from: msigowned.name,
               to: user2.name,
               quantity: '10.0000 TLM',
               memo: 'testing',
@@ -80,6 +80,14 @@ describe('dacmultisigs', () => {
 
     await shared.initDac(dacId, '4,DMS', '1000000.0000 DMS');
     await configureAuths();
+
+    await shared.eosio_token_contract.transfer(
+      shared.tokenIssuer.name,
+      msigowned.name,
+      '100000.0000 TLM',
+      'starter blanace.',
+      { from: shared.tokenIssuer }
+    );
   });
 
   context('proposed', async () => {
@@ -219,7 +227,7 @@ describe('dacmultisigs', () => {
     context('when proposal is not really executed', async () => {
       it('should fail', async () => {
         await assertEOSErrorIncludesMessage(
-          dacmultisigs.executed(user1.name, 'prop1', user2.name, dacId, {
+          dacmultisigs.executed(user1.name, 'prop2', user2.name, dacId, {
             auths: [
               {
                 actor: shared.auth_account.name,
@@ -237,6 +245,25 @@ describe('dacmultisigs', () => {
     });
     context('when proposal is executed', async () => {
       before(async () => {
+        await dacmultisigs.proposed(
+          user1.name,
+          'prop2',
+          'some metadata',
+          dacId,
+          {
+            auths: [
+              {
+                actor: shared.auth_account.name,
+                permission: 'active',
+              },
+              {
+                actor: user1.name,
+                permission: 'active',
+              },
+            ],
+          }
+        );
+
         await debugPromise(
           msigworlds.approve(
             'prop2',
@@ -258,6 +285,33 @@ describe('dacmultisigs', () => {
           ),
           'approve 2'
         );
+
+        await dacmultisigs.approved(user1.name, 'prop2', user1.name, dacId, {
+          auths: [
+            {
+              actor: shared.auth_account.name,
+              permission: 'active',
+            },
+            {
+              actor: user1.name,
+              permission: 'active',
+            },
+          ],
+        });
+
+        await dacmultisigs.approved(user1.name, 'prop2', user2.name, dacId, {
+          auths: [
+            {
+              actor: shared.auth_account.name,
+              permission: 'active',
+            },
+            {
+              actor: user2.name,
+              permission: 'active',
+            },
+          ],
+        });
+
         await debugPromise(
           msigworlds.exec('prop2', user1.name, dacId, {
             from: user1,
@@ -266,7 +320,7 @@ describe('dacmultisigs', () => {
         );
       });
       it('should work', async () => {
-        await dacmultisigs.executed(user1.name, 'prop1', user2.name, dacId, {
+        await dacmultisigs.executed(user1.name, 'prop2', user2.name, dacId, {
           auths: [
             {
               actor: shared.auth_account.name,
@@ -279,11 +333,58 @@ describe('dacmultisigs', () => {
           ],
         });
       });
-      it('should have updated the table entry', async () => {
-        const res = await dacmultisigs.proposalsTable({ scope: dacId });
-        const row = res.rows[0];
-        chai.expect(row.modifieddate).to.not.equal(modifieddate);
+      it('should have erased the table entry', async () => {
+        const res = await assertRowCount(
+          dacmultisigs.proposalsTable({ scope: dacId }),
+          0
+        );
       });
+    });
+  });
+  context('clean', async () => {
+    before(async () => {
+      await propose('prop3');
+      await dacmultisigs.proposed(user1.name, 'prop3', 'some metadata', dacId, {
+        auths: [
+          {
+            actor: shared.auth_account.name,
+            permission: 'active',
+          },
+          {
+            actor: user1.name,
+            permission: 'active',
+          },
+        ],
+      });
+      const res = await assertRowCount(
+        dacmultisigs.proposalsTable({ scope: dacId }),
+        1
+      );
+    });
+    it('too soon, should fail', async () => {
+      await assertEOSErrorIncludesMessage(
+        dacmultisigs.clean(user1.name, 'prop3', dacId, {
+          from: shared.auth_account,
+        }),
+        'This proposal is still active'
+      );
+    });
+    it('without proper authorization, should fail', async () => {
+      await assertMissingAuthority(
+        dacmultisigs.clean(user1.name, 'prop3', dacId)
+      );
+    });
+    it('with proper parameters, should work', async () => {
+      await sleep(5000);
+      await dacmultisigs.clean(user1.name, 'prop3', dacId, {
+        from: shared.auth_account,
+      });
+    });
+    it('should have cleaned the table', async () => {
+      const res = await assertRowCount(
+        dacmultisigs.proposalsTable({ scope: dacId }),
+        0
+      );
     });
   });
 });

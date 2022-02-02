@@ -41,6 +41,7 @@ export class SharedTestObjects {
   msigworlds_contract: Msigworlds;
   eosio_token_contract: EosioToken;
   dacmultisigs_contract: Dacmultisigs;
+  tokenIssuer: Account;
   // === Shared Values
   configured_dac_memberterms: string;
 

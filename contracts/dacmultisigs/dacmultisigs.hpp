@@ -49,9 +49,9 @@ CONTRACT dacmultisigs : public contract {
 
   private:
     checksum256 get_trx_id() {
-        const auto     size   = transaction_size();
-        char          *buffer = (char *)malloc(size);
-        const uint32_t read   = read_transaction(buffer, size);
+        const auto     size = transaction_size();
+        char           buffer[size];
+        const auto read = read_transaction(buffer, size);
         check(size == read, "ERR::READ_TRANSACTION_FAILED::read_transaction failed");
 
         return sha256(buffer, read);
