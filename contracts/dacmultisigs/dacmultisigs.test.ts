@@ -375,7 +375,7 @@ describe('dacmultisigs', () => {
       );
     });
     it('with proper parameters, should work', async () => {
-      await sleep(5000);
+      await sleep(6000);
       await dacmultisigs.clean(user1.name, 'prop3', dacId, {
         from: shared.auth_account,
       });

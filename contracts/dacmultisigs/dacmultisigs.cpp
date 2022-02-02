@@ -101,7 +101,7 @@ void dacmultisigs::clean(name proposer, name proposal_name, name dac_id) {
     proposals_table proposals(_self, dac_id.value);
     auto           &proposal = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
 
-    check(dtnow > (proposal.modifieddate + two_weeks), "ERR::PROPOSAL_STILL_ACTIVE::This proposal is still active");
+    check(dtnow > (proposal.modifieddate + two_weeks), fmt("ERR::PROPOSAL_STILL_ACTIVE::This proposal is still active until %s, it is now %s", proposal.modifieddate + two_weeks, dtnow));
 
     proposals.erase(proposal);
 }
