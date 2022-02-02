@@ -64,8 +64,8 @@ template <typename T> inline string toString(const T &x) {
 /*
  * C++'s missing format string function :-)
  */
-template <typename... Args> inline string fmt(const string &format, Args const &...args) {
-    char buf[512];
+template <typename... Args> inline char *fmt(const string &format, Args const &...args) {
+    static char buf[512];
     snprintf(buf, sizeof(buf), format.c_str(), toString(args).c_str()...);
     return buf;
 }
@@ -75,6 +75,6 @@ template <typename... Args> inline string fmt(const string &format, Args const &
 template <typename... Args> inline void check(bool pred, const string &format, Args const &...args) {
     if (!pred) {
         const auto msg = fmt(format, args...);
-        check(pred, msg.c_str());
+        check(pred, msg);
     }
 }
