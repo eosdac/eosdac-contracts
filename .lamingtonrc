@@ -18,7 +18,6 @@
     "eosdactokens.cpp",
     "referendum.cpp",
     "eosio.token.cpp",
-    "eosio.msig.cpp_",
     "stakevote.cpp",
     "msigworlds.cpp"
   ]

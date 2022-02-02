@@ -16,7 +16,7 @@ void dacmultisigs::proposed(name proposer, name proposal_name, string metadata, 
     require_auth(proposer);
 
     msig_proposals_table msig_proposals(name(MSIG_CONTRACT), dac_id.value);
-    msig_proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND_MSIG::Proposal not found in eosio.msig");
+    msig_proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND_MSIG::Proposal not found in " MSIG_CONTRACT);
 
     proposals_table proposals(_self, dac_id.value);
     proposals.emplace(proposer, [&](storedproposal &p) {
@@ -34,7 +34,7 @@ void dacmultisigs::approved(name proposer, name proposal_name, name approver, na
     require_auth(approver);
 
     msig_proposals_table msig_proposals(name(MSIG_CONTRACT), dac_id.value);
-    msig_proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND_MSIG::Proposal not found in eosio.msig");
+    msig_proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND_MSIG::Proposal not found in " MSIG_CONTRACT);
 
     proposals_table proposals(_self, dac_id.value);
     auto           &proposal = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
@@ -49,7 +49,7 @@ void dacmultisigs::unapproved(name proposer, name proposal_name, name unapprover
     require_auth(unapprover);
 
     msig_proposals_table msig_proposals(name(MSIG_CONTRACT), dac_id.value);
-    msig_proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND_MSIG::Proposal not found in eosio.msig");
+    msig_proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND_MSIG::Proposal not found in " MSIG_CONTRACT);
 
     proposals_table proposals(_self, dac_id.value);
     auto           &proposal = proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found");
@@ -64,7 +64,7 @@ void dacmultisigs::cancelled(name proposer, name proposal_name, name canceler, n
     require_auth(canceler);
 
     msig_proposals_table msig_proposals(name(MSIG_CONTRACT), dac_id.value);
-    const auto prop = msig_proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND_MSIG::Proposal not found in eosio.msig");
+    const auto prop = msig_proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND_MSIG::Proposal not found in " MSIG_CONTRACT);
     check(prop.state == CANCELLED, "Trying to set as cancelled, but proposal is not really cancelled");
     
     proposals_table proposals(_self, dac_id.value);
@@ -79,7 +79,7 @@ void dacmultisigs::executed(name proposer, name proposal_name, name executer, na
     require_auth(executer);
 
     msig_proposals_table msig_proposals(name(MSIG_CONTRACT), dac_id.value);
-    const auto prop = msig_proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND_MSIG::Proposal not found in eosio.msig");
+    const auto prop = msig_proposals.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND_MSIG::Proposal not found in " MSIG_CONTRACT);
     check(prop.state == EXECUTED, "Trying to set as executed, but proposal is not really executed");
 
     proposals_table proposals(_self, dac_id.value);
