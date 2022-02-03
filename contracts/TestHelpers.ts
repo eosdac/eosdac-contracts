@@ -17,6 +17,7 @@ import { Msigworlds } from './msigworlds/msigworlds';
 import { Dacproposals } from './dacproposals/dacproposals';
 import { Dacescrow } from './dacescrow/dacescrow';
 import { Dacmultisigs } from './dacmultisigs/dacmultisigs';
+import { Referendum } from './referendum/referendum';
 import { EosioToken } from '../../external_contracts/eosio.token/eosio.token';
 
 import * as fs from 'fs';
@@ -41,6 +42,7 @@ export class SharedTestObjects {
   msigworlds_contract: Msigworlds;
   eosio_token_contract: EosioToken;
   dacmultisigs_contract: Dacmultisigs;
+  referendum_contract: Referendum;
   tokenIssuer: Account;
   // === Shared Values
   configured_dac_memberterms: string;
@@ -140,6 +142,14 @@ export class SharedTestObjects {
         'dacmultisigs'
       ),
       'created dacmultisigs_contract'
+    );
+
+    this.referendum_contract = await debugPromise(
+      ContractDeployer.deployWithName<Referendum>(
+        'contracts/referendum/referendum',
+        'referendum'
+      ),
+      'created referendum_contract'
     );
 
     // Other objects
@@ -330,6 +340,10 @@ export class SharedTestObjects {
           key: Account_type.TREASURY,
           value: this.treasury_account.name,
         },
+        {
+          key: Account_type.MSIGS,
+          value: this.dacmultisigs_contract.account.name,
+        },
       ],
       {
         auths: [
@@ -436,21 +450,6 @@ export class SharedTestObjects {
       ),
       'add pay auth to daccustodian'
     );
-
-    // FIXME: Uncomment this in order for daccustodian to work, leave it commented out if you want daccustodian to work
-
-    // await debugPromise(
-    //   UpdateAuth.execUpdateAuth(
-    //     this.treasury_account.active,
-    //     this.treasury_account.name,
-    //     'xfer',
-    //     'active',
-    //     UpdateAuth.AuthorityToSet.forContractCode(
-    //       this.daccustodian_contract.account
-    //     )
-    //   ),
-    //   'add xfer to daccustodian'
-    // );
 
     await debugPromise(
       UpdateAuth.execUpdateAuth(
@@ -576,6 +575,33 @@ export class SharedTestObjects {
         )
       ),
       'add admin auth'
+    );
+
+    await debugPromise(
+      UpdateAuth.execUpdateAuth(
+        this.auth_account.active,
+        this.auth_account.name,
+        'referendum',
+        'active',
+        UpdateAuth.AuthorityToSet.explicitAuthorities(1, [
+          {
+            permission: {
+              actor: this.referendum_contract.account.name,
+              permission: 'eosio.code',
+            },
+            weight: 1,
+          },
+        ])
+      ),
+      'add referendum to auth_account'
+    );
+
+    await UpdateAuth.execLinkAuth(
+      this.auth_account.active,
+      this.auth_account.name,
+      this.dacmultisigs_contract.account.name,
+      'proposed',
+      'referendum'
     );
 
     await debugPromise(
@@ -710,6 +736,8 @@ export class SharedTestObjects {
       'clearstake',
       'pay'
     );
+
+    await this.referendum_contract.account.addCodePermission();
   }
 
   async setup_dac_memberterms(dacId: string, dacAuth: Account) {

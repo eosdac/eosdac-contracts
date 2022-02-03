@@ -389,7 +389,7 @@ uint8_t referendum::calculateStatus(name referendum_id, name dac_id) {
 
     map<uint8_t, uint64_t> votes;
 
-    if (ref->expires.sec_since_epoch() < time_now) {
+    if (time_now < ref->expires.sec_since_epoch()) {
         if (ref->voting_type == count_type::COUNT_TOKEN) {
             quorum = config.quorum_token[ref->type];
             votes  = ref->token_votes;
@@ -428,7 +428,7 @@ uint8_t referendum::calculateStatus(name referendum_id, name dac_id) {
             ", pass rate : ", pass_rate, ", current rate : ", current_all, ", total : ", total, ", yes : ", current_yes,
             "double: ", double(current_yes), "all double: ", double(current_all), ", yes% : ", yes_percentage,
             " status: ", status);
-    }
+    } 
 
     return status;
 }
@@ -445,7 +445,7 @@ void referendum::proposeMsig(referendum_data ref, name dac_id) {
     // Calculate expiry as 30 days
     uint32_t time_now = current_time_point().sec_since_epoch();
     trx.expiration    = time_point_sec(time_now + (60 * 60 * 24 * 30));
-
+    
     // Get required auths
     candidates_table candidates(custodian_contract, dac_id.value);
     candperms_table  candperms(custodian_contract, dac_id.value);
@@ -474,14 +474,14 @@ void referendum::proposeMsig(referendum_data ref, name dac_id) {
         count++;
     }
 
-    action(permission_level{auth_account, "referendum"_n}, name(SYSTEM_MSIG_CONTRACT), "propose"_n,
-        make_tuple(auth_account, proposal_name, reqd_perms, trx))
+    action(permission_level{get_self(), "active"_n}, name(SYSTEM_MSIG_CONTRACT), "propose"_n,
+        make_tuple(get_self(), proposal_name, reqd_perms, dac_id, map<string, string>{}, trx))
         .send();
 
     string metadata = "{\"title\":\"REFERENDUM: " + ref.title +
                       "\", \"description\":\"Automated submission of passing referendum number " +
                       ref.referendum_id.to_string() + "\"}";
     vector<permission_level> perms = {
-        permission_level{auth_account, "admin"_n}, permission_level{auth_account, "referendum"_n}};
-    action(perms, msig_contract, "proposede"_n, make_tuple(auth_account, proposal_name, metadata, dac_id)).send();
+        permission_level{get_self(), "active"_n}, permission_level{auth_account, "referendum"_n}};
+    action(perms, msig_contract, "proposed"_n, make_tuple(get_self(), proposal_name, metadata, dac_id)).send();
 }
