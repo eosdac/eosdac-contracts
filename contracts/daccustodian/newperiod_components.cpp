@@ -122,6 +122,34 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
     }
 }
 
+void daccustodian::setMsigAuths(name dac_id) {
+  const auto custodians = custodians_table{get_self(), dac_id.value};
+  const auto current_config = contr_config::get_current_configs(get_self(), dac_id);
+
+  const auto dac = dacdir::dac_for_id(dac_id);
+  const auto accountToChange = "msigowned"_n;
+
+  auto accounts = vector<eosiosystem::permission_level_weight>{};
+
+  for (auto it = custodians.begin(); it != custodians.end(); it++) {
+      const auto account = eosiosystem::permission_level_weight{
+          .permission = getCandidatePermission(it->cust_name, dac_id),
+          .weight     = (uint16_t)1,
+      };
+      accounts.push_back(account);
+  }
+
+  const auto auth = eosiosystem::authority{
+      .threshold = 1,
+      .keys = {}, 
+      .accounts = accounts
+    };
+
+  action(permission_level{accountToChange, "owner"_n}, "eosio"_n, "updateauth"_n,
+      std::make_tuple(accountToChange, "active"_n, "owner"_n, auth))
+      .send();
+}
+
 void daccustodian::setCustodianAuths(name dac_id) {
 
     custodians_table custodians(get_self(), dac_id.value);
@@ -142,7 +170,6 @@ void daccustodian::setCustodianAuths(name dac_id) {
         };
         accounts.push_back(account);
     }
-
     eosiosystem::authority high_contract_authority{
         .threshold = current_config.auth_threshold_high, .keys = {}, .accounts = accounts};
     print("About to set the first one in auths for custodians\n\n");
@@ -223,7 +250,7 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
 
         check(currentState.met_initial_votes_threshold == true ||
                   percent_of_current_voter_engagement > configs.initial_vote_quorum_percent,
-            "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_ACTIVATE::Voter engagement is insufficient to activate the DAC.");
+            "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_ACTIVATE::Voter engagement %s is insufficient to activate the DAC (%s required).", percent_of_current_voter_engagement, configs.initial_vote_quorum_percent);
 
         check(percent_of_current_voter_engagement > configs.vote_quorum_percent,
             "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_PROCESS::Voter engagement is insufficient to process a new period");
@@ -241,12 +268,10 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
 
     // Set the auths on the dacauthority account
     setCustodianAuths(dac_id);
+    setMsigAuths(dac_id);
 
     currentState.lastperiodtime = current_block_time();
     currentState.save(get_self(), dac_id);
 
-    //        Schedule the the next election cycle at the end of the period.
-    //        transaction nextTrans{};
-    //        nextTrans.actions.emplace_back(permission_level(_self,N(active)), _self, N(newperiod), std::make_tuple("",
-    //        false)); nextTrans.delay_sec = configs().periodlength; nextTrans.send(N(newperiod), false);
+    
 }

@@ -201,6 +201,7 @@ namespace eosdac {
         void modifyProxiesWeight(int64_t vote_weight, name oldProxy, name newProxy, name dac_id);
         void assertPeriodTime(contr_config &configs, contr_state &currentState);
         void distributeMeanPay(name internal_dac_id);
+        void setMsigAuths(name dac_id);
         void setCustodianAuths(name internal_dac_id);
         void removeCustodian(name cust, name internal_dac_id);
         void removeCandidate(name cust, bool lockupStake, name internal_dac_id);

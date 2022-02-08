@@ -63,7 +63,7 @@ template <typename T> inline std::string toString(const T &x) {
 /*
  * C++'s missing format string function :-)
  */
-template <typename... Args> inline char *fmt(const std::string_view &format, Args const &...args) {
+template <typename... Args> inline char *fmt(const std::string_view format, Args const &...args) {
     static char buf[512];
     snprintf(buf, sizeof(buf), format.data(), toString(args).c_str()...);
     return buf;
@@ -71,7 +71,7 @@ template <typename... Args> inline char *fmt(const std::string_view &format, Arg
 /* eosio::check overload that allows passing a format string for more
  * helpful error messages.
  */
-template <typename... Args> inline void check(bool pred, const std::string_view &format, Args const &...args) {
+template <typename... Args> inline void check(bool pred, const std::string_view format, Args const &...args) {
     if (!pred) {
         const auto msg = fmt(format, args...);
         check(pred, msg);

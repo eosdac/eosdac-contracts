@@ -97,13 +97,13 @@ namespace eosdac {
 
     asset get_supply(name code, symbol_code sym) {
         stats       statstable(code, sym.raw());
-        const auto &st = statstable.get(sym.raw());
+        const auto &st = statstable.get(sym.raw(), fmt("eosdactokens::get_supply symbol %s not found in statstable", sym));
         return st.supply;
     }
 
     asset get_balance(name owner, name code, symbol_code sym) {
         accounts    accountstable(code, owner.value);
-        const auto &ac = accountstable.get(sym.raw());
+        const auto &ac = accountstable.get(sym.raw(), fmt("eosdactokens::get_balance user %s has no %s balance", owner, sym));
         return ac.balance;
     }
 

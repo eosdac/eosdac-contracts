@@ -64,7 +64,7 @@ void multisig::propose(name proposer, name proposal_name, std::vector<permission
     auto res              = check_transaction_authorization(
         trx_pos, size, (const char *)0, 0, packed_requested.data(), packed_requested.size());
 
-    check(res > 0, "transaction authorization failed");
+    check(res > 0, "msigworlds::propose preflight transaction authorization check failed");
 
     std::vector<char> pkd_trans;
     pkd_trans.resize(size);
@@ -228,7 +228,7 @@ void multisig::exec(name proposal_name, name executer, name dac_id) {
 
     bool ok = trx_is_authorized(
         get_approvals_and_adjust_table(get_self(), proposal_name, table_op, dac_id), prop.packed_transaction);
-    check(ok, "transaction authorization failed");
+    check(ok, "msigworlds::exec transaction authorization failed");
 
     if (prop.earliest_exec_time.has_value()) {
         check(*prop.earliest_exec_time <= current_time_point(), "too early to execute");

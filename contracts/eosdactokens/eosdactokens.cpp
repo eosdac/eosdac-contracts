@@ -104,7 +104,7 @@ namespace eosdac {
 
         auto        sym = quantity.symbol.code();
         stats       statstable(_self, sym.raw());
-        const auto &st = statstable.get(sym.raw());
+        const auto &st = statstable.get(sym.raw(), fmt("eosdactokens::transfer Symbol %s not found", sym));
 
         if (st.transfer_locked) {
             check(has_auth(st.issuer), "Transfer is locked, need issuer permission");
@@ -145,7 +145,7 @@ namespace eosdac {
     void eosdactokens::sub_balance(name owner, asset value) {
         accounts from_acnts(_self, owner.value);
 
-        const auto &from = from_acnts.get(value.symbol.code().raw());
+        const auto &from = from_acnts.get(value.symbol.code().raw(), fmt("eosdactokens::sub_balance Symbol %s not found", value.symbol));
         check(from.balance.amount >= value.amount, "ERR::TRANSFER_OVERDRAWN::overdrawn balance");
 
         from_acnts.modify(from, owner, [&](auto &a) {

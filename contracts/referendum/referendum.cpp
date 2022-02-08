@@ -106,9 +106,9 @@ void referendum::propose(name proposer, name referendum_id, uint8_t type, uint8_
         }
 
         // transfer fee to treasury account
-        auto   dac              = dacdir::dac_for_id(dac_id);
-        auto   treasury_account = dac.account_for_type(dacdir::TREASURY);
-        string fee_memo         = "Fee for referendum id " + referendum_id.to_string();
+        const auto       dac              = dacdir::dac_for_id(dac_id);
+        const auto       treasury_account = dac.account_for_type(dacdir::TREASURY);
+        const string fee_memo         = fmt("Fee for referendum id %s", referendum_id);
         eosio::action(eosio::permission_level{get_self(), "active"_n}, fee_required.contract, "transfer"_n,
             make_tuple(get_self(), treasury_account, fee_required.quantity, fee_memo))
             .send();
@@ -472,9 +472,9 @@ void referendum::proposeMsig(referendum_data ref, name dac_id) {
         cand_itr++;
         count++;
     }
-    const auto metadata = map<string, string>{ 
-      {"title", fmt("REFERENDUM: %s", ref.title) },
-      {"description", fmt("Automated submission of passing referendum number %s", ref.referendum_id) }
+    const auto metadata = map<string, string>{
+      {"title", fmt("REFERENDUM: %s", ref.title)},
+      {"description", fmt("Automated submission of passing referendum number %s", ref.referendum_id)}
     };
 
     action(permission_level{get_self(), "active"_n}, name{SYSTEM_MSIG_CONTRACT}, "propose"_n,
