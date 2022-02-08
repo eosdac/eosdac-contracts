@@ -9,6 +9,8 @@
 #include "../../contract-shared-headers/eosdactokens_shared.hpp"
 #include "external_types.hpp"
 
+using namespace std;
+
 namespace eosdac {
 
     const eosio::name ONE_PERMISSION    = "one"_n;

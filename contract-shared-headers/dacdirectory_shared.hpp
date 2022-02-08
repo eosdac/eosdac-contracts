@@ -13,7 +13,6 @@ namespace eosdac {
             AUTH        = 0,
             TREASURY    = 1,
             CUSTODIAN   = 2,
-            MSIGS       = 3,
             SERVICE     = 5,
             PROPOSALS   = 6,
             ESCROW      = 7,

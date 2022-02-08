@@ -7,6 +7,7 @@ import {
   assertRowsEqual,
   assertEOSErrorIncludesMessage,
   assertRowCount,
+  assertBalanceEqual,
   EosioAction,
   ContractLoader,
   AccountManager,
@@ -14,7 +15,6 @@ import {
 } from 'lamington';
 import { SharedTestObjects } from '../TestHelpers';
 import { Msigworlds } from '../msigworlds/msigworlds';
-import { Dacmultisigs } from '../dacmultisigs/dacmultisigs';
 import { currentHeadTimeWithAddedSeconds } from '../msigworlds/msigworlds.test';
 const api = EOSManager.api;
 
@@ -270,11 +270,11 @@ describe('referendum', () => {
           );
         });
         it('should have transferred the fee to treasury', async () => {
-          await assertRowsEqual(
+          await assertBalanceEqual(
             shared.dac_token_contract.accountsTable({
               scope: shared.treasury_account.name,
             }),
-            [{ balance: '1.0000 REF' }]
+            '1.0000 REF'
           );
         });
       });

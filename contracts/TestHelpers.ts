@@ -16,7 +16,6 @@ import { Eosdactokens } from './eosdactokens/eosdactokens';
 import { Msigworlds } from './msigworlds/msigworlds';
 import { Dacproposals } from './dacproposals/dacproposals';
 import { Dacescrow } from './dacescrow/dacescrow';
-import { Dacmultisigs } from './dacmultisigs/dacmultisigs';
 import { Referendum } from './referendum/referendum';
 import { EosioToken } from '../../external_contracts/eosio.token/eosio.token';
 
@@ -41,7 +40,6 @@ export class SharedTestObjects {
   dacescrow_contract: Dacescrow;
   msigworlds_contract: Msigworlds;
   eosio_token_contract: EosioToken;
-  dacmultisigs_contract: Dacmultisigs;
   referendum_contract: Referendum;
   tokenIssuer: Account;
   // === Shared Values
@@ -134,14 +132,6 @@ export class SharedTestObjects {
         'msigworlds'
       ),
       'created msigworlds_contract'
-    );
-
-    this.dacmultisigs_contract = await debugPromise(
-      ContractDeployer.deployWithName<Dacmultisigs>(
-        'contracts/dacmultisigs/dacmultisigs',
-        'dacmultisigs'
-      ),
-      'created dacmultisigs_contract'
     );
 
     this.referendum_contract = await debugPromise(
@@ -339,10 +329,6 @@ export class SharedTestObjects {
         {
           key: Account_type.TREASURY,
           value: this.treasury_account.name,
-        },
-        {
-          key: Account_type.MSIGS,
-          value: this.dacmultisigs_contract.account.name,
         },
       ],
       {
@@ -596,14 +582,6 @@ export class SharedTestObjects {
       'add referendum to auth_account'
     );
 
-    await UpdateAuth.execLinkAuth(
-      this.auth_account.active,
-      this.auth_account.name,
-      this.dacmultisigs_contract.account.name,
-      'proposed',
-      'referendum'
-    );
-
     await debugPromise(
       UpdateAuth.execUpdateAuth(
         this.daccustodian_contract.account.active,
@@ -849,7 +827,6 @@ export enum Account_type {
   AUTH = 0,
   TREASURY = 1,
   CUSTODIAN = 2,
-  MSIGS = 3,
   SERVICE = 5,
   PROPOSALS = 6,
   ESCROW = 7,

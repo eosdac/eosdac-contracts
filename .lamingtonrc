@@ -12,7 +12,6 @@
     "daccustodian.cpp",
     "dacdirectory.cpp",
     "dacescrow.cpp",
-    "dacmultisigs.cpp",
     "dacproposals.cpp",
     "distribution.cpp",
     "eosdactokens.cpp",

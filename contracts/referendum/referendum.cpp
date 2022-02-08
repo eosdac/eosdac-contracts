@@ -436,7 +436,6 @@ uint8_t referendum::calculateStatus(name referendum_id, name dac_id) {
 void referendum::proposeMsig(referendum_data ref, name dac_id) {
     auto dac                = dacdir::dac_for_id(dac_id);
     auto custodian_contract = dac.account_for_type(dacdir::CUSTODIAN);
-    auto msig_contract      = dac.account_for_type(dacdir::MSIGS);
     auto auth_account       = dac.account_for_type(dacdir::AUTH);
 
     transaction trx;
@@ -473,15 +472,12 @@ void referendum::proposeMsig(referendum_data ref, name dac_id) {
         cand_itr++;
         count++;
     }
+    const auto metadata = map<string, string>{ 
+      {"title", fmt("REFERENDUM: %s", ref.title) },
+      {"description", fmt("Automated submission of passing referendum number %s", ref.referendum_id) }
+    };
 
-    action(permission_level{get_self(), "active"_n}, name(SYSTEM_MSIG_CONTRACT), "propose"_n,
-        make_tuple(get_self(), proposal_name, reqd_perms, dac_id, map<string, string>{}, trx))
+    action(permission_level{get_self(), "active"_n}, name{SYSTEM_MSIG_CONTRACT}, "propose"_n,
+        make_tuple(get_self(), proposal_name, reqd_perms, dac_id, metadata, trx))
         .send();
-
-    string metadata = "{\"title\":\"REFERENDUM: " + ref.title +
-                      "\", \"description\":\"Automated submission of passing referendum number " +
-                      ref.referendum_id.to_string() + "\"}";
-    vector<permission_level> perms = {
-        permission_level{get_self(), "active"_n}, permission_level{auth_account, "referendum"_n}};
-    action(perms, msig_contract, "proposed"_n, make_tuple(get_self(), proposal_name, metadata, dac_id)).send();
 }
