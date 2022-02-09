@@ -13,10 +13,11 @@ using namespace std;
 
 namespace eosdac {
 
-    const eosio::name ONE_PERMISSION    = "one"_n;
-    const eosio::name LOW_PERMISSION    = "low"_n;
-    const eosio::name MEDIUM_PERMISSION = "med"_n;
-    const eosio::name HIGH_PERMISSION   = "high"_n;
+    static constexpr eosio::name ONE_PERMISSION    = "one"_n;
+    static constexpr eosio::name LOW_PERMISSION    = "low"_n;
+    static constexpr eosio::name MEDIUM_PERMISSION = "med"_n;
+    static constexpr eosio::name HIGH_PERMISSION   = "high"_n;
+    static constexpr eosio::name MSIG_CONTRACT     = "msigworlds"_n;
 
 #ifndef TRANSFER_DELAY
 #define TRANSFER_DELAY 60 * 60
