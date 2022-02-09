@@ -50,7 +50,7 @@ let candidates: Account[];
 let otherAccount: Account;
 let proposer1Account: Account;
 let arbitrator: Account;
-let msigowned: Account;
+let planet: Account;
 
 describe('referendum', () => {
   before(async () => {
@@ -59,9 +59,9 @@ describe('referendum', () => {
 
     user1 = await AccountManager.createAccount('user1');
     user2 = await AccountManager.createAccount('user2');
-    msigowned = await AccountManager.createAccount('msigowned');
+    planet = await AccountManager.createAccount('omicrontheta');
 
-    await shared.initDac(dacId, '4,REF', '1000000.0000 REF');
+    await shared.initDac(dacId, '4,REF', '1000000.0000 REF', planet);
     await shared.updateconfig(dacId, '12.0000 REF');
     await setup_token();
 
@@ -78,12 +78,12 @@ describe('referendum', () => {
     serialized_actions = await api.serializeActions([
       {
         account: shared.dac_token_contract.name,
-        authorization: [{ actor: msigowned.name, permission: 'active' }],
+        authorization: [{ actor: planet.name, permission: 'active' }],
         name: 'transfer',
         data: {
-          from: msigowned.name,
+          from: planet.name,
           to: user1.name,
-          quantity: '10.0000 REF',
+          quantity: '10.1234 REF',
           memo: 'testing',
         },
       },
@@ -337,6 +337,14 @@ describe('referendum', () => {
         from: candidates[0],
       });
     });
+    it('should have transferred the token', async () => {
+      await assertBalanceEqual(
+        shared.dac_token_contract.accountsTable({
+          scope: user1.name,
+        }),
+        '1010.1234 REF'
+      );
+    });
   });
 });
 
@@ -350,7 +358,7 @@ async function setup_token() {
   );
   await shared.dac_token_contract.transfer(
     shared.dac_token_contract.account.name,
-    msigowned.name,
+    planet.name,
     '1100.0000 REF',
     'starter blanace.',
     { from: shared.dac_token_contract.account }
@@ -366,46 +374,17 @@ async function setup_token() {
 }
 
 async function configureAuths() {
-  await UpdateAuth.execUpdateAuth(
-    [{ actor: msigowned.name, permission: 'owner' }],
-    msigowned.name,
-    'active',
-    'owner',
-    UpdateAuth.AuthorityToSet.explicitAuthorities(
-      1,
-      [
-        {
-          permission: {
-            actor: shared.msigworlds_contract.account.name,
-            permission: 'active',
-          },
-          weight: 1,
-        },
-        // {
-        //   permission: { actor: candidates[0].name, permission: 'active' },
-        //   weight: 1,
-        // },
-        // {
-        //   permission: { actor: candidates[1].name, permission: 'active' },
-        //   weight: 1,
-        // },
-      ].sort((a, b) => {
-        // ensure actors are sorted alphabetically to avoid invalid auth error.
-        return a.permission.actor < b.permission.actor ? -1 : 1;
-      })
-    )
-  );
   await debugPromise(
     UpdateAuth.execUpdateAuth(
-      msigowned.owner,
-      msigowned.name,
+      planet.owner,
+      planet.name,
       'owner',
       '',
       UpdateAuth.AuthorityToSet.forContractCode(
         shared.daccustodian_contract.account
       )
     ),
-    'change owner of msigowned'
+    'change owner of planet'
   );
   await shared.msigworlds_contract.addCodePermission();
 }

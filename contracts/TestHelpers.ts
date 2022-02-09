@@ -148,10 +148,15 @@ export class SharedTestObjects {
     await this.configTokenContract();
   }
 
-  async initDac(dacId: string, symbol: string, initialAsset: string) {
+  async initDac(
+    dacId: string,
+    symbol: string,
+    initialAsset: string,
+    planet: ?Account
+  ) {
     // Further setup after the inital singleton object have been created.
     await this.setup_tokens(initialAsset);
-    await this.register_dac_with_directory(dacId, symbol);
+    await this.register_dac_with_directory(dacId, symbol, planet);
     await this.setup_dac_memberterms(dacId, this.auth_account);
   }
 
@@ -305,8 +310,31 @@ export class SharedTestObjects {
   // tokenSymbol is the symbol in this format: '4,EOSDAC'
   private async register_dac_with_directory(
     dacId: string,
-    tokenSymbol: string
+    tokenSymbol: string,
+    planet: ?Account
   ) {
+    let accounts = [
+      { key: Account_type.AUTH, value: this.auth_account.name },
+      {
+        key: Account_type.CUSTODIAN,
+        value: this.daccustodian_contract.account.name,
+      },
+      {
+        key: Account_type.ESCROW,
+        value: this.dacescrow_contract.account.name,
+      },
+      {
+        key: Account_type.TREASURY,
+        value: this.treasury_account.name,
+      },
+    ];
+    if (planet) {
+      accounts.push({
+        key: Account_type.MSIGOWNED,
+        value: planet.name,
+      });
+    }
+
     await this.dacdirectory_contract.regdac(
       this.auth_account.name,
       dacId,
@@ -316,21 +344,7 @@ export class SharedTestObjects {
       },
       'dac_title',
       [],
-      [
-        { key: Account_type.AUTH, value: this.auth_account.name },
-        {
-          key: Account_type.CUSTODIAN,
-          value: this.daccustodian_contract.account.name,
-        },
-        {
-          key: Account_type.ESCROW,
-          value: this.dacescrow_contract.account.name,
-        },
-        {
-          key: Account_type.TREASURY,
-          value: this.treasury_account.name,
-        },
-      ],
+      accounts,
       {
         auths: [
           { actor: this.auth_account.name, permission: 'active' },
@@ -827,6 +841,7 @@ export enum Account_type {
   AUTH = 0,
   TREASURY = 1,
   CUSTODIAN = 2,
+  MSIGOWNED = 3,
   SERVICE = 5,
   PROPOSALS = 6,
   ESCROW = 7,

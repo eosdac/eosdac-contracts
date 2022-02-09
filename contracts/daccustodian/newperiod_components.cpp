@@ -127,9 +127,13 @@ void daccustodian::setMsigAuths(name dac_id) {
   const auto current_config = contr_config::get_current_configs(get_self(), dac_id);
 
   const auto dac = dacdir::dac_for_id(dac_id);
-  const auto accountToChange = "msigowned"_n;
-
-  auto accounts = vector<eosiosystem::permission_level_weight>{};
+  const auto accountToChange = dac.account_for_type(dacdir::MSIGOWNED);
+  auto accounts = vector<eosiosystem::permission_level_weight>{  
+    eosiosystem::permission_level_weight{
+      .permission = permission_level{"msigworlds"_n, "active"_n},
+      .weight     = (uint16_t)1,
+  }
+};
 
   for (auto it = custodians.begin(); it != custodians.end(); it++) {
       const auto account = eosiosystem::permission_level_weight{
@@ -138,7 +142,9 @@ void daccustodian::setMsigAuths(name dac_id) {
       };
       accounts.push_back(account);
   }
-
+  
+  std::sort(accounts.begin(), accounts.end());
+  
   const auto auth = eosiosystem::authority{
       .threshold = 1,
       .keys = {}, 

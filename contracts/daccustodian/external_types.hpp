@@ -23,6 +23,10 @@ namespace eosiosystem {
     struct permission_level_weight {
         eosio::permission_level permission;
         uint16_t                weight;
+        
+        friend constexpr bool operator < ( const permission_level_weight& a, const permission_level_weight& b ) {
+         return a.permission.actor < b.permission.actor;
+      }
     };
 
     struct wait_weight {
