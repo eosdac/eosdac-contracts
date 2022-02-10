@@ -1002,32 +1002,6 @@ async function configureAuths() {
       []
     )
   );
-
-  await UpdateAuth.execUpdateAuth(
-    [{ actor: msigworlds.account.name, permission: 'owner' }],
-    msigworlds.account.name,
-    'active',
-    'owner',
-    UpdateAuth.AuthorityToSet.explicitAuthorities(
-      1,
-      [
-        {
-          permission: {
-            actor: msigworlds.account.name,
-            permission: 'eosio.code',
-          },
-          weight: 1,
-        },
-      ],
-      [
-        {
-          key: msigworlds.account.publicKey,
-          weight: 1,
-        },
-      ],
-      []
-    )
-  );
 }
 
 async function seedAccounts() {

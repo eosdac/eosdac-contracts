@@ -386,5 +386,4 @@ async function configureAuths() {
     ),
     'change owner of planet'
   );
-  await shared.msigworlds_contract.addCodePermission();
 }

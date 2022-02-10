@@ -622,6 +622,32 @@ export class SharedTestObjects {
       'add xfer to daccustodian'
     );
 
+    await UpdateAuth.execUpdateAuth(
+      [{ actor: this.msigworlds_contract.account.name, permission: 'owner' }],
+      this.msigworlds_contract.account.name,
+      'active',
+      'owner',
+      UpdateAuth.AuthorityToSet.explicitAuthorities(
+        1,
+        [
+          {
+            permission: {
+              actor: this.msigworlds_contract.account.name,
+              permission: 'eosio.code',
+            },
+            weight: 1,
+          },
+        ],
+        [
+          {
+            key: this.msigworlds_contract.account.publicKey,
+            weight: 1,
+          },
+        ],
+        []
+      )
+    );
+
     await UpdateAuth.execLinkAuth(
       this.dac_token_contract.account.active,
       this.dac_token_contract.account.name,

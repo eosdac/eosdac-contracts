@@ -127,7 +127,12 @@ void daccustodian::setMsigAuths(name dac_id) {
   const auto current_config = contr_config::get_current_configs(get_self(), dac_id);
 
   const auto dac = dacdir::dac_for_id(dac_id);
-  const auto accountToChange = dac.account_for_type(dacdir::MSIGOWNED);
+  const auto accountToChangeMaybe = dac.account_for_type_maybe(dacdir::MSIGOWNED);
+  if(!accountToChangeMaybe) {
+    return;
+  }
+  const auto accountToChange = *accountToChangeMaybe;
+  
   auto accounts = vector<eosiosystem::permission_level_weight>{  
     eosiosystem::permission_level_weight{
       .permission = permission_level{MSIG_CONTRACT, "active"_n},
