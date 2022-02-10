@@ -138,7 +138,7 @@ describe('EOSDacTokens', () => {
       );
     });
     it('to issuer should increase the issuer balance', async () => {
-      shared.dac_token_contract.issue(
+      await shared.dac_token_contract.issue(
         issuer.name,
         `1000.0000 ABC`,
         'some memo',
@@ -273,7 +273,7 @@ describe('EOSDacTokens', () => {
       });
       context('with staking enabled', async () => {
         before(async () => {
-          shared.dac_token_contract.stakeconfig(
+          await shared.dac_token_contract.stakeconfig(
             { enabled: true, min_stake_time: 13, max_stake_time: 20 },
             '4,ABC',
             { from: shared.auth_account }

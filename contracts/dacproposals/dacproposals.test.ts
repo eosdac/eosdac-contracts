@@ -869,20 +869,18 @@ describe('Dacproposals', () => {
         'check updateVotes count on proposal before calling start work',
         async () => {
           it('should succeed to update prop votes', async () => {
-            chai.expect(
-              shared.dacproposals_contract.updpropvotes(newpropid, dacId, {
-                auths: [
-                  {
-                    actor: proposer1Account.name,
-                    permission: 'active',
-                  },
-                  {
-                    actor: shared.auth_account.name,
-                    permission: 'active',
-                  },
-                ],
-              })
-            ).to.eventually.be.fulfilled;
+            await shared.dacproposals_contract.updpropvotes(newpropid, dacId, {
+              auths: [
+                {
+                  actor: proposer1Account.name,
+                  permission: 'active',
+                },
+                {
+                  actor: shared.auth_account.name,
+                  permission: 'active',
+                },
+              ],
+            });
           });
         }
       );
@@ -934,9 +932,7 @@ describe('Dacproposals', () => {
             memo: 'initial funds for proposal payments',
           },
         };
-        chai.expect(
-          EOSManager.transact({ actions: [eosLoadAction, propLoadAction] })
-        ).to.eventually.be.fulfilled;
+        await EOSManager.transact({ actions: [eosLoadAction, propLoadAction] });
       });
 
       it('should succeed', async () => {
@@ -2465,24 +2461,22 @@ describe('Dacproposals', () => {
             );
           });
           it('should succeed to allow start work', async () => {
-            chai.expect(
-              shared.dacproposals_contract.startwork(
-                propId, // proposal id
-                dacId,
-                {
-                  auths: [
-                    {
-                      actor: proposer1Account.name,
-                      permission: 'active',
-                    },
-                    {
-                      actor: shared.auth_account.name,
-                      permission: 'active',
-                    },
-                  ],
-                }
-              )
-            ).to.be.fulfilled;
+            await shared.dacproposals_contract.startwork(
+              propId, // proposal id
+              dacId,
+              {
+                auths: [
+                  {
+                    actor: proposer1Account.name,
+                    permission: 'active',
+                  },
+                  {
+                    actor: shared.auth_account.name,
+                    permission: 'active',
+                  },
+                ],
+              }
+            );
           });
         });
       }
@@ -2600,24 +2594,22 @@ describe('Dacproposals', () => {
               ).eventually.be.fulfilled;
             });
             it('should succeed when attempting start work', async () => {
-              chai.expect(
-                shared.dacproposals_contract.startwork(
-                  propId, // proposal id
-                  dacId,
-                  {
-                    auths: [
-                      {
-                        actor: proposer1Account.name,
-                        permission: 'active',
-                      },
-                      {
-                        actor: shared.auth_account.name,
-                        permission: 'active',
-                      },
-                    ],
-                  }
-                )
-              ).to.be.fulfilled;
+              await shared.dacproposals_contract.startwork(
+                propId, // proposal id
+                dacId,
+                {
+                  auths: [
+                    {
+                      actor: proposer1Account.name,
+                      permission: 'active',
+                    },
+                    {
+                      actor: shared.auth_account.name,
+                      permission: 'active',
+                    },
+                  ],
+                }
+              );
             });
             it('propvotes should contain 3 votes for this proposal - one as a delegated vote', async () => {
               await assertRowCount(
@@ -2674,25 +2666,23 @@ describe('Dacproposals', () => {
     });
     context('with correct auth', async () => {
       it('should succeed to undelegate', async () => {
-        chai.expect(
-          shared.dacproposals_contract.undelegateca(
-            propDacCustodians[2].name,
-            category, // matching category
-            dacId,
-            {
-              auths: [
-                {
-                  actor: propDacCustodians[2].name,
-                  permission: 'active',
-                },
-                {
-                  actor: shared.auth_account.name,
-                  permission: 'active',
-                },
-              ],
-            }
-          )
-        ).to.eventually.be.fulfilled;
+        await shared.dacproposals_contract.undelegateca(
+          propDacCustodians[2].name,
+          category, // matching category
+          dacId,
+          {
+            auths: [
+              {
+                actor: propDacCustodians[2].name,
+                permission: 'active',
+              },
+              {
+                actor: shared.auth_account.name,
+                permission: 'active',
+              },
+            ],
+          }
+        );
       });
       it('should have removed the delegated category votes', async () => {
         await assertRowCount(
