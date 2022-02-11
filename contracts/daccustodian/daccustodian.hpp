@@ -202,6 +202,9 @@ namespace eosdac {
         void modifyProxiesWeight(int64_t vote_weight, name oldProxy, name newProxy, name dac_id);
         void assertPeriodTime(contr_config &configs, contr_state &currentState);
         void distributeMeanPay(name internal_dac_id);
+        vector<eosiosystem::permission_level_weight> get_perm_level_weights(const custodians_table &custodians, const name &dac_id);
+        void add_all_auths(const name &accountToChange, const vector<eosiosystem::permission_level_weight> &weights, const name & dac_id);
+        void add_auth_to_account(const name &accountToChange, const uint8_t threshold, const name &permission, const name &parent, const vector<eosiosystem::permission_level_weight> &weights);
         void setMsigAuths(name dac_id);
         void setCustodianAuths(name internal_dac_id);
         void removeCustodian(name cust, name internal_dac_id);
