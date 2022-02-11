@@ -127,11 +127,10 @@ vector<eosiosystem::permission_level_weight> daccustodian::get_perm_level_weight
     auto accounts = vector<eosiosystem::permission_level_weight>{};
 
     for (const auto &cust : custodians) {
-        const auto account = eosiosystem::permission_level_weight{
+        accounts.push_back({
             .permission = getCandidatePermission(cust.cust_name, dac_id),
-            .weight     = (uint16_t)1,
-        };
-        accounts.push_back(account);
+            .weight     = 1,
+        });
     }
     return accounts;
 }
@@ -162,6 +161,7 @@ void daccustodian::add_all_auths(
 void daccustodian::setMsigAuths(name dac_id) {
     const auto custodians = custodians_table{get_self(), dac_id.value};
     const auto dac                  = dacdir::dac_for_id(dac_id);
+    const auto current_config = contr_config::get_current_configs(get_self(), dac_id);
     const auto accountToChangeMaybe = dac.account_for_type_maybe(dacdir::MSIGOWNED);
     if (!accountToChangeMaybe) {
         return;
@@ -170,15 +170,15 @@ void daccustodian::setMsigAuths(name dac_id) {
 
     auto weights = get_perm_level_weights(custodians, dac_id);
 
-    weights.push_back(eosiosystem::permission_level_weight{
+    weights.push_back({
         .permission = permission_level{MSIG_CONTRACT, "active"_n},
-        .weight     = (uint16_t)1,
+        .weight     = current_config.msig_threshold,
     });
 
     // weights must be sorted to prevent invalid authorization error
     std::sort(weights.begin(), weights.end());
 
-    add_all_auths(accountToChange, weights, dac_id);
+    add_auth_to_account(accountToChange, current_config.msig_threshold, "active"_n, "owner"_n, weights);
 }
 
 void daccustodian::setCustodianAuths(name dac_id) {

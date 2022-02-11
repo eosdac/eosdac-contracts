@@ -51,6 +51,9 @@ namespace eosdac {
         uint8_t auth_threshold_high;
         uint8_t auth_threshold_mid;
         uint8_t auth_threshold_low;
+        
+        // number of custodians required to approve multisig transactions
+        uint8_t msig_threshold;
 
         // The time before locked up stake can be released back to the candidate using the unstake action
         uint32_t lockup_release_time_delay;

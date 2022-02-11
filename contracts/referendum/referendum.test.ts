@@ -323,6 +323,14 @@ describe('referendum', () => {
         null,
         { from: candidates[1] }
       );
+
+      await shared.msigworlds_contract.approve(
+        'ref1',
+        { actor: candidates[2].name, permission: 'active' },
+        dacId,
+        null,
+        { from: candidates[2] }
+      );
     });
     it('should create the proposal', async () => {
       await assertRowCount(
@@ -384,6 +392,6 @@ async function configureAuths() {
         shared.daccustodian_contract.account
       )
     ),
-    'change owner of planet'
+    'make daccustodian the owner of the planet'
   );
 }

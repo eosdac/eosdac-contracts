@@ -175,6 +175,7 @@ export class SharedTestObjects {
         auth_threshold_high: 4,
         auth_threshold_mid: 3,
         auth_threshold_low: 2,
+        msig_threshold: 3,
         lockupasset: {
           contract: this.dac_token_contract.account.name,
           quantity: lockupAsset,
@@ -263,33 +264,6 @@ export class SharedTestObjects {
       );
     }
     return newCandidates;
-  }
-
-  async configureCustodianConfig(lockupAsset: string, dacId: string) {
-    await this.daccustodian_contract.updateconfig(
-      {
-        numelected: 5,
-        maxvotes: 4,
-        requested_pay_max: {
-          contract: 'eosio.token',
-          quantity: '30.0000 EOS',
-        },
-        periodlength: 5,
-        initial_vote_quorum_percent: 31,
-        vote_quorum_percent: 15,
-        auth_threshold_high: 4,
-        auth_threshold_mid: 3,
-        auth_threshold_low: 2,
-        lockupasset: {
-          contract: this.dac_token_contract.account.name,
-          quantity: lockupAsset,
-        },
-        should_pay_via_service_provider: false,
-        lockup_release_time_delay: 1233,
-      },
-      dacId,
-      { from: this.auth_account }
-    );
   }
 
   private async setup_tokens(initialAsset: string) {
