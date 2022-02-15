@@ -70,6 +70,7 @@ describe('referendum', () => {
     await shared.voteForCustodians(regMembers, candidates, dacId);
 
     await configureAuths();
+    await linkPermissions();
 
     await shared.daccustodian_contract.newperiod(dacId, dacId, {
       from: regMembers[0],
@@ -78,7 +79,7 @@ describe('referendum', () => {
     serialized_actions = await api.serializeActions([
       {
         account: shared.dac_token_contract.name,
-        authorization: [{ actor: planet.name, permission: 'active' }],
+        authorization: [{ actor: planet.name, permission: 'high' }],
         name: 'transfer',
         data: {
           from: planet.name,
@@ -307,30 +308,6 @@ describe('referendum', () => {
   context('exec', async () => {
     it('should work', async () => {
       await referendum.exec('ref1', dacId);
-
-      await shared.msigworlds_contract.approve(
-        'ref1',
-        { actor: candidates[0].name, permission: 'active' },
-        dacId,
-        null,
-        { from: candidates[0] }
-      );
-
-      await shared.msigworlds_contract.approve(
-        'ref1',
-        { actor: candidates[1].name, permission: 'active' },
-        dacId,
-        null,
-        { from: candidates[1] }
-      );
-
-      await shared.msigworlds_contract.approve(
-        'ref1',
-        { actor: candidates[2].name, permission: 'active' },
-        dacId,
-        null,
-        { from: candidates[2] }
-      );
     });
     it('should create the proposal', async () => {
       await assertRowCount(
@@ -340,18 +317,70 @@ describe('referendum', () => {
     });
   });
   context('msig exec', async () => {
-    it('should work', async () => {
-      await shared.msigworlds_contract.exec('ref1', candidates[0].name, dacId, {
-        from: candidates[0],
+    context('high with only 3 approvals', async () => {
+      before(async () => {
+        await shared.msigworlds_contract.approve(
+          'ref1',
+          { actor: candidates[0].name, permission: 'active' },
+          dacId,
+          null,
+          { from: candidates[0] }
+        );
+
+        await shared.msigworlds_contract.approve(
+          'ref1',
+          { actor: candidates[1].name, permission: 'active' },
+          dacId,
+          null,
+          { from: candidates[1] }
+        );
+
+        await shared.msigworlds_contract.approve(
+          'ref1',
+          { actor: candidates[2].name, permission: 'active' },
+          dacId,
+          null,
+          { from: candidates[2] }
+        );
+      });
+
+      it('should fail', async () => {
+        await assertEOSErrorIncludesMessage(
+          shared.msigworlds_contract.exec('ref1', candidates[0].name, dacId, {
+            from: candidates[0],
+          }),
+          'msigworlds::exec transaction authorization failed'
+        );
       });
     });
-    it('should have transferred the token', async () => {
-      await assertBalanceEqual(
-        shared.dac_token_contract.accountsTable({
-          scope: user1.name,
-        }),
-        '1010.1234 REF'
-      );
+    context('high with 4 approvals', async () => {
+      before(async () => {
+        await shared.msigworlds_contract.approve(
+          'ref1',
+          { actor: candidates[3].name, permission: 'active' },
+          dacId,
+          null,
+          { from: candidates[3] }
+        );
+      });
+      it('should work', async () => {
+        await shared.msigworlds_contract.exec(
+          'ref1',
+          candidates[0].name,
+          dacId,
+          {
+            from: candidates[0],
+          }
+        );
+      });
+      it('should have transferred the token', async () => {
+        await assertBalanceEqual(
+          shared.dac_token_contract.accountsTable({
+            scope: user1.name,
+          }),
+          '1010.1234 REF'
+        );
+      });
     });
   });
 });
@@ -382,6 +411,57 @@ async function setup_token() {
 }
 
 async function configureAuths() {
+  /* Even though these custom permissions will be added from within the contract in the newperiod action,
+   * we need to create them beforehand because you cannot reference a parent permission
+   * that was created within the same transaction. That means you cannot add high and then med with parent high in the same transaction unless the high perm has existed already.
+   */
+  await debugPromise(
+    UpdateAuth.execUpdateAuth(
+      planet.owner,
+      planet.name,
+      'high',
+      'active',
+      UpdateAuth.AuthorityToSet.forContractCode(planet)
+    ),
+    'add high auth to planet'
+  );
+
+  await debugPromise(
+    UpdateAuth.execUpdateAuth(
+      planet.owner,
+      planet.name,
+      'med',
+      'high',
+      UpdateAuth.AuthorityToSet.forContractCode(planet)
+    ),
+    'add med auth to planet'
+  );
+
+  await debugPromise(
+    UpdateAuth.execUpdateAuth(
+      planet.owner,
+      planet.name,
+      'low',
+      'med',
+      UpdateAuth.AuthorityToSet.forContractCode(planet)
+    ),
+    'add low auth to planet'
+  );
+
+  await debugPromise(
+    UpdateAuth.execUpdateAuth(
+      planet.owner,
+      planet.name,
+      'one',
+      'low',
+      UpdateAuth.AuthorityToSet.forContractCode(planet)
+    ),
+    'add one auth to planet'
+  );
+
+  /* The daccustodian contract will need to make eosio::updateauth calls on
+   * behalf of the planet, so we need to add a custom permission to allow this
+   */
   await debugPromise(
     UpdateAuth.execUpdateAuth(
       planet.owner,
@@ -393,5 +473,18 @@ async function configureAuths() {
       )
     ),
     'make daccustodian the owner of the planet'
+  );
+}
+
+async function linkPermissions() {
+  /* Link the high, medium, low, one custom permissions to whatever they
+   * should be allowed to execute here
+   */
+  await UpdateAuth.execLinkAuth(
+    planet.active,
+    planet.name,
+    shared.dac_token_contract.name,
+    'transfer',
+    'high'
   );
 }

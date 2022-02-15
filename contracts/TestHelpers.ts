@@ -175,7 +175,6 @@ export class SharedTestObjects {
         auth_threshold_high: 4,
         auth_threshold_mid: 3,
         auth_threshold_low: 2,
-        msig_threshold: 3,
         lockupasset: {
           contract: this.dac_token_contract.account.name,
           quantity: lockupAsset,

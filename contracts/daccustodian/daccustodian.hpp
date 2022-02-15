@@ -51,9 +51,6 @@ namespace eosdac {
         uint8_t auth_threshold_high;
         uint8_t auth_threshold_mid;
         uint8_t auth_threshold_low;
-        
-        // number of custodians required to approve multisig transactions
-        uint8_t msig_threshold;
 
         // The time before locked up stake can be released back to the candidate using the unstake action
         uint32_t lockup_release_time_delay;
@@ -206,8 +203,11 @@ namespace eosdac {
         void assertPeriodTime(contr_config &configs, contr_state &currentState);
         void distributeMeanPay(name internal_dac_id);
         vector<eosiosystem::permission_level_weight> get_perm_level_weights(const custodians_table &custodians, const name &dac_id);
-        void add_all_auths(const name &accountToChange, const vector<eosiosystem::permission_level_weight> &weights, const name & dac_id);
-        void add_auth_to_account(const name &accountToChange, const uint8_t threshold, const name &permission, const name &parent, const vector<eosiosystem::permission_level_weight> &weights);
+        void add_all_auths(const name &accountToChange, const vector<eosiosystem::permission_level_weight> &weights, const name &dac_id, const bool msig = false);
+        void add_all_auths_msig(
+            const name &accountToChange, vector<eosiosystem::permission_level_weight> &weights, const name &dac_id);
+        void add_auth_to_account(const name &accountToChange, const uint8_t threshold, const name &permission,
+            const name &parent, vector<eosiosystem::permission_level_weight> weights, const bool msig = false);
         void setMsigAuths(name dac_id);
         void setCustodianAuths(name internal_dac_id);
         void removeCustodian(name cust, name internal_dac_id);

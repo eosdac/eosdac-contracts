@@ -136,32 +136,40 @@ vector<eosiosystem::permission_level_weight> daccustodian::get_perm_level_weight
 }
 
 void daccustodian::add_auth_to_account(const name &accountToChange, const uint8_t threshold, const name &permission,
-    const name &parent, const vector<eosiosystem::permission_level_weight> &weights) {
-    const auto auth = eosiosystem::authority{.threshold = threshold, .keys = {}, .accounts = weights};
+    const name &parent, vector<eosiosystem::permission_level_weight> weights, const bool msig) {
+    if (msig) {
+        weights.push_back({
+            .permission = permission_level{MSIG_CONTRACT, "active"_n},
+            .weight     = threshold,
+        });
+        // weights must be sorted to prevent invalid authorization error
+        std::sort(weights.begin(), weights.end());
+    }
 
+    const auto auth = eosiosystem::authority{.threshold = threshold, .keys = {}, .accounts = weights};
     action(permission_level{accountToChange, "owner"_n}, "eosio"_n, "updateauth"_n,
         std::make_tuple(accountToChange, permission, parent, auth))
         .send();
 }
 
 void daccustodian::add_all_auths(
-    const name &accountToChange, const vector<eosiosystem::permission_level_weight> &weights, const name &dac_id) {
+    const name &accountToChange, const vector<eosiosystem::permission_level_weight> &weights, const name &dac_id, const bool msig) {
     const auto current_config = contr_config::get_current_configs(get_self(), dac_id);
 
-    add_auth_to_account(accountToChange, current_config.auth_threshold_high, HIGH_PERMISSION, "active"_n, weights);
+    add_auth_to_account(accountToChange, current_config.auth_threshold_high, HIGH_PERMISSION, "active"_n, weights, msig);
 
     add_auth_to_account(
-        accountToChange, current_config.auth_threshold_mid, MEDIUM_PERMISSION, HIGH_PERMISSION, weights);
+        accountToChange, current_config.auth_threshold_mid, MEDIUM_PERMISSION, HIGH_PERMISSION, weights, msig);
 
-    add_auth_to_account(accountToChange, current_config.auth_threshold_low, LOW_PERMISSION, MEDIUM_PERMISSION, weights);
+    add_auth_to_account(accountToChange, current_config.auth_threshold_low, LOW_PERMISSION, MEDIUM_PERMISSION, weights, msig);
 
-    add_auth_to_account(accountToChange, 1, ONE_PERMISSION, LOW_PERMISSION, weights);
+    add_auth_to_account(accountToChange, 1, ONE_PERMISSION, LOW_PERMISSION, weights, msig);
 }
 
 void daccustodian::setMsigAuths(name dac_id) {
-    const auto custodians = custodians_table{get_self(), dac_id.value};
+    const auto custodians           = custodians_table{get_self(), dac_id.value};
     const auto dac                  = dacdir::dac_for_id(dac_id);
-    const auto current_config = contr_config::get_current_configs(get_self(), dac_id);
+    const auto current_config       = contr_config::get_current_configs(get_self(), dac_id);
     const auto accountToChangeMaybe = dac.account_for_type_maybe(dacdir::MSIGOWNED);
     if (!accountToChangeMaybe) {
         return;
@@ -170,19 +178,11 @@ void daccustodian::setMsigAuths(name dac_id) {
 
     auto weights = get_perm_level_weights(custodians, dac_id);
 
-    weights.push_back({
-        .permission = permission_level{MSIG_CONTRACT, "active"_n},
-        .weight     = current_config.msig_threshold,
-    });
-
-    // weights must be sorted to prevent invalid authorization error
-    std::sort(weights.begin(), weights.end());
-
-    add_auth_to_account(accountToChange, current_config.msig_threshold, "active"_n, "owner"_n, weights);
+    add_all_auths(accountToChange, weights, dac_id, true);
 }
 
 void daccustodian::setCustodianAuths(name dac_id) {
-    const auto custodians = custodians_table{get_self(), dac_id.value};
+    const auto custodians      = custodians_table{get_self(), dac_id.value};
     const auto dac             = dacdir::dac_for_id(dac_id);
     const auto accountToChange = dac.account_for_type(dacdir::AUTH);
     const auto weights         = get_perm_level_weights(custodians, dac_id);

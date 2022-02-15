@@ -43,7 +43,6 @@ describe('Daccustodian', () => {
             vote_quorum_percent: 15,
             auth_threshold_high: 4,
             auth_threshold_low: 3,
-            msig_threshold: 3,
             lockupasset: { contract: 'sdfsdf', quantity: '12.0000 EOS' },
             should_pay_via_service_provider: false,
             lockup_release_time_delay: 1233,
@@ -74,7 +73,6 @@ describe('Daccustodian', () => {
             auth_threshold_high: 5,
             auth_threshold_mid: 6,
             auth_threshold_low: 3,
-            msig_threshold: 3,
             lockupasset: { contract: 'sdfsdf', quantity: '12.0000 EOS' },
             should_pay_via_service_provider: false,
             lockup_release_time_delay: 1233,
@@ -105,7 +103,6 @@ describe('Daccustodian', () => {
             auth_threshold_high: 9,
             auth_threshold_mid: 10,
             auth_threshold_low: 4,
-            msig_threshold: 3,
             lockupasset: { contract: 'sdfsdf', quantity: '12.0000 EOS' },
             should_pay_via_service_provider: false,
             lockup_release_time_delay: 1233,
@@ -136,7 +133,6 @@ describe('Daccustodian', () => {
             auth_threshold_high: 9,
             auth_threshold_mid: 7,
             auth_threshold_low: 8,
-            msig_threshold: 3,
             lockupasset: { contract: 'sdfsdf', quantity: '12.0000 EOS' },
             should_pay_via_service_provider: false,
             lockup_release_time_delay: 1233,
@@ -170,7 +166,6 @@ describe('Daccustodian', () => {
             auth_threshold_high: 4,
             auth_threshold_mid: 3,
             auth_threshold_low: 2,
-            msig_threshold: 3,
             lockupasset: {
               contract: shared.dac_token_contract.account.name,
               quantity: '12.0000 CUSDAC',
@@ -200,7 +195,6 @@ describe('Daccustodian', () => {
             auth_threshold_high: 4,
             auth_threshold_mid: 3,
             auth_threshold_low: 2,
-            msig_threshold: 3,
             lockupasset: {
               contract: shared.dac_token_contract.account.name,
               quantity: '12.0000 CUSDAC',
@@ -230,7 +224,6 @@ describe('Daccustodian', () => {
             auth_threshold_high: 4,
             auth_threshold_mid: 3,
             auth_threshold_low: 2,
-            msig_threshold: 3,
             lockupasset: {
               contract: shared.dac_token_contract.account.name,
               quantity: '12.0000 CUSDAC',
@@ -260,7 +253,6 @@ describe('Daccustodian', () => {
             auth_threshold_high: 4,
             auth_threshold_mid: 3,
             auth_threshold_low: 2,
-            msig_threshold: 3,
             lockupasset: {
               contract: shared.dac_token_contract.account.name,
               quantity: '12.0000 CUSDAC',
@@ -290,7 +282,6 @@ describe('Daccustodian', () => {
             auth_threshold_high: 4,
             auth_threshold_mid: 3,
             auth_threshold_low: 2,
-            msig_threshold: 3,
             lockupasset: {
               contract: shared.dac_token_contract.account.name,
               quantity: '12.0000 CUSDAC',
@@ -319,7 +310,6 @@ describe('Daccustodian', () => {
           auth_threshold_high: 4,
           auth_threshold_mid: 3,
           auth_threshold_low: 2,
-          msig_threshold: 3,
           lockupasset: {
             contract: shared.dac_token_contract.account.name,
             quantity: '12.0000 CUSDAC',
@@ -349,7 +339,6 @@ describe('Daccustodian', () => {
             auth_threshold_high: 4,
             auth_threshold_mid: 3,
             auth_threshold_low: 2,
-            msig_threshold: 3,
             lockupasset: {
               contract: shared.dac_token_contract.account.name,
               quantity: '12.0000 CUSDAC',
@@ -1083,7 +1072,6 @@ describe('Daccustodian', () => {
                     auth_threshold_high: 4,
                     auth_threshold_mid: 3,
                     auth_threshold_low: 2,
-                    msig_threshold: 3,
                     lockupasset: {
                       contract: shared.dac_token_contract.account.name,
                       quantity: '12.0000 PERDAC',
@@ -1385,7 +1373,6 @@ describe('Daccustodian', () => {
           auth_threshold_high: 4,
           auth_threshold_mid: 3,
           auth_threshold_low: 2,
-          msig_threshold: 3,
           lockupasset: {
             contract: shared.dac_token_contract.account.name,
             quantity: '12.0000 ZERODAC',
@@ -1947,7 +1934,6 @@ describe('Daccustodian', () => {
             auth_threshold_high: 4,
             auth_threshold_mid: 3,
             auth_threshold_low: 2,
-            msig_threshold: 3,
             lockupasset: {
               contract: shared.dac_token_contract.account.name,
               quantity: '12.0000 APPDAC',
