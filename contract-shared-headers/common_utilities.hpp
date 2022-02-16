@@ -5,7 +5,6 @@
 #include <experimental/type_traits>
 
 using namespace eosio;
-using namespace std;
 
 namespace eosdac {
 
@@ -49,32 +48,32 @@ template <typename T> using has_to_string = std::experimental::is_detected<to_st
 /*
  * Polymorphic helper to convert common EOS.IO types to string
  */
-template <typename T> inline string toString(const T &x) {
-    if constexpr (is_same<T, string>::value) {
+template <typename T> inline std::string toString(const T &x) {
+    if constexpr (std::is_same<T, std::string>::value) {
         return x;
-    } else if constexpr (is_same<T, eosio::symbol>::value) {
+    } else if constexpr (std::is_same<T, eosio::symbol>::value) {
         return x.code().to_string();
     } else if constexpr (has_to_string<T>::value) {
         return x.to_string();
     } else {
-        return to_string(x);
+        return std::to_string(x);
     }
 }
 
 /*
  * C++'s missing format string function :-)
  */
-template <typename... Args> inline string fmt(const string &format, Args const &...args) {
-    char buf[512];
-    snprintf(buf, sizeof(buf), format.c_str(), toString(args).c_str()...);
+template <typename... Args> inline char *fmt(const std::string_view format, Args const &...args) {
+    static char buf[512];
+    snprintf(buf, sizeof(buf), format.data(), toString(args).c_str()...);
     return buf;
 }
 /* eosio::check overload that allows passing a format string for more
  * helpful error messages.
  */
-template <typename... Args> inline void check(bool pred, const string &format, Args const &...args) {
+template <typename... Args> inline void check(bool pred, const std::string_view format, Args const &...args) {
     if (!pred) {
         const auto msg = fmt(format, args...);
-        check(pred, msg.c_str());
+        check(pred, msg);
     }
 }

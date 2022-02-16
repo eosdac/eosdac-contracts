@@ -9,12 +9,15 @@
 #include "../../contract-shared-headers/eosdactokens_shared.hpp"
 #include "external_types.hpp"
 
+using namespace std;
+
 namespace eosdac {
 
-    const eosio::name ONE_PERMISSION    = "one"_n;
-    const eosio::name LOW_PERMISSION    = "low"_n;
-    const eosio::name MEDIUM_PERMISSION = "med"_n;
-    const eosio::name HIGH_PERMISSION   = "high"_n;
+    static constexpr eosio::name ONE_PERMISSION    = "one"_n;
+    static constexpr eosio::name LOW_PERMISSION    = "low"_n;
+    static constexpr eosio::name MEDIUM_PERMISSION = "med"_n;
+    static constexpr eosio::name HIGH_PERMISSION   = "high"_n;
+    static constexpr eosio::name MSIG_CONTRACT     = "msigworlds"_n;
 
 #ifndef TRANSFER_DELAY
 #define TRANSFER_DELAY 60 * 60
@@ -199,6 +202,13 @@ namespace eosdac {
         void modifyProxiesWeight(int64_t vote_weight, name oldProxy, name newProxy, name dac_id);
         void assertPeriodTime(contr_config &configs, contr_state &currentState);
         void distributeMeanPay(name internal_dac_id);
+        vector<eosiosystem::permission_level_weight> get_perm_level_weights(const custodians_table &custodians, const name &dac_id);
+        void add_all_auths(const name &accountToChange, const vector<eosiosystem::permission_level_weight> &weights, const name &dac_id, const bool msig = false);
+        void add_all_auths_msig(
+            const name &accountToChange, vector<eosiosystem::permission_level_weight> &weights, const name &dac_id);
+        void add_auth_to_account(const name &accountToChange, const uint8_t threshold, const name &permission,
+            const name &parent, vector<eosiosystem::permission_level_weight> weights, const bool msig = false);
+        void setMsigAuths(name dac_id);
         void setCustodianAuths(name internal_dac_id);
         void removeCustodian(name cust, name internal_dac_id);
         void removeCandidate(name cust, bool lockupStake, name internal_dac_id);

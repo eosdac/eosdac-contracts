@@ -760,7 +760,7 @@ describe('Daccustodian', () => {
     });
     context('Before registering as a proxy', async () => {
       it('voteproxy should fail with not registered error', async () => {
-        assertEOSErrorIncludesMessage(
+        await assertEOSErrorIncludesMessage(
           shared.daccustodian_contract.voteproxy(
             regMembers[3].name,
             regMembers[0].name,
@@ -904,7 +904,7 @@ describe('Daccustodian', () => {
       context('after unregproxy', async () => {
         context('with wrong auth', async () => {
           it('should fail', async () => {
-            assertMissingAuthority(
+            await assertMissingAuthority(
               shared.daccustodian_contract.unregproxy(
                 regMembers[0].name,
                 dacId,
@@ -915,7 +915,7 @@ describe('Daccustodian', () => {
         });
         context('with correct auth', async () => {
           it('should succeed', async () => {
-            chai.expect(
+            await chai.expect(
               shared.daccustodian_contract.unregproxy(
                 regMembers[0].name,
                 dacId,
@@ -927,7 +927,7 @@ describe('Daccustodian', () => {
       });
       context('with non proxy member', async () => {
         it('should fail', async () => {
-          assertEOSErrorIncludesMessage(
+          await assertEOSErrorIncludesMessage(
             shared.daccustodian_contract.unregproxy(regMembers[2].name, dacId, {
               from: regMembers[2],
             }),
@@ -1057,7 +1057,7 @@ describe('Daccustodian', () => {
 
               // Change the config to a lower requestedPayMax to affect average pay tests after `newperiod` succeeds.
               // This change to `23.0000 EOS` should cause the requested pays of 25.0000 EOS to be fitered from the mean pay.
-              chai.expect(
+              await chai.expect(
                 shared.daccustodian_contract.updateconfig(
                   {
                     numelected: 5,
@@ -1450,7 +1450,7 @@ describe('Daccustodian', () => {
             // satisfy the config that requires 5 candidates be voted for.
             // Therefore the `resigncust` would fail because a replacement candidate is not
             // available until another candiate has been voted for.
-            assertEOSErrorIncludesMessage(
+            await assertEOSErrorIncludesMessage(
               shared.daccustodian_contract.resigncust(
                 electedCandidateToResign.name,
                 dacId,

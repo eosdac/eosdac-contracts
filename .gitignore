@@ -2,7 +2,6 @@
 .vscode
 *.code-workspace
 node_modules
-*.js
 /external_contracts/eosio.token/eosio.token.ts
 /contracts/stakevote/stakevote.ts
 /contracts/referendum/referendum.ts
@@ -36,3 +35,6 @@ node_modules
 /yarn-error.log
 /yarn.lock
 .DS_Store
+/artifacts/compiled_contracts/contracts/msigworlds/msigworlds.abi
+/artifacts/compiled_contracts/contracts/msigworlds/msigworlds.wasm
+/contracts/msigworlds/msigworlds.ts

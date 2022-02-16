@@ -11,6 +11,7 @@ import {
   assertRowsEqualStrict,
   assertRowCount,
 } from 'lamington';
+import { SharedTestObjects } from '../TestHelpers';
 
 const api = EOSManager.api;
 
@@ -29,17 +30,23 @@ let msigowned: Account;
 
 let modDate: Date;
 
-const currentHeadTimeWithAddedSeconds = async (seconds: number) => {
+export const currentHeadTimeWithAddedSeconds = async (seconds: number) => {
   const { head_block_time } = await EOSManager.api.rpc.get_info();
   const date = new Date(new Date(head_block_time).getTime() + seconds * 1000);
   return date;
 };
 
 describe('msigworlds', () => {
+  let shared: SharedTestObjects;
+
   before(async () => {
+    shared = await SharedTestObjects.getInstance();
+    msigworlds = shared.msigworlds_contract;
+    tokenIssuer = shared.tokenIssuer;
+    eosioToken = shared.eosio_token_contract;
+
     await seedAccounts();
     await configureAuths();
-    await issueTokens();
 
     await eosioToken.transfer(
       tokenIssuer.name,
@@ -995,74 +1002,13 @@ async function configureAuths() {
       []
     )
   );
-
-  await UpdateAuth.execUpdateAuth(
-    [{ actor: msigworlds.account.name, permission: 'owner' }],
-    msigworlds.account.name,
-    'active',
-    'owner',
-    UpdateAuth.AuthorityToSet.explicitAuthorities(
-      1,
-      [
-        {
-          permission: {
-            actor: msigworlds.account.name,
-            permission: 'eosio.code',
-          },
-          weight: 1,
-        },
-      ],
-      [
-        {
-          key: msigworlds.account.publicKey,
-          weight: 1,
-        },
-      ],
-      []
-    )
-  );
 }
 
 async function seedAccounts() {
-  console.log('created first test account');
-
-  msigworlds = await ContractDeployer.deployWithName<Msigworlds>(
-    'contracts/msigworlds/msigworlds',
-    'msigworlds'
-  );
-  console.log('set msig');
-
-  eosioToken = await ContractDeployer.deployWithName<EosioToken>(
-    'external_contracts/eosio.token/eosio.token',
-    'alienworlds'
-  );
-
   owner1 = await AccountManager.createAccount('owner1');
   owner2 = await AccountManager.createAccount('owner2');
   owner3 = await AccountManager.createAccount('owner3');
   msigowned = await AccountManager.createAccount('msigowned');
-}
-
-async function issueTokens() {
-  tokenIssuer = await AccountManager.createAccount('tokenissuer');
-
-  try {
-    await eosioToken.create(tokenIssuer.name, '1000000000.0000 TLM', {
-      from: eosioToken.account,
-    });
-    await eosioToken.issue(
-      tokenIssuer.name,
-      '10000000.0000 TLM',
-      'initial deposit',
-      {
-        from: tokenIssuer,
-      }
-    );
-  } catch (e) {
-    if (e.json.error.what != 'eosio_assert_message assertion failure') {
-      throw e;
-    }
-  }
 
   await eosioToken.transfer(
     tokenIssuer.name,

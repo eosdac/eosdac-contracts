@@ -122,57 +122,72 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
     }
 }
 
-void daccustodian::setCustodianAuths(name dac_id) {
+vector<eosiosystem::permission_level_weight> daccustodian::get_perm_level_weights(
+    const custodians_table &custodians, const name &dac_id) {
+    auto accounts = vector<eosiosystem::permission_level_weight>{};
 
-    custodians_table custodians(get_self(), dac_id.value);
-    contr_config     current_config = contr_config::get_current_configs(get_self(), dac_id);
+    for (const auto &cust : custodians) {
+        accounts.push_back({
+            .permission = getCandidatePermission(cust.cust_name, dac_id),
+            .weight     = 1,
+        });
+    }
+    return accounts;
+}
 
-    auto dac = dacdir::dac_for_id(dac_id);
-
-    name accountToChange = dac.account_for_type(dacdir::AUTH);
-
-    vector<eosiosystem::permission_level_weight> accounts;
-
-    print("setting auths for custodians\n\n");
-
-    for (auto it = custodians.begin(); it != custodians.end(); it++) {
-        eosiosystem::permission_level_weight account{
-            .permission = getCandidatePermission(it->cust_name, dac_id),
-            .weight     = (uint16_t)1,
-        };
-        accounts.push_back(account);
+void daccustodian::add_auth_to_account(const name &accountToChange, const uint8_t threshold, const name &permission,
+    const name &parent, vector<eosiosystem::permission_level_weight> weights, const bool msig) {
+    if (msig) {
+        weights.push_back({
+            .permission = permission_level{MSIG_CONTRACT, "active"_n},
+            .weight     = threshold,
+        });
+        // weights must be sorted to prevent invalid authorization error
+        std::sort(weights.begin(), weights.end());
     }
 
-    eosiosystem::authority high_contract_authority{
-        .threshold = current_config.auth_threshold_high, .keys = {}, .accounts = accounts};
-    print("About to set the first one in auths for custodians\n\n");
-
+    const auto auth = eosiosystem::authority{.threshold = threshold, .keys = {}, .accounts = weights};
     action(permission_level{accountToChange, "owner"_n}, "eosio"_n, "updateauth"_n,
-        std::make_tuple(accountToChange, HIGH_PERMISSION, "active"_n, high_contract_authority))
+        std::make_tuple(accountToChange, permission, parent, auth))
         .send();
+}
 
-    print("After setting the first one in auths for custodians\n\n");
+void daccustodian::add_all_auths(
+    const name &accountToChange, const vector<eosiosystem::permission_level_weight> &weights, const name &dac_id, const bool msig) {
+    const auto current_config = contr_config::get_current_configs(get_self(), dac_id);
 
-    eosiosystem::authority medium_contract_authority{
-        .threshold = current_config.auth_threshold_mid, .keys = {}, .accounts = accounts};
+    add_auth_to_account(accountToChange, current_config.auth_threshold_high, HIGH_PERMISSION, "active"_n, weights, msig);
 
-    action(permission_level{accountToChange, "owner"_n}, "eosio"_n, "updateauth"_n,
-        std::make_tuple(accountToChange, MEDIUM_PERMISSION, "high"_n, medium_contract_authority))
-        .send();
+    add_auth_to_account(
+        accountToChange, current_config.auth_threshold_mid, MEDIUM_PERMISSION, HIGH_PERMISSION, weights, msig);
 
-    eosiosystem::authority low_contract_authority{
-        .threshold = current_config.auth_threshold_low, .keys = {}, .accounts = accounts};
+    add_auth_to_account(accountToChange, current_config.auth_threshold_low, LOW_PERMISSION, MEDIUM_PERMISSION, weights, msig);
 
-    action(permission_level{accountToChange, "owner"_n}, "eosio"_n, "updateauth"_n,
-        std::make_tuple(accountToChange, LOW_PERMISSION, "med"_n, low_contract_authority))
-        .send();
+    add_auth_to_account(accountToChange, 1, ONE_PERMISSION, LOW_PERMISSION, weights, msig);
+}
 
-    eosiosystem::authority one_contract_authority{.threshold = 1, .keys = {}, .accounts = accounts};
+void daccustodian::setMsigAuths(name dac_id) {
+    const auto custodians           = custodians_table{get_self(), dac_id.value};
+    const auto dac                  = dacdir::dac_for_id(dac_id);
+    const auto current_config       = contr_config::get_current_configs(get_self(), dac_id);
+    const auto accountToChangeMaybe = dac.account_for_type_maybe(dacdir::MSIGOWNED);
+    if (!accountToChangeMaybe) {
+        return;
+    }
+    const auto accountToChange = *accountToChangeMaybe;
 
-    action(permission_level{accountToChange, "owner"_n}, "eosio"_n, "updateauth"_n,
-        std::make_tuple(accountToChange, ONE_PERMISSION, "low"_n, one_contract_authority))
-        .send();
-    print("Got to the end of setting permissions.");
+    auto weights = get_perm_level_weights(custodians, dac_id);
+
+    add_all_auths(accountToChange, weights, dac_id, true);
+}
+
+void daccustodian::setCustodianAuths(name dac_id) {
+    const auto custodians      = custodians_table{get_self(), dac_id.value};
+    const auto dac             = dacdir::dac_for_id(dac_id);
+    const auto accountToChange = dac.account_for_type(dacdir::AUTH);
+    const auto weights         = get_perm_level_weights(custodians, dac_id);
+
+    add_all_auths(accountToChange, weights, dac_id);
 }
 
 ACTION daccustodian::newperiod(const string &message, const name &dac_id) {
@@ -223,7 +238,8 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
 
         check(currentState.met_initial_votes_threshold == true ||
                   percent_of_current_voter_engagement > configs.initial_vote_quorum_percent,
-            "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_ACTIVATE::Voter engagement is insufficient to activate the DAC.");
+            "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_ACTIVATE::Voter engagement %s is insufficient to activate the DAC (%s required).",
+            percent_of_current_voter_engagement, configs.initial_vote_quorum_percent);
 
         check(percent_of_current_voter_engagement > configs.vote_quorum_percent,
             "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_PROCESS::Voter engagement is insufficient to process a new period");
@@ -241,12 +257,8 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
 
     // Set the auths on the dacauthority account
     setCustodianAuths(dac_id);
+    setMsigAuths(dac_id);
 
     currentState.lastperiodtime = current_block_time();
     currentState.save(get_self(), dac_id);
-
-    //        Schedule the the next election cycle at the end of the period.
-    //        transaction nextTrans{};
-    //        nextTrans.actions.emplace_back(permission_level(_self,N(active)), _self, N(newperiod), std::make_tuple("",
-    //        false)); nextTrans.delay_sec = configs().periodlength; nextTrans.send(N(newperiod), false);
 }

@@ -97,13 +97,13 @@ namespace eosdac {
 
     asset get_supply(name code, symbol_code sym) {
         stats       statstable(code, sym.raw());
-        const auto &st = statstable.get(sym.raw());
+        const auto &st = statstable.get(sym.raw(), fmt("eosdactokens::get_supply symbol %s not found in statstable", sym));
         return st.supply;
     }
 
     asset get_balance(name owner, name code, symbol_code sym) {
         accounts    accountstable(code, owner.value);
-        const auto &ac = accountstable.get(sym.raw());
+        const auto &ac = accountstable.get(sym.raw(), fmt("eosdactokens::get_balance user %s has no %s balance", owner, sym));
         return ac.balance;
     }
 
@@ -164,7 +164,7 @@ namespace eosdac {
         memterms   memberterms(member_terms_account, dac_id.value);
 
         const auto &regmem =
-            reg_members.get(member.value, "ERR::GENERAL_REG_MEMBER_NOT_FOUND::Account is not registered with members.");
+            reg_members.get(member.value, fmt("ERR::GENERAL_REG_MEMBER_NOT_FOUND::Account %s is not registered with members.", member));
         eosio::check((regmem.agreedterms != 0),
             "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_ANY_TERMS::Account has not agreed to any terms");
         auto latest_member_terms = (--memberterms.end());
