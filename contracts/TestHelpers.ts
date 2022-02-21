@@ -129,7 +129,7 @@ export class SharedTestObjects {
     this.msigworlds_contract = await debugPromise(
       ContractDeployer.deployWithName<Msigworlds>(
         'contracts/msigworlds/msigworlds',
-        'msigworlds'
+        'msig.world'
       ),
       'created msigworlds_contract'
     );
@@ -143,7 +143,7 @@ export class SharedTestObjects {
     );
 
     // Other objects
-    this.configured_dac_memberterms = 'AgreedMemberTermsHashValue';
+    this.configured_dac_memberterms = 'be2c9d0494417cf7522cd8d6f774477c';
     await this.add_token_contract_permissions();
     await this.configTokenContract();
   }
@@ -734,7 +734,7 @@ export class SharedTestObjects {
   async setup_dac_memberterms(dacId: string, dacAuth: Account) {
     await debugPromise(
       this.dac_token_contract.newmemterms(
-        'teermsstring',
+        'https://raw.githubusercontent.com/eosdac/eosdac-constitution/master/constitution.md',
         this.configured_dac_memberterms,
         dacId,
         { from: dacAuth }
