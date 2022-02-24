@@ -19,6 +19,7 @@ import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 
 chai.use(chaiAsPromised);
+let shared: SharedTestObjects;
 
 enum VoteType {
   vote_abstain = 0,
@@ -38,7 +39,6 @@ enum ProposalState {
 let proposalHash = 'jhsdfkjhsdfkjhkjsdf';
 
 describe('Dacproposals', () => {
-  let shared: SharedTestObjects;
   let otherAccount: Account;
   let proposer1Account: Account;
   let arbitrator: Account;
@@ -2696,6 +2696,21 @@ describe('Dacproposals', () => {
           2
         );
       });
+      it('should succeed setting up testuser', async () => {
+        await setup_test_user(propDacCustodians[0], 'PROPDAC');
+      });
     });
   });
 });
+
+async function setup_test_user(testuser: Account, tokenSymbol: string) {
+  // const testuser = await AccountManager.createAccount('clienttest');
+  console.log(`testuser: ${JSON.stringify(testuser, null, 2)}`);
+  await shared.dac_token_contract.transfer(
+    shared.dac_token_contract.account.name,
+    testuser.name,
+    `1200.0000 ${tokenSymbol}`,
+    '',
+    { from: shared.dac_token_contract.account }
+  );
+}

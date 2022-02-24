@@ -14,7 +14,7 @@
 #include "../../contract-shared-headers/dacdirectory_shared.hpp"
 #include "../../contract-shared-headers/eosdactokens_shared.hpp"
 
-#define SYSTEM_MSIG_CONTRACT "msigworlds"
+#define SYSTEM_MSIG_CONTRACT "msig.world"
 // WARNING : Do not use ENABLE_BINDING_VOTE if this will be a shared contract (ie RESTRICT_DAC should be set if
 // ENABLE_BINDING_VOTE==1)
 //#ifndef ENABLE_BINDING_VOTE

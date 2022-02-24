@@ -17,10 +17,9 @@ import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import { DaccustodianCandidate } from './daccustodian';
 chai.use(chaiAsPromised);
+let shared: SharedTestObjects;
 
 describe('Daccustodian', () => {
-  let shared: SharedTestObjects;
-
   before(async () => {
     shared = await chai.expect(SharedTestObjects.getInstance()).to.be.fulfilled;
   });
@@ -1048,8 +1047,9 @@ describe('Daccustodian', () => {
             }
           );
           context('with enough candidates to fill the configs', async () => {
+            let candidates: Account[];
             before(async () => {
-              let candidates = await shared.getStakeObservedCandidates(
+              candidates = await shared.getStakeObservedCandidates(
                 dacId,
                 '12.0000 PERDAC'
               );
@@ -1199,6 +1199,9 @@ describe('Daccustodian', () => {
               chai.expect(oneAccounts[0].weight).to.eq(1);
             });
           });
+          // it('should succeed setting up testuser', async () => {
+          //   await setup_test_user(candidates[0], 'PERDAC');
+          // });
         });
       });
     });
@@ -2006,3 +2009,15 @@ describe('Daccustodian', () => {
     });
   });
 });
+
+async function setup_test_user(testuser: Account, tokenSymbol: string) {
+  // const testuser = await AccountManager.createAccount('clienttest');
+  console.log(`testuser: ${JSON.stringify(testuser, null, 2)}`);
+  await shared.dac_token_contract.transfer(
+    shared.dac_token_contract.account.name,
+    testuser.name,
+    `1200.0000 ${tokenSymbol}`,
+    '',
+    { from: shared.dac_token_contract.account }
+  );
+}
