@@ -17,7 +17,7 @@ namespace eosdac {
     static constexpr eosio::name LOW_PERMISSION    = "low"_n;
     static constexpr eosio::name MEDIUM_PERMISSION = "med"_n;
     static constexpr eosio::name HIGH_PERMISSION   = "high"_n;
-    static constexpr eosio::name MSIG_CONTRACT     = "msigworlds"_n;
+    static constexpr eosio::name MSIG_CONTRACT     = "msig.world"_n;
 
 #ifndef TRANSFER_DELAY
 #define TRANSFER_DELAY 60 * 60
