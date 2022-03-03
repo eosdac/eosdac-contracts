@@ -9,6 +9,8 @@ import {
   assertRowCount,
   EosioAction,
   ContractLoader,
+  AccountManager,
+  UpdateAuth,
 } from 'lamington';
 
 import { EosioToken } from '../external_contracts/eosio.token/eosio.token';
@@ -37,6 +39,7 @@ enum ProposalState {
 }
 
 let proposalHash = 'jhsdfkjhsdfkjhkjsdf';
+let planet: Account;
 
 describe('Dacproposals', () => {
   let otherAccount: Account;
@@ -54,9 +57,12 @@ describe('Dacproposals', () => {
   let eosiotoken: EosioToken;
 
   before(async () => {
-    shared = await chai.expect(SharedTestObjects.getInstance()).to.be.fulfilled;
+    shared = await SharedTestObjects.getInstance();
+    planet = await AccountManager.createAccount('propplanet');
 
-    await shared.initDac(dacId, '4,PROPDAC', '1000000.0000 PROPDAC');
+    await setup_planet();
+
+    await shared.initDac(dacId, '4,PROPDAC', '1000000.0000 PROPDAC', planet);
     await shared.updateconfig(dacId, '12.0000 PROPDAC');
     eosiotoken = await ContractLoader.at('eosio.token');
     await chai.expect(
@@ -2712,5 +2718,83 @@ async function setup_test_user(testuser: Account, tokenSymbol: string) {
     `1200.0000 ${tokenSymbol}`,
     '',
     { from: shared.dac_token_contract.account }
+  );
+
+  await shared.dac_token_contract.transfer(
+    shared.dac_token_contract.account.name,
+    planet.name,
+    `1200.0000 PROPDAC`,
+    '',
+    { from: shared.dac_token_contract.account }
+  );
+}
+
+async function setup_planet() {
+  await debugPromise(
+    UpdateAuth.execUpdateAuth(
+      planet.owner,
+      planet.name,
+      'high',
+      'active',
+      UpdateAuth.AuthorityToSet.forContractCode(planet)
+    ),
+    'add high auth to planet'
+  );
+
+  await debugPromise(
+    UpdateAuth.execUpdateAuth(
+      planet.owner,
+      planet.name,
+      'med',
+      'high',
+      UpdateAuth.AuthorityToSet.forContractCode(planet)
+    ),
+    'add med auth to planet'
+  );
+
+  await debugPromise(
+    UpdateAuth.execUpdateAuth(
+      planet.owner,
+      planet.name,
+      'low',
+      'med',
+      UpdateAuth.AuthorityToSet.forContractCode(planet)
+    ),
+    'add low auth to planet'
+  );
+
+  await debugPromise(
+    UpdateAuth.execUpdateAuth(
+      planet.owner,
+      planet.name,
+      'one',
+      'low',
+      UpdateAuth.AuthorityToSet.forContractCode(planet)
+    ),
+    'add one auth to planet'
+  );
+
+  /* The daccustodian contract will need to make eosio::updateauth calls on
+   * behalf of the planet, so we need to add a custom permission to allow this
+   */
+  await debugPromise(
+    UpdateAuth.execUpdateAuth(
+      planet.owner,
+      planet.name,
+      'owner',
+      '',
+      UpdateAuth.AuthorityToSet.forContractCode(
+        shared.daccustodian_contract.account
+      )
+    ),
+    'make daccustodian the owner of the planet'
+  );
+
+  await UpdateAuth.execLinkAuth(
+    planet.active,
+    planet.name,
+    shared.dac_token_contract.name,
+    'transfer',
+    'one'
   );
 }
