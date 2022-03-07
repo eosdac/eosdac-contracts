@@ -161,7 +161,7 @@ export class SharedTestObjects {
   }
 
   async updateconfig(dacId: string, lockupAsset: string) {
-    await this.daccustodian_contract.updateconfig(
+    await this.daccustodian_contract.updateconfige(
       {
         numelected: 5,
         maxvotes: 4,
@@ -251,7 +251,7 @@ export class SharedTestObjects {
         payAmount = '25.0000 EOS';
       }
       await debugPromise(
-        this.daccustodian_contract.nominatecand(
+        this.daccustodian_contract.nominatecane(
           candidate.name,
           payAmount,
           dacId,

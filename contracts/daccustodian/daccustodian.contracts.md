@@ -69,7 +69,7 @@ Unstake custodian stake.
 
 Custodian stake will be returned after calling this action, subject to the candidate having passed the lockup period.
 
-<h1 class="contract">updateconfig</h1>
+<h1 class="contract">updateconfige</h1>
 
 ---
 
@@ -82,7 +82,7 @@ icon: https://eosdac.io/assets/contracts/generic.png#00da1afc6464028359b3a02ffbd
 
 Update the DAC config for {{ dac_id }} to the provided configuration.
 
-<h1 class="contract">nominatecand</h1>
+<h1 class="contract">nominatecane</h1>
 
 ---
 
@@ -95,7 +95,7 @@ icon: https://eosdac.io/assets/contracts/generic.png#00da1afc6464028359b3a02ffbd
 
 Register {{ nowrap cand }} as a candidate for {{ dac_id }}, I request to be paid {{ nowrap requestedpay }}
 
-<h1 class="contract">withdrawcand</h1>
+<h1 class="contract">withdrawcane</h1>
 
 ---
 
