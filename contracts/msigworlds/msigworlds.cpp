@@ -66,9 +66,7 @@ void multisig::propose(name proposer, name proposal_name, std::vector<permission
 
     check(res > 0, "msigworlds::propose preflight transaction authorization check failed");
 
-    std::vector<char> pkd_trans;
-    pkd_trans.resize(size);
-    memcpy((char *)pkd_trans.data(), trx_pos, size);
+    const auto pkd_trans = std::vector<char>(trx_pos, trx_pos + size);
 
     proptable.emplace(proposer, [&](proposal &prop) {
         prop.id                 = next_id(dac_id);
