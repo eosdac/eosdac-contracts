@@ -292,15 +292,10 @@ void multisig::blockaction(name account, name action, name dac_id) {
 
 uint64_t multisig::next_id(name dac_id) {
     auto s = serial_singleton{_self, dac_id.value};
-    if (s.exists()) {
-        const auto old_id  = s.get().id;
-        const auto next_id = old_id + 1;
-        s.set(serial{next_id}, get_self());
-        return next_id;
-    } else {
-        s.set(serial{}, get_self());
-        return 0;
-    }
+    auto x = s.get_or_create(get_self(), serial());
+    x.id++;
+    s.set(x, get_self());
+    return x.id;
 }
 
 transaction_header get_trx_header(const char *ptr, size_t sz) {
