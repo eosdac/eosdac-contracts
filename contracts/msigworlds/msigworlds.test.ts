@@ -309,6 +309,7 @@ describe('msigworlds', () => {
           expect(prop.proposer).to.equal(owner1.name);
           expect(prop.state).to.equal(0);
           expect(prop.proposal_name).to.equal('prop1');
+          expect(prop.id).to.equal(0);
           modDate = prop.modified_date;
         });
         it('should populate approvals table', async () => {
@@ -680,6 +681,16 @@ describe('msigworlds', () => {
         { from: owner1 }
       );
     });
+    it('prop2 should have the correct id', async () => {
+      const res = await msigworlds.proposalsTable({
+        scope: 'dac1',
+        lowerBound: 'prop2',
+        upperBound: 'prop2',
+      });
+      const prop = res.rows[0];
+      expect(prop.proposal_name).to.equal('prop2');
+      expect(prop.id).to.equal(1);
+    });
     context('with wrong auth', async () => {
       it('should fail with auth error', async () => {
         await assertMissingAuthority(
@@ -769,7 +780,16 @@ describe('msigworlds', () => {
         );
         await sleep(2001);
       });
-
+      it('propexp should have the correct id', async () => {
+        const res = await msigworlds.proposalsTable({
+          scope: 'dac1',
+          lowerBound: 'propexp',
+          upperBound: 'propexp',
+        });
+        const prop = res.rows[0];
+        expect(prop.proposal_name).to.equal('propexp');
+        expect(prop.id).to.equal(2);
+      });
       it('should fail with expired error', async () => {
         await assertEOSErrorIncludesMessage(
           msigworlds.exec('propexp', owner1.name, 'dac1', {
@@ -839,6 +859,16 @@ describe('msigworlds', () => {
         await msigworlds.exec('propgood', owner1.name, 'dac1', {
           from: owner1,
         });
+      });
+      it('propgood should have the correct id', async () => {
+        const res = await msigworlds.proposalsTable({
+          scope: 'dac1',
+          lowerBound: 'propgood',
+          upperBound: 'propgood',
+        });
+        const prop = res.rows[0];
+        expect(prop.proposal_name).to.equal('propgood');
+        expect(prop.id).to.equal(3);
       });
 
       it('should update approvals table', async () => {
@@ -940,6 +970,16 @@ describe('msigworlds', () => {
           null,
           { from: owner2 }
         );
+      });
+      it('propclean should have the correct id', async () => {
+        const res = await msigworlds.proposalsTable({
+          scope: 'dac1',
+          lowerBound: 'propclean',
+          upperBound: 'propclean',
+        });
+        const prop = res.rows[0];
+        expect(prop.proposal_name).to.equal('propclean');
+        expect(prop.id).to.equal(4);
       });
       it('shoul fail with wrong state error', async () => {
         await assertEOSErrorIncludesMessage(

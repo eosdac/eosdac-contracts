@@ -3,6 +3,7 @@
 #include <eosio/binary_extension.hpp>
 #include <eosio/eosio.hpp>
 #include <eosio/ignore.hpp>
+#include <eosio/singleton.hpp>
 #include <eosio/transaction.hpp>
 
 using namespace eosio;
@@ -10,6 +11,7 @@ using namespace eosio;
 enum PropState { PENDING = 0, EXECUTED = 1, CANCELLED = 2 };
 
 struct [[eosio::table("proposals"), eosio::contract("msigworlds")]] proposal {
+    uint64_t                           id;
     name                               proposal_name;
     name                               proposer;
     std::vector<char>                  packed_transaction;
@@ -63,6 +65,9 @@ struct [[eosio::table("blockedactns"), eosio::contract("msigworlds")]] blocked_a
 typedef eosio::multi_index<"blockedactns"_n, blocked_action,
     indexed_by<"contractns"_n, const_mem_fun<blocked_action, uint128_t, &blocked_action::contract_and_actions>>>
     blocked_actions;
+
+TABLE serial { uint64_t id = 0; };
+using serial_singleton = eosio::singleton<"serial"_n, serial>;
 
 /**
  * The `eosio.msig` system contract allows for creation of proposed transactions which require authorization from a
@@ -188,4 +193,7 @@ class [[eosio::contract("msigworlds")]] multisig : public eosio::contract {
     using cancel_action     = eosio::action_wrapper<"cancel"_n, &multisig::cancel>;
     using exec_action       = eosio::action_wrapper<"exec"_n, &multisig::exec>;
     using invalidate_action = eosio::action_wrapper<"invalidate"_n, &multisig::invalidate>;
+
+  private:
+    uint64_t next_id(name dac_id);
 };
