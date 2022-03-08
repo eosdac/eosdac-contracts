@@ -233,7 +233,7 @@ All of the active actions require a `dac_id (account_name)` parameter to be pass
 
 ### nominatecane
 
-### nominatecanee
+### nominatecane
 
 This action is used to nominate a candidate for custodian elections. It must be authorised by the candidate and the candidate must be an active member of the DAC, having agreed to the latest constitution. The candidate must have transferred a number of tokens (determined by a config setting - `lockupasset`) to the contract for staking before this action is executed. This could have been from a recent transfer with the contract name in the memo or from a previous time when this account had nominated, as long as the candidate had never `unstake`d those tokens.
 
@@ -259,7 +259,7 @@ The candidate should be present in the candidates table and be set to active. If
 
 ---
 
-### withdrawcanee
+### withdrawcane
 
 This action is used to withdraw a candidate from being active for custodian elections.
 
