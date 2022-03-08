@@ -123,11 +123,23 @@ class [[eosio::contract("msigworlds")]] multisig : public eosio::contract {
      * validations pass the `level` permission is erased from internal `provided_approvals` and added to the
      * internal `requested_approvals` list, and thus un-approve or revoke the proposal.
      *
-     * @param proposer - The account proposing a transaction
      * @param proposal_name - The name of the proposal (should be an existing proposal)
      * @param level - Permission level revoking approval for proposal
+     * @param dac_id - The name of the dac
      */
     ACTION unapprove(name proposal_name, permission_level level, name dac_id);
+
+    /**
+     * Can be used by the custodian to signal that they have seen the proposal
+     * and deliberately chose not to approve it. If it has been approved before,
+     * the proposal will automatically be unapproved.
+     *
+     * @param proposal_name - The name of the proposal (should be an existing proposal)
+     * @param level - Permission level revoking approval for proposal
+     * @param dac_id - The name of the dac
+     */
+    ACTION deny(name proposal_name, permission_level level, name dac_id);
+
     /**
      * Cancel action cancels an existing proposal.
      *

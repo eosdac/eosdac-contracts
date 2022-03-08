@@ -179,6 +179,46 @@ void multisig::unapprove(name proposal_name, permission_level level, name dac_id
     });
 }
 
+void multisig::deny(name proposal_name, permission_level level, name dac_id) {
+    if (level.permission == "eosio.code"_n) {
+        check(get_sender() == level.actor, "wrong contract sent `deny` action for eosio.code permmission");
+    } else {
+        require_auth(level);
+    }
+
+    approvals apptable(get_self(), dac_id.value);
+    auto      apps_it = apptable.find(proposal_name.value);
+    auto      itr =
+        std::find_if(apps_it->provided_approvals.begin(), apps_it->provided_approvals.end(), [&](const approval &a) {
+            return a.level == level;
+        });
+    if (itr != apps_it->provided_approvals.end()) {
+        apptable.modify(apps_it, same_payer, [&](auto &a) {
+            a.requested_approvals.push_back(approval{level, current_time_point()});
+            a.provided_approvals.erase(itr);
+        });
+    }
+    proposals proptable(get_self(), dac_id.value);
+    auto     &prop = proptable.get(proposal_name.value, "proposal not found");
+    check(
+        prop.state == PropState::PENDING, "ERR::PROP_NOT_PENDING::proposal can only be denied while in pending state.");
+
+    if (prop.earliest_exec_time.has_value()) {
+        auto table_op = [](auto &&, auto &&) {};
+        if (!trx_is_authorized(
+                get_approvals_and_adjust_table(get_self(), proposal_name, table_op, dac_id), prop.packed_transaction)) {
+            proptable.modify(prop, same_payer, [&](auto &p) {
+                p.earliest_exec_time = std::optional<time_point>{};
+            });
+        }
+    }
+
+    auto prop_itr = proptable.iterator_to(prop);
+    proptable.modify(prop_itr, same_payer, [&](proposal &p) {
+        p.modified_date = current_time_point();
+    });
+}
+
 void multisig::cancel(name proposal_name, name canceler, name dac_id) {
     require_auth(canceler);
 
