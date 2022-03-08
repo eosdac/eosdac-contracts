@@ -24,9 +24,9 @@ namespace eosdac {
 #endif
 
     struct contr_config;
-    using configscontainer = eosio::singleton<"config"_n, contr_config>;
+    using configscontainer = eosio::singleton<"config2"_n, contr_config>;
 
-    struct [[eosio::table("config"), eosio::contract("daccustodian")]] contr_config {
+    struct [[eosio::table("config2"), eosio::contract("daccustodian")]] contr_config {
         //    The amount of assets that are locked up by each candidate applying for election.
         eosio::extended_asset lockupasset;
         //    The maximum number of votes that each member can make for a candidate.
@@ -141,14 +141,14 @@ namespace eosdac {
       public:
         daccustodian(name s, name code, datastream<const char *> ds) : contract(s, code, ds) {}
 
-        ACTION updateconfig(const contr_config &newconfig, const name &dac_id);
+        ACTION updateconfige(const contr_config &newconfig, const name &dac_id);
         // ACTION transferobsv(name from, name to, asset quantity, name dac_id);
         ACTION balanceobsv(const vector<account_balance_delta> &account_balance_deltas, const name &dac_id);
         ACTION stakeobsv(const vector<account_stake_delta> &account_stake_deltas, const name &dac_id);
         ACTION weightobsv(const vector<account_weight_delta> &account_weight_deltas, const name &dac_id);
 
-        ACTION nominatecand(const name &cand, const eosio::asset &requestedpay, const name &dac_id);
-        ACTION withdrawcand(const name &cand, const name &dac_id);
+        ACTION nominatecane(const name &cand, const eosio::asset &requestedpay, const name &dac_id);
+        ACTION withdrawcane(const name &cand, const name &dac_id);
         ACTION firecand(const name &cand, const bool lockupStake, const name &dac_id);
         ACTION resigncust(const name &cust, const name &dac_id);
         ACTION firecust(const name &cust, const name &dac_id);

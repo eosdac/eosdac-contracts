@@ -3,7 +3,7 @@
 
 using namespace eosdac;
 
-ACTION daccustodian::nominatecand(const name &cand, const asset &requestedpay, const name &dac_id) {
+ACTION daccustodian::nominatecane(const name &cand, const asset &requestedpay, const name &dac_id) {
     require_auth(cand);
     assertValidMember(cand, dac_id);
     contr_state  currentState = contr_state::get_current_state(_self, dac_id);
@@ -45,7 +45,7 @@ ACTION daccustodian::nominatecand(const name &cand, const asset &requestedpay, c
     }
 }
 
-ACTION daccustodian::withdrawcand(const name &cand, const name &dac_id) {
+ACTION daccustodian::withdrawcane(const name &cand, const name &dac_id) {
     require_auth(cand);
     removeCandidate(cand, false, dac_id);
 }

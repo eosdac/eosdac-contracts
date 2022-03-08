@@ -24,14 +24,14 @@ describe('Daccustodian', () => {
     shared = await chai.expect(SharedTestObjects.getInstance()).to.be.fulfilled;
   });
 
-  context('updateconfig', async () => {
+  context('updateconfige', async () => {
     let dacId = 'custodiandac';
     before(async () => {
       await shared.initDac(dacId, '4,CUSDAC', '1000000.0000 CUSDAC');
     });
     it('Should fail for a dac_id without a dac', async () => {
       await assertEOSErrorIncludesMessage(
-        shared.daccustodian_contract.updateconfig(
+        shared.daccustodian_contract.updateconfige(
           {
             numelected: 5,
             maxvotes: 5,
@@ -52,7 +52,7 @@ describe('Daccustodian', () => {
         'ERR::DAC_NOT_FOUND'
       );
       await assertRowsEqual(
-        shared.daccustodian_contract.configTable({
+        shared.daccustodian_contract.config2Table({
           scope: 'unknowndac',
           limit: 1,
         }),
@@ -61,7 +61,7 @@ describe('Daccustodian', () => {
     });
     it('Should fail for invalid high auth threshold', async () => {
       await assertEOSErrorIncludesMessage(
-        shared.daccustodian_contract.updateconfig(
+        shared.daccustodian_contract.updateconfige(
           {
             numelected: 5,
             maxvotes: 5,
@@ -82,7 +82,7 @@ describe('Daccustodian', () => {
         'ERR::UPDATECONFIG_INVALID_AUTH_HIGH_TO_NUM_ELECTED'
       );
       await assertRowsEqual(
-        shared.daccustodian_contract.configTable({
+        shared.daccustodian_contract.config2Table({
           scope: dacId,
           limit: 2,
         }),
@@ -91,7 +91,7 @@ describe('Daccustodian', () => {
     });
     it('Should fail for invalid mid auth threshold', async () => {
       await assertEOSErrorIncludesMessage(
-        shared.daccustodian_contract.updateconfig(
+        shared.daccustodian_contract.updateconfige(
           {
             numelected: 12,
             maxvotes: 5,
@@ -112,7 +112,7 @@ describe('Daccustodian', () => {
         'ERR::UPDATECONFIG_INVALID_AUTH_HIGH_TO_MID_AUTH'
       );
       await assertRowsEqual(
-        shared.daccustodian_contract.configTable({
+        shared.daccustodian_contract.config2Table({
           scope: dacId,
           limit: 2,
         }),
@@ -121,7 +121,7 @@ describe('Daccustodian', () => {
     });
     it('Should fail for invalid low auth threshold', async () => {
       await assertEOSErrorIncludesMessage(
-        shared.daccustodian_contract.updateconfig(
+        shared.daccustodian_contract.updateconfige(
           {
             numelected: 12,
             maxvotes: 5,
@@ -142,7 +142,7 @@ describe('Daccustodian', () => {
         'ERR::UPDATECONFIG_INVALID_AUTH_MID_TO_LOW_AUTH'
       );
       await assertRowsEqual(
-        shared.daccustodian_contract.configTable({
+        shared.daccustodian_contract.config2Table({
           scope: dacId,
           limit: 2,
         }),
@@ -151,7 +151,7 @@ describe('Daccustodian', () => {
     });
     it('Should fail for invalid num elected', async () => {
       await assertEOSErrorIncludesMessage(
-        shared.daccustodian_contract.updateconfig(
+        shared.daccustodian_contract.updateconfige(
           {
             numelected: 68,
             maxvotes: 4,
@@ -180,7 +180,7 @@ describe('Daccustodian', () => {
     });
     it('Should fail for invalid max votes', async () => {
       await assertEOSErrorIncludesMessage(
-        shared.daccustodian_contract.updateconfig(
+        shared.daccustodian_contract.updateconfige(
           {
             numelected: 12,
             maxvotes: 13,
@@ -209,7 +209,7 @@ describe('Daccustodian', () => {
     });
     it('Should fail for invalid period length', async () => {
       await assertEOSErrorIncludesMessage(
-        shared.daccustodian_contract.updateconfig(
+        shared.daccustodian_contract.updateconfige(
           {
             numelected: 12,
             maxvotes: 5,
@@ -238,7 +238,7 @@ describe('Daccustodian', () => {
     });
     it('Should fail for invalid initial quorum percent', async () => {
       await assertEOSErrorIncludesMessage(
-        shared.daccustodian_contract.updateconfig(
+        shared.daccustodian_contract.updateconfige(
           {
             numelected: 12,
             maxvotes: 5,
@@ -267,7 +267,7 @@ describe('Daccustodian', () => {
     });
     it('Should fail for invalid quorum percent', async () => {
       await assertEOSErrorIncludesMessage(
-        shared.daccustodian_contract.updateconfig(
+        shared.daccustodian_contract.updateconfige(
           {
             numelected: 12,
             maxvotes: 5,
@@ -295,7 +295,7 @@ describe('Daccustodian', () => {
       );
     });
     it('Should succeed with valid params', async () => {
-      await shared.daccustodian_contract.updateconfig(
+      await shared.daccustodian_contract.updateconfige(
         {
           numelected: 5,
           maxvotes: 4,
@@ -320,7 +320,7 @@ describe('Daccustodian', () => {
         { from: shared.auth_account }
       );
       await assertRowsEqual(
-        shared.daccustodian_contract.configTable({
+        shared.daccustodian_contract.config2Table({
           scope: dacId,
           limit: 1,
         }),
@@ -350,7 +350,7 @@ describe('Daccustodian', () => {
     });
   });
 
-  context('nominatecand', async () => {
+  context('nominatecane', async () => {
     context('With a staking enabled DAC', async () => {
       let dacId = 'nomstakedac';
       let newUser1: Account;
@@ -372,7 +372,7 @@ describe('Daccustodian', () => {
       context('with unregistered member', async () => {
         it('should fail with error', async () => {
           await assertEOSErrorIncludesMessage(
-            shared.daccustodian_contract.nominatecand(
+            shared.daccustodian_contract.nominatecane(
               newUser1.name,
               '25.0000 EOS',
               dacId,
@@ -394,7 +394,7 @@ describe('Daccustodian', () => {
         context('with insufficient staked funds', async () => {
           it('should fail with error', async () => {
             await assertEOSErrorIncludesMessage(
-              shared.daccustodian_contract.nominatecand(
+              shared.daccustodian_contract.nominatecane(
                 newUser1.name,
                 '25.0000 EOS',
                 dacId,
@@ -425,7 +425,7 @@ describe('Daccustodian', () => {
           });
           it('should succeed', async () => {
             await chai.expect(
-              shared.daccustodian_contract.nominatecand(
+              shared.daccustodian_contract.nominatecane(
                 newUser1.name,
                 '25.0000 EOS',
                 dacId,
@@ -452,7 +452,7 @@ describe('Daccustodian', () => {
       context('with unregistered member', async () => {
         it('should fail with error', async () => {
           await assertEOSErrorIncludesMessage(
-            shared.daccustodian_contract.nominatecand(
+            shared.daccustodian_contract.nominatecane(
               newUser1.name,
               '25.0000 EOS',
               dacId,
@@ -473,7 +473,7 @@ describe('Daccustodian', () => {
         });
         it('should succeed', async () => {
           await chai.expect(
-            shared.daccustodian_contract.nominatecand(
+            shared.daccustodian_contract.nominatecane(
               newUser1.name,
               '25.0000 EOS',
               dacId,
@@ -1058,7 +1058,7 @@ describe('Daccustodian', () => {
               // Change the config to a lower requestedPayMax to affect average pay tests after `newperiod` succeeds.
               // This change to `23.0000 EOS` should cause the requested pays of 25.0000 EOS to be fitered from the mean pay.
               await chai.expect(
-                shared.daccustodian_contract.updateconfig(
+                shared.daccustodian_contract.updateconfige(
                   {
                     numelected: 5,
                     maxvotes: 4,
@@ -1362,7 +1362,7 @@ describe('Daccustodian', () => {
       );
       await shared.voteForCustodians(regMembers, candidates, dacId);
 
-      await shared.daccustodian_contract.updateconfig(
+      await shared.daccustodian_contract.updateconfige(
         {
           numelected: 5,
           maxvotes: 4,
@@ -1574,7 +1574,7 @@ describe('Daccustodian', () => {
     });
     it('should fail for unregistered candidate with not current candidate error', async () => {
       await assertEOSErrorIncludesMessage(
-        shared.daccustodian_contract.withdrawcand(
+        shared.daccustodian_contract.withdrawcane(
           unregisteredCandidate.name,
           dacId,
           { from: unregisteredCandidate }
@@ -1584,7 +1584,7 @@ describe('Daccustodian', () => {
     });
     it('should fail with incorrect auth returning auth error', async () => {
       await assertMissingAuthority(
-        shared.daccustodian_contract.withdrawcand(
+        shared.daccustodian_contract.withdrawcane(
           unregisteredCandidate.name,
           dacId,
           { from: unelectedCandidateToResign }
@@ -1594,7 +1594,7 @@ describe('Daccustodian', () => {
     context('with correct auth', async () => {
       context('for a currently elected custodian', async () => {
         it('should succeed with lockup of stake active from previous election', async () => {
-          await shared.daccustodian_contract.withdrawcand(
+          await shared.daccustodian_contract.withdrawcane(
             electedCandidateToResign.name,
             dacId,
             { from: electedCandidateToResign }
@@ -1620,7 +1620,7 @@ describe('Daccustodian', () => {
           var numberActiveCandidatesBefore =
             beforeState.rows[0].number_active_candidates;
 
-          await shared.daccustodian_contract.withdrawcand(
+          await shared.daccustodian_contract.withdrawcane(
             unelectedCandidateToResign.name,
             dacId,
             { from: unelectedCandidateToResign }
@@ -1923,7 +1923,7 @@ describe('Daccustodian', () => {
       otherAccount = await AccountManager.createAccount();
       accountsToRegister = await AccountManager.createAccounts(5);
       await debugPromise(
-        shared.daccustodian_contract.updateconfig(
+        shared.daccustodian_contract.updateconfige(
           {
             numelected: 5,
             maxvotes: 4,

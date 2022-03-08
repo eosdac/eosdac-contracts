@@ -3,7 +3,7 @@
 This contract will be in charge of custodian registration and voting for candidates. It will also contain a function which could be called periodically to update the custodian set, and allocate payments.
 
 When a candidate registers, they need to provide a set of configuration variables which will include things like their requested pay. The system will select the median requested pay when choosing the actual pay.
-The mean pay is to be paid to elected custodians at the end of each period. If an elected custodian resigns via the `withdrawcand` during a period a new candidate will be chosen to fill the gap on the custodian board from the votes ranking in the candidates at that moment.
+The mean pay is to be paid to elected custodians at the end of each period. If an elected custodian resigns via the `withdrawcane` during a period a new candidate will be chosen to fill the gap on the custodian board from the votes ranking in the candidates at that moment.
 
 Eg. 12 custodians are elected and their median `requestedpay` is 100 EOSDAC If one of the custodians resigns partially through a period they will not be paid for that partial period. The mean pay amount will be calculated based on the current elected custodians `requestedpay` value. If a candidate changes their requested pay it will not be included in the pay calculation until the next period if they are re-elected.
 
@@ -29,7 +29,7 @@ All of the active actions require a `dac_id (account_name)` parameter to be pass
 
 - voter (account_name) - The account name of the voter (INDEX)
 - proxy (account_name) - Name of another voter used to proxy votes through. This should not have a value in both the proxy and candidates at the same time.
-- candidates (account_name[]) - The candidates voted for, can supply up to the maximum number of votes (currently 5) - Can be configured via `updateconfig`
+- candidates (account_name[]) - The candidates voted for, can supply up to the maximum number of votes (currently 5) - Can be configured via `updateconfige`
 
 ### pendingpay
 
@@ -231,9 +231,9 @@ All of the active actions require a `dac_id (account_name)` parameter to be pass
 
 ##### Post Condition:
 
-### nominatecand
+### nominatecane
 
-### nominatecande
+### nominatecane
 
 This action is used to nominate a candidate for custodian elections. It must be authorised by the candidate and the candidate must be an active member of the DAC, having agreed to the latest constitution. The candidate must have transferred a number of tokens (determined by a config setting - `lockupasset`) to the contract for staking before this action is executed. This could have been from a recent transfer with the contract name in the memo or from a previous time when this account had nominated, as long as the candidate had never `unstake`d those tokens.
 
@@ -259,7 +259,7 @@ The candidate should be present in the candidates table and be set to active. If
 
 ---
 
-### withdrawcande
+### withdrawcane
 
 This action is used to withdraw a candidate from being active for custodian elections.
 
@@ -410,7 +410,7 @@ If successful a new record should be added to the proxy table which is then used
 
 ---
 
-### updateconfig
+### updateconfige
 
 ## unregproxy
 
@@ -432,13 +432,13 @@ If successful a the existing proxy record will be removed from the proxy table a
 
 ---
 
-### updateconfig
+### updateconfige
 
 Updates the contract configuration parameters to allow changes without needing to redeploy the source code.
 
 #### Message
 
-updateconfig(<params>)
+updateconfige(<params>)
 
 This action asserts:
 
@@ -447,7 +447,7 @@ This action asserts:
 
 The parameters are:
 
-- lockupasset(uint8_t) : defines the asset and amount required for a user to register as a candidate. This is the amount that will be locked up until the user calls `withdrawcand` in order to get the asset returned to them. If there are currently already registered candidates in the contract this cannot be changed to a different asset type because of introduced complexity of handling the staked amounts.
+- lockupasset(uint8_t) : defines the asset and amount required for a user to register as a candidate. This is the amount that will be locked up until the user calls `withdrawcane` in order to get the asset returned to them. If there are currently already registered candidates in the contract this cannot be changed to a different asset type because of introduced complexity of handling the staked amounts.
 - maxvotes(asset) : Defines the maximum number of candidates a user can vote for at any given time.
 - numelected(uint16_t) : The number of candidates to elect for custodians. This is used for the payment amount to custodians for median amount.
 - periodlength(uint32_t) : The length of a period in seconds. This is used for the scheduling of the deferred `newperiod` actions at the end of processing the current one. Also is used as part of the partial payment to custodians in the case of an elected custodian resigning which would also trigger a `newperiod` action.
