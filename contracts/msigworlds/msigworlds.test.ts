@@ -555,6 +555,89 @@ describe('msigworlds', () => {
       });
     });
   });
+  context('deny', async () => {
+    context('with wrong auth', async () => {
+      it('should fail with auth error', async () => {
+        await assertMissingAuthority(
+          msigworlds.deny_object_params(
+            {
+              proposal_name: 'prop1',
+              level: { actor: owner1.name, permission: 'active' },
+              dac_id: 'dac1',
+            },
+            { from: owner3 }
+          )
+        );
+      });
+    });
+    context('with correct auth', async () => {
+      context('with non-existing proposal', async () => {
+        it('should fail with prop not found error', async () => {
+          await assertEOSErrorIncludesMessage(
+            msigworlds.deny(
+              'prop11',
+              { actor: owner1.name, permission: 'active' },
+              'dac1',
+              { from: owner1 }
+            ),
+            'proposal not found'
+          );
+        });
+      });
+    });
+    context('with correct auth', async () => {
+      context('with existing proposal', async () => {
+        context('for previously denied auth', async () => {
+          it('should work', async () => {
+            await msigworlds.deny(
+              'prop1',
+              { actor: owner3.name, permission: 'active' },
+              'dac1',
+              { from: owner3 }
+            );
+          });
+        });
+        context('for previously granted approval auth', async () => {
+          it('should succeed', async () => {
+            await msigworlds.deny(
+              'prop1',
+              { actor: owner2.name, permission: 'active' },
+              'dac1',
+              { from: owner2 }
+            );
+          });
+          it('should update approvals table', async () => {
+            const approvals = await msigworlds.approvalsTable({
+              scope: 'dac1',
+            });
+            const matching = approvals.rows[0];
+
+            expect(matching).to.not.be.null;
+            expect(matching.proposal_name).to.equal('prop1');
+            expect(matching.requested_approvals[0].level.actor).to.equal(
+              'owner1'
+            );
+            expect(matching.requested_approvals[0].time).to.equal(
+              '1970-01-01T00:00:00.000'
+            );
+            expect(matching.provided_approvals).to.empty;
+            expect(matching.requested_approvals[1].level.actor).to.equal(
+              'owner2'
+            );
+            expect(new Date(matching.requested_approvals[1].time)).to.afterDate(
+              new Date('2022-01-01T00:00:00.000')
+            );
+          });
+          it('should update proposal modification date', async () => {
+            const props = await msigworlds.proposalsTable({ scope: 'dac1' });
+            expect(props.rows[0].modified_date).to.afterTime(modDate);
+            expect(props.rows[0].earliest_exec_time).to.be.null;
+            expect(props.rows[0].state).to.equal(0);
+          });
+        });
+      });
+    });
+  });
   context('cancel', async () => {
     context('with wrong auth', async () => {
       it('should fail with auth error', async () => {
