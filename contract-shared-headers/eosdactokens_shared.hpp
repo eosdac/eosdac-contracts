@@ -106,6 +106,16 @@ namespace eosdac {
         const auto &ac = accountstable.get(sym.raw(), fmt("eosdactokens::get_balance user %s has no %s balance", owner, sym));
         return ac.balance;
     }
+    
+    asset get_balance_graceful(name owner, name code, symbol sym) {
+        accounts    accountstable(code, owner.value);
+        const auto itr = accountstable.find(sym.code().raw());
+        if(itr != accountstable.end()) {
+          return itr->balance;          
+        } else {
+          return asset{0, sym};
+        }
+    }
 
     asset get_liquid(name owner, name code, symbol sym) {
         // Hardcoding a precision of 4, it doesnt matter because the index ignores precision

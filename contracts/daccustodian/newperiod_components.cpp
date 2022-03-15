@@ -190,6 +190,33 @@ void daccustodian::setCustodianAuths(name dac_id) {
     add_all_auths(accountToChange, weights, dac_id);
 }
 
+asset balance_for_type(const dacdir::dac &dac, const dacdir::account_type type) {
+  const auto account = dac.account_for_type(type);
+  return eosdac::get_balance_graceful(account, TLM_TOKEN_CONTRACT, TLM_SYM);
+}
+
+void daccustodian::transferCustodianBudget(const dacdir::dac &dac) {
+  const auto spendings_account = dac.account_for_type_maybe(dacdir::SPENDINGS);
+  const auto auth_account = dac.account_for_type_maybe(dacdir::AUTH);
+  if(!spendings_account && !auth_account) {
+    return;
+  }
+  const auto recipient = spendings_account ? *spendings_account : *auth_account;
+  
+  const auto auth_balance = balance_for_type(dac, dacdir::AUTH);
+  const auto treasury_balance = balance_for_type(dac, dacdir::TREASURY);
+
+  const int64_t p = 5; // 5 %
+  
+  const auto amount = std::min(treasury_balance, auth_balance - treasury_balance * p / 100);
+  if(amount.amount > 0 ) {
+    const auto treasury_account = dac.account_for_type(dacdir::TREASURY);
+    action(permission_level{treasury_account, "xfer"_n}, TLM_TOKEN_CONTRACT, "transfer"_n,
+        make_tuple(treasury_account, recipient, amount, "period budget"s))
+        .send();
+  }
+}
+
 ACTION daccustodian::newperiod(const string &message, const name &dac_id) {
     /* This is a housekeeping method, it can be called by anyone by design */
     const auto auth_account = dacdir::dac_for_id(dac_id).account_for_type_maybe(dacdir::AUTH);
@@ -251,6 +278,8 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
     // period. This also implies custodians should not be paid the first time this is called.
     // Distribute pay to the current custodians.
     distributeMeanPay(dac_id);
+    
+    transferCustodianBudget(found_dac);
 
     // Set custodians for the next period.
     allocateCustodians(false, dac_id);

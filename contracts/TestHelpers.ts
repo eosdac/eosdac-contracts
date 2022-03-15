@@ -144,8 +144,8 @@ export class SharedTestObjects {
 
     // Other objects
     this.configured_dac_memberterms = 'be2c9d0494417cf7522cd8d6f774477c';
-    await this.add_token_contract_permissions();
     await this.configTokenContract();
+    await this.add_token_contract_permissions();
   }
 
   async initDac(
@@ -668,6 +668,14 @@ export class SharedTestObjects {
       this.treasury_account.active,
       this.treasury_account.name,
       'eosdactokens',
+      'transfer',
+      'xfer'
+    );
+
+    await UpdateAuth.execLinkAuth(
+      this.treasury_account.active,
+      this.treasury_account.name,
+      'alienworlds',
       'transfer',
       'xfer'
     );

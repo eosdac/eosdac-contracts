@@ -6,7 +6,6 @@
 #include <eosio/symbol.hpp>
 
 namespace eosdac {
-
     namespace dacdir {
 
         enum account_type : uint8_t {
@@ -20,6 +19,7 @@ namespace eosdac {
             VOTE_WEIGHT = 8,
             ACTIVATION  = 9,
             REFERENDUM  = 10,
+            SPENDINGS   = 11,
             EXTERNAL    = 254,
             OTHER       = 255
         };
@@ -50,8 +50,7 @@ namespace eosdac {
             std::map<uint8_t, eosio::name> accounts;
             uint8_t                        dac_state;
 
-            eosio::name account_for_type(uint8_t type) const {
-                eosio::print("\ngetting account for type: ", type, "\n");
+            eosio::name account_for_type(account_type type) const {
                 const auto x = accounts.find(type);
                 check(x != accounts.end(),
                     "ERR:ACC_NOT_FOUND: Account for type %s not found in dac with dac_id %s owned by %s",
@@ -59,8 +58,7 @@ namespace eosdac {
                 return x->second;
             }
 
-            std::optional<eosio::name> account_for_type_maybe(uint8_t type) const {
-                eosio::print("\ngetting account for type: ", type, "\n");
+            std::optional<eosio::name> account_for_type_maybe(account_type type) const {
                 const auto x = accounts.find(type);
                 if (x != accounts.end()) {
                     return x->second;
@@ -68,7 +66,7 @@ namespace eosdac {
                     return {};
                 }
             }
-
+            
             uint64_t  primary_key() const { return dac_id.value; }
             uint64_t  by_owner() const { return owner.value; }
             uint128_t by_symbol() const { return eosdac::raw_from_extended_symbol(symbol); }
@@ -91,5 +89,7 @@ namespace eosdac {
                 "ERR::DAC_NOT_FOUND_SYMBOL::DAC not found in directory for the given symbol");
             return *dac_idx;
         }
+        
+        
     } // namespace dacdir
 } // namespace eosdac

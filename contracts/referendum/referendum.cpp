@@ -477,7 +477,7 @@ void referendum::proposeMsig(referendum_data ref, name dac_id) {
       {"description", fmt("Automated submission of passing referendum number %s", ref.referendum_id)}
     };
 
-    action(permission_level{get_self(), "active"_n}, name{SYSTEM_MSIG_CONTRACT}, "propose"_n,
+    action(permission_level{get_self(), "active"_n}, MSIG_CONTRACT, "propose"_n,
         make_tuple(get_self(), proposal_name, reqd_perms, dac_id, metadata, trx))
         .send();
 }

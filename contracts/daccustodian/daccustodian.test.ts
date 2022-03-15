@@ -10,6 +10,7 @@ import {
   assertMissingAuthority,
   assertRowsEqual,
   TableRowsResult,
+  assertBalanceEqual,
 } from 'lamington';
 
 import { SharedTestObjects, NUMBER_OF_CANDIDATES } from '../TestHelpers';
@@ -21,7 +22,7 @@ let shared: SharedTestObjects;
 
 describe('Daccustodian', () => {
   before(async () => {
-    shared = await chai.expect(SharedTestObjects.getInstance()).to.be.fulfilled;
+    shared = await SharedTestObjects.getInstance();
   });
 
   context('updateconfige', async () => {
@@ -2007,6 +2008,136 @@ describe('Daccustodian', () => {
         'ERR:CUSTODIANS_NOT_EMPTY'
       );
     });
+  });
+  context('period budget', async () => {
+    let dacId = 'budgetdac';
+    let regMembers: Account[];
+    let newUser1: Account;
+    let candidates: Account[];
+    let tlm_token_contract: Account;
+
+    before(async () => {
+      await shared.initDac(dacId, '4,PERIODDAC', '1000000.0000 PERIODDAC');
+      await shared.updateconfig(dacId, '12.0000 PERIODDAC');
+      await shared.dac_token_contract.stakeconfig(
+        { enabled: true, min_stake_time: 5, max_stake_time: 20 },
+        '4,PERIODDAC',
+        { from: shared.auth_account }
+      );
+
+      // With 16 voting members with 2000 each and a threshold of 31 percent
+      // this will total to 320_000 vote value which will be enough to start the DAC
+      regMembers = await shared.getRegMembers(dacId, '20000.0000 PERIODDAC');
+      candidates = await shared.getStakeObservedCandidates(
+        dacId,
+        '12.0000 PERIODDAC'
+      );
+      await shared.voteForCustodians(regMembers, candidates, dacId);
+
+      await shared.daccustodian_contract.updateconfige(
+        {
+          numelected: 5,
+          maxvotes: 4,
+          requested_pay_max: {
+            contract: 'eosio.token',
+            quantity: '0.0000 EOS',
+          },
+          periodlength: 1,
+          initial_vote_quorum_percent: 31,
+          vote_quorum_percent: 15,
+          auth_threshold_high: 4,
+          auth_threshold_mid: 3,
+          auth_threshold_low: 2,
+          lockupasset: {
+            contract: shared.dac_token_contract.account.name,
+            quantity: '12.0000 PERIODDAC',
+          },
+          should_pay_via_service_provider: false,
+          lockup_release_time_delay: 1233,
+        },
+        dacId,
+        { from: shared.auth_account }
+      );
+    });
+    context(
+      'newperiod when transfer amount is bigger than treasury',
+      async () => {
+        before(async () => {
+          await shared.eosio_token_contract.transfer(
+            shared.tokenIssuer.name,
+            shared.treasury_account.name,
+            `50.0000 TLM`,
+            'Some money for the treasury',
+            { from: shared.tokenIssuer }
+          );
+          await shared.eosio_token_contract.transfer(
+            shared.tokenIssuer.name,
+            shared.auth_account.name,
+            `100.0000 TLM`,
+            'Some money for the authority',
+            { from: shared.tokenIssuer }
+          );
+
+          await shared.daccustodian_contract.newperiod(
+            'initial new period',
+            dacId,
+            {
+              from: regMembers[0],
+            }
+          );
+          await sleep(1000);
+        });
+        it('should only transfer treasury balance', async () => {
+          await assertBalanceEqual(
+            shared.eosio_token_contract.accountsTable({
+              scope: shared.treasury_account.name,
+            }),
+            '0.0000 TLM'
+          );
+          await assertBalanceEqual(
+            shared.eosio_token_contract.accountsTable({
+              scope: shared.auth_account.name,
+            }),
+            '150.0000 TLM'
+          );
+        });
+      }
+    );
+    context(
+      'newperiod when transfer amount smaller than treasury',
+      async () => {
+        before(async () => {
+          await shared.eosio_token_contract.transfer(
+            shared.tokenIssuer.name,
+            shared.treasury_account.name,
+            `1500.0000 TLM`,
+            'Some money for the treasury',
+            { from: shared.tokenIssuer }
+          );
+          await shared.daccustodian_contract.newperiod(
+            'initial new period',
+            dacId,
+            {
+              from: regMembers[0],
+            }
+          );
+        });
+        it('should transfer amount according to formula', async () => {
+          await assertBalanceEqual(
+            shared.eosio_token_contract.accountsTable({
+              scope: shared.treasury_account.name,
+            }),
+            '1425.0000 TLM'
+          );
+          await assertBalanceEqual(
+            shared.eosio_token_contract.accountsTable({
+              scope: shared.auth_account.name,
+            }),
+            '225.0000 TLM'
+          );
+        });
+      }
+    );
   });
 });
 

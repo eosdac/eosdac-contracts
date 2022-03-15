@@ -4,6 +4,7 @@
 #include <eosio/singleton.hpp>
 #include <eosio/time.hpp>
 
+#include "../../contract-shared-headers/config.hpp"
 #include "../../contract-shared-headers/common_utilities.hpp"
 #include "../../contract-shared-headers/daccustodian_shared.hpp"
 #include "../../contract-shared-headers/eosdactokens_shared.hpp"
@@ -17,7 +18,6 @@ namespace eosdac {
     static constexpr eosio::name LOW_PERMISSION    = "low"_n;
     static constexpr eosio::name MEDIUM_PERMISSION = "med"_n;
     static constexpr eosio::name HIGH_PERMISSION   = "high"_n;
-    static constexpr eosio::name MSIG_CONTRACT     = "msig.world"_n;
 
 #ifndef TRANSFER_DELAY
 #define TRANSFER_DELAY 60 * 60
@@ -210,6 +210,7 @@ namespace eosdac {
             const name &parent, vector<eosiosystem::permission_level_weight> weights, const bool msig = false);
         void setMsigAuths(name dac_id);
         void setCustodianAuths(name internal_dac_id);
+        void transferCustodianBudget(const dacdir::dac &dac);
         void removeCustodian(name cust, name internal_dac_id);
         void removeCandidate(name cust, bool lockupStake, name internal_dac_id);
         void allocateCustodians(bool early_election, name internal_dac_id);
