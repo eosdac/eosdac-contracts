@@ -196,6 +196,25 @@ asset balance_for_type(const dacdir::dac &dac, const dacdir::account_type type) 
 }
 
 void daccustodian::transferCustodianBudget(const dacdir::dac &dac) {
+  const auto treasury_account = dac.account_for_type(dacdir::TREASURY);
+  
+  const auto nfts = atomicassets::assets_t(NFT_CONTRACT, treasury_account.value);
+  if(nfts.begin() == nfts.end()) {
+    // this DAC does not own any NFTs, so we do nothing
+    check(false, "We don't own any NFTs");
+    return;
+  }
+  
+  // TODO: What if they own multiple NFTs?
+  // TODO: Don't do this live, but detect transfer and mints and cache in local table. This is a denial-of-service vulnerability.
+  for(const auto &nft: nfts) {
+    if(nft.collection_name == NFT_COLLECTION && nft.schema_name == BUDGET_SCHEMA) {
+      const auto percentage = nft::get_immutable_attr<double>(nft, "percentage");
+      check(false, "we can haz NFT! percentage: %s", std::to_string(percentage));
+    }
+  }
+  
+  
   const auto spendings_account = dac.account_for_type_maybe(dacdir::SPENDINGS);
   const auto auth_account = dac.account_for_type_maybe(dacdir::AUTH);
   if(!spendings_account && !auth_account) {
@@ -210,7 +229,7 @@ void daccustodian::transferCustodianBudget(const dacdir::dac &dac) {
   
   const auto amount = std::min(treasury_balance, auth_balance - treasury_balance * p / 100);
   if(amount.amount > 0 ) {
-    const auto treasury_account = dac.account_for_type(dacdir::TREASURY);
+    
     action(permission_level{treasury_account, "xfer"_n}, TLM_TOKEN_CONTRACT, "transfer"_n,
         make_tuple(treasury_account, recipient, amount, "period budget"s))
         .send();
@@ -291,3 +310,4 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
     currentState.lastperiodtime = current_block_time();
     currentState.save(get_self(), dac_id);
 }
+

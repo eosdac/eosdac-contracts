@@ -18,6 +18,7 @@ import { Dacproposals } from './dacproposals/dacproposals';
 import { Dacescrow } from './dacescrow/dacescrow';
 import { Referendum } from './referendum/referendum';
 import { EosioToken } from '../../external_contracts/eosio.token/eosio.token';
+import { Atomicassets } from '../../external_contracts/atomicassets/atomicassets';
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -42,8 +43,16 @@ export class SharedTestObjects {
   eosio_token_contract: EosioToken;
   referendum_contract: Referendum;
   tokenIssuer: Account;
+  atomicassets: Atomicassets;
+
   // === Shared Values
   configured_dac_memberterms: string;
+
+  NFT_COLLECTION: string;
+
+  constructor() {
+    this.NFT_COLLECTION = 'alien.worlds';
+  }
 
   static async getInstance(): Promise<SharedTestObjects> {
     if (!SharedTestObjects.instance) {
@@ -116,7 +125,7 @@ export class SharedTestObjects {
       ),
       'created dacproposals'
     );
-    await sleep(2000);
+    // await sleep(2000);
     this.dacescrow_contract = await debugPromise(
       ContractDeployer.deployWithName(
         'contracts/dacescrow/dacescrow',
@@ -124,7 +133,7 @@ export class SharedTestObjects {
       ),
       'created dacescrow'
     );
-    await sleep(2000);
+    // await sleep(2000);
 
     this.msigworlds_contract = await debugPromise(
       ContractDeployer.deployWithName<Msigworlds>(
@@ -141,6 +150,13 @@ export class SharedTestObjects {
       ),
       'created referendum_contract'
     );
+
+    this.atomicassets = await ContractDeployer.deployWithName<Atomicassets>(
+      'contracts/atomicassets/atomicassets',
+      'atomicassets'
+    );
+    this.atomicassets.account.addCodePermission();
+    await this.atomicassets.init({ from: this.atomicassets.account });
 
     // Other objects
     this.configured_dac_memberterms = 'be2c9d0494417cf7522cd8d6f774477c';
@@ -675,7 +691,7 @@ export class SharedTestObjects {
     await UpdateAuth.execLinkAuth(
       this.treasury_account.active,
       this.treasury_account.name,
-      'alienworlds',
+      this.eosio_token_contract.name,
       'transfer',
       'xfer'
     );
@@ -797,7 +813,7 @@ export class SharedTestObjects {
   async configTokenContract() {
     this.eosio_token_contract = await ContractDeployer.deployWithName<
       EosioToken
-    >('external_contracts/eosio.token/eosio.token', 'alienworlds');
+    >('external_contracts/eosio.token/eosio.token', 'alien.worlds');
 
     this.tokenIssuer = await AccountManager.createAccount('tokenissuer');
 

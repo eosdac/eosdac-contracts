@@ -20,6 +20,9 @@ import { DaccustodianCandidate } from './daccustodian';
 chai.use(chaiAsPromised);
 let shared: SharedTestObjects;
 
+const NFT_COLLECTION = 'alien.worlds';
+const BUDGET_SCHEMA = 'budget';
+
 describe('Daccustodian', () => {
   before(async () => {
     shared = await SharedTestObjects.getInstance();
@@ -2058,6 +2061,8 @@ describe('Daccustodian', () => {
         dacId,
         { from: shared.auth_account }
       );
+
+      await setup_nfts();
     });
     context(
       'newperiod when transfer amount is bigger than treasury',
@@ -2141,6 +2146,65 @@ describe('Daccustodian', () => {
   });
 });
 
+/* Use a fresh instance to prevent caching of results */
+function get_atomic() {
+  return new RpcApi('http://localhost:8888', 'atomicassets', {
+    fetch,
+  });
+}
+
+async function setup_nfts() {
+  await shared.atomicassets.createcol(
+    shared.eosio_token_contract.account.name,
+    NFT_COLLECTION,
+    true,
+    [
+      shared.eosio_token_contract.account.name,
+      shared.daccustodian_contract.name,
+    ],
+    [shared.daccustodian_contract.name],
+    '0.01',
+    '',
+    { from: shared.eosio_token_contract.account }
+  );
+  await shared.atomicassets.createschema(
+    shared.eosio_token_contract.account.name,
+    NFT_COLLECTION,
+    BUDGET_SCHEMA,
+    [
+      { name: 'cardid', type: 'uint16' },
+      { name: 'name', type: 'string' },
+      { name: 'percentage', type: 'uint16' },
+    ],
+    { from: shared.eosio_token_contract.account }
+  );
+  await shared.atomicassets.createtempl(
+    shared.eosio_token_contract.account.name,
+    NFT_COLLECTION,
+    BUDGET_SCHEMA,
+    true,
+    true,
+    100,
+    '',
+    { from: shared.eosio_token_contract.account }
+  );
+
+  await shared.atomicassets.mintasset(
+    shared.eosio_token_contract.account.name,
+    NFT_COLLECTION,
+    BUDGET_SCHEMA,
+    1,
+    shared.treasury_account.name,
+    [
+      { key: 'cardid', value: ['uint16', 1] },
+      { key: 'name', value: ['string', 'xxx'] },
+      { key: 'percentage', value: ['uint16', 5] },
+    ] as any,
+    '',
+    [],
+    { from: shared.eosio_token_contract.account }
+  );
+}
 async function setup_test_user(testuser: Account, tokenSymbol: string) {
   // const testuser = await AccountManager.createAccount('clienttest');
   console.log(`testuser: ${JSON.stringify(testuser, null, 2)}`);

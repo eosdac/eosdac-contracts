@@ -8,6 +8,7 @@
 #include "../../contract-shared-headers/common_utilities.hpp"
 #include "../../contract-shared-headers/daccustodian_shared.hpp"
 #include "../../contract-shared-headers/eosdactokens_shared.hpp"
+#include "nft.hpp"
 #include "external_types.hpp"
 
 using namespace std;

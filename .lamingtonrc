@@ -8,6 +8,7 @@
   "outDir": "artifacts",
   "reporter": "List",
   "bailOnFailure": true,
+  "cppFlags": "-I=/opt/eosio/bin/project/contracts/atomicassets/",
   "include": [
     "daccustodian.cpp",
     "dacdirectory.cpp",
@@ -18,6 +19,7 @@
     "referendum.cpp",
     "eosio.token.cpp",
     "stakevote.cpp",
-    "msigworlds.cpp"
+    "msigworlds.cpp",
+    "atomicassets.cpp"
   ]
 }
