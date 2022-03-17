@@ -140,7 +140,7 @@ namespace eosdac {
     struct [[eosio::table("nftcache"), eosio::contract("daccustodian")]] nftcache {
         name     owner;
         uint64_t nft_id;
-        uint16_t    percentage;
+        uint16_t percentage;
 
         uint64_t primary_key() const { return nft_id; }
         uint64_t by_owner() const { return owner.value; }
@@ -148,8 +148,8 @@ namespace eosdac {
         EOSLIB_SERIALIZE(nftcache, (owner)(nft_id)(percentage))
     };
 
-    using nftcache_table =
-        multi_index<"nftcache"_n, nftcache, indexed_by<"byowner"_n, const_mem_fun<nftcache, uint64_t, &nftcache::by_owner>>>;
+    using nftcache_table = multi_index<"nftcache"_n, nftcache,
+        indexed_by<"byowner"_n, const_mem_fun<nftcache, uint64_t, &nftcache::by_owner>>>;
 
     class daccustodian : public contract {
 
