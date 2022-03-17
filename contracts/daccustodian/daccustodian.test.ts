@@ -2108,6 +2108,61 @@ describe('Daccustodian', () => {
         });
       }
     );
+    context('when owns multiple nfts', async () => {
+      before(async () => {
+        await shared.atomicassets.mintasset(
+          shared.eosio_token_contract.account.name,
+          NFT_COLLECTION,
+          BUDGET_SCHEMA,
+          1,
+          shared.treasury_account.name,
+          [
+            { key: 'cardid', value: ['uint16', 2] },
+            { key: 'name', value: ['string', 'xxx'] },
+            { key: 'percentage', value: ['uint16', 500] }, // 5%
+          ] as any,
+          '',
+          [],
+          { from: shared.eosio_token_contract.account }
+        );
+        await shared.daccustodian_contract.newperiod(
+          'initial new period',
+          dacId,
+          {
+            from: regMembers[0],
+          }
+        );
+        await sleep(1000);
+      });
+      it('should skip the transfer', async () => {
+        await assertBalanceEqual(
+          shared.eosio_token_contract.accountsTable({
+            scope: shared.treasury_account.name,
+          }),
+          '0.0000 TLM'
+        );
+        await assertBalanceEqual(
+          shared.eosio_token_contract.accountsTable({
+            scope: shared.auth_account.name,
+          }),
+          '150.0000 TLM'
+        );
+      });
+      after(async () => {
+        const res = await shared.daccustodian_contract.nftcacheTable({
+          scope: shared.daccustodian_contract.name,
+        });
+        const nft_id = res.rows[1].nft_id;
+        console.log(`res: ${JSON.stringify(res)}`);
+        await shared.atomicassets.transfer(
+          shared.treasury_account.name,
+          'eosio',
+          [nft_id],
+          'move out of the way',
+          { from: shared.treasury_account }
+        );
+      });
+    });
     context(
       'newperiod when transfer amount smaller than treasury',
       async () => {

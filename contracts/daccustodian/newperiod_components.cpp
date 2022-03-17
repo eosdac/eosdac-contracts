@@ -213,11 +213,21 @@ void daccustodian::transferCustodianBudget(const dacdir::dac &dac) {
     
     const auto       nftcache     = nftcache_table{get_self(), get_self().value};
     const auto      index    = nftcache.get_index<"byowner"_n>();
-    const auto itr = index.find(treasury_account.value);
+    auto itr = index.find(treasury_account.value);
     if(itr == index.end()) {
+      // DAC does not own an NFT, we do nothing
       return;
     }
+    
+    // we need to convert this to int64_t so we can use the * operator on asset further down
     const auto p = int64_t(itr->percentage);
+
+    if(++itr != index.end() ) {
+        // DAC owns more than one NFT, the situation is not well-defined, do nothing
+        return;
+    }
+    
+    // percentage value is scaled by 100, so to calculate percent we need to divide by (100 * 100 == 10000)
     const auto amount = std::min(treasury_balance, auth_balance - treasury_balance * p / 10000);
     if (amount.amount > 0) {
         action(permission_level{treasury_account, "xfer"_n}, TLM_TOKEN_CONTRACT, "transfer"_n,
