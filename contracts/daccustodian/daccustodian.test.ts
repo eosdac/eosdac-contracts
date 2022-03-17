@@ -24,6 +24,8 @@ const NFT_COLLECTION = 'alien.worlds';
 const BUDGET_SCHEMA = 'budget';
 
 describe('Daccustodian', () => {
+  let second_nft_id: Number;
+
   before(async () => {
     shared = await SharedTestObjects.getInstance();
   });
@@ -2119,7 +2121,7 @@ describe('Daccustodian', () => {
           [
             { key: 'cardid', value: ['uint16', 2] },
             { key: 'name', value: ['string', 'xxx'] },
-            { key: 'percentage', value: ['uint16', 500] }, // 5%
+            { key: 'percentage', value: ['uint16', 600] }, // 6%
           ] as any,
           '',
           [],
@@ -2152,12 +2154,11 @@ describe('Daccustodian', () => {
         const res = await shared.daccustodian_contract.nftcacheTable({
           scope: shared.daccustodian_contract.name,
         });
-        const nft_id = res.rows[1].nft_id;
-        console.log(`res: ${JSON.stringify(res)}`);
+        second_nft_id = res.rows[1].nft_id;
         await shared.atomicassets.transfer(
           shared.treasury_account.name,
           'eosio',
-          [nft_id],
+          [second_nft_id],
           'move out of the way',
           { from: shared.treasury_account }
         );
@@ -2198,6 +2199,69 @@ describe('Daccustodian', () => {
         });
       }
     );
+    context('logtransfer', async () => {
+      it('should update nftcache table when transfering away', async () => {
+        const res = await shared.daccustodian_contract.nftcacheTable({
+          scope: shared.daccustodian_contract.name,
+          index_position: 2,
+          lower_bound: shared.treasury_account.name,
+          upper_bound: shared.treasury_account.name,
+        });
+        console.log(`res: ${JSON.stringify(res)}`);
+
+        const nft_id = res.rows[0].nft_id;
+        await shared.atomicassets.transfer(
+          shared.treasury_account.name,
+          'eosio',
+          [nft_id],
+          'move out of the way',
+          { from: shared.treasury_account }
+        );
+        await assertRowsEqual(
+          shared.daccustodian_contract.nftcacheTable({
+            scope: shared.daccustodian_contract.name,
+          }),
+          [
+            {
+              owner: 'eosio',
+              nft_id: '1099511627776',
+              percentage: 500,
+            },
+            {
+              owner: 'eosio',
+              nft_id: '1099511627777',
+              percentage: 600,
+            },
+          ]
+        );
+      });
+      it('should update nftcache table when depositing', async () => {
+        await shared.atomicassets.transfer(
+          'eosio',
+          shared.treasury_account.name,
+          [second_nft_id],
+          'deposit nft',
+          { from: new Account('eosio') }
+        );
+        await assertRowsEqual(
+          shared.daccustodian_contract.nftcacheTable({
+            scope: shared.daccustodian_contract.name,
+          }),
+          [
+            {
+              owner: 'eosio',
+              nft_id: '1099511627776',
+              percentage: 500,
+            },
+            {
+              owner: 'treasury',
+              nft_id: '1099511627777',
+              percentage: 600,
+            },
+          ]
+        );
+      });
+    });
   });
 });
 
