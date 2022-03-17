@@ -310,7 +310,7 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
     currentState.save(get_self(), dac_id);
 }
 
-void daccustodian::upsert_nft(uint64_t id, const name new_owner) {
+void daccustodian::upsert_nft(const uint64_t id, const name new_owner) {
     const auto  assets = atomicassets::assets_t(NFT_CONTRACT, new_owner.value);
     const auto &nft    = assets.get(id, fmt("Owner %s does not own NFT with id %s", new_owner, id));
     check(nft.collection_name == NFT_COLLECTION, "Wrong collection! Is %s but expected %s", nft.collection_name,

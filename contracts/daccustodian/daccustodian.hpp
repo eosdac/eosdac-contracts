@@ -249,6 +249,6 @@ namespace eosdac {
         void             validateUnstake(name code, name cand, name dac_id);
         void validateUnstakeAmount(const name &code, const name &cand, const asset &unstake_amount, const name &dac_id);
         void validateMinStake(name account, name dac_id);
-        void upsert_nft(uint64_t id, const name new_owner);
+        void upsert_nft(const uint64_t id, const name new_owner);
     };
 }; // namespace eosdac
