@@ -19,7 +19,6 @@
     "referendum.cpp",
     "eosio.token.cpp",
     "stakevote.cpp",
-    "msigworlds.cpp",
-    "atomicassets.cpp"
+    "msigworlds.cpp"
   ]
 }
