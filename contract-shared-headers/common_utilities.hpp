@@ -77,3 +77,13 @@ template <typename... Args> inline void check(bool pred, const std::string_view 
         check(pred, msg);
     }
 }
+
+template <typename Table, typename Pk, typename Fun>
+void upsert(Table &table, Pk &pk, eosio::name payer, Fun fun) {
+    const auto itr = table.find(pk);
+    if (itr == table.end()) {
+        table.emplace(payer, fun);
+    } else {
+        table.modify(itr, payer, fun);
+    }
+}
