@@ -78,12 +78,27 @@ template <typename... Args> inline void check(bool pred, const std::string_view 
     }
 }
 
-template <typename Table, typename Pk, typename Fun>
-void upsert(Table &table, Pk &pk, eosio::name payer, Fun fun) {
+/**
+ * Helper to insert or update a value in eosio tables. If table entry with 
+ * primary key pk is found, the table entry is updated using the supplied 
+ * updater function, if no table entry exists, it is emplaced using that same 
+ * function.
+ *
+ * @param table - The eosio multi_index instance
+ * @param pk - The primary key of the table entry to insert or update
+ * @param payer - The RAM payer
+ * @param updater - The updater lambda function (e.g. [&](auto &x) { x.id = id; x.key = value;} )
+ * @return true - if a new table entry was created
+ * @return false - if an existing table entry was updated
+ */
+template <typename Table, typename Pk, typename Function>
+bool upsert(Table &table, const Pk &pk, const eosio::name payer, const Function &updater) {
     const auto itr = table.find(pk);
     if (itr == table.end()) {
-        table.emplace(payer, fun);
+        table.emplace(payer, updater);
+        return true;
     } else {
-        table.modify(itr, payer, fun);
+        table.modify(itr, payer, updater);
+        return false;
     }
 }
