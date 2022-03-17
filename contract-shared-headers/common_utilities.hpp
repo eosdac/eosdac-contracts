@@ -92,7 +92,7 @@ template <typename... Args> inline void check(bool pred, const std::string_view 
  * @return false - if an existing table entry was updated
  */
 template <typename Table, typename Pk, typename Function>
-bool upsert(Table &table, const Pk &pk, const eosio::name payer, const Function &updater) {
+inline bool upsert(Table &table, const Pk &pk, const eosio::name payer, const Function &updater) {
     const auto itr = table.find(pk);
     if (itr == table.end()) {
         table.emplace(payer, updater);
