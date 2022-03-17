@@ -2066,6 +2066,22 @@ describe('Daccustodian', () => {
 
       await setup_nfts();
     });
+    context('after initial logmint', async () => {
+      it('nftcache table should contain our NFT', async () => {
+        await assertRowsEqual(
+          shared.daccustodian_contract.nftcacheTable({
+            scope: shared.daccustodian_contract.name,
+          }),
+          [
+            {
+              owner: shared.treasury_account.name,
+              nft_id: '1099511627776',
+              percentage: 500,
+            },
+          ]
+        );
+      });
+    });
     context(
       'newperiod when transfer amount is bigger than treasury',
       async () => {
@@ -2207,8 +2223,6 @@ describe('Daccustodian', () => {
           lower_bound: shared.treasury_account.name,
           upper_bound: shared.treasury_account.name,
         });
-        console.log(`res: ${JSON.stringify(res)}`);
-
         const nft_id = res.rows[0].nft_id;
         await shared.atomicassets.transfer(
           shared.treasury_account.name,
