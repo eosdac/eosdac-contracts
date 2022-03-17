@@ -197,7 +197,6 @@ asset balance_for_type(const dacdir::dac &dac, const dacdir::account_type type) 
     return eosdac::get_balance_graceful(account, TLM_TOKEN_CONTRACT, TLM_SYM);
 }
 
-
 void daccustodian::transferCustodianBudget(const dacdir::dac &dac) {
     const auto treasury_account = dac.account_for_type(dacdir::TREASURY);
 
@@ -210,23 +209,23 @@ void daccustodian::transferCustodianBudget(const dacdir::dac &dac) {
 
     const auto auth_balance     = balance_for_type(dac, dacdir::AUTH);
     const auto treasury_balance = balance_for_type(dac, dacdir::TREASURY);
-    
-    const auto       nftcache     = nftcache_table{get_self(), get_self().value};
-    const auto      index    = nftcache.get_index<"byowner"_n>();
-    auto itr = index.find(treasury_account.value);
-    if(itr == index.end()) {
-      // DAC does not own an NFT, we do nothing
-      return;
+
+    const auto nftcache = nftcache_table{get_self(), get_self().value};
+    const auto index    = nftcache.get_index<"byowner"_n>();
+    auto       itr      = index.find(treasury_account.value);
+    if (itr == index.end()) {
+        // DAC does not own an NFT, we do nothing
+        return;
     }
-    
+
     // we need to convert this to int64_t so we can use the * operator on asset further down
     const auto p = int64_t(itr->percentage);
 
-    if(++itr != index.end() ) {
+    if (++itr != index.end()) {
         // DAC owns more than one NFT, the situation is not well-defined, do nothing
         return;
     }
-    
+
     // percentage value is scaled by 100, so to calculate percent we need to divide by (100 * 100 == 10000)
     const auto amount = std::min(treasury_balance, auth_balance - treasury_balance * p / 10000);
     if (amount.amount > 0) {
@@ -297,7 +296,7 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
     // period. This also implies custodians should not be paid the first time this is called.
     // Distribute pay to the current custodians.
     distributeMeanPay(dac_id);
-    
+
     transferCustodianBudget(found_dac);
 
     // Set custodians for the next period.
@@ -311,16 +310,15 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
     currentState.save(get_self(), dac_id);
 }
 
-
-
 void daccustodian::upsert_nft(uint64_t id, const name new_owner) {
     const auto  assets = atomicassets::assets_t(NFT_CONTRACT, new_owner.value);
     const auto &nft    = assets.get(id, fmt("Owner %s does not own NFT with id %s", new_owner, id));
-    check(nft.collection_name == NFT_COLLECTION, "Wrong collection! Is %s but expected %s", nft.collection_name, NFT_COLLECTION);
+    check(nft.collection_name == NFT_COLLECTION, "Wrong collection! Is %s but expected %s", nft.collection_name,
+        NFT_COLLECTION);
     check(nft.schema_name == BUDGET_SCHEMA, "Wrong schema! Is %s but expected %s", nft.schema_name, BUDGET_SCHEMA);
-    const auto percentage   = nft::get_immutable_attr<uint16_t>(nft, "percentage");
-    auto       nftcache     = nftcache_table{get_self(), get_self().value};
-    
+    const auto percentage = nft::get_immutable_attr<uint16_t>(nft, "percentage");
+    auto       nftcache   = nftcache_table{get_self(), get_self().value};
+
     upsert(nftcache, id, get_self(), [&](auto &x) {
         x.owner      = new_owner;
         x.nft_id     = id;
