@@ -4,12 +4,12 @@
 #include <eosio/singleton.hpp>
 #include <eosio/time.hpp>
 
-#include "../../contract-shared-headers/config.hpp"
 #include "../../contract-shared-headers/common_utilities.hpp"
+#include "../../contract-shared-headers/config.hpp"
 #include "../../contract-shared-headers/daccustodian_shared.hpp"
 #include "../../contract-shared-headers/eosdactokens_shared.hpp"
-#include "nft.hpp"
 #include "external_types.hpp"
+#include "nft.hpp"
 
 using namespace std;
 
@@ -137,6 +137,20 @@ namespace eosdac {
 
     using candperms_table = multi_index<"candperms"_n, candperm>;
 
+    struct [[eosio::table("nftcache"), eosio::contract("daccustodian")]] nftcache {
+        name     owner;
+        uint64_t nft_id;
+        uint16_t    percentage;
+
+        uint64_t primary_key() const { return nft_id; }
+        uint64_t by_owner() const { return owner.value; }
+
+        EOSLIB_SERIALIZE(nftcache, (owner)(nft_id)(percentage))
+    };
+
+    using nftcache_table =
+        multi_index<"nftcache"_n, nftcache, indexed_by<"byowner"_n, const_mem_fun<nftcache, uint64_t, &nftcache::by_owner>>>;
+
     class daccustodian : public contract {
 
       public:
@@ -195,6 +209,16 @@ namespace eosdac {
          */
         ACTION setperm(const name &cand, const name &permission, const name &dac_id);
 
+        /* NFT token log */
+        [[eosio::on_notify(NFT_CONTRACT_STR "::logtransfer")]] void logtransfer(const name collection_name,
+            const name from, const name new_owner, const vector<uint64_t> &asset_ids, const string &memo);
+
+        /* NFT token log */
+        [[eosio::on_notify(NFT_CONTRACT_STR "::logmint")]] void logmint(const uint64_t asset_id,
+            const name authorized_minter, const name collection_name, const name schema_name, const int32_t preset_id,
+            const name new_asset_owner, const atomicdata::ATTRIBUTE_MAP &immutable_data,
+            const atomicdata::ATTRIBUTE_MAP &mutable_data, const vector<asset> &backed_tokens);
+
       private: // Private helper methods used by other actions.
         void    updateVoteWeight(name custodian, int64_t weight, name internal_dac_id);
         void    updateVoteWeights(const vector<name> &votes, int64_t vote_weight, name internal_dac_id);
@@ -203,8 +227,10 @@ namespace eosdac {
         void modifyProxiesWeight(int64_t vote_weight, name oldProxy, name newProxy, name dac_id);
         void assertPeriodTime(contr_config &configs, contr_state &currentState);
         void distributeMeanPay(name internal_dac_id);
-        vector<eosiosystem::permission_level_weight> get_perm_level_weights(const custodians_table &custodians, const name &dac_id);
-        void add_all_auths(const name &accountToChange, const vector<eosiosystem::permission_level_weight> &weights, const name &dac_id, const bool msig = false);
+        vector<eosiosystem::permission_level_weight> get_perm_level_weights(
+            const custodians_table &custodians, const name &dac_id);
+        void add_all_auths(const name &accountToChange, const vector<eosiosystem::permission_level_weight> &weights,
+            const name &dac_id, const bool msig = false);
         void add_all_auths_msig(
             const name &accountToChange, vector<eosiosystem::permission_level_weight> &weights, const name &dac_id);
         void add_auth_to_account(const name &accountToChange, const uint8_t threshold, const name &permission,
@@ -223,5 +249,6 @@ namespace eosdac {
         void             validateUnstake(name code, name cand, name dac_id);
         void validateUnstakeAmount(const name &code, const name &cand, const asset &unstake_amount, const name &dac_id);
         void validateMinStake(name account, name dac_id);
+        void upsert_nft(uint64_t id, const name new_owner);
     };
 }; // namespace eosdac

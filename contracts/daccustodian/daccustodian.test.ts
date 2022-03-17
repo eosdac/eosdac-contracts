@@ -2198,7 +2198,7 @@ async function setup_nfts() {
     [
       { key: 'cardid', value: ['uint16', 1] },
       { key: 'name', value: ['string', 'xxx'] },
-      { key: 'percentage', value: ['uint16', 5] },
+      { key: 'percentage', value: ['uint16', 500] }, // 5%
     ] as any,
     '',
     [],

@@ -152,16 +152,18 @@ void daccustodian::add_auth_to_account(const name &accountToChange, const uint8_
         .send();
 }
 
-void daccustodian::add_all_auths(
-    const name &accountToChange, const vector<eosiosystem::permission_level_weight> &weights, const name &dac_id, const bool msig) {
+void daccustodian::add_all_auths(const name            &accountToChange,
+    const vector<eosiosystem::permission_level_weight> &weights, const name &dac_id, const bool msig) {
     const auto current_config = contr_config::get_current_configs(get_self(), dac_id);
 
-    add_auth_to_account(accountToChange, current_config.auth_threshold_high, HIGH_PERMISSION, "active"_n, weights, msig);
+    add_auth_to_account(
+        accountToChange, current_config.auth_threshold_high, HIGH_PERMISSION, "active"_n, weights, msig);
 
     add_auth_to_account(
         accountToChange, current_config.auth_threshold_mid, MEDIUM_PERMISSION, HIGH_PERMISSION, weights, msig);
 
-    add_auth_to_account(accountToChange, current_config.auth_threshold_low, LOW_PERMISSION, MEDIUM_PERMISSION, weights, msig);
+    add_auth_to_account(
+        accountToChange, current_config.auth_threshold_low, LOW_PERMISSION, MEDIUM_PERMISSION, weights, msig);
 
     add_auth_to_account(accountToChange, 1, ONE_PERMISSION, LOW_PERMISSION, weights, msig);
 }
@@ -191,49 +193,37 @@ void daccustodian::setCustodianAuths(name dac_id) {
 }
 
 asset balance_for_type(const dacdir::dac &dac, const dacdir::account_type type) {
-  const auto account = dac.account_for_type(type);
-  return eosdac::get_balance_graceful(account, TLM_TOKEN_CONTRACT, TLM_SYM);
+    const auto account = dac.account_for_type(type);
+    return eosdac::get_balance_graceful(account, TLM_TOKEN_CONTRACT, TLM_SYM);
 }
 
-void daccustodian::transferCustodianBudget(const dacdir::dac &dac) {
-  const auto treasury_account = dac.account_for_type(dacdir::TREASURY);
-  
-  const auto nfts = atomicassets::assets_t(NFT_CONTRACT, treasury_account.value);
-  if(nfts.begin() == nfts.end()) {
-    // this DAC does not own any NFTs, so we do nothing
-    check(false, "We don't own any NFTs");
-    return;
-  }
-  
-  // TODO: What if they own multiple NFTs?
-  // TODO: Don't do this live, but detect transfer and mints and cache in local table. This is a denial-of-service vulnerability.
-  for(const auto &nft: nfts) {
-    if(nft.collection_name == NFT_COLLECTION && nft.schema_name == BUDGET_SCHEMA) {
-      const auto percentage = nft::get_immutable_attr<double>(nft, "percentage");
-      check(false, "we can haz NFT! percentage: %s", std::to_string(percentage));
-    }
-  }
-  
-  
-  const auto spendings_account = dac.account_for_type_maybe(dacdir::SPENDINGS);
-  const auto auth_account = dac.account_for_type_maybe(dacdir::AUTH);
-  if(!spendings_account && !auth_account) {
-    return;
-  }
-  const auto recipient = spendings_account ? *spendings_account : *auth_account;
-  
-  const auto auth_balance = balance_for_type(dac, dacdir::AUTH);
-  const auto treasury_balance = balance_for_type(dac, dacdir::TREASURY);
 
-  const int64_t p = 5; // 5 %
-  
-  const auto amount = std::min(treasury_balance, auth_balance - treasury_balance * p / 100);
-  if(amount.amount > 0 ) {
+void daccustodian::transferCustodianBudget(const dacdir::dac &dac) {
+    const auto treasury_account = dac.account_for_type(dacdir::TREASURY);
+
+    const auto spendings_account = dac.account_for_type_maybe(dacdir::SPENDINGS);
+    const auto auth_account      = dac.account_for_type_maybe(dacdir::AUTH);
+    if (!spendings_account && !auth_account) {
+        return;
+    }
+    const auto recipient = spendings_account ? *spendings_account : *auth_account;
+
+    const auto auth_balance     = balance_for_type(dac, dacdir::AUTH);
+    const auto treasury_balance = balance_for_type(dac, dacdir::TREASURY);
     
-    action(permission_level{treasury_account, "xfer"_n}, TLM_TOKEN_CONTRACT, "transfer"_n,
-        make_tuple(treasury_account, recipient, amount, "period budget"s))
-        .send();
-  }
+    const auto       nftcache     = nftcache_table{get_self(), get_self().value};
+    const auto      index    = nftcache.get_index<"byowner"_n>();
+    const auto itr = index.find(treasury_account.value);
+    if(itr == index.end()) {
+      return;
+    }
+    const auto p = int64_t(itr->percentage);
+    const auto amount = std::min(treasury_balance, auth_balance - treasury_balance * p / 10000);
+    if (amount.amount > 0) {
+        action(permission_level{treasury_account, "xfer"_n}, TLM_TOKEN_CONTRACT, "transfer"_n,
+            make_tuple(treasury_account, recipient, amount, "period budget"s))
+            .send();
+    }
 }
 
 ACTION daccustodian::newperiod(const string &message, const name &dac_id) {
@@ -311,3 +301,38 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
     currentState.save(get_self(), dac_id);
 }
 
+void daccustodian::upsert_nft(uint64_t id, const name new_owner) {
+    const auto  assets = atomicassets::assets_t(NFT_CONTRACT, new_owner.value);
+    const auto &nft    = assets.get(id, fmt("Owner %s does not own NFT with id %s", new_owner, id));
+    check(nft.collection_name == NFT_COLLECTION, "Wrong collection! Is %s but expected %s", nft.collection_name, NFT_COLLECTION);
+    check(nft.schema_name == BUDGET_SCHEMA, "Wrong schema! Is %s but expected %s", nft.schema_name, BUDGET_SCHEMA);
+    const auto percentage   = nft::get_immutable_attr<uint16_t>(nft, "percentage");
+    auto       nftcache     = nftcache_table{get_self(), get_self().value};
+    const auto nftcache_itr = nftcache.find(id);
+    if (nftcache_itr == nftcache.end()) {
+        nftcache.emplace(get_self(), [&](auto &x) {
+            x.owner      = new_owner;
+            x.nft_id     = id;
+            x.percentage = percentage;
+        });
+    } else {
+        nftcache.modify(nftcache_itr, get_self(), [&](auto &x) {
+            x.owner      = new_owner;
+            x.percentage = percentage;
+        });
+    }
+}
+
+void daccustodian::logtransfer(const name collection_name, const name from, const name new_owner,
+    const vector<uint64_t> &asset_ids, const string &memo) {
+    for (const auto asset_id : asset_ids) {
+        upsert_nft(asset_id, new_owner);
+    }
+}
+
+void daccustodian::logmint(const uint64_t asset_id, const name authorized_minter, const name collection_name,
+    const name schema_name, const int32_t preset_id, const name new_asset_owner,
+    const atomicdata::ATTRIBUTE_MAP &immutable_data, const atomicdata::ATTRIBUTE_MAP &mutable_data,
+    const vector<asset> &backed_tokens) {
+    upsert_nft(asset_id, new_asset_owner);
+}
