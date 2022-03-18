@@ -67,8 +67,6 @@ export class SharedTestObjects {
     // await sleep(500);
     // EOSManager.initWithDefaults();
 
-    await sleep(3000);
-
     this.auth_account = await debugPromise(
       AccountManager.createAccount('eosdacauth'),
       'create eosdacauth'
@@ -125,7 +123,6 @@ export class SharedTestObjects {
       ),
       'created dacproposals'
     );
-    // await sleep(2000);
     this.dacescrow_contract = await debugPromise(
       ContractDeployer.deployWithName(
         'contracts/dacescrow/dacescrow',
@@ -133,8 +130,6 @@ export class SharedTestObjects {
       ),
       'created dacescrow'
     );
-    // await sleep(2000);
-
     this.msigworlds_contract = await debugPromise(
       ContractDeployer.deployWithName<Msigworlds>(
         'contracts/msigworlds/msigworlds',
