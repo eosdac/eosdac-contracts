@@ -313,9 +313,9 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
 void daccustodian::upsert_nft(const uint64_t id, const name new_owner) {
     const auto  assets = atomicassets::assets_t(NFT_CONTRACT, new_owner.value);
     const auto &nft    = assets.get(id, fmt("Owner %s does not own NFT with id %s", new_owner, id));
-    check(nft.collection_name == NFT_COLLECTION, "Wrong collection! Is %s but expected %s", nft.collection_name,
-        NFT_COLLECTION);
-    check(nft.schema_name == BUDGET_SCHEMA, "Wrong schema! Is %s but expected %s", nft.schema_name, BUDGET_SCHEMA);
+    if(nft.collection_name != NFT_COLLECTION || nft.schema_name != BUDGET_SCHEMA) {
+      return;  
+    }
     const auto percentage = nft::get_immutable_attr<uint16_t>(nft, "percentage");
     auto       nftcache   = nftcache_table{get_self(), get_self().value};
 
