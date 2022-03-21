@@ -55,6 +55,10 @@ namespace eosdac {
                 for (const auto &[key, account] : accounts) {
                     check(is_account(account), "ERR::ACCOUNT_DOES_NOT_EXIST: Account '%s' does not exist", account);
                 }
+                
+                const auto owner_already_owns_a_dac = dac_for_owner(owner);
+                check(!owner_already_owns_a_dac, "Owner %s already owns a dac %s", owner, owner_already_owns_a_dac->dac_id);
+                
                 _dacs.emplace(owner, [&](dac &d) {
                     d.owner    = owner;
                     d.dac_id   = dac_id;

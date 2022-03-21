@@ -216,5 +216,21 @@ describe('Dacdirectory', () => {
         'ERR::DAC_EXISTS_SYMBOL'
       );
     });
+    it('Should fail if owner already owns a dac', async () => {
+      await l.assertEOSErrorIncludesMessage(
+        shared.dacdirectory_contract.regdac(
+          shared.auth_account.name,
+          'fjkds',
+          { contract: shared.dac_token_contract.account.name, sym: '4,DAOY' },
+          'dactitle',
+          [],
+          [],
+          {
+            from: shared.auth_account,
+          }
+        ),
+        'already owns a dac'
+      );
+    });
   });
 });
