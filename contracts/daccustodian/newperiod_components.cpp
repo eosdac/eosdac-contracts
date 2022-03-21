@@ -210,21 +210,22 @@ void daccustodian::transferCustodianBudget(const dacdir::dac &dac) {
     const auto auth_balance     = balance_for_type(dac, dacdir::AUTH);
     const auto treasury_balance = balance_for_type(dac, dacdir::TREASURY);
 
-    const auto nftcache = nftcache_table{get_self(), get_self().value};
-    const auto index    = nftcache.get_index<"byowner"_n>();
-    auto       itr      = index.find(treasury_account.value);
+    const auto nftcache = nftcache_table{get_self(), dac.dac_id.value};
+    const auto index    = nftcache.get_index<"valdesc"_n>();
+
+    const auto index_key = nftcache::template_and_value_key_ascending(BUDGET_TEMPLATE_ID, 0);
+    auto       itr       = index.lower_bound(index_key);
     if (itr == index.end()) {
-        // DAC does not own an NFT, we do nothing
+        // DAC does not own any NFTs, we do nothing
+        return;
+    }
+    if (itr->template_id != BUDGET_TEMPLATE_ID) {
+        // DAC does own some NFTs, but none with the correct template ID
         return;
     }
 
     // we need to convert this to int64_t so we can use the * operator on asset further down
-    const auto p = int64_t(itr->percentage);
-
-    if (++itr != index.end()) {
-        // DAC owns more than one NFT, the situation is not well-defined, do nothing
-        return;
-    }
+    const auto p = int64_t(itr->value);
 
     // percentage value is scaled by 100, so to calculate percent we need to divide by (100 * 100 == 10000)
     const auto amount = std::min(treasury_balance, auth_balance - treasury_balance * p / 10000);
@@ -310,26 +311,43 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
     currentState.save(get_self(), dac_id);
 }
 
-void daccustodian::upsert_nft(const uint64_t id, const name new_owner) {
+void daccustodian::upsert_nft(const uint64_t id, const std::optional<name> old_owner_optional, const name new_owner) {
     const auto  assets = atomicassets::assets_t(NFT_CONTRACT, new_owner.value);
     const auto &nft    = assets.get(id, fmt("Owner %s does not own NFT with id %s", new_owner, id));
-    if(nft.collection_name != NFT_COLLECTION || nft.schema_name != BUDGET_SCHEMA) {
-      return;  
+    if (nft.collection_name != NFT_COLLECTION || nft.schema_name != BUDGET_SCHEMA || nft.template_id < 0) {
+        return;
     }
     const auto percentage = nft::get_immutable_attr<uint16_t>(nft, "percentage");
-    auto       nftcache   = nftcache_table{get_self(), get_self().value};
 
-    upsert(nftcache, id, get_self(), [&](auto &x) {
-        x.owner      = new_owner;
-        x.nft_id     = id;
-        x.percentage = percentage;
-    });
+    if (old_owner_optional) {
+        const auto old_owner        = *old_owner_optional;
+        const auto old_dac_optional = dacdir::dac_for_owner(old_owner);
+        if (old_dac_optional) {
+            const auto old_dac   = *old_dac_optional;
+            auto       nftcache  = nftcache_table{get_self(), old_dac.dac_id.value};
+            const auto to_delete = nftcache.find(id);
+            if (to_delete != nftcache.end()) {
+                nftcache.erase(to_delete);
+            }
+        }
+    }
+
+    const auto new_dac_optional = dacdir::dac_for_owner(new_owner);
+    if (new_dac_optional) {
+        const auto new_dac  = *new_dac_optional;
+        auto       nftcache = nftcache_table{get_self(), new_dac.dac_id.value};
+        upsert(nftcache, id, get_self(), [&](auto &x) {
+            x.nft_id      = id;
+            x.template_id = nft.template_id;
+            x.value       = percentage;
+        });
+    }
 }
 
 void daccustodian::logtransfer(const name collection_name, const name from, const name new_owner,
     const vector<uint64_t> &asset_ids, const string &memo) {
     for (const auto asset_id : asset_ids) {
-        upsert_nft(asset_id, new_owner);
+        upsert_nft(asset_id, from, new_owner);
     }
 }
 
@@ -337,5 +355,5 @@ void daccustodian::logmint(const uint64_t asset_id, const name authorized_minter
     const name schema_name, const int32_t preset_id, const name new_asset_owner,
     const atomicdata::ATTRIBUTE_MAP &immutable_data, const atomicdata::ATTRIBUTE_MAP &mutable_data,
     const vector<asset> &backed_tokens) {
-    upsert_nft(asset_id, new_asset_owner);
+    upsert_nft(asset_id, {}, new_asset_owner);
 }

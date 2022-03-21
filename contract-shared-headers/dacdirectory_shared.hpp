@@ -90,6 +90,17 @@ namespace eosdac {
             return *dac_idx;
         }
         
+        const std::optional<dac> dac_for_owner(eosio::name owner) {
+          const auto dactable = dac_table{"dacdirectory"_n, "dacdirectory"_n.value};
+          const auto      index    = dactable.get_index<"byowner"_n>();
+          const auto itr = index.find(owner.value);
+          if(itr != index.end()) {
+            return *itr;
+          } else {
+            return {};
+          }
+        }
+        
         
     } // namespace dacdir
 } // namespace eosdac

@@ -138,18 +138,34 @@ namespace eosdac {
     using candperms_table = multi_index<"candperms"_n, candperm>;
 
     struct [[eosio::table("nftcache"), eosio::contract("daccustodian")]] nftcache {
-        name     owner;
         uint64_t nft_id;
-        uint16_t percentage;
+        int32_t  template_id;
+        uint64_t value;
 
         uint64_t primary_key() const { return nft_id; }
-        uint64_t by_owner() const { return owner.value; }
 
-        EOSLIB_SERIALIZE(nftcache, (owner)(nft_id)(percentage))
+        static uint128_t template_and_value_key_descending(int32_t template_id, uint64_t value) {
+            check(template_id >= 0, "index will not work with template_id < 0");
+            return (uint128_t(template_id) << 64) | uint128_t(std::numeric_limits<uint64_t>::max() - value);
+        }
+
+        static uint128_t template_and_value_key_ascending(int32_t template_id, uint64_t value) {
+            check(template_id >= 0, "index will not work with template_id < 0");
+          return (uint128_t(template_id) << 64) | uint128_t(value);
+        }
+        
+        uint128_t by_template_and_value_descending() const {
+            return template_and_value_key_descending(template_id, value);
+        }
+
+        uint128_t by_template_and_value_ascending() const {
+            return template_and_value_key_ascending(template_id, value);
+        }
     };
 
     using nftcache_table = multi_index<"nftcache"_n, nftcache,
-        indexed_by<"byowner"_n, const_mem_fun<nftcache, uint64_t, &nftcache::by_owner>>>;
+        indexed_by<"valasc"_n, const_mem_fun<nftcache, uint128_t, &nftcache::by_template_and_value_ascending>>,
+        indexed_by<"valdesc"_n, const_mem_fun<nftcache, uint128_t, &nftcache::by_template_and_value_descending>>>;
 
     class daccustodian : public contract {
 
@@ -249,6 +265,6 @@ namespace eosdac {
         void             validateUnstake(name code, name cand, name dac_id);
         void validateUnstakeAmount(const name &code, const name &cand, const asset &unstake_amount, const name &dac_id);
         void validateMinStake(name account, name dac_id);
-        void upsert_nft(const uint64_t id, const name new_owner);
+        void upsert_nft(const uint64_t id, const std::optional<name> old_owner_optional, const name new_owner);
     };
 }; // namespace eosdac
