@@ -146,12 +146,12 @@ namespace eosdac {
 
         static uint128_t template_and_value_key_descending(int32_t template_id, uint64_t value) {
             check(template_id >= 0, "index will not work with template_id < 0");
-            return (uint128_t(template_id) << 64) | uint128_t(std::numeric_limits<uint64_t>::max() - value);
+            return (uint128_t(template_id) << uint128_t(64)) | uint128_t(std::numeric_limits<uint64_t>::max() - value);
         }
 
         static uint128_t template_and_value_key_ascending(int32_t template_id, uint64_t value) {
             check(template_id >= 0, "index will not work with template_id < 0");
-          return (uint128_t(template_id) << 64) | uint128_t(value);
+          return (uint128_t(template_id) << uint128_t(64)) | uint128_t(value);
         }
         
         uint128_t by_template_and_value_descending() const {
