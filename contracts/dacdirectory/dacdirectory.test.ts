@@ -159,6 +159,7 @@ describe('Dacdirectory', () => {
       );
     });
     it('Should succeed for a new token', async () => {
+      await shared.setup_new_auth_account();
       await shared.dacdirectory_contract.regdac(
         shared.auth_account.name,
         'legaldacid',
