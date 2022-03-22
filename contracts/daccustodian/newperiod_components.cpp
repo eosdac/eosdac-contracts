@@ -215,15 +215,11 @@ void daccustodian::transferCustodianBudget(const dacdir::dac &dac) {
 
     const auto index_key = nftcache::template_and_value_key_ascending(BUDGET_TEMPLATE_ID, 0);
     auto       itr       = index.lower_bound(index_key);
-    if (itr == index.end()) {
-        // DAC does not own any NFTs, we do nothing
+    if (itr == index.end() || itr->template_id != BUDGET_TEMPLATE_ID) {
+        // DAC does not own any budget NFTs, we do nothing
         return;
     }
-    if (itr->template_id != BUDGET_TEMPLATE_ID) {
-        // DAC does own some NFTs, but none with the correct template ID
-        return;
-    }
-
+    
     // we need to convert this to int64_t so we can use the * operator on asset further down
     const auto p = int64_t(itr->value);
 
