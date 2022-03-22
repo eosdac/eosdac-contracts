@@ -4,8 +4,8 @@ using namespace eosdac;
 ACTION daccustodian::updateconfige(const contr_config &new_config, const name &dac_id) {
 
     dacdir::dac dacForScope  = dacdir::dac_for_id(dac_id);
-    auto        auth_account = dacForScope.account_for_type(dacdir::AUTH);
-    require_auth(auth_account);
+    auto        owner = dacForScope.owner;
+    require_auth(owner);
     check(new_config.numelected <= 67,
         "ERR::UPDATECONFIG_INVALID_NUM_ELECTED::The number of elected custodians must be <= 67");
     check(new_config.maxvotes <= new_config.numelected,
@@ -33,9 +33,9 @@ ACTION daccustodian::updateconfige(const contr_config &new_config, const name &d
             "ERR::UPDATECONFIG_NO_SERVICE_ACCOUNT should_pay_via_service_provider is true, but no SERVICE account is set.");
     }
     configscontainer config_singleton(_self, dac_id.value);
-    config_singleton.set(new_config, auth_account);
+    config_singleton.set(new_config, owner);
 
     contr_state currentState = contr_state::get_current_state(_self, dac_id);
-    currentState.save(_self, dac_id, auth_account);
+    currentState.save(_self, dac_id, owner);
     print("Succesfully updated the daccustodian config for: ", dac_id);
 }

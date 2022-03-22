@@ -170,7 +170,7 @@ namespace eosdac {
     void eosdactokens::newmemterms(string terms, string hash, name dac_id) {
 
         dacdir::dac dac          = dacdir::dac_for_id(dac_id);
-        eosio::name auth_account = dac.account_for_type(dacdir::AUTH);
+        eosio::name auth_account = dac.owner;
         require_auth(auth_account);
 
         // sample IPFS: QmXjkFQjnD8i8ntmwehoAHBfJEApETx8ebScyVzAHqgjpD
@@ -229,7 +229,7 @@ namespace eosdac {
     void eosdactokens::updateterms(uint64_t termsid, string terms, name dac_id) {
 
         dacdir::dac dac          = dacdir::dac_for_id(dac_id);
-        eosio::name auth_account = dac.account_for_type(dacdir::AUTH);
+        eosio::name auth_account = dac.owner;
         require_auth(auth_account);
 
         check(terms.length() <= 256,
@@ -420,7 +420,7 @@ namespace eosdac {
 
     void eosdactokens::stakeconfig(stake_config config, symbol token_symbol) {
         dacdir::dac dac          = dacdir::dac_for_symbol(extended_symbol{token_symbol, get_self()});
-        eosio::name auth_account = dac.account_for_type(dacdir::AUTH);
+        eosio::name auth_account = dac.owner;
         require_auth(auth_account);
 
         config.save(get_self(), dac.dac_id, get_self());

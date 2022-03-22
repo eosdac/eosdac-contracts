@@ -33,7 +33,7 @@ namespace eosdac {
 
         auto dac      = dacdir::dac_for_id(dac_id);
         auto treasury = dac.account_for_type(dacdir::TREASURY);
-        auto auth     = dac.account_for_type(dacdir::AUTH);
+        auto auth     = dac.owner;
         check(arbitrator != auth && arbitrator != treasury, "Arbitrator must be a third party");
 
         uint32_t approval_duration = current_configs(dac_id).approval_duration;
@@ -87,7 +87,7 @@ namespace eosdac {
     void dacproposals::_voteprop(name custodian, name proposal_id, uint8_t vote, name dac_id) {
         require_auth(custodian);
 
-        auto auth_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::AUTH);
+        auto auth_account = dacdir::dac_for_id(dac_id).owner;
         require_auth(auth_account);
 
         assertValidMember(custodian, dac_id);
@@ -136,7 +136,7 @@ namespace eosdac {
 
     ACTION dacproposals::delegatevote(name custodian, name proposal_id, name delegatee_custodian, name dac_id) {
         require_auth(custodian);
-        auto auth_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::AUTH);
+        auto auth_account = dacdir::dac_for_id(dac_id).owner;
         require_auth(auth_account);
 
         assertValidMember(custodian, dac_id);
@@ -171,7 +171,7 @@ namespace eosdac {
 
     ACTION dacproposals::delegatecat(name custodian, uint64_t category, name delegatee_custodian, name dac_id) {
         require_auth(custodian);
-        auto auth_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::AUTH);
+        auto auth_account = dacdir::dac_for_id(dac_id).owner;
         require_auth(auth_account);
         assertValidMember(custodian, dac_id);
         check(custodian != delegatee_custodian, "ERR::DELEGATEVOTE_DELEGATE_SELF::Cannot delegate voting to yourself.");
@@ -361,14 +361,14 @@ namespace eosdac {
 
         const proposal &prop = proposals.get(proposal_id.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found.");
         if (!has_auth(prop.proposer)) {
-            auto auth_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::AUTH);
+            auto auth_account = dacdir::dac_for_id(dac_id).owner;
             require_auth(auth_account);
         }
     }
 
     ACTION dacproposals::updateconfig(config new_config, name dac_id) {
 
-        auto auth_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::AUTH);
+        auto auth_account = dacdir::dac_for_id(dac_id).owner;
         require_auth(auth_account);
 
         configs_table configs(_self, dac_id.value);
@@ -376,7 +376,7 @@ namespace eosdac {
     }
 
     ACTION dacproposals::clearconfig(name dac_id) {
-        auto auth_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::AUTH);
+        auto auth_account = dacdir::dac_for_id(dac_id).owner;
         require_auth(auth_account);
 
         configs_table configs(_self, dac_id.value);

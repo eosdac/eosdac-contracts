@@ -4,7 +4,7 @@ void daccustodian::distributeMeanPay(name dac_id) {
     custodians_table  custodians(get_self(), dac_id.value);
     pending_pay_table pending_pay(get_self(), dac_id.value);
     contr_config      configs      = contr_config::get_current_configs(get_self(), dac_id);
-    name              auth_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::AUTH);
+    name              owner = dacdir::dac_for_id(dac_id).owner;
 
     // Find the mean pay using a temporary vector to hold the requestedpay amounts.
     extended_asset total = configs.requested_pay_max - configs.requested_pay_max;
@@ -42,7 +42,7 @@ void daccustodian::distributeMeanPay(name dac_id) {
             } else {
                 print("\n Creating pending pay amount with : ", extended_asset(meanAsset, total.contract));
 
-                pending_pay.emplace(auth_account, [&](pay &p) {
+                pending_pay.emplace(owner, [&](pay &p) {
                     p.key      = pending_pay.available_primary_key();
                     p.receiver = cust.cust_name;
                     p.quantity = extended_asset(meanAsset, total.contract);
@@ -69,7 +69,7 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
     custodians_table custodians(get_self(), dac_id.value);
     candidates_table registered_candidates(get_self(), dac_id.value);
     contr_config     configs      = contr_config::get_current_configs(get_self(), dac_id);
-    name             auth_account = dacdir::dac_for_id(dac_id).account_for_type(dacdir::AUTH);
+    name             auth_account = dacdir::dac_for_id(dac_id).owner;
 
     auto byvotes  = registered_candidates.get_index<"byvotesrank"_n>();
     auto cand_itr = byvotes.begin();
@@ -186,10 +186,9 @@ void daccustodian::setMsigAuths(name dac_id) {
 void daccustodian::setCustodianAuths(name dac_id) {
     const auto custodians      = custodians_table{get_self(), dac_id.value};
     const auto dac             = dacdir::dac_for_id(dac_id);
-    const auto accountToChange = dac.account_for_type(dacdir::AUTH);
     const auto weights         = get_perm_level_weights(custodians, dac_id);
 
-    add_all_auths(accountToChange, weights, dac_id);
+    add_all_auths(dac.owner, weights, dac_id);
 }
 
 asset balance_for_type(const dacdir::dac &dac, const dacdir::account_type type) {
@@ -201,13 +200,13 @@ void daccustodian::transferCustodianBudget(const dacdir::dac &dac) {
     const auto treasury_account = dac.account_for_type(dacdir::TREASURY);
 
     const auto spendings_account = dac.account_for_type_maybe(dacdir::SPENDINGS);
-    const auto auth_account      = dac.account_for_type_maybe(dacdir::AUTH);
+    const auto auth_account      = dac.owner;
     if (!spendings_account && !auth_account) {
         return;
     }
-    const auto recipient = spendings_account ? *spendings_account : *auth_account;
+    const auto recipient = spendings_account ? *spendings_account : auth_account;
 
-    const auto auth_balance     = balance_for_type(dac, dacdir::AUTH);
+    const auto auth_balance     = eosdac::get_balance_graceful(auth_account, TLM_TOKEN_CONTRACT, TLM_SYM);
     const auto treasury_balance = balance_for_type(dac, dacdir::TREASURY);
 
     const auto nftcache = nftcache_table{get_self(), dac.dac_id.value};
@@ -234,8 +233,7 @@ void daccustodian::transferCustodianBudget(const dacdir::dac &dac) {
 
 ACTION daccustodian::newperiod(const string &message, const name &dac_id) {
     /* This is a housekeeping method, it can be called by anyone by design */
-    const auto auth_account = dacdir::dac_for_id(dac_id).account_for_type_maybe(dacdir::AUTH);
-    const auto sender       = auth_account ? *auth_account : get_self();
+    const auto sender = dacdir::dac_for_id(dac_id).owner;
     eosio::action(eosio::permission_level{sender, "owner"_n}, get_self(), "runnewperiod"_n, make_tuple(message, dac_id))
         .send();
 }

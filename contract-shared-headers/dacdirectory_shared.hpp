@@ -9,7 +9,6 @@ namespace eosdac {
     namespace dacdir {
 
         enum account_type : uint8_t {
-            AUTH        = 0,
             TREASURY    = 1,
             CUSTODIAN   = 2,
             MSIGOWNED   = 3,

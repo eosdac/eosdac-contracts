@@ -298,7 +298,6 @@ export class SharedTestObjects {
     planet: ?Account
   ) {
     let accounts = [
-      { key: Account_type.AUTH, value: this.auth_account.name },
       {
         key: Account_type.CUSTODIAN,
         value: this.daccustodian_contract.account.name,
@@ -856,7 +855,6 @@ async function setup_external(name: string) {
 }
 
 export enum Account_type {
-  AUTH = 0,
   TREASURY = 1,
   CUSTODIAN = 2,
   MSIGOWNED = 3,

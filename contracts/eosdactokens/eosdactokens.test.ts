@@ -200,7 +200,6 @@ describe('EOSDacTokens', () => {
             'abc dac_title',
             [],
             [
-              { key: Account_type.AUTH, value: shared.auth_account.name },
               {
                 key: Account_type.CUSTODIAN,
                 value: shared.daccustodian_contract.account.name,

@@ -3,7 +3,7 @@ using namespace eosdac;
 
 ACTION daccustodian::paycpu(const name &dac_id) {
     dacdir::dac dac_inst     = dacdir::dac_for_id(dac_id);
-    auto        auth_account = dac_inst.account_for_type(dacdir::AUTH);
+    auto        auth_account = dac_inst.owner;
     require_auth(auth_account);
 
     auto     size   = transaction_size();

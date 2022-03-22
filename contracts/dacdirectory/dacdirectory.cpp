@@ -46,19 +46,17 @@ namespace eosdac {
                 }
                 check(length > 4, "ERR::DAC_ID_SHORT::DAC ID must be at least 5 characters");
 
-                if (accounts.find(AUTH) != accounts.end()) {
-                    require_auth(accounts.at(AUTH));
-                }
                 if (accounts.find(TREASURY) != accounts.end()) {
                     require_auth(accounts.at(TREASURY));
                 }
                 for (const auto &[key, account] : accounts) {
                     check(is_account(account), "ERR::ACCOUNT_DOES_NOT_EXIST: Account '%s' does not exist", account);
                 }
-                
+
                 const auto owner_already_owns_a_dac = dac_for_owner(owner);
-                check(!owner_already_owns_a_dac, "Owner %s already owns a dac %s", owner, owner_already_owns_a_dac->dac_id);
-                
+                check(!owner_already_owns_a_dac, "Owner %s already owns a dac %s", owner,
+                    owner_already_owns_a_dac->dac_id);
+
                 _dacs.emplace(owner, [&](dac &d) {
                     d.owner    = owner;
                     d.dac_id   = dac_id;
@@ -96,9 +94,7 @@ namespace eosdac {
 
             require_auth(dac_inst->owner);
 
-            if (type == AUTH) {
-                require_auth(account);
-            } else if (type == TREASURY) {
+            if (type == TREASURY) {
                 require_auth(account);
             }
 

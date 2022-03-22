@@ -35,7 +35,7 @@ void referendum::updateconfig(config_item config, name dac_id) {
     checkDAC(dac_id);
 
     auto dac          = dacdir::dac_for_id(dac_id);
-    auto auth_account = dac.account_for_type(dacdir::AUTH);
+    auto auth_account = dac.owner;
     require_auth(auth_account);
 
     config.save(get_self(), dac_id, auth_account);
@@ -340,7 +340,7 @@ void referendum::clearconfig(name dac_id) {
     checkDAC(dac_id);
 
     auto dac          = dacdir::dac_for_id(dac_id);
-    auto auth_account = dac.account_for_type(dacdir::AUTH);
+    auto auth_account = dac.owner;
     require_auth(auth_account);
 
     config_container c = config_container(get_self(), dac_id.value);
@@ -436,7 +436,7 @@ uint8_t referendum::calculateStatus(name referendum_id, name dac_id) {
 void referendum::proposeMsig(referendum_data ref, name dac_id) {
     auto dac                = dacdir::dac_for_id(dac_id);
     auto custodian_contract = dac.account_for_type(dacdir::CUSTODIAN);
-    auto auth_account       = dac.account_for_type(dacdir::AUTH);
+    auto auth_account       = dac.owner;
 
     transaction trx;
     trx.actions = ref.acts;
