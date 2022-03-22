@@ -207,8 +207,12 @@ namespace eosdac {
 #ifdef DEBUG
         ACTION resetvotes(const name &voter, const name &dac_id);
         ACTION resetcands(const name &dac_id);
+
 #endif
 
+#ifdef IS_DEV
+        ACTION indextest();
+#endif
         /**
          * This action is used to register a custom permission that will be used in the multisig instead of active.
          *

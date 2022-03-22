@@ -2217,6 +2217,11 @@ describe('Daccustodian', () => {
         );
       });
     });
+    context('index', async () => {
+      it('should sort correctly', async () => {
+        await shared.daccustodian_contract.indextest();
+      });
+    });
   });
 });
 

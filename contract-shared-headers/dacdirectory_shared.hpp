@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common_utilities.hpp"
+#include "config.hpp"
 #include <eosio/eosio.hpp>
 #include <eosio/multi_index.hpp>
 #include <eosio/symbol.hpp>
@@ -76,12 +77,12 @@ namespace eosdac {
             eosio::indexed_by<"bysymbol"_n, eosio::const_mem_fun<dac, uint128_t, &dac::by_symbol>>>;
 
         const dac dac_for_id(eosio::name id) {
-            dac_table dactable = dac_table("dacdirectory"_n, "dacdirectory"_n.value);
+            dac_table dactable = dac_table(DACDIRECTORY_CONTRACT, DACDIRECTORY_CONTRACT.value);
             return dactable.get(id.value, "ERR::DAC_NOT_FOUND::DAC not found in directory");
         }
 
         const dac dac_for_symbol(eosio::extended_symbol sym) {
-            dac_table dactable = dac_table("dacdirectory"_n, "dacdirectory"_n.value);
+            dac_table dactable = dac_table(DACDIRECTORY_CONTRACT, DACDIRECTORY_CONTRACT.value);
             auto      index    = dactable.get_index<"bysymbol"_n>();
             auto      dac_idx  = index.find(eosdac::raw_from_extended_symbol(sym));
             eosio::check(dac_idx != index.end() && dac_idx->symbol.get_symbol().code() == sym.get_symbol().code(),
@@ -90,7 +91,7 @@ namespace eosdac {
         }
         
         const std::optional<dac> dac_for_owner(eosio::name owner) {
-          const auto dactable = dac_table{"dacdirectory"_n, "dacdirectory"_n.value};
+          const auto dactable = dac_table{DACDIRECTORY_CONTRACT, DACDIRECTORY_CONTRACT.value};
           const auto      index    = dactable.get_index<"byowner"_n>();
           const auto itr = index.find(owner.value);
           if(itr != index.end()) {

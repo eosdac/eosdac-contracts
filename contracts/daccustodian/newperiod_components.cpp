@@ -351,3 +351,47 @@ void daccustodian::logmint(const uint64_t asset_id, const name authorized_minter
     const vector<asset> &backed_tokens) {
     upsert_nft(asset_id, {}, new_asset_owner);
 }
+
+#ifdef IS_DEV
+void daccustodian::indextest() {
+  const auto dacs = dacdir::dac_table{DACDIRECTORY_CONTRACT, DACDIRECTORY_CONTRACT.value};
+  const auto dac = dacs.begin();
+  auto       _nftcache = nftcache_table{get_self(), dac->dac_id.value};
+
+  auto data = std::vector<nftcache>{
+    {.nft_id=1, .template_id=123, .value=92},
+    {.nft_id=2, .template_id=123, .value=561},
+    {.nft_id=3, .template_id=123, .value=239},
+    {.nft_id=4, .template_id=123, .value=966},
+    {.nft_id=5, .template_id=123, .value=380},
+    {.nft_id=6, .template_id=123, .value=1},
+    {.nft_id=7, .template_id=123, .value=518},
+    {.nft_id=8, .template_id=123, .value=654},
+    {.nft_id=9, .template_id=123, .value=876},
+    {.nft_id=10, .template_id=123, .value=299},
+    {.nft_id=11, .template_id=123, .value=20},
+    {.nft_id=12, .template_id=123, .value=31},
+  };
+  for(const auto &nft: data) {
+    _nftcache.emplace(get_self(), [&](auto &x) {
+      x.nft_id = nft.nft_id;
+      x.template_id = nft.template_id;
+      x.value = nft.value;
+    });
+  }
+  
+  // sort by value descending 
+  std::sort(data.begin(), data.end(),[](auto &a, auto &b) {
+        return a.value > b.value;
+    });
+
+  const auto index    = _nftcache.get_index<"valdesc"_n>();
+  const auto index_key = nftcache::template_and_value_key_ascending(123, 0);
+  auto       itr       = index.lower_bound(index_key);  
+  
+  for(const auto &nft: data) {
+    check(itr->value == nft.value && itr->template_id == nft.template_id, "index is not correctly sorted expected: %s actual: %s template_id: %s nft_id: %s", nft.value, itr->value, itr->template_id, itr->nft_id);
+    itr++;
+  }  
+}
+#endif
