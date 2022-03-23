@@ -2075,17 +2075,17 @@ describe('Daccustodian', () => {
           [
             {
               nft_id: '1099511627776',
-              template_id: 1,
+              schema_name: BUDGET_SCHEMA,
               value: 400,
             },
             {
               nft_id: '1099511627777',
-              template_id: 1,
+              schema_name: BUDGET_SCHEMA,
               value: 500,
             },
             {
               nft_id: '1099511627778',
-              template_id: 1,
+              schema_name: BUDGET_SCHEMA,
               value: 300,
             },
           ]
@@ -2209,7 +2209,7 @@ describe('Daccustodian', () => {
           }),
           [
             {
-              template_id: 1,
+              schema_name: BUDGET_SCHEMA,
               nft_id: '1099511627777',
               value: 500,
             },

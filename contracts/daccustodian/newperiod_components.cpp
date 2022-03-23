@@ -212,9 +212,9 @@ void daccustodian::transferCustodianBudget(const dacdir::dac &dac) {
     const auto nftcache = nftcache_table{get_self(), dac.dac_id.value};
     const auto index    = nftcache.get_index<"valdesc"_n>();
 
-    const auto index_key = nftcache::template_and_value_key_ascending(BUDGET_TEMPLATE_ID, 0);
+    const auto index_key = nftcache::template_and_value_key_ascending(BUDGET_SCHEMA, 0);
     auto       itr       = index.lower_bound(index_key);
-    if (itr == index.end() || itr->template_id != BUDGET_TEMPLATE_ID) {
+    if (itr == index.end() || itr->schema_name != BUDGET_SCHEMA) {
         // DAC does not own any budget NFTs, we do nothing
         return;
     }
@@ -308,7 +308,7 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
 void daccustodian::upsert_nft(const uint64_t id, const std::optional<name> old_owner_optional, const name new_owner) {
     const auto  assets = atomicassets::assets_t(NFT_CONTRACT, new_owner.value);
     const auto &nft    = assets.get(id, fmt("Owner %s does not own NFT with id %s", new_owner, id));
-    if (nft.collection_name != NFT_COLLECTION || nft.schema_name != BUDGET_SCHEMA || nft.template_id < 0) {
+    if (nft.collection_name != NFT_COLLECTION || nft.schema_name != BUDGET_SCHEMA) {
         return;
     }
     const auto percentage = nft::get_immutable_attr<uint16_t>(nft, "percentage");
@@ -332,7 +332,7 @@ void daccustodian::upsert_nft(const uint64_t id, const std::optional<name> old_o
         auto       nftcache = nftcache_table{get_self(), new_dac.dac_id.value};
         upsert(nftcache, id, get_self(), [&](auto &x) {
             x.nft_id      = id;
-            x.template_id = nft.template_id;
+            x.schema_name = nft.schema_name;
             x.value       = percentage;
         });
     }
@@ -358,24 +358,25 @@ void daccustodian::indextest() {
   const auto dac = dacs.begin();
   auto       _nftcache = nftcache_table{get_self(), dac->dac_id.value};
 
+  const auto schema_name = "myschema"_n;
   auto data = std::vector<nftcache>{
-    {.nft_id=1, .template_id=123, .value=92},
-    {.nft_id=2, .template_id=123, .value=561},
-    {.nft_id=3, .template_id=123, .value=239},
-    {.nft_id=4, .template_id=123, .value=966},
-    {.nft_id=5, .template_id=123, .value=380},
-    {.nft_id=6, .template_id=123, .value=1},
-    {.nft_id=7, .template_id=123, .value=518},
-    {.nft_id=8, .template_id=123, .value=654},
-    {.nft_id=9, .template_id=123, .value=876},
-    {.nft_id=10, .template_id=123, .value=299},
-    {.nft_id=11, .template_id=123, .value=20},
-    {.nft_id=12, .template_id=123, .value=31},
+    {.nft_id=1, .schema_name=schema_name, .value=92},
+    {.nft_id=2, .schema_name=schema_name, .value=561},
+    {.nft_id=3, .schema_name=schema_name, .value=239},
+    {.nft_id=4, .schema_name=schema_name, .value=966},
+    {.nft_id=5, .schema_name=schema_name, .value=380},
+    {.nft_id=6, .schema_name=schema_name, .value=1},
+    {.nft_id=7, .schema_name=schema_name, .value=518},
+    {.nft_id=8, .schema_name=schema_name, .value=654},
+    {.nft_id=9, .schema_name=schema_name, .value=876},
+    {.nft_id=10, .schema_name=schema_name, .value=299},
+    {.nft_id=11, .schema_name=schema_name, .value=20},
+    {.nft_id=12, .schema_name=schema_name, .value=31},
   };
   for(const auto &nft: data) {
     _nftcache.emplace(get_self(), [&](auto &x) {
       x.nft_id = nft.nft_id;
-      x.template_id = nft.template_id;
+      x.schema_name = nft.schema_name;
       x.value = nft.value;
     });
   }
@@ -386,11 +387,11 @@ void daccustodian::indextest() {
     });
 
   const auto index    = _nftcache.get_index<"valdesc"_n>();
-  const auto index_key = nftcache::template_and_value_key_ascending(123, 0);
+  const auto index_key = nftcache::template_and_value_key_ascending(schema_name, 0);
   auto       itr       = index.lower_bound(index_key);  
   
   for(const auto &nft: data) {
-    check(itr->value == nft.value && itr->template_id == nft.template_id, "index is not correctly sorted expected: %s actual: %s template_id: %s nft_id: %s", nft.value, itr->value, itr->template_id, itr->nft_id);
+    check(itr->value == nft.value && itr->schema_name == nft.schema_name, "index is not correctly sorted expected: %s actual: %s schema_name: %s nft_id: %s", nft.value, itr->value, itr->schema_name, itr->nft_id);
     itr++;
   }  
 }

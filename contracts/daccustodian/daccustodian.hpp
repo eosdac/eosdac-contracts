@@ -139,27 +139,25 @@ namespace eosdac {
 
     struct [[eosio::table("nftcache"), eosio::contract("daccustodian")]] nftcache {
         uint64_t nft_id;
-        int32_t  template_id;
+        name  schema_name;
         uint64_t value;
 
         uint64_t primary_key() const { return nft_id; }
 
-        static uint128_t template_and_value_key_descending(int32_t template_id, uint64_t value) {
-            check(template_id >= 0, "index will not work with template_id < 0");
-            return (uint128_t(template_id) << uint128_t(64)) | uint128_t(std::numeric_limits<uint64_t>::max() - value);
+        static uint128_t template_and_value_key_descending(name schema_name, uint64_t value) {
+            return (uint128_t(schema_name.value) << uint128_t(64)) | uint128_t(std::numeric_limits<uint64_t>::max() - value);
         }
 
-        static uint128_t template_and_value_key_ascending(int32_t template_id, uint64_t value) {
-            check(template_id >= 0, "index will not work with template_id < 0");
-          return (uint128_t(template_id) << uint128_t(64)) | uint128_t(value);
+        static uint128_t template_and_value_key_ascending(name schema_name, uint64_t value) {
+          return (uint128_t(schema_name.value) << uint128_t(64)) | uint128_t(value);
         }
         
         uint128_t by_template_and_value_descending() const {
-            return template_and_value_key_descending(template_id, value);
+            return template_and_value_key_descending(schema_name, value);
         }
 
         uint128_t by_template_and_value_ascending() const {
-            return template_and_value_key_ascending(template_id, value);
+            return template_and_value_key_ascending(schema_name, value);
         }
     };
 
