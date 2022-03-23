@@ -209,10 +209,10 @@ void daccustodian::transferCustodianBudget(const dacdir::dac &dac) {
     const auto auth_balance     = eosdac::get_balance_graceful(auth_account, TLM_TOKEN_CONTRACT, TLM_SYM);
     const auto treasury_balance = balance_for_type(dac, dacdir::TREASURY);
 
-    const auto nftcache = nftcache_table{get_self(), dac.dac_id.value};
+    const auto nftcache = dacdir::nftcache_table{DACDIRECTORY_CONTRACT, dac.dac_id.value};
     const auto index    = nftcache.get_index<"valdesc"_n>();
 
-    const auto index_key = nftcache::template_and_value_key_ascending(BUDGET_SCHEMA, 0);
+    const auto index_key = dacdir::nftcache::template_and_value_key_ascending(BUDGET_SCHEMA, 0);
     auto       itr       = index.lower_bound(index_key);
     if (itr == index.end() || itr->schema_name != BUDGET_SCHEMA) {
         // DAC does not own any budget NFTs, we do nothing
@@ -305,94 +305,3 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
     currentState.save(get_self(), dac_id);
 }
 
-void daccustodian::upsert_nft(const uint64_t id, const std::optional<name> old_owner_optional, const name new_owner) {
-    const auto  assets = atomicassets::assets_t(NFT_CONTRACT, new_owner.value);
-    const auto &nft    = assets.get(id, fmt("Owner %s does not own NFT with id %s", new_owner, id));
-    if (nft.collection_name != NFT_COLLECTION || nft.schema_name != BUDGET_SCHEMA) {
-        return;
-    }
-    const auto percentage = nft::get_immutable_attr<uint16_t>(nft, "percentage");
-
-    if (old_owner_optional) {
-        const auto old_owner        = *old_owner_optional;
-        const auto old_dac_optional = dacdir::dac_for_owner(old_owner);
-        if (old_dac_optional) {
-            const auto old_dac   = *old_dac_optional;
-            auto       nftcache  = nftcache_table{get_self(), old_dac.dac_id.value};
-            const auto to_delete = nftcache.find(id);
-            if (to_delete != nftcache.end()) {
-                nftcache.erase(to_delete);
-            }
-        }
-    }
-
-    const auto new_dac_optional = dacdir::dac_for_owner(new_owner);
-    if (new_dac_optional) {
-        const auto new_dac  = *new_dac_optional;
-        auto       nftcache = nftcache_table{get_self(), new_dac.dac_id.value};
-        upsert(nftcache, id, get_self(), [&](auto &x) {
-            x.nft_id      = id;
-            x.schema_name = nft.schema_name;
-            x.value       = percentage;
-        });
-    }
-}
-
-void daccustodian::logtransfer(const name collection_name, const name from, const name new_owner,
-    const vector<uint64_t> &asset_ids, const string &memo) {
-    for (const auto asset_id : asset_ids) {
-        upsert_nft(asset_id, from, new_owner);
-    }
-}
-
-void daccustodian::logmint(const uint64_t asset_id, const name authorized_minter, const name collection_name,
-    const name schema_name, const int32_t preset_id, const name new_asset_owner,
-    const atomicdata::ATTRIBUTE_MAP &immutable_data, const atomicdata::ATTRIBUTE_MAP &mutable_data,
-    const vector<asset> &backed_tokens) {
-    upsert_nft(asset_id, {}, new_asset_owner);
-}
-
-#ifdef IS_DEV
-void daccustodian::indextest() {
-  const auto dacs = dacdir::dac_table{DACDIRECTORY_CONTRACT, DACDIRECTORY_CONTRACT.value};
-  const auto dac = dacs.begin();
-  auto       _nftcache = nftcache_table{get_self(), dac->dac_id.value};
-
-  const auto schema_name = "myschema"_n;
-  auto data = std::vector<nftcache>{
-    {.nft_id=1, .schema_name=schema_name, .value=92},
-    {.nft_id=2, .schema_name=schema_name, .value=561},
-    {.nft_id=3, .schema_name=schema_name, .value=239},
-    {.nft_id=4, .schema_name=schema_name, .value=966},
-    {.nft_id=5, .schema_name=schema_name, .value=380},
-    {.nft_id=6, .schema_name=schema_name, .value=1},
-    {.nft_id=7, .schema_name=schema_name, .value=518},
-    {.nft_id=8, .schema_name=schema_name, .value=654},
-    {.nft_id=9, .schema_name=schema_name, .value=876},
-    {.nft_id=10, .schema_name=schema_name, .value=299},
-    {.nft_id=11, .schema_name=schema_name, .value=20},
-    {.nft_id=12, .schema_name=schema_name, .value=31},
-  };
-  for(const auto &nft: data) {
-    _nftcache.emplace(get_self(), [&](auto &x) {
-      x.nft_id = nft.nft_id;
-      x.schema_name = nft.schema_name;
-      x.value = nft.value;
-    });
-  }
-  
-  // sort by value descending 
-  std::sort(data.begin(), data.end(),[](auto &a, auto &b) {
-        return a.value > b.value;
-    });
-
-  const auto index    = _nftcache.get_index<"valdesc"_n>();
-  const auto index_key = nftcache::template_and_value_key_ascending(schema_name, 0);
-  auto       itr       = index.lower_bound(index_key);  
-  
-  for(const auto &nft: data) {
-    check(itr->value == nft.value && itr->schema_name == nft.schema_name, "index is not correctly sorted expected: %s actual: %s schema_name: %s nft_id: %s", nft.value, itr->value, itr->schema_name, itr->nft_id);
-    itr++;
-  }  
-}
-#endif

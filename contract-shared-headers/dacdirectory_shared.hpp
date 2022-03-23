@@ -41,7 +41,7 @@ namespace eosdac {
 
         enum dac_state_type : uint8_t { dac_state_typeINACTIVE = 0, dac_state_typeACTIVE = 1 };
 
-        struct [[eosio::table("dacs"), eosio::contract("dacdirectory")]] dac {
+        struct [[eosio::table("dacs"), eosio::contract(DACDIRECTORY_CONTRACT_STR)]] dac {
             eosio::name                    owner;
             eosio::name                    dac_id;
             std::string                    title;
@@ -101,6 +101,33 @@ namespace eosdac {
           }
         }
         
+        struct [[eosio::table("nftcache"), eosio::contract(DACDIRECTORY_CONTRACT_STR)]] nftcache {
+            uint64_t nft_id;
+            name  schema_name;
+            uint64_t value;
+
+            uint64_t primary_key() const { return nft_id; }
+
+            static uint128_t template_and_value_key_descending(name schema_name, uint64_t value) {
+                return (uint128_t(schema_name.value) << uint128_t(64)) | uint128_t(std::numeric_limits<uint64_t>::max() - value);
+            }
+
+            static uint128_t template_and_value_key_ascending(name schema_name, uint64_t value) {
+              return (uint128_t(schema_name.value) << uint128_t(64)) | uint128_t(value);
+            }
+            
+            uint128_t by_template_and_value_descending() const {
+                return template_and_value_key_descending(schema_name, value);
+            }
+
+            uint128_t by_template_and_value_ascending() const {
+                return template_and_value_key_ascending(schema_name, value);
+            }
+        };
+
+        using nftcache_table = multi_index<"nftcache"_n, nftcache,
+            indexed_by<"valasc"_n, const_mem_fun<nftcache, uint128_t, &nftcache::by_template_and_value_ascending>>,
+            indexed_by<"valdesc"_n, const_mem_fun<nftcache, uint128_t, &nftcache::by_template_and_value_descending>>>;
         
     } // namespace dacdir
 } // namespace eosdac

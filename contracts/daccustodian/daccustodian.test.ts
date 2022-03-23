@@ -2069,7 +2069,7 @@ describe('Daccustodian', () => {
     context('after initial logmint', async () => {
       it('nftcache table should contain our NFT', async () => {
         await assertRowsEqual(
-          shared.daccustodian_contract.nftcacheTable({
+          shared.dacdirectory_contract.nftcacheTable({
             scope: dacId,
           }),
           [
@@ -2173,7 +2173,7 @@ describe('Daccustodian', () => {
     );
     context('logtransfer', async () => {
       it('should update nftcache table when transfering away', async () => {
-        const res = await shared.daccustodian_contract.nftcacheTable({
+        const res = await shared.dacdirectory_contract.nftcacheTable({
           scope: dacId,
           index_position: 2,
           lower_bound: shared.auth_account.name,
@@ -2189,7 +2189,7 @@ describe('Daccustodian', () => {
           { from: shared.auth_account }
         );
         await assertRowsEqual(
-          shared.daccustodian_contract.nftcacheTable({
+          shared.dacdirectory_contract.nftcacheTable({
             scope: dacId,
           }),
           []
@@ -2204,7 +2204,7 @@ describe('Daccustodian', () => {
           { from: new Account('eosio') }
         );
         await assertRowsEqual(
-          shared.daccustodian_contract.nftcacheTable({
+          shared.dacdirectory_contract.nftcacheTable({
             scope: dacId,
           }),
           [
@@ -2219,7 +2219,7 @@ describe('Daccustodian', () => {
     });
     context('index', async () => {
       it('should sort correctly', async () => {
-        await shared.daccustodian_contract.indextest();
+        await shared.dacdirectory_contract.indextest();
       });
     });
   });
@@ -2241,7 +2241,7 @@ async function setup_nfts() {
       shared.eosio_token_contract.account.name,
       shared.daccustodian_contract.name,
     ],
-    [shared.daccustodian_contract.name],
+    [shared.dacdirectory_contract.name],
     '0.01',
     '',
     { from: shared.eosio_token_contract.account }

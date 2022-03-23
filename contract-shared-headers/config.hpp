@@ -11,4 +11,5 @@ static constexpr eosio::name NFT_COLLECTION{"alien.worlds"};
 static constexpr eosio::name BUDGET_SCHEMA{"budget"};
 static constexpr int32_t BUDGET_TEMPLATE_ID{1};
 
-static constexpr eosio::name DACDIRECTORY_CONTRACT{"dacdirectory"};
+#define DACDIRECTORY_CONTRACT_STR "dacdirectory"
+static constexpr eosio::name DACDIRECTORY_CONTRACT{DACDIRECTORY_CONTRACT_STR};

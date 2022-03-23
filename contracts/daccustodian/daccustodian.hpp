@@ -9,7 +9,6 @@
 #include "../../contract-shared-headers/daccustodian_shared.hpp"
 #include "../../contract-shared-headers/eosdactokens_shared.hpp"
 #include "external_types.hpp"
-#include "nft.hpp"
 
 using namespace std;
 
@@ -137,33 +136,6 @@ namespace eosdac {
 
     using candperms_table = multi_index<"candperms"_n, candperm>;
 
-    struct [[eosio::table("nftcache"), eosio::contract("daccustodian")]] nftcache {
-        uint64_t nft_id;
-        name  schema_name;
-        uint64_t value;
-
-        uint64_t primary_key() const { return nft_id; }
-
-        static uint128_t template_and_value_key_descending(name schema_name, uint64_t value) {
-            return (uint128_t(schema_name.value) << uint128_t(64)) | uint128_t(std::numeric_limits<uint64_t>::max() - value);
-        }
-
-        static uint128_t template_and_value_key_ascending(name schema_name, uint64_t value) {
-          return (uint128_t(schema_name.value) << uint128_t(64)) | uint128_t(value);
-        }
-        
-        uint128_t by_template_and_value_descending() const {
-            return template_and_value_key_descending(schema_name, value);
-        }
-
-        uint128_t by_template_and_value_ascending() const {
-            return template_and_value_key_ascending(schema_name, value);
-        }
-    };
-
-    using nftcache_table = multi_index<"nftcache"_n, nftcache,
-        indexed_by<"valasc"_n, const_mem_fun<nftcache, uint128_t, &nftcache::by_template_and_value_ascending>>,
-        indexed_by<"valdesc"_n, const_mem_fun<nftcache, uint128_t, &nftcache::by_template_and_value_descending>>>;
 
     class daccustodian : public contract {
 
@@ -208,9 +180,6 @@ namespace eosdac {
 
 #endif
 
-#ifdef IS_DEV
-        ACTION indextest();
-#endif
         /**
          * This action is used to register a custom permission that will be used in the multisig instead of active.
          *
@@ -227,15 +196,6 @@ namespace eosdac {
          */
         ACTION setperm(const name &cand, const name &permission, const name &dac_id);
 
-        /* NFT token log */
-        [[eosio::on_notify(NFT_CONTRACT_STR "::logtransfer")]] void logtransfer(const name collection_name,
-            const name from, const name new_owner, const vector<uint64_t> &asset_ids, const string &memo);
-
-        /* NFT token log */
-        [[eosio::on_notify(NFT_CONTRACT_STR "::logmint")]] void logmint(const uint64_t asset_id,
-            const name authorized_minter, const name collection_name, const name schema_name, const int32_t preset_id,
-            const name new_asset_owner, const atomicdata::ATTRIBUTE_MAP &immutable_data,
-            const atomicdata::ATTRIBUTE_MAP &mutable_data, const vector<asset> &backed_tokens);
 
       private: // Private helper methods used by other actions.
         void    updateVoteWeight(name custodian, int64_t weight, name internal_dac_id);
@@ -267,6 +227,5 @@ namespace eosdac {
         void             validateUnstake(name code, name cand, name dac_id);
         void validateUnstakeAmount(const name &code, const name &cand, const asset &unstake_amount, const name &dac_id);
         void validateMinStake(name account, name dac_id);
-        void upsert_nft(const uint64_t id, const std::optional<name> old_owner_optional, const name new_owner);
     };
 }; // namespace eosdac
