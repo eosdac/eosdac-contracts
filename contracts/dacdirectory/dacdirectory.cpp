@@ -187,7 +187,7 @@ namespace eosdac {
                 const auto old_dac_optional = dacdir::dac_for_owner(old_owner);
                 if (old_dac_optional) {
                     const auto old_dac   = *old_dac_optional;
-                    auto       nftcache  = nftcache_table{DACDIRECTORY_CONTRACT, old_dac.dac_id.value};
+                    auto       nftcache  = nftcache_table{get_self(), old_dac.dac_id.value};
                     const auto to_delete = nftcache.find(id);
                     if (to_delete != nftcache.end()) {
                         nftcache.erase(to_delete);
@@ -198,7 +198,7 @@ namespace eosdac {
             const auto new_dac_optional = dacdir::dac_for_owner(new_owner);
             if (new_dac_optional) {
                 const auto new_dac  = *new_dac_optional;
-                auto       nftcache = nftcache_table{DACDIRECTORY_CONTRACT, new_dac.dac_id.value};
+                auto       nftcache = nftcache_table{get_self(), new_dac.dac_id.value};
                 upsert(nftcache, id, get_self(), [&](auto &x) {
                     x.nft_id      = id;
                     x.schema_name = nft.schema_name;
@@ -211,9 +211,9 @@ namespace eosdac {
 
         #ifdef IS_DEV
         void dacdirectory::indextest() {
-          const auto dacs = dacdir::dac_table{DACDIRECTORY_CONTRACT, DACDIRECTORY_CONTRACT.value};
+          const auto dacs = dacdir::dac_table{get_self(), get_self().value};
           const auto dac = dacs.begin();
-          auto       _nftcache = nftcache_table{DACDIRECTORY_CONTRACT, dac->dac_id.value};
+          auto       _nftcache = nftcache_table{get_self(), dac->dac_id.value};
 
           const auto schema_name = "myschema"_n;
           auto data = std::vector<nftcache>{
