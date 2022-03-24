@@ -9,7 +9,6 @@ static constexpr eosio::name MSIG_CONTRACT{"msig.world"};
 static constexpr eosio::name NFT_CONTRACT{NFT_CONTRACT_STR};
 static constexpr eosio::name NFT_COLLECTION{"alien.worlds"};
 static constexpr eosio::name BUDGET_SCHEMA{"budget"};
-static constexpr int32_t BUDGET_TEMPLATE_ID{1};
 
 #define DACDIRECTORY_CONTRACT_STR "dacdirectory"
 static constexpr eosio::name DACDIRECTORY_CONTRACT{DACDIRECTORY_CONTRACT_STR};
