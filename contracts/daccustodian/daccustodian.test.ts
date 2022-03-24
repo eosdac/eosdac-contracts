@@ -10,6 +10,7 @@ import {
   assertMissingAuthority,
   assertRowsEqual,
   TableRowsResult,
+  assertBalanceEqual,
 } from 'lamington';
 
 import { SharedTestObjects, NUMBER_OF_CANDIDATES } from '../TestHelpers';
@@ -19,9 +20,14 @@ import { DaccustodianCandidate } from './daccustodian';
 chai.use(chaiAsPromised);
 let shared: SharedTestObjects;
 
+const NFT_COLLECTION = 'alien.worlds';
+const BUDGET_SCHEMA = 'budget';
+
 describe('Daccustodian', () => {
+  let second_nft_id: Number;
+
   before(async () => {
-    shared = await chai.expect(SharedTestObjects.getInstance()).to.be.fulfilled;
+    shared = await SharedTestObjects.getInstance();
   });
 
   context('updateconfige', async () => {
@@ -2008,8 +2014,306 @@ describe('Daccustodian', () => {
       );
     });
   });
+  context('period budget', async () => {
+    let dacId = 'budgetdac';
+    let regMembers: Account[];
+    let newUser1: Account;
+    let candidates: Account[];
+    let tlm_token_contract: Account;
+
+    before(async () => {
+      await shared.initDac(dacId, '4,PERIODDAC', '1000000.0000 PERIODDAC');
+      await shared.updateconfig(dacId, '12.0000 PERIODDAC');
+      await shared.dac_token_contract.stakeconfig(
+        { enabled: true, min_stake_time: 5, max_stake_time: 20 },
+        '4,PERIODDAC',
+        { from: shared.auth_account }
+      );
+
+      // With 16 voting members with 2000 each and a threshold of 31 percent
+      // this will total to 320_000 vote value which will be enough to start the DAC
+      regMembers = await shared.getRegMembers(dacId, '20000.0000 PERIODDAC');
+      candidates = await shared.getStakeObservedCandidates(
+        dacId,
+        '12.0000 PERIODDAC'
+      );
+      await shared.voteForCustodians(regMembers, candidates, dacId);
+
+      await shared.daccustodian_contract.updateconfige(
+        {
+          numelected: 5,
+          maxvotes: 4,
+          requested_pay_max: {
+            contract: 'eosio.token',
+            quantity: '0.0000 EOS',
+          },
+          periodlength: 1,
+          initial_vote_quorum_percent: 31,
+          vote_quorum_percent: 15,
+          auth_threshold_high: 4,
+          auth_threshold_mid: 3,
+          auth_threshold_low: 2,
+          lockupasset: {
+            contract: shared.dac_token_contract.account.name,
+            quantity: '12.0000 PERIODDAC',
+          },
+          should_pay_via_service_provider: false,
+          lockup_release_time_delay: 1233,
+        },
+        dacId,
+        { from: shared.auth_account }
+      );
+
+      await setup_nfts();
+    });
+    context('after initial logmint', async () => {
+      it('nftcache table should contain our NFT', async () => {
+        await assertRowsEqual(
+          shared.dacdirectory_contract.nftcacheTable({
+            scope: dacId,
+          }),
+          [
+            {
+              nft_id: '1099511627776',
+              schema_name: BUDGET_SCHEMA,
+              value: 400,
+            },
+            {
+              nft_id: '1099511627777',
+              schema_name: BUDGET_SCHEMA,
+              value: 500,
+            },
+            {
+              nft_id: '1099511627778',
+              schema_name: BUDGET_SCHEMA,
+              value: 300,
+            },
+          ]
+        );
+      });
+    });
+    context(
+      'newperiod when transfer amount is bigger than treasury',
+      async () => {
+        before(async () => {
+          await shared.eosio_token_contract.transfer(
+            shared.tokenIssuer.name,
+            shared.treasury_account.name,
+            `50.0000 TLM`,
+            'Some money for the treasury',
+            { from: shared.tokenIssuer }
+          );
+          await shared.eosio_token_contract.transfer(
+            shared.tokenIssuer.name,
+            shared.auth_account.name,
+            `100.0000 TLM`,
+            'Some money for the authority',
+            { from: shared.tokenIssuer }
+          );
+
+          await shared.daccustodian_contract.newperiod(
+            'initial new period',
+            dacId,
+            {
+              from: regMembers[0],
+            }
+          );
+          await sleep(1000);
+        });
+        it('should only transfer treasury balance', async () => {
+          await assertBalanceEqual(
+            shared.eosio_token_contract.accountsTable({
+              scope: shared.treasury_account.name,
+            }),
+            '0.0000 TLM'
+          );
+          await assertBalanceEqual(
+            shared.eosio_token_contract.accountsTable({
+              scope: shared.auth_account.name,
+            }),
+            '150.0000 TLM'
+          );
+        });
+      }
+    );
+    context(
+      'newperiod when transfer amount smaller than treasury',
+      async () => {
+        before(async () => {
+          await shared.eosio_token_contract.transfer(
+            shared.tokenIssuer.name,
+            shared.treasury_account.name,
+            `1500.0000 TLM`,
+            'Some money for the treasury',
+            { from: shared.tokenIssuer }
+          );
+          await shared.daccustodian_contract.newperiod(
+            'initial new period',
+            dacId,
+            {
+              from: regMembers[0],
+            }
+          );
+        });
+        it('should transfer amount according to formula', async () => {
+          await assertBalanceEqual(
+            shared.eosio_token_contract.accountsTable({
+              scope: shared.treasury_account.name,
+            }),
+            '1425.0000 TLM'
+          );
+          await assertBalanceEqual(
+            shared.eosio_token_contract.accountsTable({
+              scope: shared.auth_account.name,
+            }),
+            '225.0000 TLM'
+          );
+        });
+      }
+    );
+    context('logtransfer', async () => {
+      it('should update nftcache table when transfering away', async () => {
+        const res = await shared.dacdirectory_contract.nftcacheTable({
+          scope: dacId,
+          index_position: 2,
+          lower_bound: shared.auth_account.name,
+          upper_bound: shared.auth_account.name,
+        });
+        const nft_ids = res.rows.map((x) => x.nft_id);
+        second_nft_id = nft_ids[1];
+        await shared.atomicassets.transfer(
+          shared.auth_account.name,
+          'eosio',
+          nft_ids,
+          'move out of the way',
+          { from: shared.auth_account }
+        );
+        await assertRowsEqual(
+          shared.dacdirectory_contract.nftcacheTable({
+            scope: dacId,
+          }),
+          []
+        );
+      });
+      it('should update nftcache table when depositing', async () => {
+        await shared.atomicassets.transfer(
+          'eosio',
+          shared.auth_account.name,
+          [second_nft_id],
+          'deposit nft',
+          { from: new Account('eosio') }
+        );
+        await assertRowsEqual(
+          shared.dacdirectory_contract.nftcacheTable({
+            scope: dacId,
+          }),
+          [
+            {
+              schema_name: BUDGET_SCHEMA,
+              nft_id: '1099511627777',
+              value: 500,
+            },
+          ]
+        );
+      });
+    });
+    context('index', async () => {
+      it('should sort correctly', async () => {
+        await shared.dacdirectory_contract.indextest();
+      });
+    });
+  });
 });
 
+/* Use a fresh instance to prevent caching of results */
+function get_atomic() {
+  return new RpcApi('http://localhost:8888', 'atomicassets', {
+    fetch,
+  });
+}
+
+async function setup_nfts() {
+  await shared.atomicassets.createcol(
+    shared.eosio_token_contract.account.name,
+    NFT_COLLECTION,
+    true,
+    [
+      shared.eosio_token_contract.account.name,
+      shared.daccustodian_contract.name,
+    ],
+    [shared.dacdirectory_contract.name],
+    '0.01',
+    '',
+    { from: shared.eosio_token_contract.account }
+  );
+  await shared.atomicassets.createschema(
+    shared.eosio_token_contract.account.name,
+    NFT_COLLECTION,
+    BUDGET_SCHEMA,
+    [
+      { name: 'cardid', type: 'uint16' },
+      { name: 'name', type: 'string' },
+      { name: 'percentage', type: 'uint16' },
+    ],
+    { from: shared.eosio_token_contract.account }
+  );
+  await shared.atomicassets.createtempl(
+    shared.eosio_token_contract.account.name,
+    NFT_COLLECTION,
+    BUDGET_SCHEMA,
+    true,
+    true,
+    100,
+    '',
+    { from: shared.eosio_token_contract.account }
+  );
+
+  await shared.atomicassets.mintasset(
+    shared.eosio_token_contract.account.name,
+    NFT_COLLECTION,
+    BUDGET_SCHEMA,
+    1,
+    shared.auth_account.name,
+    [
+      { key: 'cardid', value: ['uint16', 1] },
+      { key: 'name', value: ['string', 'xxx'] },
+      { key: 'percentage', value: ['uint16', 400] }, // 4%
+    ] as any,
+    '',
+    [],
+    { from: shared.eosio_token_contract.account }
+  );
+  await shared.atomicassets.mintasset(
+    shared.eosio_token_contract.account.name,
+    NFT_COLLECTION,
+    BUDGET_SCHEMA,
+    1,
+    shared.auth_account.name,
+    [
+      { key: 'cardid', value: ['uint16', 1] },
+      { key: 'name', value: ['string', 'xxx'] },
+      { key: 'percentage', value: ['uint16', 500] }, // 5%
+    ] as any,
+    '',
+    [],
+    { from: shared.eosio_token_contract.account }
+  );
+  await shared.atomicassets.mintasset(
+    shared.eosio_token_contract.account.name,
+    NFT_COLLECTION,
+    BUDGET_SCHEMA,
+    1,
+    shared.auth_account.name,
+    [
+      { key: 'cardid', value: ['uint16', 1] },
+      { key: 'name', value: ['string', 'xxx'] },
+      { key: 'percentage', value: ['uint16', 300] }, // 3%
+    ] as any,
+    '',
+    [],
+    { from: shared.eosio_token_contract.account }
+  );
+}
 async function setup_test_user(testuser: Account, tokenSymbol: string) {
   // const testuser = await AccountManager.createAccount('clienttest');
   console.log(`testuser: ${JSON.stringify(testuser, null, 2)}`);

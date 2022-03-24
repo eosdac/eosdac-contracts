@@ -38,3 +38,4 @@ node_modules
 /artifacts/compiled_contracts/contracts/msigworlds/msigworlds.abi
 /artifacts/compiled_contracts/contracts/msigworlds/msigworlds.wasm
 /contracts/msigworlds/msigworlds.ts
+/contracts/atomicassets/atomicassets.ts

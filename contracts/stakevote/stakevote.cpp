@@ -57,7 +57,7 @@ void stakevote::balanceobsv(vector<account_balance_delta> balance_deltas, name d
 
 void stakevote::updateconfig(config_item new_config, name dac_id) {
     auto dac          = dacdir::dac_for_id(dac_id);
-    auto auth_account = dac.account_for_type(dacdir::AUTH);
+    auto auth_account = dac.owner;
 
     require_auth(auth_account);
 

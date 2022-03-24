@@ -41,14 +41,17 @@ namespace eosdac {
  */
 
 /* Helpers to detect if a type has the "to_string" method */
-template <typename T> using to_string_t = decltype(std::declval<T>().to_string());
+template <typename T>
+using to_string_t = decltype(std::declval<T>().to_string());
 
-template <typename T> using has_to_string = std::experimental::is_detected<to_string_t, T>;
+template <typename T>
+using has_to_string = std::experimental::is_detected<to_string_t, T>;
 
 /*
  * Polymorphic helper to convert common EOS.IO types to string
  */
-template <typename T> inline std::string toString(const T &x) {
+template <typename T>
+inline std::string toString(const T &x) {
     if constexpr (std::is_same<T, std::string>::value) {
         return x;
     } else if constexpr (std::is_same<T, eosio::symbol>::value) {
@@ -63,7 +66,8 @@ template <typename T> inline std::string toString(const T &x) {
 /*
  * C++'s missing format string function :-)
  */
-template <typename... Args> inline char *fmt(const std::string_view format, Args const &...args) {
+template <typename... Args>
+inline char *fmt(const std::string_view format, Args const &...args) {
     static char buf[512];
     snprintf(buf, sizeof(buf), format.data(), toString(args).c_str()...);
     return buf;
@@ -71,9 +75,35 @@ template <typename... Args> inline char *fmt(const std::string_view format, Args
 /* eosio::check overload that allows passing a format string for more
  * helpful error messages.
  */
-template <typename... Args> inline void check(bool pred, const std::string_view format, Args const &...args) {
+template <typename... Args>
+inline void check(bool pred, const std::string_view format, Args const &...args) {
     if (!pred) {
         const auto msg = fmt(format, args...);
         check(pred, msg);
+    }
+}
+
+/**
+ * Helper to insert or update a value in eosio tables. If table entry with
+ * primary key pk is found, the table entry is updated using the supplied
+ * updater function, if no table entry exists, it is emplaced using that same
+ * function.
+ *
+ * @param table - The eosio multi_index instance
+ * @param pk - The primary key of the table entry to insert or update
+ * @param payer - The RAM payer
+ * @param updater - The updater lambda function (e.g. [&](auto &x) { x.id = id; x.key = value;} )
+ * @return true - if a new table entry was created
+ * @return false - if an existing table entry was updated
+ */
+template <typename Table, typename Pk, typename Function>
+inline bool upsert(Table &table, const Pk &pk, const eosio::name payer, const Function &updater) {
+    const auto itr = table.find(pk);
+    if (itr == table.end()) {
+        table.emplace(payer, updater);
+        return true;
+    } else {
+        table.modify(itr, payer, updater);
+        return false;
     }
 }

@@ -190,6 +190,7 @@ describe('EOSDacTokens', () => {
       });
       context('with a dac', async () => {
         before(async () => {
+          await shared.setup_new_auth_account();
           await shared.dacdirectory_contract.regdac(
             shared.auth_account.name,
             'abcdac',
@@ -200,7 +201,6 @@ describe('EOSDacTokens', () => {
             'abc dac_title',
             [],
             [
-              { key: Account_type.AUTH, value: shared.auth_account.name },
               {
                 key: Account_type.CUSTODIAN,
                 value: shared.daccustodian_contract.account.name,

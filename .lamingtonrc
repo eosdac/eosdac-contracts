@@ -8,6 +8,7 @@
   "outDir": "artifacts",
   "reporter": "List",
   "bailOnFailure": true,
+  "cppFlags": "-I=/opt/eosio/bin/project/contracts/atomicassets/",
   "include": [
     "daccustodian.cpp",
     "dacdirectory.cpp",

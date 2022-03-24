@@ -160,7 +160,7 @@ describe('msigworlds', () => {
               {
                 actions: await api.serializeActions([
                   {
-                    account: 'alienworlds',
+                    account: shared.eosio_token_contract.name,
                     authorization: [
                       { actor: owner1.name, permission: 'active' },
                       { actor: owner2.name, permission: 'active' },
@@ -176,7 +176,7 @@ describe('msigworlds', () => {
                 ]),
                 context_free_actions: await api.serializeActions([
                   {
-                    account: 'alienworlds',
+                    account: shared.eosio_token_contract.name,
                     authorization: [
                       { actor: owner1.name, permission: 'active' },
                       { actor: owner2.name, permission: 'active' },
@@ -219,7 +219,7 @@ describe('msigworlds', () => {
               {
                 actions: await api.serializeActions([
                   {
-                    account: 'alienworlds',
+                    account: shared.eosio_token_contract.name,
                     authorization: [
                       { actor: owner1.name, permission: 'active' },
                       { actor: owner2.name, permission: 'active' },
@@ -233,7 +233,7 @@ describe('msigworlds', () => {
                     },
                   },
                   {
-                    account: 'alienworlds',
+                    account: shared.eosio_token_contract.name,
                     authorization: [
                       { actor: owner1.name, permission: 'active' },
                       { actor: owner2.name, permission: 'active' },
@@ -274,7 +274,7 @@ describe('msigworlds', () => {
             {
               actions: await api.serializeActions([
                 {
-                  account: 'alienworlds',
+                  account: shared.eosio_token_contract.name,
                   authorization: [
                     { actor: owner1.name, permission: 'active' },
                     { actor: owner2.name, permission: 'active' },
@@ -351,7 +351,7 @@ describe('msigworlds', () => {
               {
                 actions: await api.serializeActions([
                   {
-                    account: 'alienworlds',
+                    account: shared.eosio_token_contract.name,
                     authorization: [
                       { actor: owner1.name, permission: 'active' },
                       { actor: owner2.name, permission: 'active' },
@@ -738,7 +738,7 @@ describe('msigworlds', () => {
         {
           actions: await api.serializeActions([
             {
-              account: 'alienworlds',
+              account: shared.eosio_token_contract.name,
               authorization: [
                 { actor: owner1.name, permission: 'active' },
                 { actor: owner2.name, permission: 'active' },
@@ -836,7 +836,7 @@ describe('msigworlds', () => {
           {
             actions: await api.serializeActions([
               {
-                account: 'alienworlds',
+                account: shared.eosio_token_contract.name,
                 authorization: [
                   { actor: owner1.name, permission: 'active' },
                   { actor: owner2.name, permission: 'active' },
@@ -897,7 +897,7 @@ describe('msigworlds', () => {
           {
             actions: await api.serializeActions([
               {
-                account: 'alienworlds',
+                account: shared.eosio_token_contract.name,
                 authorization: [
                   { actor: msigowned.name, permission: 'active' },
                 ],
@@ -1013,7 +1013,7 @@ describe('msigworlds', () => {
           {
             actions: await api.serializeActions([
               {
-                account: 'alienworlds',
+                account: shared.eosio_token_contract.name,
                 authorization: [
                   { actor: msigowned.name, permission: 'active' },
                 ],

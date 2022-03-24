@@ -4,6 +4,7 @@
 #include <eosio/eosio.hpp>
 #include <eosio/multi_index.hpp>
 #include <eosio/symbol.hpp>
+#include "nft.hpp"
 
 using namespace eosio;
 using namespace std;
@@ -24,6 +25,21 @@ namespace eosdac {
             ACTION setowner(name dac_id, name new_owner);
             ACTION settitle(name dac_id, string title);
             ACTION setstatus(name dac_id, uint8_t value);
+#ifdef IS_DEV
+            ACTION indextest();
+#endif
+            /* NFT token log */
+            [[eosio::on_notify(NFT_CONTRACT_STR "::logtransfer")]] void logtransfer(const name collection_name,
+                const name from, const name new_owner, const vector<uint64_t> &asset_ids, const string &memo);
+
+            /* NFT token log */
+            [[eosio::on_notify(NFT_CONTRACT_STR "::logmint")]] void logmint(const uint64_t asset_id,
+                const name authorized_minter, const name collection_name, const name schema_name,
+                const int32_t preset_id, const name new_asset_owner, const atomicdata::ATTRIBUTE_MAP &immutable_data,
+                const atomicdata::ATTRIBUTE_MAP &mutable_data, const vector<asset> &backed_tokens);
+
+          private:
+            void upsert_nft(const uint64_t id, const std::optional<name> old_owner_optional, const name new_owner);
 
           protected:
             dac_table _dacs;

@@ -52,7 +52,7 @@ ACTION daccustodian::withdrawcane(const name &cand, const name &dac_id) {
 
 ACTION daccustodian::firecand(const name &cand, const bool lockupStake, const name &dac_id) {
     auto dac = dacdir::dac_for_id(dac_id);
-    require_auth(dac.account_for_type(dacdir::AUTH));
+    require_auth(dac.owner);
     removeCandidate(cand, lockupStake, dac_id);
 }
 
@@ -63,7 +63,7 @@ ACTION daccustodian::resigncust(const name &cust, const name &dac_id) {
 
 ACTION daccustodian::firecust(const name &cust, const name &dac_id) {
     auto dac = dacdir::dac_for_id(dac_id);
-    require_auth(dac.account_for_type(dacdir::AUTH));
+    require_auth(dac.owner);
     removeCustodian(cust, dac_id);
 }
 
@@ -97,7 +97,7 @@ ACTION daccustodian::setperm(const name &cand, const name &permission, const nam
 
 ACTION daccustodian::appointcust(const vector<name> &custs, const name &dac_id) {
     dacdir::dac dac          = dacdir::dac_for_id(dac_id);
-    name        auth_account = dac.account_for_type(dacdir::AUTH);
+    name        auth_account = dac.owner;
     require_auth(auth_account);
 
     contr_config     configs = contr_config::get_current_configs(_self, dac_id);
