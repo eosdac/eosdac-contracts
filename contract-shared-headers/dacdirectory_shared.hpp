@@ -41,7 +41,7 @@ namespace eosdac {
 
         enum dac_state_type : uint8_t { dac_state_typeINACTIVE = 0, dac_state_typeACTIVE = 1 };
 
-        struct [[eosio::table("dacs"), eosio::contract(DACDIRECTORY_CONTRACT_STR)]] dac {
+        struct [[eosio::table("dacs"), eosio::contract("dacdirectory")]] dac {
             eosio::name                    owner;
             eosio::name                    dac_id;
             std::string                    title;
@@ -101,7 +101,7 @@ namespace eosdac {
           }
         }
         
-        struct [[eosio::table("nftcache"), eosio::contract(DACDIRECTORY_CONTRACT_STR)]] nftcache {
+        struct [[eosio::table("nftcache"), eosio::contract("dacdirectory")]] nftcache {
             uint64_t nft_id;
             name  schema_name;
             uint64_t value;
