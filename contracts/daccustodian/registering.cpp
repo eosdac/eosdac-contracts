@@ -6,7 +6,7 @@ using namespace eosdac;
 ACTION daccustodian::nominatecane(const name &cand, const asset &requestedpay, const name &dac_id) {
     require_auth(cand);
     assertValidMember(cand, dac_id);
-    contr_state  currentState = contr_state::get_current_state(_self, dac_id);
+    auto         currentState = contr_state2::get_current_state(_self, dac_id);
     contr_config configs      = contr_config::get_current_configs(_self, dac_id);
 
     check(requestedpay.amount >= 0, "ERR::UPDATEREQPAY_UNDER_ZERO::Requested pay amount must not be negative.");
@@ -16,7 +16,8 @@ ACTION daccustodian::nominatecane(const name &cand, const asset &requestedpay, c
 
     validateMinStake(cand, dac_id);
 
-    currentState.number_active_candidates++;
+    const auto number_active_candidates = currentState.get<uint32_t>(state_keys::number_active_candidates);
+    currentState.set(state_keys::number_active_candidates, number_active_candidates + 1);
     currentState.save(get_self(), dac_id);
 
     candidates_table registered_candidates(get_self(), dac_id.value);
@@ -167,10 +168,11 @@ void daccustodian::removeCustodian(name cust, name dac_id) {
 }
 
 void daccustodian::removeCandidate(name cand, bool lockupStake, name dac_id) {
-    contr_state  currentState = contr_state::get_current_state(_self, dac_id);
+    auto         currentState = contr_state2::get_current_state(_self, dac_id);
     contr_config configs      = contr_config::get_current_configs(_self, dac_id);
 
-    currentState.number_active_candidates--;
+    const auto number_active_candidates = currentState.get<uint32_t>(state_keys::number_active_candidates);
+    currentState.set(state_keys::number_active_candidates, number_active_candidates - 1);
     currentState.save(_self, dac_id);
 
     candidates_table registered_candidates(_self, dac_id.value);

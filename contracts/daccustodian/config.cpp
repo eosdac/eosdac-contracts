@@ -3,8 +3,8 @@ using namespace eosdac;
 
 ACTION daccustodian::updateconfige(const contr_config &new_config, const name &dac_id) {
 
-    dacdir::dac dacForScope  = dacdir::dac_for_id(dac_id);
-    auto        owner = dacForScope.owner;
+    dacdir::dac dacForScope = dacdir::dac_for_id(dac_id);
+    auto        owner       = dacForScope.owner;
     require_auth(owner);
     check(new_config.numelected <= 67,
         "ERR::UPDATECONFIG_INVALID_NUM_ELECTED::The number of elected custodians must be <= 67");
@@ -35,7 +35,7 @@ ACTION daccustodian::updateconfige(const contr_config &new_config, const name &d
     configscontainer config_singleton(_self, dac_id.value);
     config_singleton.set(new_config, owner);
 
-    contr_state currentState = contr_state::get_current_state(_self, dac_id);
-    currentState.save(_self, dac_id, owner);
+    auto currentState = contr_state2::get_current_state(_self, dac_id);
+    currentState.save(_self, dac_id);
     print("Succesfully updated the daccustodian config for: ", dac_id);
 }

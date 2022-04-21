@@ -35,8 +35,9 @@ void daccustodian::updateVoteWeights(const vector<name> &votes, int64_t vote_wei
     int16_t vote_delta = votes.size() * vote_weight;
 
     if (vote_delta != 0) {
-        contr_state currentState = contr_state::get_current_state(get_self(), dac_id);
-        currentState.total_votes_on_candidates += vote_delta;
+        auto       currentState              = contr_state2::get_current_state(get_self(), dac_id);
+        const auto total_votes_on_candidates = currentState.get<int64_t>(state_keys::total_votes_on_candidates);
+        currentState.set(state_keys::total_votes_on_candidates, total_votes_on_candidates + vote_delta);
         currentState.save(get_self(), dac_id);
     }
 }
@@ -73,24 +74,24 @@ void daccustodian::modifyVoteWeights(int64_t vote_weight, vector<name> oldVotes,
         print("Voter has no weight therefore no need to update vote weights");
         return;
     }
-    contr_state currentState = contr_state::get_current_state(get_self(), dac_id);
+    auto currentState = contr_state2::get_current_state(get_self(), dac_id);
 
     // New voter -> Add the tokens to the total weight.
+    auto total_weight_of_votes = currentState.get<int64_t>(state_keys::total_weight_of_votes);
     if (vote_weight > 0) {
-        check((currentState.total_weight_of_votes + vote_weight) >= currentState.total_weight_of_votes,
-            "Overflow in total_weight_of_votes");
+        check((total_weight_of_votes + vote_weight) >= total_weight_of_votes, "Overflow in total_weight_of_votes");
     } else {
-        check((currentState.total_weight_of_votes + vote_weight) <= currentState.total_weight_of_votes,
-            "Underflow in total_weight_of_votes");
+        check((total_weight_of_votes + vote_weight) <= total_weight_of_votes, "Underflow in total_weight_of_votes");
     }
 
     if (oldVotes.size() == 0)
-        currentState.total_weight_of_votes += vote_weight;
+        total_weight_of_votes += vote_weight;
 
     // Leaving voter -> Remove the tokens to the total weight.
     if (newVotes.size() == 0)
-        currentState.total_weight_of_votes -= vote_weight;
+        total_weight_of_votes -= vote_weight;
 
+    currentState.set(state_keys::total_weight_of_votes, total_weight_of_votes);
     currentState.save(get_self(), dac_id);
 
     updateVoteWeights(oldVotes, -vote_weight, dac_id);
