@@ -106,7 +106,7 @@ namespace eosdac {
             return statecontainer2(account, scope.value).get_or_default(contr_state2());
         }
 
-        void save(eosio::name account, eosio::name scope, eosio::name payer = same_payer) {
+        void save(eosio::name account, eosio::name scope, eosio::name payer) {
             statecontainer2(account, scope.value).set(*this, payer);
         }
 
@@ -170,7 +170,6 @@ namespace eosdac {
     };
 
     using candperms_table = multi_index<"candperms"_n, candperm>;
-
 
     class daccustodian : public contract {
 

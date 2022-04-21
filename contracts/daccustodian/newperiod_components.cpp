@@ -233,7 +233,7 @@ ACTION daccustodian::claimbudget(const name &dac_id) {
     }
 
     state.set(state_keys::lastclaimbudgettime, time_point_sec(current_time_point()));
-    state.save(get_self(), dac_id);
+    state.save(get_self(), dac_id, get_self());
 }
 
 ACTION daccustodian::migratestate(const name &dac_id) {
@@ -321,5 +321,5 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
     setMsigAuths(dac_id);
 
     currentState.lastperiodtime = current_block_time();
-    currentState.save(get_self(), dac_id);
+    currentState.save(get_self(), dac_id, get_self());
 }
