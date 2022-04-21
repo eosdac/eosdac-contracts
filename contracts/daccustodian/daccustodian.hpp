@@ -100,20 +100,43 @@ namespace eosdac {
 
     struct [[eosio::table("state2"), eosio::contract("daccustodian")]] contr_state2 {
         eosio::time_point_sec                  lastperiodtime = time_point_sec(0);
-        std::map<uint8_t, state_value_variant> data           = {};
+        std::map<uint8_t, state_value_variant> data           = {
+                      {state_keys::total_weight_of_votes, int64_t(0)},
+                      {state_keys::total_votes_on_candidates, int64_t(0)},
+                      {state_keys::number_active_candidates, uint32_t(0)},
+                      {state_keys::met_initial_votes_threshold, false},
+                      {state_keys::lastclaimbudgettime, time_point_sec(0)},
+        };
 
-        static contr_state2 get_current_state(eosio::name account, eosio::name scope) {
-            return statecontainer2(account, scope.value).get_or_default(contr_state2());
+        static contr_state2 get_migrated_state(const eosio::name account, const eosio::name dac_id) {
+            auto new_state = contr_state2();
+            if (!statecontainer(account, dac_id.value).exists()) {
+                return new_state;
+            }
+            auto old_state = contr_state::get_current_state(account, dac_id);
+
+            new_state.lastperiodtime = old_state.lastperiodtime;
+            new_state.set(state_keys::total_weight_of_votes, old_state.total_weight_of_votes);
+            new_state.set(state_keys::total_votes_on_candidates, old_state.total_votes_on_candidates);
+            new_state.set(state_keys::number_active_candidates, old_state.number_active_candidates);
+            new_state.set(state_keys::met_initial_votes_threshold, old_state.met_initial_votes_threshold);
+            new_state.set(state_keys::lastclaimbudgettime, time_point_sec(0));
+
+            return new_state;
+        }
+        static contr_state2 get_current_state(const eosio::name account, const eosio::name scope) {
+            return statecontainer2(account, scope.value).get_or_default(get_migrated_state(account, scope));
         }
 
-        void save(eosio::name account, eosio::name scope, eosio::name payer) {
-            statecontainer2(account, scope.value).set(*this, payer);
+        void save(const eosio::name account, const eosio::name scope) {
+            statecontainer2(account, scope.value).set(*this, account);
+            statecontainer(account, scope.value).remove();
         }
 
         void set(const state_keys key, const state_value_variant &value) { data[key] = value; }
 
         template <typename T>
-        T get(const state_keys key) {
+        T get(const state_keys key) const {
             const auto search = data.find(key);
             check(search != data.end(), "Key %s not found in state data", std::to_string(key));
             return std::get<T>(search->second);

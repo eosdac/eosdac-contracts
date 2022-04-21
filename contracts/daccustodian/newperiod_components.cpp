@@ -238,18 +238,8 @@ ACTION daccustodian::claimbudget(const name &dac_id) {
 
 ACTION daccustodian::migratestate(const name &dac_id) {
     check(!statecontainer2(get_self(), dac_id.value).exists(), "Already migrated dac %s", dac_id);
-
-    auto old_state = contr_state::get_current_state(get_self(), dac_id);
     auto new_state = contr_state2::get_current_state(get_self(), dac_id);
-
-    new_state.lastperiodtime = old_state.lastperiodtime;
-    new_state.set(state_keys::total_weight_of_votes, state_value_variant(old_state.total_weight_of_votes));
-    new_state.set(state_keys::total_votes_on_candidates, state_value_variant(old_state.total_votes_on_candidates));
-    new_state.set(state_keys::number_active_candidates, state_value_variant(old_state.number_active_candidates));
-    new_state.set(state_keys::met_initial_votes_threshold, state_value_variant(old_state.met_initial_votes_threshold));
-    new_state.set(state_keys::lastclaimbudgettime, state_value_variant(time_point_sec(0)));
-
-    new_state.save(get_self(), dac_id, get_self());
+    new_state.save(get_self(), dac_id);
 }
 
 ACTION daccustodian::newperiod(const string &message, const name &dac_id) {
