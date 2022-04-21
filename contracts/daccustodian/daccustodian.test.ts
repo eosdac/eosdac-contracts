@@ -16,6 +16,9 @@ import {
 import { SharedTestObjects, NUMBER_OF_CANDIDATES } from '../TestHelpers';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
+const dayjs = require('dayjs');
+const utc = require('dayjs/plugin/utc');
+dayjs.extend(utc);
 import { DaccustodianCandidate } from './daccustodian';
 chai.use(chaiAsPromised);
 let shared: SharedTestObjects;
@@ -2063,10 +2066,72 @@ describe('Daccustodian', () => {
         dacId,
         { from: shared.auth_account }
       );
-
-      await setup_nfts();
+    });
+    context('migratestate', async () => {
+      it('should work', async () => {
+        await shared.daccustodian_contract.migratestate(dacId);
+      });
+      it('should populate state2 table', async () => {
+        const res = await shared.daccustodian_contract.state2Table({
+          scope: dacId,
+        });
+        chai.expect(res.rows).to.deep.equal([
+          {
+            lastperiodtime: dayjs.utc('1970-01-01T00:00:00.000Z').toDate(),
+            data: [
+              {
+                key: 1,
+                value: ['int64', 3200000000],
+              },
+              {
+                key: 2,
+                value: ['int64', 32768],
+              },
+              {
+                key: 3,
+                value: ['uint32', 7],
+              },
+              {
+                key: 4,
+                value: ['bool', 0],
+              },
+              {
+                key: 5,
+                value: ['time_point_sec', '1970-01-01T00:00:00'],
+              },
+            ],
+          },
+        ]);
+      });
+      it('migrating more than once should throw error', async () => {
+        await assertEOSErrorIncludesMessage(
+          shared.daccustodian_contract.migratestate(dacId),
+          'Already migrated dac'
+        );
+      });
+    });
+    context('with no budget NFTs', async () => {
+      before(async () => {
+        await shared.daccustodian_contract.newperiod(
+          'initial new period',
+          dacId,
+          {
+            from: regMembers[0],
+          }
+        );
+        await sleep(1000);
+      });
+      it('claimbudget should fail', async () => {
+        await assertEOSErrorIncludesMessage(
+          shared.daccustodian_contract.claimbudget(dacId),
+          'Dac with ID budgetdac does not own any budget NFTs'
+        );
+      });
     });
     context('after initial logmint', async () => {
+      before(async () => {
+        await setup_nfts();
+      });
       it('nftcache table should contain our NFT', async () => {
         await assertRowsEqual(
           shared.dacdirectory_contract.nftcacheTable({
@@ -2092,33 +2157,52 @@ describe('Daccustodian', () => {
         );
       });
     });
+    context('when newperiod is called without claimbudget', async () => {
+      before(async () => {
+        await shared.eosio_token_contract.transfer(
+          shared.tokenIssuer.name,
+          shared.treasury_account.name,
+          `50.0000 TLM`,
+          'Some money for the treasury',
+          { from: shared.tokenIssuer }
+        );
+        await shared.eosio_token_contract.transfer(
+          shared.tokenIssuer.name,
+          shared.auth_account.name,
+          `100.0000 TLM`,
+          'Some money for the authority',
+          { from: shared.tokenIssuer }
+        );
+
+        await shared.daccustodian_contract.newperiod(
+          'initial new period',
+          dacId,
+          {
+            from: regMembers[0],
+          }
+        );
+        await sleep(1000);
+      });
+      it('should not transfer budget', async () => {
+        await assertBalanceEqual(
+          shared.eosio_token_contract.accountsTable({
+            scope: shared.treasury_account.name,
+          }),
+          '50.0000 TLM'
+        );
+        await assertBalanceEqual(
+          shared.eosio_token_contract.accountsTable({
+            scope: shared.auth_account.name,
+          }),
+          '100.0000 TLM'
+        );
+      });
+    });
     context(
-      'newperiod when transfer amount is bigger than treasury',
+      'claimbudget when transfer amount is bigger than treasury',
       async () => {
         before(async () => {
-          await shared.eosio_token_contract.transfer(
-            shared.tokenIssuer.name,
-            shared.treasury_account.name,
-            `50.0000 TLM`,
-            'Some money for the treasury',
-            { from: shared.tokenIssuer }
-          );
-          await shared.eosio_token_contract.transfer(
-            shared.tokenIssuer.name,
-            shared.auth_account.name,
-            `100.0000 TLM`,
-            'Some money for the authority',
-            { from: shared.tokenIssuer }
-          );
-
-          await shared.daccustodian_contract.newperiod(
-            'initial new period',
-            dacId,
-            {
-              from: regMembers[0],
-            }
-          );
-          await sleep(1000);
+          await shared.daccustodian_contract.claimbudget(dacId);
         });
         it('should only transfer treasury balance', async () => {
           await assertBalanceEqual(
@@ -2134,10 +2218,28 @@ describe('Daccustodian', () => {
             '150.0000 TLM'
           );
         });
+        it('should update lastclaimbudgettime', async () => {
+          const res = await shared.daccustodian_contract.state2Table({
+            scope: dacId,
+          });
+          const lastclaimbudgettime = res.rows[0].data.find((x) => x.key == 5)
+            .value[1];
+          chai
+            .expect(dayjs.utc().unix() - dayjs.utc(lastclaimbudgettime).unix())
+            .to.be.below(5);
+        });
       }
     );
+    context('calling claimbudget twice in the same period', async () =>
+      it('should fail', async () => {
+        await assertEOSErrorIncludesMessage(
+          shared.daccustodian_contract.claimbudget(dacId),
+          'Claimbudget can only be called once per period'
+        );
+      })
+    );
     context(
-      'newperiod when transfer amount smaller than treasury',
+      'claimbudget when transfer amount smaller than treasury',
       async () => {
         before(async () => {
           await shared.eosio_token_contract.transfer(
@@ -2154,6 +2256,7 @@ describe('Daccustodian', () => {
               from: regMembers[0],
             }
           );
+          await shared.daccustodian_contract.claimbudget(dacId);
         });
         it('should transfer amount according to formula', async () => {
           await assertBalanceEqual(

@@ -85,6 +85,41 @@ namespace eosdac {
         }
     };
 
+    struct contr_state2;
+    using statecontainer2 = eosio::singleton<"state2"_n, contr_state2>;
+
+    enum state_keys : uint8_t {
+        total_weight_of_votes       = 1,
+        total_votes_on_candidates   = 2,
+        number_active_candidates    = 3,
+        met_initial_votes_threshold = 4,
+        lastclaimbudgettime         = 5
+    };
+    using state_value_variant =
+        std::variant<uint32_t, uint64_t, int64_t, bool, std::vector<int64_t>, name, std::string, eosio::time_point_sec>;
+
+    struct [[eosio::table("state2"), eosio::contract("daccustodian")]] contr_state2 {
+        eosio::time_point_sec                  lastperiodtime = time_point_sec(0);
+        std::map<uint8_t, state_value_variant> data           = {};
+
+        static contr_state2 get_current_state(eosio::name account, eosio::name scope) {
+            return statecontainer2(account, scope.value).get_or_default(contr_state2());
+        }
+
+        void save(eosio::name account, eosio::name scope, eosio::name payer = same_payer) {
+            statecontainer2(account, scope.value).set(*this, payer);
+        }
+
+        void set(const state_keys key, const state_value_variant &value) { data[key] = value; }
+
+        template <typename T>
+        T get(const state_keys key) {
+            const auto search = data.find(key);
+            check(search != data.end(), "Key %s not found in state data", std::to_string(key));
+            return std::get<T>(search->second);
+        }
+    };
+
     struct [[eosio::table("votes"), eosio::contract("daccustodian")]] vote {
         name              voter;
         name              proxy;
@@ -174,6 +209,8 @@ namespace eosdac {
         ACTION removecuspay(const uint64_t payid, const name &dac_id);
         ACTION rejectcuspay(const uint64_t payid, const name &dac_id);
         ACTION paycpu(const name &dac_id);
+        ACTION claimbudget(const name &dac_id);
+        ACTION migratestate(const name &dac_id);
 #ifdef DEBUG
         ACTION resetvotes(const name &voter, const name &dac_id);
         ACTION resetcands(const name &dac_id);
@@ -196,14 +233,13 @@ namespace eosdac {
          */
         ACTION setperm(const name &cand, const name &permission, const name &dac_id);
 
-
       private: // Private helper methods used by other actions.
         void    updateVoteWeight(name custodian, int64_t weight, name internal_dac_id);
         void    updateVoteWeights(const vector<name> &votes, int64_t vote_weight, name internal_dac_id);
         int64_t get_vote_weight(name voter, name dac_id);
         void modifyVoteWeights(int64_t vote_weight, vector<name> oldVotes, vector<name> newVotes, name internal_dac_id);
         void modifyProxiesWeight(int64_t vote_weight, name oldProxy, name newProxy, name dac_id);
-        void assertPeriodTime(contr_config &configs, contr_state &currentState);
+        void assertPeriodTime(contr_config &configs, contr_state2 &currentState);
         void distributeMeanPay(name internal_dac_id);
         vector<eosiosystem::permission_level_weight> get_perm_level_weights(
             const custodians_table &custodians, const name &dac_id);

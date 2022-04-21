@@ -3,8 +3,8 @@ using namespace eosdac;
 void daccustodian::distributeMeanPay(name dac_id) {
     custodians_table  custodians(get_self(), dac_id.value);
     pending_pay_table pending_pay(get_self(), dac_id.value);
-    contr_config      configs      = contr_config::get_current_configs(get_self(), dac_id);
-    name              owner = dacdir::dac_for_id(dac_id).owner;
+    contr_config      configs = contr_config::get_current_configs(get_self(), dac_id);
+    name              owner   = dacdir::dac_for_id(dac_id).owner;
 
     // Find the mean pay using a temporary vector to hold the requestedpay amounts.
     extended_asset total = configs.requested_pay_max - configs.requested_pay_max;
@@ -54,7 +54,7 @@ void daccustodian::distributeMeanPay(name dac_id) {
     print("distribute mean pay");
 }
 
-void daccustodian::assertPeriodTime(contr_config &configs, contr_state &currentState) {
+void daccustodian::assertPeriodTime(contr_config &configs, contr_state2 &currentState) {
     time_point_sec timestamp        = time_point_sec(eosio::current_time_point());
     uint32_t       periodBlockCount = (timestamp - currentState.lastperiodtime.sec_since_epoch()).sec_since_epoch();
     check(periodBlockCount > configs.periodlength,
@@ -184,9 +184,9 @@ void daccustodian::setMsigAuths(name dac_id) {
 }
 
 void daccustodian::setCustodianAuths(name dac_id) {
-    const auto custodians      = custodians_table{get_self(), dac_id.value};
-    const auto dac             = dacdir::dac_for_id(dac_id);
-    const auto weights         = get_perm_level_weights(custodians, dac_id);
+    const auto custodians = custodians_table{get_self(), dac_id.value};
+    const auto dac        = dacdir::dac_for_id(dac_id);
+    const auto weights    = get_perm_level_weights(custodians, dac_id);
 
     add_all_auths(dac.owner, weights, dac_id);
 }
@@ -196,7 +196,11 @@ asset balance_for_type(const dacdir::dac &dac, const dacdir::account_type type) 
     return eosdac::get_balance_graceful(account, TLM_TOKEN_CONTRACT, TLM_SYM);
 }
 
-void daccustodian::transferCustodianBudget(const dacdir::dac &dac) {
+ACTION daccustodian::claimbudget(const name &dac_id) {
+    auto state = contr_state2::get_current_state(get_self(), dac_id);
+    check(state.get<time_point_sec>(state_keys::lastclaimbudgettime) < state.lastperiodtime,
+        "Claimbudget can only be called once per period");
+    const auto dac              = dacdir::dac_for_id(dac_id);
     const auto treasury_account = dac.account_for_type(dacdir::TREASURY);
 
     const auto spendings_account = dac.account_for_type_maybe(dacdir::SPENDINGS);
@@ -214,11 +218,9 @@ void daccustodian::transferCustodianBudget(const dacdir::dac &dac) {
 
     const auto index_key = dacdir::nftcache::template_and_value_key_ascending(BUDGET_SCHEMA, 0);
     auto       itr       = index.lower_bound(index_key);
-    if (itr == index.end() || itr->schema_name != BUDGET_SCHEMA) {
-        // DAC does not own any budget NFTs, we do nothing
-        return;
-    }
-    
+    check(
+        itr != index.end() && itr->schema_name == BUDGET_SCHEMA, "Dac with ID %s does not own any budget NFTs", dac_id);
+
     // we need to convert this to int64_t so we can use the * operator on asset further down
     const auto p = int64_t(itr->value);
 
@@ -229,6 +231,25 @@ void daccustodian::transferCustodianBudget(const dacdir::dac &dac) {
             make_tuple(treasury_account, recipient, amount, "period budget"s))
             .send();
     }
+
+    state.set(state_keys::lastclaimbudgettime, time_point_sec(current_time_point()));
+    state.save(get_self(), dac_id);
+}
+
+ACTION daccustodian::migratestate(const name &dac_id) {
+    check(!statecontainer2(get_self(), dac_id.value).exists(), "Already migrated dac %s", dac_id);
+
+    auto old_state = contr_state::get_current_state(get_self(), dac_id);
+    auto new_state = contr_state2::get_current_state(get_self(), dac_id);
+
+    new_state.lastperiodtime = old_state.lastperiodtime;
+    new_state.set(state_keys::total_weight_of_votes, state_value_variant(old_state.total_weight_of_votes));
+    new_state.set(state_keys::total_votes_on_candidates, state_value_variant(old_state.total_votes_on_candidates));
+    new_state.set(state_keys::number_active_candidates, state_value_variant(old_state.number_active_candidates));
+    new_state.set(state_keys::met_initial_votes_threshold, state_value_variant(old_state.met_initial_votes_threshold));
+    new_state.set(state_keys::lastclaimbudgettime, state_value_variant(time_point_sec(0)));
+
+    new_state.save(get_self(), dac_id, get_self());
 }
 
 ACTION daccustodian::newperiod(const string &message, const name &dac_id) {
@@ -241,7 +262,7 @@ ACTION daccustodian::newperiod(const string &message, const name &dac_id) {
 ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
     /* This is a housekeeping method, it can be called by anyone by design */
     contr_config configs      = contr_config::get_current_configs(get_self(), dac_id);
-    contr_state  currentState = contr_state::get_current_state(get_self(), dac_id);
+    auto         currentState = contr_state2::get_current_state(get_self(), dac_id);
     assertPeriodTime(configs, currentState);
 
     dacdir::dac found_dac          = dacdir::dac_for_id(dac_id);
@@ -264,19 +285,19 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
         uint64_t token_current_supply = tokenStats->supply.amount;
 
         double percent_of_current_voter_engagement =
-            double(currentState.total_weight_of_votes) / double(token_current_supply) * 100.0;
+            double(currentState.get<int64_t>(state_keys::total_weight_of_votes)) / double(token_current_supply) * 100.0;
 
         print("\n\nToken current supply as decimal units: ", token_current_supply,
-            " total votes so far: ", currentState.total_weight_of_votes);
+            " total votes so far: ", currentState.get<int64_t>(state_keys::total_weight_of_votes));
         print("\n\nNeed inital engagement of: ", configs.initial_vote_quorum_percent, "% to start the DAC.");
         print("\n\nToken supply: ", token_current_supply * 0.0001,
-            " total votes so far: ", currentState.total_weight_of_votes * 0.0001);
+            " total votes so far: ", currentState.get<int64_t>(state_keys::total_weight_of_votes) * 0.0001);
         print("\n\nNeed initial engagement of: ", configs.initial_vote_quorum_percent, "% to start the DAC.");
         print("\n\nNeed ongoing engagement of: ", configs.vote_quorum_percent,
             "% to allow new periods to trigger after initial activation.");
         print("\n\nPercent of current voter engagement: ", percent_of_current_voter_engagement, "\n\n");
 
-        check(currentState.met_initial_votes_threshold == true ||
+        check(currentState.get<bool>(state_keys::met_initial_votes_threshold) == true ||
                   percent_of_current_voter_engagement > configs.initial_vote_quorum_percent,
             "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_ACTIVATE::Voter engagement %s is insufficient to activate the DAC (%s required).",
             percent_of_current_voter_engagement, configs.initial_vote_quorum_percent);
@@ -285,14 +306,12 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
             "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_PROCESS::Voter engagement is insufficient to process a new period");
     }
 
-    currentState.met_initial_votes_threshold = true;
+    currentState.set(state_keys::met_initial_votes_threshold, true);
 
     // Distribute Pay is called before allocateCustodians is called to ensure custodians are paid for the just passed
     // period. This also implies custodians should not be paid the first time this is called.
     // Distribute pay to the current custodians.
     distributeMeanPay(dac_id);
-
-    transferCustodianBudget(found_dac);
 
     // Set custodians for the next period.
     allocateCustodians(false, dac_id);
@@ -304,4 +323,3 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
     currentState.lastperiodtime = current_block_time();
     currentState.save(get_self(), dac_id);
 }
-
