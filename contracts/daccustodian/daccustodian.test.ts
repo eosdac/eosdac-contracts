@@ -554,11 +554,12 @@ describe('Daccustodian', () => {
         }
       });
       it('state should have 0 the total_weight_of_votes', async () => {
-        let dacState = await shared.daccustodian_contract.stateTable({
+        let dacState = await shared.daccustodian_contract.state2Table({
           scope: dacId,
         });
-        chai.expect(dacState.rows[0]).to.include({
-          total_weight_of_votes: 0,
+        chai.expect(dacState.rows[0].data).to.deep.include({
+          key: 1,
+          value: ['int64', 0],
         });
       });
     });
@@ -624,11 +625,12 @@ describe('Daccustodian', () => {
         );
       });
       it('state should have increased the total_weight_of_votes', async () => {
-        let dacState = await shared.daccustodian_contract.stateTable({
+        let dacState = await shared.daccustodian_contract.state2Table({
           scope: dacId,
         });
-        chai.expect(dacState.rows[0]).to.include({
-          total_weight_of_votes: 20_000_000,
+        chai.expect(dacState.rows[0].data).to.deep.include({
+          key: 1,
+          value: ['int64', 20_000_000],
         });
       });
     });
@@ -645,11 +647,12 @@ describe('Daccustodian', () => {
         chai.expect(initialVoteValue).to.equal(20_000_000);
       });
       it('assert preconditions for total vote values on state', async () => {
-        let dacState = await shared.daccustodian_contract.stateTable({
+        let dacState = await shared.daccustodian_contract.state2Table({
           scope: dacId,
         });
-        chai.expect(dacState.rows[0]).to.include({
-          total_weight_of_votes: 20_000_000,
+        chai.expect(dacState.rows[0].data).to.deep.include({
+          key: 1,
+          value: ['int64', 20_000_000],
         });
       });
       it('after transfer to non-voter values should reduce for candidates and total values', async () => {
@@ -671,11 +674,12 @@ describe('Daccustodian', () => {
         chai.expect(updatedCandVoteValue).to.equal(17_000_000);
       });
       it('total vote values on state should have changed', async () => {
-        let dacState = await shared.daccustodian_contract.stateTable({
+        let dacState = await shared.daccustodian_contract.state2Table({
           scope: dacId,
         });
-        chai.expect(dacState.rows[0]).to.include({
-          total_weight_of_votes: 17_000_000,
+        chai.expect(dacState.rows[0].data).to.deep.include({
+          key: 1,
+          value: ['int64', 17_000_000],
         });
       });
     });
@@ -758,11 +762,12 @@ describe('Daccustodian', () => {
         );
       });
       it('state should have increased the total_weight_of_votes', async () => {
-        let dacState = await shared.daccustodian_contract.stateTable({
+        let dacState = await shared.daccustodian_contract.state2Table({
           scope: dacId,
         });
-        chai.expect(dacState.rows[0]).to.include({
-          total_weight_of_votes: 20_000_000,
+        chai.expect(dacState.rows[0].data).to.deep.include({
+          key: 1,
+          value: ['int64', 20_000_000],
         });
       });
     });
@@ -855,11 +860,12 @@ describe('Daccustodian', () => {
         );
       });
       it('state should have increased the total_weight_of_votes', async () => {
-        let dacState = await shared.daccustodian_contract.stateTable({
+        let dacState = await shared.daccustodian_contract.state2Table({
           scope: dacId,
         });
-        chai.expect(dacState.rows[0]).to.include({
-          total_weight_of_votes: 30_000_000, // SHould be 30,000,000 I think
+        chai.expect(dacState.rows[0].data).to.deep.include({
+          key: 1,
+          value: ['int64', 30_000_000],
         });
       });
       context('vote values after transfers', async () => {
@@ -875,11 +881,12 @@ describe('Daccustodian', () => {
           chai.expect(initialVoteValue).to.equal(30_000_000);
         });
         it('assert preconditions for total vote values on state', async () => {
-          let dacState = await shared.daccustodian_contract.stateTable({
+          let dacState = await shared.daccustodian_contract.state2Table({
             scope: dacId,
           });
-          chai.expect(dacState.rows[0]).to.include({
-            total_weight_of_votes: 30_000_000,
+          chai.expect(dacState.rows[0].data).to.deep.include({
+            key: 1,
+            value: ['int64', 30_000_000],
           });
         });
         it('after transfer to non-voter values should reduce for candidates and total values', async () => {
@@ -901,11 +908,12 @@ describe('Daccustodian', () => {
           chai.expect(updatedCandVoteValue).to.equal(27_000_000); // should be 27,000,000
         });
         it('total vote values on state should have changed', async () => {
-          let dacState = await shared.daccustodian_contract.stateTable({
+          let dacState = await shared.daccustodian_contract.state2Table({
             scope: dacId,
           });
-          chai.expect(dacState.rows[0]).to.include({
-            total_weight_of_votes: 27_000_000,
+          chai.expect(dacState.rows[0].data).to.deep.include({
+            key: 1,
+            value: ['int64', 27_000_000],
           });
         });
       });
@@ -958,11 +966,12 @@ describe('Daccustodian', () => {
             chai.expect(updatedCandVoteValue).to.equal(20_000_000);
           });
           it('total vote values on state should have changed', async () => {
-            let dacState = await shared.daccustodian_contract.stateTable({
+            let dacState = await shared.daccustodian_contract.state2Table({
               scope: dacId,
             });
-            chai.expect(dacState.rows[0]).to.include({
-              total_weight_of_votes: 20_000_000,
+            chai.expect(dacState.rows[0].data).to.deep.include({
+              key: 1,
+              value: ['int64', 20_000_000],
             });
           });
         }
@@ -1621,13 +1630,14 @@ describe('Daccustodian', () => {
       });
       context('for an unelected candidate', async () => {
         it('should succeed', async () => {
-          let beforeState = await shared.daccustodian_contract.stateTable({
+          let beforeState = await shared.daccustodian_contract.state2Table({
             scope: dacId,
             limit: 1,
           });
 
-          var numberActiveCandidatesBefore =
-            beforeState.rows[0].number_active_candidates;
+          var numberActiveCandidatesBefore = beforeState.rows[0].data.find(
+            (x) => x.key == 3
+          ).value[1];
 
           await shared.daccustodian_contract.withdrawcane(
             unelectedCandidateToResign.name,
@@ -1644,12 +1654,15 @@ describe('Daccustodian', () => {
             .expect(candidates.rows[0].custodian_end_time_stamp)
             .to.be.equalDate(new Date(0));
           chai.expect(candidates.rows[0].is_active).to.be.equal(0);
-          let afterState = await shared.daccustodian_contract.stateTable({
+          let afterState = await shared.daccustodian_contract.state2Table({
             scope: dacId,
             limit: 1,
           });
+          var numberActiveCandidatesAfter = afterState.rows[0].data.find(
+            (x) => x.key == 3
+          ).value[1];
           chai
-            .expect(afterState.rows[0].number_active_candidates)
+            .expect(numberActiveCandidatesAfter)
             .to.be.equal(numberActiveCandidatesBefore - 1);
         });
         it('should allow unstaking without a timelock error', async () => {
@@ -1740,13 +1753,14 @@ describe('Daccustodian', () => {
       });
       context('for an unelected candidate', async () => {
         it('should succeed', async () => {
-          let beforeState = await shared.daccustodian_contract.stateTable({
+          let beforeState = await shared.daccustodian_contract.state2Table({
             scope: dacId,
             limit: 1,
           });
 
-          var numberActiveCandidatesBefore =
-            beforeState.rows[0].number_active_candidates;
+          var numberActiveCandidatesBefore = beforeState.rows[0].data.find(
+            (x) => x.key == 3
+          ).value[1];
 
           await shared.daccustodian_contract.firecand(
             unelectedCandidateToFire.name,
@@ -1764,12 +1778,15 @@ describe('Daccustodian', () => {
             .expect(candidates.rows[0].custodian_end_time_stamp)
             .to.be.afterDate(new Date(0));
           chai.expect(candidates.rows[0].is_active).to.be.equal(0);
-          let afterState = await shared.daccustodian_contract.stateTable({
+          let afterState = await shared.daccustodian_contract.state2Table({
             scope: dacId,
             limit: 1,
           });
+          var numberActiveCandidatesAfter = afterState.rows[0].data.find(
+            (x) => x.key == 3
+          ).value[1];
           chai
-            .expect(afterState.rows[0].number_active_candidates)
+            .expect(numberActiveCandidatesAfter)
             .to.be.equal(numberActiveCandidatesBefore - 1);
         });
       });
