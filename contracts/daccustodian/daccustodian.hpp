@@ -239,6 +239,9 @@ namespace eosdac {
 
 #endif
 
+#ifdef IS_DEV
+        ACTION fillstate(const name &dac_id, contr_state &state);
+#endif
         /**
          * This action is used to register a custom permission that will be used in the multisig instead of active.
          *

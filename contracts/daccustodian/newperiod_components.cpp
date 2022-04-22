@@ -236,6 +236,12 @@ ACTION daccustodian::claimbudget(const name &dac_id) {
     state.save(get_self(), dac_id);
 }
 
+#ifdef IS_DEV
+ACTION daccustodian::fillstate(const name &dac_id, contr_state &state) {
+    state.save(get_self(), dac_id, get_self());
+}
+#endif
+
 ACTION daccustodian::migratestate(const name &dac_id) {
     check(!statecontainer2(get_self(), dac_id.value).exists(), "Already migrated dac %s", dac_id);
     auto new_state = contr_state2::get_current_state(get_self(), dac_id);
