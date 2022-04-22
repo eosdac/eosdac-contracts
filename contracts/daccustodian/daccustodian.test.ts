@@ -22,6 +22,7 @@ dayjs.extend(utc);
 import { DaccustodianCandidate } from './daccustodian';
 chai.use(chaiAsPromised);
 let shared: SharedTestObjects;
+const now = dayjs.utc();
 
 const NFT_COLLECTION = 'alien.worlds';
 const BUDGET_SCHEMA = 'budget';
@@ -32,7 +33,81 @@ describe('Daccustodian', () => {
   before(async () => {
     shared = await SharedTestObjects.getInstance();
   });
+  context('fillstate', async () => {
+    let dacId = 'migratedac';
+    before(async () => {
+      await shared.daccustodian_contract.fillstate(dacId, {
+        lastperiodtime: now.toDate(),
+        total_weight_of_votes: -123,
+        total_votes_on_candidates: -234,
+        number_active_candidates: 456,
+        met_initial_votes_threshold: true,
+      });
+    });
+    it('should create table entries', async () => {
+      const res = await shared.daccustodian_contract.stateTable({
+        scope: dacId,
+      });
+      const s = res.rows[0];
+      chai
+        .expect(now.unix() - dayjs.utc(s.lastperiodtime).unix())
+        .to.be.below(2);
+      chai.expect(s.total_weight_of_votes).to.equal(-123);
+      chai.expect(s.total_votes_on_candidates).to.equal(-234);
+      chai.expect(s.number_active_candidates).to.equal(456);
+      chai.expect(s.met_initial_votes_threshold).to.be.true;
+    });
+  });
+  context('migratestate', async () => {
+    let dacId = 'migratedac';
 
+    it('should work', async () => {
+      await shared.daccustodian_contract.migratestate(dacId);
+    });
+    it('calling a second time should fail with already migrated error', async () => {
+      // call something else to prevent duplicate transaction error
+      await shared.daccustodian_contract.migratestate('decoydac');
+      await sleep(500);
+
+      await assertEOSErrorIncludesMessage(
+        shared.daccustodian_contract.migratestate(dacId),
+        'Already migrated dac'
+      );
+    });
+    it('should create table2 entries', async () => {
+      const res = await shared.daccustodian_contract.state2Table({
+        scope: dacId,
+      });
+      const s = res.rows[0];
+      chai
+        .expect(now.unix() - dayjs.utc(s.lastperiodtime).unix())
+        .to.be.below(2);
+      chai.expect(s.data).deep.contains({
+        key: 2,
+        value: ['int64', -234],
+      });
+      chai.expect(s.data).deep.contains({
+        key: 3,
+        value: ['uint32', 456],
+      });
+      chai.expect(s.data).deep.contains({
+        key: 4,
+        value: ['bool', 1],
+      });
+      chai.expect(s.data).deep.contains({
+        key: 5,
+        value: ['time_point_sec', '1970-01-01T00:00:00'],
+      });
+    });
+    it('should delete old table entries', async () => {
+      await assertRowCount(
+        shared.daccustodian_contract.stateTable({
+          scope: dacId,
+        }),
+        0
+      );
+    });
+  });
   context('updateconfige', async () => {
     let dacId = 'custodiandac';
     before(async () => {
