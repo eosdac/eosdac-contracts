@@ -113,8 +113,7 @@ namespace eosdac {
             if (!statecontainer(account, dac_id.value).exists()) {
                 return new_state;
             }
-            auto old_state = contr_state::get_current_state(account, dac_id);
-
+            auto old_state           = contr_state::get_current_state(account, dac_id);
             new_state.lastperiodtime = old_state.lastperiodtime;
             new_state.set(state_keys::total_weight_of_votes, old_state.total_weight_of_votes);
             new_state.set(state_keys::total_votes_on_candidates, old_state.total_votes_on_candidates);
@@ -133,7 +132,9 @@ namespace eosdac {
             statecontainer(account, scope.value).remove();
         }
 
-        void set(const state_keys key, const state_value_variant &value) { data[key] = value; }
+        void set(const state_keys key, const state_value_variant &value) {
+            data[key] = value;
+        }
 
         template <typename T>
         T get(const state_keys key) const {
@@ -148,9 +149,13 @@ namespace eosdac {
         name              proxy;
         std::vector<name> candidates;
 
-        uint64_t primary_key() const { return voter.value; }
+        uint64_t primary_key() const {
+            return voter.value;
+        }
 
-        uint64_t by_proxy() const { return proxy.value; }
+        uint64_t by_proxy() const {
+            return proxy.value;
+        }
     };
 
     using votes_table =
@@ -160,7 +165,9 @@ namespace eosdac {
         name    proxy;
         int64_t total_weight;
 
-        uint64_t primary_key() const { return proxy.value; }
+        uint64_t primary_key() const {
+            return proxy.value;
+        }
     };
 
     using proxies_table = eosio::multi_index<"proxies"_n, proxy>;
@@ -174,9 +181,15 @@ namespace eosdac {
             return combine_ids(receiver.value, symbol.get_contract().value, symbol.get_symbol().code().raw(), 0);
         }
 
-        uint64_t    primary_key() const { return key; }
-        uint64_t    byreceiver() const { return receiver.value; }
-        checksum256 byreceiver_and_symbol() const { return getIndex(receiver, quantity.get_extended_symbol()); }
+        uint64_t primary_key() const {
+            return key;
+        }
+        uint64_t byreceiver() const {
+            return receiver.value;
+        }
+        checksum256 byreceiver_and_symbol() const {
+            return getIndex(receiver, quantity.get_extended_symbol());
+        }
 
         EOSLIB_SERIALIZE(pay, (key)(receiver)(quantity))
     };
@@ -189,7 +202,9 @@ namespace eosdac {
         name cand;
         name permission;
 
-        uint64_t primary_key() const { return cand.value; }
+        uint64_t primary_key() const {
+            return cand.value;
+        }
     };
 
     using candperms_table = multi_index<"candperms"_n, candperm>;
