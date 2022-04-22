@@ -2159,49 +2159,6 @@ describe('Daccustodian', () => {
         { from: shared.auth_account }
       );
     });
-    // context('migratestate', async () => {
-    //   it('should work', async () => {
-    //     await shared.daccustodian_contract.migratestate(dacId);
-    //   });
-    //   it('should populate state2 table', async () => {
-    //     const res = await shared.daccustodian_contract.state2Table({
-    //       scope: dacId,
-    //     });
-    //     chai.expect(res.rows).to.deep.equal([
-    //       {
-    //         lastperiodtime: dayjs.utc('1970-01-01T00:00:00.000Z').toDate(),
-    //         data: [
-    //           {
-    //             key: 1,
-    //             value: ['int64', 3200000000],
-    //           },
-    //           {
-    //             key: 2,
-    //             value: ['int64', 32768],
-    //           },
-    //           {
-    //             key: 3,
-    //             value: ['uint32', 7],
-    //           },
-    //           {
-    //             key: 4,
-    //             value: ['bool', 0],
-    //           },
-    //           {
-    //             key: 5,
-    //             value: ['time_point_sec', '1970-01-01T00:00:00'],
-    //           },
-    //         ],
-    //       },
-    //     ]);
-    //   });
-    //   it('migrating more than once should throw error', async () => {
-    //     await assertEOSErrorIncludesMessage(
-    //       shared.daccustodian_contract.migratestate(dacId),
-    //       'Already migrated dac'
-    //     );
-    //   });
-    // });
     context('with no budget NFTs', async () => {
       before(async () => {
         await shared.daccustodian_contract.newperiod(
