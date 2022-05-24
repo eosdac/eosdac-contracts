@@ -15,6 +15,7 @@ import {
 
 import { SharedTestObjects, NUMBER_OF_CANDIDATES } from '../TestHelpers';
 import * as chai from 'chai';
+const { Serialize } = require('eosjs');
 import * as chaiAsPromised from 'chai-as-promised';
 const dayjs = require('dayjs');
 const utc = require('dayjs/plugin/utc');
@@ -23,6 +24,7 @@ import { DaccustodianCandidate } from './daccustodian';
 chai.use(chaiAsPromised);
 let shared: SharedTestObjects;
 const now = dayjs.utc();
+const Int64LE = require('int64-buffer').Int64LE;
 
 const NFT_COLLECTION = 'alien.worlds';
 const BUDGET_SCHEMA = 'budget';
@@ -2308,6 +2310,8 @@ describe('Daccustodian', () => {
           await shared.daccustodian_contract.claimbudget(dacId);
         });
         it('should transfer amount according to formula', async () => {
+          const expected_amount = await expected_budget_transfer_amount(dacId);
+
           await assertBalanceEqual(
             shared.eosio_token_contract.accountsTable({
               scope: shared.treasury_account.name,
@@ -2476,4 +2480,84 @@ async function setup_test_user(testuser: Account, tokenSymbol: string) {
     '',
     { from: shared.dac_token_contract.account }
   );
+}
+
+async function expected_budget_transfer_amount(dacId: string) {
+  const auth_balance = await get_balance(
+    shared.eosio_token_contract,
+    shared.auth_account,
+    'TLM'
+  );
+  const treasury_balance = await get_balance(
+    shared.eosio_token_contract,
+    shared.treasury_account,
+    'TLM'
+  );
+  console.log('auth_balance: ', auth_balance);
+  console.log('treasury_balance: ', treasury_balance);
+
+  // await shared.daccustodian_contract.setbudget(dacId, 100);
+  // await shared.daccustodian_contract.setbudget('abc', 200);
+  // await shared.daccustodian_contract.setbudget('cde', 300);
+
+  const res = await shared.daccustodian_contract.budgetTable({
+    lowerBound: dacId,
+    upperBound: dacId,
+    keyType: 'i64',
+  });
+  let percentage;
+  if (res.rows.length) {
+    // we have manually set budget percentage
+    percentage = res.rows[0].percentage;
+  } else {
+    // see if the dac owns any budget NFTs
+    const index_key = template_and_value_key_ascending(BUDGET_SCHEMA, 0);
+    console.log('index_key: ', index_key + '');
+    const nft_res = await shared.dacdirectory_contract.nftcacheTable({
+      scope: dacId,
+      lowerBound: index_key,
+      keyType: 'i128',
+    });
+    console.log('nft_res: ', JSON.stringify(nft_res, null, 2));
+
+    if (nft_res.rows.length) {
+    }
+  }
+
+  console.log('res.rows: ', JSON.stringify(res.rows));
+}
+
+async function get_balance(
+  token_contract: Account,
+  account: Account,
+  search_symbol: string
+) {
+  const res = await token_contract.accountsTable({
+    scope: account.name,
+  });
+  for (const row of res.rows) {
+    const bal = row.balance;
+    const [amount, symbol] = bal.split(' ');
+    if (symbol == search_symbol) {
+      return amount;
+    }
+  }
+  return 0;
+}
+
+function template_and_value_key_ascending(schema_name, value) {
+  return (BigInt(nameToInt(schema_name)) << BigInt(64)) | BigInt(value);
+}
+
+function nameToInt(name) {
+  const sb = new Serialize.SerialBuffer({
+    textEncoder: new TextEncoder(),
+    textDecoder: new TextDecoder(),
+  });
+
+  sb.pushName(name);
+
+  const name_64 = new Int64LE(sb.array);
+
+  return name_64 + '';
 }

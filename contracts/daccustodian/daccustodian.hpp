@@ -101,11 +101,11 @@ namespace eosdac {
     struct [[eosio::table("state2"), eosio::contract("daccustodian")]] contr_state2 {
         eosio::time_point_sec                  lastperiodtime = time_point_sec(0);
         std::map<uint8_t, state_value_variant> data           = {
-                      {state_keys::total_weight_of_votes, int64_t(0)},
-                      {state_keys::total_votes_on_candidates, int64_t(0)},
-                      {state_keys::number_active_candidates, uint32_t(0)},
-                      {state_keys::met_initial_votes_threshold, false},
-                      {state_keys::lastclaimbudgettime, time_point_sec(0)},
+            {state_keys::total_weight_of_votes, int64_t(0)},
+            {state_keys::total_votes_on_candidates, int64_t(0)},
+            {state_keys::number_active_candidates, uint32_t(0)},
+            {state_keys::met_initial_votes_threshold, false},
+            {state_keys::lastclaimbudgettime, time_point_sec(0)},
         };
 
         static contr_state2 get_migrated_state(const eosio::name account, const eosio::name dac_id) {
@@ -209,6 +209,16 @@ namespace eosdac {
 
     using candperms_table = multi_index<"candperms"_n, candperm>;
 
+    struct [[eosio::table("budget"), eosio::contract("daccustodian")]] budget_settings_item {
+        name     dac_id;
+        uint16_t percentage;
+
+        uint64_t primary_key() const {
+            return dac_id.value;
+        }
+    };
+    using budget_settings_table = multi_index<"budget"_n, budget_settings_item>;
+
     class daccustodian : public contract {
 
       public:
@@ -248,6 +258,7 @@ namespace eosdac {
         ACTION paycpu(const name &dac_id);
         ACTION claimbudget(const name &dac_id);
         ACTION migratestate(const name &dac_id);
+        ACTION setbudget(const name &dac_id, const uint16_t percentage);
 #ifdef DEBUG
         ACTION resetvotes(const name &voter, const name &dac_id);
         ACTION resetcands(const name &dac_id);

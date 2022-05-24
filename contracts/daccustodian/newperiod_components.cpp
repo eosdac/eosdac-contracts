@@ -196,6 +196,16 @@ asset balance_for_type(const dacdir::dac &dac, const dacdir::account_type type) 
     return eosdac::get_balance_graceful(account, TLM_TOKEN_CONTRACT, TLM_SYM);
 }
 
+ACTION daccustodian::setbudget(const name &dac_id, const uint16_t percentage) {
+    require_auth(get_self());
+
+    auto budget_settings = budget_settings_table{get_self(), get_self().value};
+    upsert(budget_settings, dac_id.value, get_self(), [&](auto &b) {
+        b.dac_id     = dac_id;
+        b.percentage = percentage;
+    });
+}
+
 ACTION daccustodian::claimbudget(const name &dac_id) {
     auto state = contr_state2::get_current_state(get_self(), dac_id);
     check(state.get<time_point_sec>(state_keys::lastclaimbudgettime) < state.lastperiodtime,
