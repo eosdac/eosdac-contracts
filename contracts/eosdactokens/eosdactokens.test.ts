@@ -28,17 +28,6 @@ describe('EOSDacTokens', () => {
   });
 
   context('create token', async () => {
-    it('with invalid token symbol should fail with invalid symbol error', async () => {
-      await l.assertEOSErrorIncludesMessage(
-        shared.dac_token_contract.create(
-          issuer.name,
-          '10000.0000 asdf',
-          false,
-          validAuths
-        ),
-        'ERR::CREATE_INVALID_SYMBOL'
-      );
-    });
     it('with negative token quantity should fail with invalid supply error', async () => {
       await l.assertEOSErrorIncludesMessage(
         shared.dac_token_contract.create(
@@ -82,17 +71,6 @@ describe('EOSDacTokens', () => {
     });
   });
   context('issue token', async () => {
-    it('with invalid token symbol should fail with invalid symbol error', async () => {
-      await l.assertEOSErrorIncludesMessage(
-        shared.dac_token_contract.issue(
-          issuer.name,
-          '10000.0000 sdasd',
-          'some memo',
-          validAuths
-        ),
-        'ERR::ISSUE_INVALID_SYMBOL'
-      );
-    });
     it('with non existing token should fail with non-existing token error', async () => {
       await l.assertEOSErrorIncludesMessage(
         shared.dac_token_contract.issue(
