@@ -199,48 +199,7 @@ describe('Dacproposals', () => {
           );
         });
       });
-      context('with invalid pay symbol', async () => {
-        it('should fail with invalid pay symbol error', async () => {
-          await assertEOSErrorIncludesMessage(
-            shared.dacproposals_contract.createprop(
-              proposer1Account.name,
-              'title',
-              'summary',
-              arbitrator.name,
-              { quantity: '100.0000 sdff', contract: 'eosio.token' },
-              { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
-              proposalHash,
-              newpropid,
-              category,
-              150,
-              dacId,
-              { from: proposer1Account }
-            ),
-            'CREATEPROP_INVALID_SYMBOL'
-          );
-        });
-      });
-      context('with no pay symbol', async () => {
-        it('should fail with no pay symbol error', async () => {
-          await assertEOSErrorIncludesMessage(
-            shared.dacproposals_contract.createprop(
-              proposer1Account.name,
-              'title',
-              'summary',
-              arbitrator.name,
-              { quantity: '100.0000', contract: 'eosio.token' },
-              { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
-              proposalHash,
-              newpropid,
-              category,
-              150,
-              dacId,
-              { from: proposer1Account }
-            ),
-            'CREATEPROP_INVALID_SYMBOL'
-          );
-        });
-      });
+
       context('with negative amount', async () => {
         it('should fail with negative pay error', async () => {
           await assertEOSErrorIncludesMessage(
