@@ -358,28 +358,26 @@ describe('Dacproposals', () => {
         });
       });
       context('proposal in pending approval state', async () => {
-        context('proposal_approve vote', async () => {
+        context('proposal_approve vote 1', async () => {
           it('should succeed', async () => {
-            await chai.expect(
-              shared.dacproposals_contract.voteprop(
-                propDacCustodians[0].name,
-                newpropid,
-                VoteType.vote_approve,
-                dacId,
-                {
-                  auths: [
-                    {
-                      actor: propDacCustodians[0].name,
-                      permission: 'active',
-                    },
-                    {
-                      actor: shared.auth_account.name,
-                      permission: 'active',
-                    },
-                  ],
-                }
-              )
-            ).to.eventually.be.fulfilled;
+            await shared.dacproposals_contract.voteprop(
+              propDacCustodians[0].name,
+              newpropid,
+              VoteType.vote_approve,
+              dacId,
+              {
+                auths: [
+                  {
+                    actor: propDacCustodians[0].name,
+                    permission: 'active',
+                  },
+                  {
+                    actor: shared.auth_account.name,
+                    permission: 'active',
+                  },
+                ],
+              }
+            );
           });
         });
         context('proposal_deny vote', async () => {
@@ -406,76 +404,71 @@ describe('Dacproposals', () => {
             ).to.eventually.be.fulfilled;
           });
         });
-        context('proposal_approve vote', async () => {
+        context('proposal_approve vote 2 ', async () => {
           it('should succeed', async () => {
-            await chai.expect(
-              shared.dacproposals_contract.voteprop(
-                propDacCustodians[0].name,
-                newpropid,
-                VoteType.vote_approve,
-                dacId,
-                {
-                  auths: [
-                    {
-                      actor: propDacCustodians[0].name,
-                      permission: 'active',
-                    },
-                    {
-                      actor: shared.auth_account.name,
-                      permission: 'active',
-                    },
-                  ],
-                }
-              )
-            ).to.eventually.be.fulfilled;
+            await sleep(1000);
+            await shared.dacproposals_contract.voteprop(
+              propDacCustodians[0].name,
+              newpropid,
+              VoteType.vote_approve,
+              dacId,
+              {
+                auths: [
+                  {
+                    actor: propDacCustodians[0].name,
+                    permission: 'active',
+                  },
+                  {
+                    actor: shared.auth_account.name,
+                    permission: 'active',
+                  },
+                ],
+              }
+            );
           });
         });
         context('Extra proposal_approve vote', async () => {
           it('should succeed', async () => {
-            await chai.expect(
-              shared.dacproposals_contract.voteprop(
-                propDacCustodians[0].name,
-                otherfoundpropid,
-                VoteType.vote_approve,
-                dacId,
-                {
-                  auths: [
-                    {
-                      actor: propDacCustodians[0].name,
-                      permission: 'active',
-                    },
-                    {
-                      actor: shared.auth_account.name,
-                      permission: 'active',
-                    },
-                  ],
-                }
-              )
-            ).to.eventually.be.fulfilled;
+            await shared.dacproposals_contract.voteprop(
+              propDacCustodians[0].name,
+              otherfoundpropid,
+              VoteType.vote_approve,
+              dacId,
+              {
+                auths: [
+                  {
+                    actor: propDacCustodians[0].name,
+                    permission: 'active',
+                  },
+                  {
+                    actor: shared.auth_account.name,
+                    permission: 'active',
+                  },
+                ],
+              }
+            );
           });
         });
         context('proposal_deny vote of existing vote', async () => {
           it('should succeed', async () => {
-            await chai.expect(
-              shared.dacproposals_contract.voteprop(
-                propDacCustodians[0].name,
-                newpropid,
-                VoteType.vote_deny,
-                dacId,
-                {
-                  auths: [
-                    {
-                      actor: propDacCustodians[0].name,
-                      permission: 'active',
-                    },
-                    {
-                      actor: shared.auth_account.name,
-                      permission: 'active',
-                    },
-                  ],
-                }
-              )
-            ).to.eventually.be.fulfilled;
+            await shared.dacproposals_contract.voteprop(
+              propDacCustodians[0].name,
+              newpropid,
+              VoteType.vote_deny,
+              dacId,
+              {
+                auths: [
+                  {
+                    actor: propDacCustodians[0].name,
+                    permission: 'active',
+                  },
+                  {
+                    actor: shared.auth_account.name,
+                    permission: 'active',
+                  },
+                ],
+              }
+            );
           });
         });
       });
@@ -1218,23 +1211,20 @@ describe('Dacproposals', () => {
     context('proposal in pending approval state', async () => {
       let wrongStateProp = 'wrongpropid';
       before(async () => {
-        await chai.expect(
-          shared.dacproposals_contract.createprop(
-            proposer1Account.name,
-            'startwork_title',
-            'startwork_summary',
-            arbitrator.name,
-            { quantity: '101.0000 EOS', contract: 'eosio.token' },
-            { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
-            'asdfasdfasdfasdfasdfasdfasdffdsa',
-            wrongStateProp, // proposal id
-            category,
-            150, // approval duration
-            dacId,
-            { from: proposer1Account }
-          ),
-          ''
-        ).to.eventually.be.fulfilled;
+        await shared.dacproposals_contract.createprop(
+          proposer1Account.name,
+          'startwork_title',
+          'startwork_summary',
+          arbitrator.name,
+          { quantity: '101.0000 EOS', contract: 'eosio.token' },
+          { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+          'asdfasdfasdfasdfasdfasdfasdffdsa',
+          wrongStateProp, // proposal id
+          category,
+          150, // approval duration
+          dacId,
+          { from: proposer1Account }
+        );
       });
       it('should fail with incorrect to state to complete error', async () => {
         await assertEOSErrorIncludesMessage(
