@@ -1055,7 +1055,7 @@ describe('Daccustodian', () => {
   });
 
   context('New Period Elections', async () => {
-    let dacId = 'newperioddac';
+    let dacId = 'nperidac';
     let regMembers: Account[];
     let newUser1: Account;
 
@@ -1877,19 +1877,18 @@ describe('Daccustodian', () => {
     let candidates: Account[];
 
     before(async () => {
-      await shared.initDac(dacId, '4,FCUSTDAC', '1000000.0000 FCUSTDAC');
-      await shared.updateconfig(dacId, '12.0000 FCUSTDAC');
+      await shared.initDac(dacId, '4,CUSTDAC', '1000000.0000 CUSTDAC');
+      await shared.updateconfig(dacId, '12.0000 CUSTDAC');
       await shared.dac_token_contract.stakeconfig(
         { enabled: true, min_stake_time: 5, max_stake_time: 20 },
-        '4,FCUSTDAC',
+        '4,CUSTDAC',
         { from: shared.auth_account }
       );
-
-      regMembers = await shared.getRegMembers(dacId, '20000.0000 FCUSTDAC');
+      regMembers = await shared.getRegMembers(dacId, '20000.0000 CUSTDAC');
       unregisteredCandidate = regMembers[0];
       candidates = await shared.getStakeObservedCandidates(
         dacId,
-        '12.0000 FCUSTDAC',
+        '12.0000 CUSTDAC',
         NUMBER_OF_CANDIDATES + 1
       );
       await shared.voteForCustodians(regMembers, candidates, dacId);
@@ -1900,6 +1899,7 @@ describe('Daccustodian', () => {
           from: regMembers[0], // Could be run by anyone.
         }
       );
+
       electedCandidateToFire = candidates[3];
       unelectedCandidateToFire = candidates[NUMBER_OF_CANDIDATES];
     });
@@ -2117,20 +2117,20 @@ describe('Daccustodian', () => {
     let tlm_token_contract: Account;
 
     before(async () => {
-      await shared.initDac(dacId, '4,PERIODDAC', '1000000.0000 PERIODDAC');
-      await shared.updateconfig(dacId, '12.0000 PERIODDAC');
+      await shared.initDac(dacId, '4,PERIDAC', '1000000.0000 PERIDAC');
+      await shared.updateconfig(dacId, '12.0000 PERIDAC');
       await shared.dac_token_contract.stakeconfig(
         { enabled: true, min_stake_time: 5, max_stake_time: 20 },
-        '4,PERIODDAC',
+        '4,PERIDAC',
         { from: shared.auth_account }
       );
 
       // With 16 voting members with 2000 each and a threshold of 31 percent
       // this will total to 320_000 vote value which will be enough to start the DAC
-      regMembers = await shared.getRegMembers(dacId, '20000.0000 PERIODDAC');
+      regMembers = await shared.getRegMembers(dacId, '20000.0000 PERIDAC');
       candidates = await shared.getStakeObservedCandidates(
         dacId,
-        '12.0000 PERIODDAC'
+        '12.0000 PERIDAC'
       );
       await shared.voteForCustodians(regMembers, candidates, dacId);
 
@@ -2150,7 +2150,7 @@ describe('Daccustodian', () => {
           auth_threshold_low: 2,
           lockupasset: {
             contract: shared.dac_token_contract.account.name,
-            quantity: '12.0000 PERIODDAC',
+            quantity: '12.0000 PERIDAC',
           },
           should_pay_via_service_provider: false,
           lockup_release_time_delay: 1233,
