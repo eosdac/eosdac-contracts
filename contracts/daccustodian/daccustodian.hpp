@@ -259,6 +259,7 @@ namespace eosdac {
         ACTION claimbudget(const name &dac_id);
         ACTION migratestate(const name &dac_id);
         ACTION setbudget(const name &dac_id, const uint16_t percentage);
+        ACTION unsetbudget(const name &dac_id);
 #ifdef DEBUG
         ACTION resetvotes(const name &voter, const name &dac_id);
         ACTION resetcands(const name &dac_id);
@@ -314,5 +315,6 @@ namespace eosdac {
         void             validateUnstake(name code, name cand, name dac_id);
         void validateUnstakeAmount(const name &code, const name &cand, const asset &unstake_amount, const name &dac_id);
         void validateMinStake(name account, name dac_id);
+        uint16_t get_budget_percentage(const name &dac_id);
     };
 }; // namespace eosdac

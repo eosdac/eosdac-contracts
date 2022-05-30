@@ -206,6 +206,15 @@ ACTION daccustodian::setbudget(const name &dac_id, const uint16_t percentage) {
     });
 }
 
+ACTION daccustodian::unsetbudget(const name &dac_id) {
+    require_auth(get_self());
+
+    auto       budget_settings = budget_settings_table{get_self(), get_self().value};
+    const auto itr             = budget_settings.find(dac_id.value);
+    check(itr != budget_settings.end(), "Budget setting for dac %s does not exist, cannot unsetbudget", dac_id);
+    budget_settings.erase(itr);
+}
+
 ACTION daccustodian::claimbudget(const name &dac_id) {
     auto state = contr_state2::get_current_state(get_self(), dac_id);
     check(state.get<time_point_sec>(state_keys::lastclaimbudgettime) < state.lastperiodtime,
@@ -218,21 +227,10 @@ ACTION daccustodian::claimbudget(const name &dac_id) {
     if (!spendings_account && !auth_account) {
         return;
     }
-    const auto recipient = spendings_account ? *spendings_account : auth_account;
-
+    const auto recipient        = spendings_account ? *spendings_account : auth_account;
     const auto auth_balance     = eosdac::get_balance_graceful(auth_account, TLM_TOKEN_CONTRACT, TLM_SYM);
     const auto treasury_balance = balance_for_type(dac, dacdir::TREASURY);
-
-    const auto nftcache = dacdir::nftcache_table{DACDIRECTORY_CONTRACT, dac.dac_id.value};
-    const auto index    = nftcache.get_index<"valdesc"_n>();
-
-    const auto index_key = dacdir::nftcache::template_and_value_key_ascending(BUDGET_SCHEMA, 0);
-    auto       itr       = index.lower_bound(index_key);
-    check(
-        itr != index.end() && itr->schema_name == BUDGET_SCHEMA, "Dac with ID %s does not own any budget NFTs", dac_id);
-
-    // we need to convert this to int64_t so we can use the * operator on asset further down
-    const auto p = int64_t(itr->value);
+    const auto p                = get_budget_percentage(dac_id);
 
     // percentage value is scaled by 100, so to calculate percent we need to divide by (100 * 100 == 10000)
     const auto amount = std::min(treasury_balance, auth_balance - treasury_balance * p / 10000);
@@ -328,4 +326,22 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
 
     currentState.lastperiodtime = current_block_time();
     currentState.save(get_self(), dac_id);
+}
+
+uint16_t daccustodian::get_budget_percentage(const name &dac_id) {
+    const auto budget_settings = budget_settings_table{get_self(), get_self().value};
+    const auto budget_itr      = budget_settings.find(dac_id.value);
+    if (budget_itr != budget_settings.end()) {
+        return budget_itr->percentage;
+    } else {
+        const auto nftcache = dacdir::nftcache_table{DACDIRECTORY_CONTRACT, dac_id.value};
+        const auto index    = nftcache.get_index<"valdesc"_n>();
+
+        const auto index_key = dacdir::nftcache::template_and_value_key_ascending(BUDGET_SCHEMA, 0);
+        auto       itr       = index.lower_bound(index_key);
+        check(itr != index.end() && itr->schema_name == BUDGET_SCHEMA, "Dac with ID %s does not own any budget NFTs",
+            dac_id);
+
+        return itr->value;
+    }
 }
