@@ -338,7 +338,7 @@ uint16_t daccustodian::get_budget_percentage(const name &dac_id) {
         const auto index    = nftcache.get_index<"valdesc"_n>();
 
         const auto index_key = dacdir::nftcache::template_and_value_key_ascending(BUDGET_SCHEMA, 0);
-        auto       itr       = index.lower_bound(index_key);
+        const auto itr       = index.lower_bound(index_key);
         check(itr != index.end() && itr->schema_name == BUDGET_SCHEMA, "Dac with ID %s does not own any budget NFTs",
             dac_id);
 
