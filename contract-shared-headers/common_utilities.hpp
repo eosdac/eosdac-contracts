@@ -96,8 +96,8 @@ inline void check(bool pred, const std::string_view format, Args const &...args)
  * @return true - if a new table entry was created
  * @return false - if an existing table entry was updated
  */
-template <typename Table, typename Pk, typename Function>
-inline bool upsert(Table &table, const Pk &pk, const eosio::name payer, const Function &updater) {
+template <typename Table, typename Function>
+inline bool upsert(Table &table, const uint64_t pk, const eosio::name payer, const Function &updater) {
     const auto itr = table.find(pk);
     if (itr == table.end()) {
         table.emplace(payer, updater);
