@@ -12,6 +12,9 @@
 
 using namespace std;
 
+/**
+ * simple getter/setter
+ **/
 #define PROPERTY(type, name)                                                                                           \
     type get_##name() const {                                                                                          \
         return get<type>(state_keys::name);                                                                            \
@@ -20,6 +23,15 @@ using namespace std;
         set(state_keys::name, value);                                                                                  \
     }
 
+/**
+ * A slightly more complicated getter/setter macro that allows optional values.
+ * If value is not set, it returns a null optional. To unset a previously set
+ * value, it has an unset function.
+ * Since our variant can only hold certain number types, we sometimes need to
+ * convert our desired type to a storage_type. Before storing, it will convert
+ * the value to the storage_type and before returning, the getter will
+ * automatically convert back to type.
+ **/
 #define PROPERTY_OPTIONAL_TYPECASTING(type, storage_type, name)                                                        \
     std::optional<type> get_##name() const {                                                                           \
         const auto p = get_maybe<storage_type>(state_keys::name);                                                      \
