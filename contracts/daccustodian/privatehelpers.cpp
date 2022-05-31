@@ -36,8 +36,8 @@ void daccustodian::updateVoteWeights(const vector<name> &votes, int64_t vote_wei
 
     if (vote_delta != 0) {
         auto       currentState              = contr_state2::get_current_state(get_self(), dac_id);
-        const auto total_votes_on_candidates = currentState.get<int64_t>(state_keys::total_votes_on_candidates);
-        currentState.set(state_keys::total_votes_on_candidates, total_votes_on_candidates + vote_delta);
+        const auto total_votes_on_candidates = currentState.get_total_votes_on_candidates();
+        currentState.set_total_votes_on_candidates(total_votes_on_candidates + vote_delta);
         currentState.save(get_self(), dac_id);
     }
 }
@@ -77,7 +77,7 @@ void daccustodian::modifyVoteWeights(int64_t vote_weight, vector<name> oldVotes,
     auto currentState = contr_state2::get_current_state(get_self(), dac_id);
 
     // New voter -> Add the tokens to the total weight.
-    auto total_weight_of_votes = currentState.get<int64_t>(state_keys::total_weight_of_votes);
+    auto total_weight_of_votes = currentState.get_total_weight_of_votes();
     if (vote_weight > 0) {
         check((total_weight_of_votes + vote_weight) >= total_weight_of_votes, "Overflow in total_weight_of_votes");
     } else {
@@ -91,7 +91,7 @@ void daccustodian::modifyVoteWeights(int64_t vote_weight, vector<name> oldVotes,
     if (newVotes.size() == 0)
         total_weight_of_votes -= vote_weight;
 
-    currentState.set(state_keys::total_weight_of_votes, total_weight_of_votes);
+    currentState.set_total_weight_of_votes(total_weight_of_votes);
     currentState.save(get_self(), dac_id);
 
     updateVoteWeights(oldVotes, -vote_weight, dac_id);

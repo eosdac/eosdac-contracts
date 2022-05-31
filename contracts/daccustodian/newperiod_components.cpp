@@ -214,8 +214,7 @@ ACTION daccustodian::unsetbudget(const name &dac_id) {
 
 ACTION daccustodian::claimbudget(const name &dac_id) {
     auto state = contr_state2::get_current_state(get_self(), dac_id);
-    check(state.get<time_point_sec>(state_keys::lastclaimbudgettime) < state.lastperiodtime,
-        "Claimbudget can only be called once per period");
+    check(state.get_lastclaimbudgettime() < state.lastperiodtime, "Claimbudget can only be called once per period");
     const auto dac              = dacdir::dac_for_id(dac_id);
     const auto treasury_account = dac.account_for_type(dacdir::TREASURY);
 
@@ -237,7 +236,7 @@ ACTION daccustodian::claimbudget(const name &dac_id) {
             .send();
     }
 
-    state.set(state_keys::lastclaimbudgettime, time_point_sec(current_time_point()));
+    state.set_lastclaimbudgettime(time_point_sec(current_time_point()));
     state.save(get_self(), dac_id);
 }
 
@@ -286,19 +285,19 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
         uint64_t token_current_supply = tokenStats->supply.amount;
 
         double percent_of_current_voter_engagement =
-            double(currentState.get<int64_t>(state_keys::total_weight_of_votes)) / double(token_current_supply) * 100.0;
+            double(currentState.get_total_weight_of_votes()) / double(token_current_supply) * 100.0;
 
         print("\n\nToken current supply as decimal units: ", token_current_supply,
-            " total votes so far: ", currentState.get<int64_t>(state_keys::total_weight_of_votes));
+            " total votes so far: ", currentState.get_total_weight_of_votes());
         print("\n\nNeed inital engagement of: ", configs.initial_vote_quorum_percent, "% to start the DAC.");
         print("\n\nToken supply: ", token_current_supply * 0.0001,
-            " total votes so far: ", currentState.get<int64_t>(state_keys::total_weight_of_votes) * 0.0001);
+            " total votes so far: ", currentState.get_total_weight_of_votes() * 0.0001);
         print("\n\nNeed initial engagement of: ", configs.initial_vote_quorum_percent, "% to start the DAC.");
         print("\n\nNeed ongoing engagement of: ", configs.vote_quorum_percent,
             "% to allow new periods to trigger after initial activation.");
         print("\n\nPercent of current voter engagement: ", percent_of_current_voter_engagement, "\n\n");
 
-        check(currentState.get<bool>(state_keys::met_initial_votes_threshold) == true ||
+        check(currentState.get_met_initial_votes_threshold() == true ||
                   percent_of_current_voter_engagement > configs.initial_vote_quorum_percent,
             "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_ACTIVATE::Voter engagement %s is insufficient to activate the DAC (%s required).",
             percent_of_current_voter_engagement, configs.initial_vote_quorum_percent);
@@ -307,7 +306,7 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
             "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_PROCESS::Voter engagement is insufficient to process a new period");
     }
 
-    currentState.set(state_keys::met_initial_votes_threshold, true);
+    currentState.set_met_initial_votes_threshold(true);
 
     // Distribute Pay is called before allocateCustodians is called to ensure custodians are paid for the just passed
     // period. This also implies custodians should not be paid the first time this is called.
