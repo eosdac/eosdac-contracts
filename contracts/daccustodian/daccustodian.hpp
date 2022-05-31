@@ -42,7 +42,7 @@ using namespace std;
     void unset_##name() {                                                                                              \
         const auto search = data.find(state_keys::name);                                                               \
         check(search != data.end(), "Cannot unset " #name ", no value set");                                           \
-        data.erase(state_keys::budget_percentage);                                                                     \
+        data.erase(state_keys::name);                                                                                  \
     }
 
 namespace eosdac {
