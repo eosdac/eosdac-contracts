@@ -209,10 +209,10 @@ namespace eosdac {
         }
 
         // total_votes_on_candidates
-        int64_t get_total_votes_on_candidates() {
+        int64_t get_total_votes_on_candidates() const {
             return get<int64_t>(state_keys::total_votes_on_candidates);
         }
-        void set_total_votes_on_candidates(int64_t value) {
+        void set_total_votes_on_candidates(const int64_t value) {
             set(state_keys::total_votes_on_candidates, value);
         }
     };
