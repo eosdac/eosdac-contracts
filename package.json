@@ -38,7 +38,6 @@
     "@typescript-eslint/parser": "^5.11.0",
     "dayjs": "^1.11.1",
     "eslint": "^8.8.0",
-    "int64-buffer": "^1.0.1",
     "typescript-logging": "^0.6.3"
   }
 }

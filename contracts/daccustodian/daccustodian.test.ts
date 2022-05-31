@@ -15,7 +15,6 @@ import {
 
 import { SharedTestObjects, NUMBER_OF_CANDIDATES } from '../TestHelpers';
 import * as chai from 'chai';
-const { Serialize } = require('eosjs');
 import * as chaiAsPromised from 'chai-as-promised';
 const dayjs = require('dayjs');
 const utc = require('dayjs/plugin/utc');
@@ -24,7 +23,6 @@ import { DaccustodianCandidate } from './daccustodian';
 chai.use(chaiAsPromised);
 let shared: SharedTestObjects;
 const now = dayjs.utc();
-const Int64LE = require('int64-buffer').Int64LE;
 
 const NFT_COLLECTION = 'alien.worlds';
 const BUDGET_SCHEMA = 'budget';
@@ -2700,21 +2698,4 @@ async function get_balance(
     }
   }
   return 0.0;
-}
-
-function template_and_value_key_ascending(schema_name, value) {
-  return (BigInt(nameToInt(schema_name)) << BigInt(64)) | BigInt(value);
-}
-
-function nameToInt(name) {
-  const sb = new Serialize.SerialBuffer({
-    textEncoder: new TextEncoder(),
-    textDecoder: new TextDecoder(),
-  });
-
-  sb.pushName(name);
-
-  const name_64 = new Int64LE(sb.array);
-
-  return name_64 + '';
 }
