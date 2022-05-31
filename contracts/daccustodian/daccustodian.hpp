@@ -12,6 +12,32 @@
 
 using namespace std;
 
+#define PROPERTY(type, name)                                                                                           \
+    type get_##name() const {                                                                                          \
+        return get<type>(state_keys::name);                                                                            \
+    }                                                                                                                  \
+    void set_##name(const type value) {                                                                                \
+        set(state_keys::name, value);                                                                                  \
+    }
+
+#define PROPERTY_OPTIONAL_TYPECASTING(type, storage_type, name)                                                        \
+    std::optional<type> get_##name() const {                                                                           \
+        const auto p = get_maybe<storage_type>(state_keys::name);                                                      \
+        if (p) {                                                                                                       \
+            return type(*p);                                                                                           \
+        } else {                                                                                                       \
+            return {};                                                                                                 \
+        }                                                                                                              \
+    }                                                                                                                  \
+    void set_##name(const type value) {                                                                                \
+        set(state_keys::name, storage_type(value));                                                                    \
+    }                                                                                                                  \
+    void unset_##name() {                                                                                              \
+        const auto search = data.find(state_keys::name);                                                               \
+        check(search != data.end(), "Cannot unset " #name ", no value set");                                           \
+        data.erase(state_keys::budget_percentage);                                                                     \
+    }
+
 namespace eosdac {
 
     static constexpr eosio::name ONE_PERMISSION    = "one"_n;
@@ -158,63 +184,12 @@ namespace eosdac {
          * What follows are type-safe getters/setters for polymorphic map values
          **/
 
-        // budget_percentage
-        void set_budget_percentage(const uint16_t percentage) {
-            set(state_keys::budget_percentage, uint32_t(percentage));
-        }
-        void unset_budget_percentage() {
-            const auto search = data.find(state_keys::budget_percentage);
-            check(search != data.end(), "Cannot unset budget_percentage, no value set");
-            data.erase(state_keys::budget_percentage);
-        }
-        std::optional<uint16_t> get_budget_percentage() const {
-            const auto p = get_maybe<uint32_t>(state_keys::budget_percentage);
-            if (p) {
-                return uint16_t(*p);
-            } else {
-                return {};
-            }
-        }
-
-        // lastclaimbudgettime
-        time_point_sec get_lastclaimbudgettime() const {
-            return get<time_point_sec>(state_keys::lastclaimbudgettime);
-        }
-        void set_lastclaimbudgettime(time_point_sec value) {
-            set(state_keys::lastclaimbudgettime, value);
-        }
-
-        // total_weight_of_votes
-        int64_t get_total_weight_of_votes() const {
-            return get<int64_t>(state_keys::total_weight_of_votes);
-        }
-        void set_total_weight_of_votes(const int64_t value) {
-            set(state_keys::total_weight_of_votes, value);
-        }
-
-        // met_initial_votes_threshold
-        bool get_met_initial_votes_threshold() const {
-            return get<bool>(state_keys::met_initial_votes_threshold);
-        }
-        void set_met_initial_votes_threshold(const bool value) {
-            set(state_keys::met_initial_votes_threshold, value);
-        }
-
-        // number_active_candidates
-        uint32_t get_number_active_candidates() const {
-            return get<uint32_t>(state_keys::number_active_candidates);
-        }
-        void set_number_active_candidates(const uint32_t value) {
-            set(state_keys::number_active_candidates, value);
-        }
-
-        // total_votes_on_candidates
-        int64_t get_total_votes_on_candidates() const {
-            return get<int64_t>(state_keys::total_votes_on_candidates);
-        }
-        void set_total_votes_on_candidates(const int64_t value) {
-            set(state_keys::total_votes_on_candidates, value);
-        }
+        PROPERTY_OPTIONAL_TYPECASTING(uint16_t, uint32_t, budget_percentage);
+        PROPERTY(time_point_sec, lastclaimbudgettime);
+        PROPERTY(int64_t, total_weight_of_votes);
+        PROPERTY(bool, met_initial_votes_threshold);
+        PROPERTY(uint32_t, number_active_candidates);
+        PROPERTY(int64_t, total_votes_on_candidates);
     };
 
     struct [[eosio::table("votes"), eosio::contract("daccustodian")]] vote {
