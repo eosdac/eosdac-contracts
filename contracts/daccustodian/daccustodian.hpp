@@ -34,12 +34,7 @@ using namespace std;
  **/
 #define PROPERTY_OPTIONAL_TYPECASTING(type, storage_type, name)                                                        \
     std::optional<type> get_##name() const {                                                                           \
-        const auto p = get_maybe<storage_type>(state_keys::name);                                                      \
-        if (p) {                                                                                                       \
-            return type(*p);                                                                                           \
-        } else {                                                                                                       \
-            return {};                                                                                                 \
-        }                                                                                                              \
+        return get_maybe<storage_type>(state_keys::name);                                                              \
     }                                                                                                                  \
     void set_##name(const type value) {                                                                                \
         set(state_keys::name, storage_type(value));                                                                    \
