@@ -93,7 +93,8 @@ namespace eosdac {
         total_votes_on_candidates   = 2,
         number_active_candidates    = 3,
         met_initial_votes_threshold = 4,
-        lastclaimbudgettime         = 5
+        lastclaimbudgettime         = 5,
+        budget_percentage           = 6
     };
     using state_value_variant =
         std::variant<uint32_t, uint64_t, int64_t, bool, std::vector<int64_t>, name, std::string, eosio::time_point_sec>;
@@ -142,6 +143,38 @@ namespace eosdac {
             check(search != data.end(), "Key %s not found in state data", std::to_string(key));
             return std::get<T>(search->second);
         }
+
+        template <typename T>
+        std::optional<T> get_maybe(const state_keys key) const {
+            const auto search = data.find(key);
+            if (search != data.end()) {
+                return std::get<T>(search->second);
+            } else {
+                return {};
+            }
+        }
+
+        // getters/setters
+        void set_budget_percentage(const uint16_t percentage) {
+            set(state_keys::budget_percentage, uint32_t(percentage));
+        }
+        void unset_budget_percentage() {
+            const auto search = data.find(state_keys::budget_percentage);
+            check(search != data.end(), "Cannot unset budget_percentage, no value set");
+            data.erase(state_keys::budget_percentage);
+        }
+        std::optional<uint16_t> get_budget_percentage() const {
+            const auto p = get_maybe<uint32_t>(state_keys::budget_percentage);
+            if (p) {
+                return uint16_t(*p);
+            } else {
+                return {};
+            }
+        }
+
+        // time_point_sec get_lastclaimbudgettime() {
+        //     return state.get<time_point_sec>(state_keys::lastclaimbudgettime);
+        // }
     };
 
     struct [[eosio::table("votes"), eosio::contract("daccustodian")]] vote {
@@ -208,16 +241,6 @@ namespace eosdac {
     };
 
     using candperms_table = multi_index<"candperms"_n, candperm>;
-
-    struct [[eosio::table("budget"), eosio::contract("daccustodian")]] budget_settings_item {
-        name     dac_id;
-        uint16_t percentage;
-
-        uint64_t primary_key() const {
-            return dac_id.value;
-        }
-    };
-    using budget_settings_table = multi_index<"budget"_n, budget_settings_item>;
 
     class daccustodian : public contract {
 
@@ -315,6 +338,6 @@ namespace eosdac {
         void             validateUnstake(name code, name cand, name dac_id);
         void validateUnstakeAmount(const name &code, const name &cand, const asset &unstake_amount, const name &dac_id);
         void validateMinStake(name account, name dac_id);
-        uint16_t get_budget_percentage(const name &dac_id);
+        uint16_t get_budget_percentage(const name &dac_id, const contr_state2 &state);
     };
 }; // namespace eosdac

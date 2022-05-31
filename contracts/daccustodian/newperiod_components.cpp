@@ -199,20 +199,17 @@ asset balance_for_type(const dacdir::dac &dac, const dacdir::account_type type) 
 ACTION daccustodian::setbudget(const name &dac_id, const uint16_t percentage) {
     require_auth(get_self());
 
-    auto budget_settings = budget_settings_table{get_self(), get_self().value};
-    upsert(budget_settings, dac_id.value, get_self(), [&](auto &b) {
-        b.dac_id     = dac_id;
-        b.percentage = percentage;
-    });
+    auto state = contr_state2::get_current_state(get_self(), dac_id);
+    state.set_budget_percentage(percentage);
+    state.save(get_self(), dac_id);
 }
 
 ACTION daccustodian::unsetbudget(const name &dac_id) {
     require_auth(get_self());
 
-    auto       budget_settings = budget_settings_table{get_self(), get_self().value};
-    const auto itr             = budget_settings.find(dac_id.value);
-    check(itr != budget_settings.end(), "Budget setting for dac %s does not exist, cannot unsetbudget", dac_id);
-    budget_settings.erase(itr);
+    auto state = contr_state2::get_current_state(get_self(), dac_id);
+    state.unset_budget_percentage();
+    state.save(get_self(), dac_id);
 }
 
 ACTION daccustodian::claimbudget(const name &dac_id) {
@@ -230,7 +227,7 @@ ACTION daccustodian::claimbudget(const name &dac_id) {
     const auto recipient        = spendings_account ? *spendings_account : auth_account;
     const auto auth_balance     = eosdac::get_balance_graceful(auth_account, TLM_TOKEN_CONTRACT, TLM_SYM);
     const auto treasury_balance = balance_for_type(dac, dacdir::TREASURY);
-    const auto p                = get_budget_percentage(dac_id);
+    const auto p                = get_budget_percentage(dac_id, state);
 
     // percentage value is scaled by 100, so to calculate percent we need to divide by (100 * 100 == 10000)
     const auto amount = std::min(treasury_balance, auth_balance - treasury_balance * p / 10000);
@@ -328,11 +325,10 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
     currentState.save(get_self(), dac_id);
 }
 
-uint16_t daccustodian::get_budget_percentage(const name &dac_id) {
-    const auto budget_settings = budget_settings_table{get_self(), get_self().value};
-    const auto budget_itr      = budget_settings.find(dac_id.value);
-    if (budget_itr != budget_settings.end()) {
-        return budget_itr->percentage;
+uint16_t daccustodian::get_budget_percentage(const name &dac_id, const contr_state2 &state) {
+    const auto percentage = state.get_budget_percentage();
+    if (percentage) {
+        return *percentage;
     } else {
         const auto nftcache = dacdir::nftcache_table{DACDIRECTORY_CONTRACT, dac_id.value};
         const auto index    = nftcache.get_index<"valdesc"_n>();

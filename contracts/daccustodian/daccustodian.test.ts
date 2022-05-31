@@ -24,6 +24,15 @@ chai.use(chaiAsPromised);
 let shared: SharedTestObjects;
 const now = dayjs.utc();
 
+enum state_keys {
+  total_weight_of_votes = 1,
+  total_votes_on_candidates = 2,
+  number_active_candidates = 3,
+  met_initial_votes_threshold = 4,
+  lastclaimbudgettime = 5,
+  budget_percentage = 6,
+}
+
 const NFT_COLLECTION = 'alien.worlds';
 const BUDGET_SCHEMA = 'budget';
 
@@ -2350,47 +2359,41 @@ describe('Daccustodian', () => {
         await shared.daccustodian_contract.setbudget(dacId, 123);
       });
       it('should set table entry', async () => {
-        const res = await shared.daccustodian_contract.budgetTable({
-          lowerBound: dacId,
-          upperBound: dacId,
-          keyType: 'name',
+        const res = await shared.daccustodian_contract.state2Table({
+          scope: dacId,
         });
-        chai.expect(res.rows[0].dac_id).to.equal(dacId);
-        chai.expect(res.rows[0].percentage).to.equal(123);
+        const budget_percentage = await get_from_state2(
+          dacId,
+          state_keys.budget_percentage
+        );
       });
       it('setting again', async () => {
         console.log('dacId: ', dacId);
         await shared.daccustodian_contract.setbudget(dacId, 234);
       });
       it('should update existing table entry', async () => {
-        const res = await shared.daccustodian_contract.budgetTable({
-          lowerBound: dacId,
-          upperBound: dacId,
-          keyType: 'name',
-        });
-        chai.expect(res.rows[0].dac_id).to.equal(dacId);
-        chai.expect(res.rows[0].percentage).to.equal(234);
+        const budget_percentage = await get_from_state2(
+          dacId,
+          state_keys.budget_percentage
+        );
+        chai.expect(budget_percentage).to.equal(234);
       });
       it('setting with different dac id should work', async () => {
         await shared.daccustodian_contract.setbudget('abcd', 345);
       });
       it('should create table entry', async () => {
-        const res = await shared.daccustodian_contract.budgetTable({
-          lowerBound: 'abcd',
-          upperBound: 'abcd',
-          keyType: 'name',
-        });
-        chai.expect(res.rows[0].dac_id).to.equal('abcd');
-        chai.expect(res.rows[0].percentage).to.equal(345);
+        const budget_percentage = await get_from_state2(
+          'abcd',
+          state_keys.budget_percentage
+        );
+        chai.expect(budget_percentage).to.equal(345);
       });
       it("other dac's table entry should stay untouched", async () => {
-        const res = await shared.daccustodian_contract.budgetTable({
-          lowerBound: dacId,
-          upperBound: dacId,
-          keyType: 'name',
-        });
-        chai.expect(res.rows[0].dac_id).to.equal(dacId);
-        chai.expect(res.rows[0].percentage).to.equal(234);
+        const budget_percentage = await get_from_state2(
+          dacId,
+          state_keys.budget_percentage
+        );
+        chai.expect(budget_percentage).to.equal(234);
       });
     });
     context('unsetbudget', async () => {
@@ -2402,31 +2405,27 @@ describe('Daccustodian', () => {
         );
       });
       it('with non-existing dac id, should throw not exists error', async () => {
-        // console.log('dacId: ', dacId);
         await assertEOSErrorIncludesMessage(
           shared.daccustodian_contract.unsetbudget('notexist'),
-          'Budget setting for dac notexist does not exist'
+          'Cannot unset budget_percentage, no value set'
         );
       });
       it('with existing dac id should work', async () => {
         await shared.daccustodian_contract.unsetbudget('abcd');
       });
       it('should remove table entry', async () => {
-        const res = await shared.daccustodian_contract.budgetTable({
-          lowerBound: 'abcd',
-          upperBound: 'abcd',
-          keyType: 'name',
-        });
-        chai.expect(res.rows).to.be.empty;
+        const budget_percentage = await get_from_state2(
+          'abcd',
+          state_keys.budget_percentage
+        );
+        chai.expect(budget_percentage).to.be.undefined;
       });
       it('should should not delete anything else', async () => {
-        const res = await shared.daccustodian_contract.budgetTable({
-          lowerBound: dacId,
-          upperBound: dacId,
-          keyType: 'name',
-        });
-        chai.expect(res.rows[0].dac_id).to.equal(dacId);
-        chai.expect(res.rows[0].percentage).to.equal(234);
+        const budget_percentage = await get_from_state2(
+          dacId,
+          state_keys.budget_percentage
+        );
+        chai.expect(budget_percentage).to.equal(234);
       });
     });
     context('claimbudget when budget percentage is set manually', async () => {
@@ -2652,17 +2651,10 @@ async function expected_budget_transfer_amount(
     'TLM'
   );
 
-  const res = await shared.daccustodian_contract.budgetTable({
-    lowerBound: dacId,
-    upperBound: dacId,
-    keyType: 'i64',
-  });
-  let percentage;
-  if (res.rows.length) {
-    chai.expect(assert_manual).to.be.true;
+  let percentage = await get_from_state2(dacId, state_keys.budget_percentage);
+  if (percentage !== undefined) {
     // we have manually set budget percentage
-    chai.expect(res.rows.length).to.equal(1);
-    percentage = res.rows[0].percentage;
+    chai.expect(assert_manual).to.be.true;
   } else {
     chai.expect(assert_manual).to.be.false;
     const nft_res = await shared.dacdirectory_contract.nftcacheTable({
@@ -2698,4 +2690,16 @@ async function get_balance(
     }
   }
   return 0.0;
+}
+
+async function get_from_state2(dacId, key) {
+  const res = await shared.daccustodian_contract.state2Table({
+    scope: dacId,
+  });
+  const data = res.rows[0].data;
+  for (const x of data) {
+    if (x.key == key) {
+      return x.value[1];
+    }
+  }
 }
