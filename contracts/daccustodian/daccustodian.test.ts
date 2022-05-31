@@ -31,9 +31,10 @@ const BUDGET_SCHEMA = 'budget';
 
 describe('Daccustodian', () => {
   let second_nft_id: Number;
-
+  let somebody: Account;
   before(async () => {
     shared = await SharedTestObjects.getInstance();
+    somebody = await await AccountManager.createAccount();
   });
   context('fillstate', async () => {
     let dacId = 'migratedac';
@@ -510,14 +511,12 @@ describe('Daccustodian', () => {
             );
           });
           it('should succeed', async () => {
-            await chai.expect(
-              shared.daccustodian_contract.nominatecane(
-                newUser1.name,
-                '25.0000 EOS',
-                dacId,
-                { from: newUser1 }
-              )
-            ).eventually.be.fulfilled;
+            await shared.daccustodian_contract.nominatecane(
+              newUser1.name,
+              '25.0000 EOS',
+              dacId,
+              { from: newUser1 }
+            );
           });
         });
       });
@@ -558,14 +557,12 @@ describe('Daccustodian', () => {
           );
         });
         it('should succeed', async () => {
-          await chai.expect(
-            shared.daccustodian_contract.nominatecane(
-              newUser1.name,
-              '25.0000 EOS',
-              dacId,
-              { from: newUser1 }
-            )
-          ).eventually.be.fulfilled;
+          await shared.daccustodian_contract.nominatecane(
+            newUser1.name,
+            '25.0000 EOS',
+            dacId,
+            { from: newUser1 }
+          );
         });
         it('should fail to unstake', async () => {
           await assertEOSErrorIncludesMessage(
@@ -873,11 +870,13 @@ describe('Daccustodian', () => {
       });
       context('with correct auth', async () => {
         it('should succeed', async () => {
-          await chai.expect(
-            shared.daccustodian_contract.regproxy(regMembers[0].name, dacId, {
+          await shared.daccustodian_contract.regproxy(
+            regMembers[0].name,
+            dacId,
+            {
               from: regMembers[0],
-            })
-          ).to.eventually.be.fulfilled;
+            }
+          );
         });
       });
     });
@@ -1008,13 +1007,11 @@ describe('Daccustodian', () => {
         });
         context('with correct auth', async () => {
           it('should succeed', async () => {
-            await chai.expect(
-              shared.daccustodian_contract.unregproxy(
-                regMembers[0].name,
-                dacId,
-                { from: regMembers[0] }
-              )
-            ).to.eventually.be.fulfilled;
+            await shared.daccustodian_contract.unregproxy(
+              regMembers[0].name,
+              dacId,
+              { from: regMembers[0] }
+            );
           });
         });
       });
@@ -1152,32 +1149,30 @@ describe('Daccustodian', () => {
 
               // Change the config to a lower requestedPayMax to affect average pay tests after `newperiod` succeeds.
               // This change to `23.0000 EOS` should cause the requested pays of 25.0000 EOS to be fitered from the mean pay.
-              await chai.expect(
-                shared.daccustodian_contract.updateconfige(
-                  {
-                    numelected: 5,
-                    maxvotes: 4,
-                    requested_pay_max: {
-                      contract: 'eosio.token',
-                      quantity: '23.0000 EOS',
-                    },
-                    periodlength: 5,
-                    initial_vote_quorum_percent: 31,
-                    vote_quorum_percent: 15,
-                    auth_threshold_high: 4,
-                    auth_threshold_mid: 3,
-                    auth_threshold_low: 2,
-                    lockupasset: {
-                      contract: shared.dac_token_contract.account.name,
-                      quantity: '12.0000 PERDAC',
-                    },
-                    should_pay_via_service_provider: false,
-                    lockup_release_time_delay: 1233,
+              await shared.daccustodian_contract.updateconfige(
+                {
+                  numelected: 5,
+                  maxvotes: 4,
+                  requested_pay_max: {
+                    contract: 'eosio.token',
+                    quantity: '23.0000 EOS',
                   },
-                  dacId,
-                  { from: shared.auth_account }
-                )
-              ).to.eventually.be.fulfilled;
+                  periodlength: 5,
+                  initial_vote_quorum_percent: 31,
+                  vote_quorum_percent: 15,
+                  auth_threshold_high: 4,
+                  auth_threshold_mid: 3,
+                  auth_threshold_low: 2,
+                  lockupasset: {
+                    contract: shared.dac_token_contract.account.name,
+                    quantity: '12.0000 PERDAC',
+                  },
+                  should_pay_via_service_provider: false,
+                  lockup_release_time_delay: 1233,
+                },
+                dacId,
+                { from: shared.auth_account }
+              );
             });
             it('should succeed with custodians populated', async () => {
               await shared.daccustodian_contract.newperiod(
@@ -1333,15 +1328,13 @@ describe('Daccustodian', () => {
           await sleep(4_000);
         });
         it('should succeed', async () => {
-          await chai.expect(
-            shared.daccustodian_contract.newperiod(
-              'initial new period',
-              dacId,
-              {
-                from: newUser1,
-              }
-            )
-          ).to.eventually.be.fulfilled;
+          await shared.daccustodian_contract.newperiod(
+            'initial new period',
+            dacId,
+            {
+              from: newUser1,
+            }
+          );
         });
         it('custodians should have been paid', async () => {
           await assertRowCount(
@@ -1743,13 +1736,11 @@ describe('Daccustodian', () => {
             .to.be.equal(numberActiveCandidatesBefore - 1);
         });
         it('should allow unstaking without a timelock error', async () => {
-          await chai.expect(
-            shared.dac_token_contract.unstake(
-              unelectedCandidateToResign.name,
-              '12.0000 WITHDAC',
-              { from: unelectedCandidateToResign }
-            )
-          ).to.eventually.be.fulfilled;
+          await shared.dac_token_contract.unstake(
+            unelectedCandidateToResign.name,
+            '12.0000 WITHDAC',
+            { from: unelectedCandidateToResign }
+          );
         });
       });
     });
@@ -2066,15 +2057,13 @@ describe('Daccustodian', () => {
       );
     });
     it('should succeed with correct auth', async () => {
-      await chai.expect(
-        shared.daccustodian_contract.appointcust(
-          accountsToRegister.map((account) => {
-            return account.name;
-          }),
-          dacId,
-          { from: shared.auth_account }
-        )
-      ).to.eventually.be.fulfilled;
+      await shared.daccustodian_contract.appointcust(
+        accountsToRegister.map((account) => {
+          return account.name;
+        }),
+        dacId,
+        { from: shared.auth_account }
+      );
       let candidates = await shared.daccustodian_contract.candidatesTable({
         scope: dacId,
         limit: 20,
@@ -2322,7 +2311,8 @@ describe('Daccustodian', () => {
             'TLM'
           );
           expected_transfer_amount = await expected_budget_transfer_amount(
-            dacId
+            dacId,
+            false
           );
           await shared.daccustodian_contract.claimbudget(dacId);
         });
@@ -2352,6 +2342,11 @@ describe('Daccustodian', () => {
       }
     );
     context('setbudget', async () => {
+      it('without self auth, should throw authentication error', async () => {
+        await assertMissingAuthority(
+          shared.daccustodian_contract.setbudget(dacId, 123, { from: somebody })
+        );
+      });
       it('should work', async () => {
         console.log('dacId: ', dacId);
         await shared.daccustodian_contract.setbudget(dacId, 123);
@@ -2360,7 +2355,7 @@ describe('Daccustodian', () => {
         const res = await shared.daccustodian_contract.budgetTable({
           lowerBound: dacId,
           upperBound: dacId,
-          keyType: 'i64',
+          keyType: 'name',
         });
         chai.expect(res.rows[0].dac_id).to.equal(dacId);
         chai.expect(res.rows[0].percentage).to.equal(123);
@@ -2369,7 +2364,7 @@ describe('Daccustodian', () => {
         console.log('dacId: ', dacId);
         await shared.daccustodian_contract.setbudget(dacId, 234);
       });
-      it('should update table entry', async () => {
+      it('should update existing table entry', async () => {
         const res = await shared.daccustodian_contract.budgetTable({
           lowerBound: dacId,
           upperBound: dacId,
@@ -2401,7 +2396,14 @@ describe('Daccustodian', () => {
       });
     });
     context('unsetbudget', async () => {
-      it('with non-existing dac id', async () => {
+      it('without self auth, should throw authentication error', async () => {
+        await assertMissingAuthority(
+          shared.daccustodian_contract.unsetbudget(dacId, {
+            from: somebody,
+          })
+        );
+      });
+      it('with non-existing dac id, should throw not exists error', async () => {
         // console.log('dacId: ', dacId);
         await assertEOSErrorIncludesMessage(
           shared.daccustodian_contract.unsetbudget('notexist'),
@@ -2454,7 +2456,10 @@ describe('Daccustodian', () => {
           shared.auth_account,
           'TLM'
         );
-        expected_transfer_amount = await expected_budget_transfer_amount(dacId);
+        expected_transfer_amount = await expected_budget_transfer_amount(
+          dacId,
+          true
+        );
         await shared.daccustodian_contract.claimbudget(dacId);
       });
       it('should transfer amount according to formula', async () => {
@@ -2634,7 +2639,10 @@ async function setup_test_user(testuser: Account, tokenSymbol: string) {
   );
 }
 
-async function expected_budget_transfer_amount(dacId: string) {
+async function expected_budget_transfer_amount(
+  dacId: string,
+  assert_manual: bool
+) {
   const auth_balance = await get_balance(
     shared.eosio_token_contract,
     shared.auth_account,
@@ -2653,10 +2661,12 @@ async function expected_budget_transfer_amount(dacId: string) {
   });
   let percentage;
   if (res.rows.length) {
+    chai.expect(assert_manual).to.be.true;
     // we have manually set budget percentage
     chai.expect(res.rows.length).to.equal(1);
     percentage = res.rows[0].percentage;
   } else {
+    chai.expect(assert_manual).to.be.false;
     const nft_res = await shared.dacdirectory_contract.nftcacheTable({
       scope: dacId,
     });
