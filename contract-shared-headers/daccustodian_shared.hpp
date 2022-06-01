@@ -10,11 +10,17 @@ namespace eosdac {
         eosio::asset requestedpay;
         uint64_t     total_votes;
 
-        uint64_t primary_key() const { return cust_name.value; }
+        uint64_t primary_key() const {
+            return cust_name.value;
+        }
 
-        uint64_t by_votes_rank() const { return static_cast<uint64_t>(UINT64_MAX - total_votes); }
+        uint64_t by_votes_rank() const {
+            return static_cast<uint64_t>(UINT64_MAX - total_votes);
+        }
 
-        uint64_t by_requested_pay() const { return static_cast<uint64_t>(requestedpay.amount); }
+        uint64_t by_requested_pay() const {
+            return static_cast<uint64_t>(requestedpay.amount);
+        }
     };
 
     using custodians_table = eosio::multi_index<"custodians"_n, custodian,
@@ -29,10 +35,18 @@ namespace eosdac {
         uint8_t               is_active;
         eosio::time_point_sec custodian_end_time_stamp;
 
-        uint64_t primary_key() const { return candidate_name.value; }
-        uint64_t by_number_votes() const { return static_cast<uint64_t>(total_votes); }
-        uint64_t by_votes_rank() const { return static_cast<uint64_t>(UINT64_MAX - total_votes); }
-        uint64_t by_requested_pay() const { return static_cast<uint64_t>(requestedpay.amount); }
+        uint64_t primary_key() const {
+            return candidate_name.value;
+        }
+        uint64_t by_number_votes() const {
+            return static_cast<uint64_t>(total_votes);
+        }
+        uint64_t by_votes_rank() const {
+            return static_cast<uint64_t>(UINT64_MAX - total_votes);
+        }
+        uint64_t by_requested_pay() const {
+            return static_cast<uint64_t>(requestedpay.amount);
+        }
     };
 
     using candidates_table = eosio::multi_index<"candidates"_n, candidate,
@@ -45,7 +59,9 @@ namespace eosdac {
         eosio::name voter;
         uint64_t    weight;
 
-        uint64_t primary_key() const { return voter.value; }
+        uint64_t primary_key() const {
+            return voter.value;
+        }
     };
     using weights = eosio::multi_index<"weights"_n, vote_weight>;
 } // namespace eosdac
