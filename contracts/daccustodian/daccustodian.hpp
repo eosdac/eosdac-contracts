@@ -12,6 +12,39 @@
 
 using namespace std;
 
+/**
+ * simple getter/setter
+ **/
+#define PROPERTY(type, name)                                                                                           \
+    type get_##name() const {                                                                                          \
+        return get<type>(state_keys::name);                                                                            \
+    }                                                                                                                  \
+    void set_##name(const type value) {                                                                                \
+        set(state_keys::name, value);                                                                                  \
+    }
+
+/**
+ * A slightly more complicated getter/setter macro that allows optional values.
+ * If value is not set, it returns a null optional. To unset a previously set
+ * value, it has an unset function.
+ * Since our variant can only hold certain number types, we sometimes need to
+ * convert our desired type to a storage_type. Before storing, it will convert
+ * the value to the storage_type and before returning, the getter will
+ * automatically convert back to type.
+ **/
+#define PROPERTY_OPTIONAL_TYPECASTING(type, storage_type, name)                                                        \
+    std::optional<type> get_##name() const {                                                                           \
+        return get_maybe<storage_type>(state_keys::name);                                                              \
+    }                                                                                                                  \
+    void set_##name(const type value) {                                                                                \
+        set(state_keys::name, storage_type(value));                                                                    \
+    }                                                                                                                  \
+    void unset_##name() {                                                                                              \
+        const auto search = data.find(state_keys::name);                                                               \
+        check(search != data.end(), "Cannot unset " #name ", no value set");                                           \
+        data.erase(state_keys::name);                                                                                  \
+    }
+
 namespace eosdac {
 
     static constexpr eosio::name ONE_PERMISSION    = "one"_n;
@@ -93,7 +126,8 @@ namespace eosdac {
         total_votes_on_candidates   = 2,
         number_active_candidates    = 3,
         met_initial_votes_threshold = 4,
-        lastclaimbudgettime         = 5
+        lastclaimbudgettime         = 5,
+        budget_percentage           = 6
     };
     using state_value_variant =
         std::variant<uint32_t, uint64_t, int64_t, bool, std::vector<int64_t>, name, std::string, eosio::time_point_sec>;
@@ -101,11 +135,11 @@ namespace eosdac {
     struct [[eosio::table("state2"), eosio::contract("daccustodian")]] contr_state2 {
         eosio::time_point_sec                  lastperiodtime = time_point_sec(0);
         std::map<uint8_t, state_value_variant> data           = {
-                      {state_keys::total_weight_of_votes, int64_t(0)},
-                      {state_keys::total_votes_on_candidates, int64_t(0)},
-                      {state_keys::number_active_candidates, uint32_t(0)},
-                      {state_keys::met_initial_votes_threshold, false},
-                      {state_keys::lastclaimbudgettime, time_point_sec(0)},
+            {state_keys::total_weight_of_votes, int64_t(0)},
+            {state_keys::total_votes_on_candidates, int64_t(0)},
+            {state_keys::number_active_candidates, uint32_t(0)},
+            {state_keys::met_initial_votes_threshold, false},
+            {state_keys::lastclaimbudgettime, time_point_sec(0)},
         };
 
         static contr_state2 get_migrated_state(const eosio::name account, const eosio::name dac_id) {
@@ -142,6 +176,27 @@ namespace eosdac {
             check(search != data.end(), "Key %s not found in state data", std::to_string(key));
             return std::get<T>(search->second);
         }
+
+        template <typename T>
+        std::optional<T> get_maybe(const state_keys key) const {
+            const auto search = data.find(key);
+            if (search != data.end()) {
+                return std::get<T>(search->second);
+            } else {
+                return {};
+            }
+        }
+
+        /**
+         * What follows are type-safe getters/setters for polymorphic map values
+         **/
+
+        PROPERTY_OPTIONAL_TYPECASTING(uint16_t, uint32_t, budget_percentage);
+        PROPERTY(time_point_sec, lastclaimbudgettime);
+        PROPERTY(int64_t, total_weight_of_votes);
+        PROPERTY(bool, met_initial_votes_threshold);
+        PROPERTY(uint32_t, number_active_candidates);
+        PROPERTY(int64_t, total_votes_on_candidates);
     };
 
     struct [[eosio::table("votes"), eosio::contract("daccustodian")]] vote {
@@ -248,6 +303,8 @@ namespace eosdac {
         ACTION paycpu(const name &dac_id);
         ACTION claimbudget(const name &dac_id);
         ACTION migratestate(const name &dac_id);
+        ACTION setbudget(const name &dac_id, const uint16_t percentage);
+        ACTION unsetbudget(const name &dac_id);
 #ifdef DEBUG
         ACTION resetvotes(const name &voter, const name &dac_id);
         ACTION resetcands(const name &dac_id);
@@ -303,5 +360,6 @@ namespace eosdac {
         void             validateUnstake(name code, name cand, name dac_id);
         void validateUnstakeAmount(const name &code, const name &cand, const asset &unstake_amount, const name &dac_id);
         void validateMinStake(name account, name dac_id);
+        uint16_t get_budget_percentage(const name &dac_id, const contr_state2 &state);
     };
 }; // namespace eosdac

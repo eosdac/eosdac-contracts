@@ -174,7 +174,7 @@ export class SharedTestObjects {
     initialAsset: string,
     planet: ?Account
   ) {
-    this.setup_new_auth_account();
+    await this.setup_new_auth_account();
     // Further setup after the inital singleton object have been created.
     await this.setup_tokens(initialAsset);
     await this.register_dac_with_directory(dacId, symbol, planet);

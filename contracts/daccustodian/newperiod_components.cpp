@@ -196,10 +196,25 @@ asset balance_for_type(const dacdir::dac &dac, const dacdir::account_type type) 
     return eosdac::get_balance_graceful(account, TLM_TOKEN_CONTRACT, TLM_SYM);
 }
 
+ACTION daccustodian::setbudget(const name &dac_id, const uint16_t percentage) {
+    require_auth(get_self());
+
+    auto state = contr_state2::get_current_state(get_self(), dac_id);
+    state.set_budget_percentage(percentage);
+    state.save(get_self(), dac_id);
+}
+
+ACTION daccustodian::unsetbudget(const name &dac_id) {
+    require_auth(get_self());
+
+    auto state = contr_state2::get_current_state(get_self(), dac_id);
+    state.unset_budget_percentage();
+    state.save(get_self(), dac_id);
+}
+
 ACTION daccustodian::claimbudget(const name &dac_id) {
     auto state = contr_state2::get_current_state(get_self(), dac_id);
-    check(state.get<time_point_sec>(state_keys::lastclaimbudgettime) < state.lastperiodtime,
-        "Claimbudget can only be called once per period");
+    check(state.get_lastclaimbudgettime() < state.lastperiodtime, "Claimbudget can only be called once per period");
     const auto dac              = dacdir::dac_for_id(dac_id);
     const auto treasury_account = dac.account_for_type(dacdir::TREASURY);
 
@@ -208,21 +223,10 @@ ACTION daccustodian::claimbudget(const name &dac_id) {
     if (!spendings_account && !auth_account) {
         return;
     }
-    const auto recipient = spendings_account ? *spendings_account : auth_account;
-
+    const auto recipient        = spendings_account ? *spendings_account : auth_account;
     const auto auth_balance     = eosdac::get_balance_graceful(auth_account, TLM_TOKEN_CONTRACT, TLM_SYM);
     const auto treasury_balance = balance_for_type(dac, dacdir::TREASURY);
-
-    const auto nftcache = dacdir::nftcache_table{DACDIRECTORY_CONTRACT, dac.dac_id.value};
-    const auto index    = nftcache.get_index<"valdesc"_n>();
-
-    const auto index_key = dacdir::nftcache::template_and_value_key_ascending(BUDGET_SCHEMA, 0);
-    auto       itr       = index.lower_bound(index_key);
-    check(
-        itr != index.end() && itr->schema_name == BUDGET_SCHEMA, "Dac with ID %s does not own any budget NFTs", dac_id);
-
-    // we need to convert this to int64_t so we can use the * operator on asset further down
-    const auto p = int64_t(itr->value);
+    const auto p                = get_budget_percentage(dac_id, state);
 
     // percentage value is scaled by 100, so to calculate percent we need to divide by (100 * 100 == 10000)
     const auto amount = std::min(treasury_balance, auth_balance - treasury_balance * p / 10000);
@@ -232,7 +236,7 @@ ACTION daccustodian::claimbudget(const name &dac_id) {
             .send();
     }
 
-    state.set(state_keys::lastclaimbudgettime, time_point_sec(current_time_point()));
+    state.set_lastclaimbudgettime(time_point_sec(current_time_point()));
     state.save(get_self(), dac_id);
 }
 
@@ -281,19 +285,19 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
         uint64_t token_current_supply = tokenStats->supply.amount;
 
         double percent_of_current_voter_engagement =
-            double(currentState.get<int64_t>(state_keys::total_weight_of_votes)) / double(token_current_supply) * 100.0;
+            double(currentState.get_total_weight_of_votes()) / double(token_current_supply) * 100.0;
 
         print("\n\nToken current supply as decimal units: ", token_current_supply,
-            " total votes so far: ", currentState.get<int64_t>(state_keys::total_weight_of_votes));
+            " total votes so far: ", currentState.get_total_weight_of_votes());
         print("\n\nNeed inital engagement of: ", configs.initial_vote_quorum_percent, "% to start the DAC.");
         print("\n\nToken supply: ", token_current_supply * 0.0001,
-            " total votes so far: ", currentState.get<int64_t>(state_keys::total_weight_of_votes) * 0.0001);
+            " total votes so far: ", currentState.get_total_weight_of_votes() * 0.0001);
         print("\n\nNeed initial engagement of: ", configs.initial_vote_quorum_percent, "% to start the DAC.");
         print("\n\nNeed ongoing engagement of: ", configs.vote_quorum_percent,
             "% to allow new periods to trigger after initial activation.");
         print("\n\nPercent of current voter engagement: ", percent_of_current_voter_engagement, "\n\n");
 
-        check(currentState.get<bool>(state_keys::met_initial_votes_threshold) == true ||
+        check(currentState.get_met_initial_votes_threshold() == true ||
                   percent_of_current_voter_engagement > configs.initial_vote_quorum_percent,
             "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_ACTIVATE::Voter engagement %s is insufficient to activate the DAC (%s required).",
             percent_of_current_voter_engagement, configs.initial_vote_quorum_percent);
@@ -302,7 +306,7 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
             "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_PROCESS::Voter engagement is insufficient to process a new period");
     }
 
-    currentState.set(state_keys::met_initial_votes_threshold, true);
+    currentState.set_met_initial_votes_threshold(true);
 
     // Distribute Pay is called before allocateCustodians is called to ensure custodians are paid for the just passed
     // period. This also implies custodians should not be paid the first time this is called.
@@ -318,4 +322,21 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
 
     currentState.lastperiodtime = current_block_time();
     currentState.save(get_self(), dac_id);
+}
+
+uint16_t daccustodian::get_budget_percentage(const name &dac_id, const contr_state2 &state) {
+    const auto percentage = state.get_budget_percentage();
+    if (percentage) {
+        return *percentage;
+    } else {
+        const auto nftcache = dacdir::nftcache_table{DACDIRECTORY_CONTRACT, dac_id.value};
+        const auto index    = nftcache.get_index<"valdesc"_n>();
+
+        const auto index_key = dacdir::nftcache::template_and_value_key_ascending(BUDGET_SCHEMA, 0);
+        const auto itr       = index.lower_bound(index_key);
+        check(itr != index.end() && itr->schema_name == BUDGET_SCHEMA, "Dac with ID %s does not own any budget NFTs",
+            dac_id);
+
+        return itr->value;
+    }
 }

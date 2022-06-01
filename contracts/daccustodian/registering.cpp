@@ -16,8 +16,8 @@ ACTION daccustodian::nominatecane(const name &cand, const asset &requestedpay, c
 
     validateMinStake(cand, dac_id);
 
-    const auto number_active_candidates = currentState.get<uint32_t>(state_keys::number_active_candidates);
-    currentState.set(state_keys::number_active_candidates, number_active_candidates + 1);
+    const auto number_active_candidates = currentState.get_number_active_candidates();
+    currentState.set_number_active_candidates(number_active_candidates + 1);
     currentState.save(get_self(), dac_id);
 
     candidates_table registered_candidates(get_self(), dac_id.value);
@@ -171,8 +171,8 @@ void daccustodian::removeCandidate(name cand, bool lockupStake, name dac_id) {
     auto         currentState = contr_state2::get_current_state(_self, dac_id);
     contr_config configs      = contr_config::get_current_configs(_self, dac_id);
 
-    const auto number_active_candidates = currentState.get<uint32_t>(state_keys::number_active_candidates);
-    currentState.set(state_keys::number_active_candidates, number_active_candidates - 1);
+    const auto number_active_candidates = currentState.get_number_active_candidates();
+    currentState.set_number_active_candidates(number_active_candidates - 1);
     currentState.save(_self, dac_id);
 
     candidates_table registered_candidates(_self, dac_id.value);
