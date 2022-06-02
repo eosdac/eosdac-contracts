@@ -200,9 +200,10 @@ namespace eosdac {
     };
 
     struct [[eosio::table("votes"), eosio::contract("daccustodian")]] vote {
-        name              voter;
-        name              proxy;
-        std::vector<name> candidates;
+        name                  voter;
+        name                  proxy;
+        std::vector<name>     candidates;
+        eosio::time_point_sec vote_time_stamp;
 
         uint64_t primary_key() const {
             return voter.value;
@@ -361,5 +362,6 @@ namespace eosdac {
         void validateUnstakeAmount(const name &code, const name &cand, const asset &unstake_amount, const name &dac_id);
         void validateMinStake(name account, name dac_id);
         uint16_t get_budget_percentage(const name &dac_id, const contr_state2 &state);
+        int64_t  calculate_avg_vote_time_stamp_delta(const int64_t weight, const uint64_t total_votes);
     };
 }; // namespace eosdac

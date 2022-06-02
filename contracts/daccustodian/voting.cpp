@@ -35,16 +35,18 @@ ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, c
             eosio::print("\n Removing empty vote.");
         } else {
             votes_cast_by_members.modify(existingVote, voter, [&](vote &v) {
-                v.candidates = newvotes;
-                v.proxy      = name();
+                v.candidates      = newvotes;
+                v.proxy           = name();
+                v.vote_time_stamp = now();
             });
         }
     } else {
         modifyVoteWeights(vote_weight, {}, newvotes, dac_id);
 
         votes_cast_by_members.emplace(voter, [&](vote &v) {
-            v.voter      = voter;
-            v.candidates = newvotes;
+            v.voter           = voter;
+            v.candidates      = newvotes;
+            v.vote_time_stamp = now();
         });
     }
 }
