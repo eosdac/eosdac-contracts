@@ -20,9 +20,12 @@ const dayjs = require('dayjs');
 const utc = require('dayjs/plugin/utc');
 dayjs.extend(utc);
 import { DaccustodianCandidate } from './daccustodian';
+import * as deepEqualInAnyOrder from 'deep-equal-in-any-order';
+chai.use(deepEqualInAnyOrder);
 chai.use(chaiAsPromised);
+import * as moment from 'moment';
 let shared: SharedTestObjects;
-const now = dayjs.utc();
+// const now = dayjs.utc();
 
 enum state_keys {
   total_weight_of_votes = 1,
@@ -36,6 +39,13 @@ enum state_keys {
 const NFT_COLLECTION = 'alien.worlds';
 const BUDGET_SCHEMA = 'budget';
 
+const withLocalOffset = (date: Date) => {
+  // const offset = moment().utcOffset();
+  const dateUTC = moment(date.toUTCString());
+  const offset = dateUTC.utcOffset();
+  return dateUTC.add(offset, 'minutes').toDate();
+};
+
 describe('Daccustodian', () => {
   let second_nft_id: Number;
   let somebody: Account;
@@ -43,11 +53,14 @@ describe('Daccustodian', () => {
     shared = await SharedTestObjects.getInstance();
     somebody = await await AccountManager.createAccount();
   });
+
+  let fill_time;
   context('fillstate', async () => {
     let dacId = 'migratedac';
     before(async () => {
+      fill_time = new Date();
       await shared.daccustodian_contract.fillstate(dacId, {
-        lastperiodtime: now.toDate(),
+        lastperiodtime: fill_time,
         total_weight_of_votes: -123,
         total_votes_on_candidates: -234,
         number_active_candidates: 456,
@@ -59,9 +72,7 @@ describe('Daccustodian', () => {
         scope: dacId,
       });
       const s = res.rows[0];
-      chai
-        .expect(now.unix() - dayjs.utc(s.lastperiodtime).unix())
-        .to.be.below(2);
+      chai.expect(s.lastperiodtime).equalTime(withLocalOffset(fill_time));
       chai.expect(s.total_weight_of_votes).to.equal(-123);
       chai.expect(s.total_votes_on_candidates).to.equal(-234);
       chai.expect(s.number_active_candidates).to.equal(456);
@@ -89,9 +100,7 @@ describe('Daccustodian', () => {
         scope: dacId,
       });
       const s = res.rows[0];
-      chai
-        .expect(now.unix() - dayjs.utc(s.lastperiodtime).unix())
-        .to.be.below(2);
+      chai.expect(s.lastperiodtime).equalTime(withLocalOffset(fill_time));
       chai.expect(s.data).deep.contains({
         key: 2,
         value: ['int64', -234],
@@ -661,21 +670,24 @@ describe('Daccustodian', () => {
         }
       });
       it('votes table should have rows', async () => {
-        let votedCandidateResult = shared.daccustodian_contract.votesTable({
+        const res = await shared.daccustodian_contract.votesTable({
           scope: dacId,
         });
-        await assertRowsEqual(votedCandidateResult, [
-          {
-            candidates: [cands[0].name, cands[2].name],
-            proxy: '',
-            voter: regMembers[0].name,
-          },
-          {
-            candidates: [cands[0].name, cands[2].name],
-            proxy: '',
-            voter: regMembers[1].name,
-          },
-        ]);
+        const rows = res.rows;
+        chai
+          .expect(rows.map((x) => x.voter))
+          .to.deep.equalInAnyOrder(regMembers.slice(0, 2).map((x) => x.name));
+
+        chai
+          .expect(rows[0].candidates)
+          .deep.equal([cands[0].name, cands[2].name]);
+        chai.expect(rows[0].proxy).to.equal('');
+        expect_recent(rows[0].vote_time_stamp);
+        chai
+          .expect(rows[1].candidates)
+          .deep.equal([cands[0].name, cands[2].name]);
+        chai.expect(rows[1].proxy).to.equal('');
+        expect_recent(rows[1].vote_time_stamp);
       });
       it('only candidates with votes have total_votes values', async () => {
         let votedCandidateResult = await shared.daccustodian_contract.candidatesTable(
@@ -798,21 +810,25 @@ describe('Daccustodian', () => {
         }
       });
       it('votes table should have rows', async () => {
-        let votedCandidateResult = shared.daccustodian_contract.votesTable({
+        const res = await shared.daccustodian_contract.votesTable({
           scope: dacId,
         });
-        await assertRowsEqual(votedCandidateResult, [
-          {
-            candidates: [cands[0].name, cands[2].name],
-            proxy: '',
-            voter: regMembers[0].name,
-          },
-          {
-            candidates: [cands[0].name, cands[2].name],
-            proxy: '',
-            voter: regMembers[1].name,
-          },
-        ]);
+        const rows = res.rows;
+        chai
+          .expect(rows.map((x) => x.voter))
+          .to.deep.equalInAnyOrder(regMembers.slice(0, 2).map((x) => x.name));
+
+        chai
+          .expect(rows[0].candidates)
+          .deep.equal([cands[0].name, cands[2].name]);
+        chai.expect(rows[0].proxy).to.equal('');
+        expect_recent(rows[0].vote_time_stamp);
+
+        chai
+          .expect(rows[1].candidates)
+          .deep.equal([cands[0].name, cands[2].name]);
+        chai.expect(rows[1].proxy).to.equal('');
+        expect_recent(rows[1].vote_time_stamp);
       });
       it('only candidates with votes have total_votes values', async () => {
         let unvotedCandidateResult = await shared.daccustodian_contract.candidatesTable(
@@ -2702,4 +2718,12 @@ async function get_from_state2(dacId, key) {
       return x.value[1];
     }
   }
+}
+
+function now() {
+  return dayjs.utc().toDate();
+}
+
+function expect_recent(datetime) {
+  chai.expect(datetime).closeToTime(now(), 5);
 }

@@ -22,22 +22,23 @@ void daccustodian::updateVoteWeight(name custodian, int64_t weight, name dac_id)
 
     registered_candidates.modify(candItr, same_payer, [&](auto &c) {
         c.total_votes += weight;
+#ifdef VOTE_DECAY_STAGE_2
         const auto avg_vote_time_stamp = calculate_avg_vote_time_stamp_delta(weight, c.total_votes);
         if (avg_vote_time_stamp >= 0) {
             c.avg_vote_time_stamp += uint32_t(avg_vote_time_stamp);
         } else {
             c.avg_vote_time_stamp -= uint32_t(-avg_vote_time_stamp);
         }
+#endif
     });
 }
 
 int64_t daccustodian::calculate_avg_vote_time_stamp_delta(const int64_t weight, const uint64_t total_votes) {
-    const auto a          = int128_t(now().sec_since_epoch()) * int128_t(weight);
-    const auto b          = a / int128_t(total_votes);
+    const auto delta      = int128_t(now().sec_since_epoch()) * int128_t(weight) / int128_t(total_votes);
     const auto max_amount = std::numeric_limits<int64_t>::max();
-    check(b <= max_amount, "multiplication overflow");
-    check(b >= -max_amount, "multiplication underflow");
-    return b;
+    check(delta <= max_amount, "multiplication overflow");
+    check(delta >= -max_amount, "multiplication underflow");
+    return delta;
 }
 
 void daccustodian::updateVoteWeights(const vector<name> &votes, int64_t vote_weight, name dac_id) {

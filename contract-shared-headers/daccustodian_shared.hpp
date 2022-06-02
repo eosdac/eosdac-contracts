@@ -68,10 +68,10 @@ namespace eosdac {
             return candidate_name.value;
         }
         uint64_t by_number_votes() const {
-            return static_cast<uint64_t>(total_votes);
+            return total_votes;
         }
         uint64_t by_votes_rank() const {
-            return static_cast<uint64_t>(UINT64_MAX - total_votes);
+            return UINT64_MAX - total_votes;
         }
         uint64_t by_requested_pay() const {
             return static_cast<uint64_t>(requestedpay.amount);
@@ -79,10 +79,10 @@ namespace eosdac {
     };
 
     using candidates2_table = eosio::multi_index<"candidates2"_n, candidate2,
-        eosio::indexed_by<"bycandidate"_n, eosio::const_mem_fun<candidate2, uint64_t, &candidate::primary_key>>,
-        eosio::indexed_by<"byvotes"_n, eosio::const_mem_fun<candidate2, uint64_t, &candidate::by_number_votes>>,
-        eosio::indexed_by<"byvotesrank"_n, eosio::const_mem_fun<candidate2, uint64_t, &candidate::by_votes_rank>>,
-        eosio::indexed_by<"byreqpay"_n, eosio::const_mem_fun<candidate2, uint64_t, &candidate::by_requested_pay>>>;
+        eosio::indexed_by<"bycandidate"_n, eosio::const_mem_fun<candidate2, uint64_t, &candidate2::primary_key>>,
+        eosio::indexed_by<"byvotes"_n, eosio::const_mem_fun<candidate2, uint64_t, &candidate2::by_number_votes>>,
+        eosio::indexed_by<"byvotesrank"_n, eosio::const_mem_fun<candidate2, uint64_t, &candidate2::by_votes_rank>>,
+        eosio::indexed_by<"byreqpay"_n, eosio::const_mem_fun<candidate2, uint64_t, &candidate2::by_requested_pay>>>;
 
     struct [[eosio::table]] vote_weight {
         eosio::name voter;
