@@ -4,6 +4,7 @@ namespace eosdac {
 
 #include <eosio/eosio.hpp>
 #include <eosio/multi_index.hpp>
+#include <math.h>
 
     struct [[eosio::table("custodians"), eosio::contract("daccustodian")]] custodian {
         eosio::name  cust_name;
@@ -34,7 +35,13 @@ namespace eosdac {
         uint64_t              total_votes;
         uint8_t               is_active;
         eosio::time_point_sec custodian_end_time_stamp;
+#ifdef VOTE_DECAY_STAGE_2
+        eosio::time_point_sec avg_vote_time_stamp;
 
+        uint64_t by_decayed_votes() const {
+            return log2(total_votes) + double(avg_vote_time_stamp.sec_since_epoch()) / double(SECONDS_TO_DOUBLE);
+        }
+#endif
         uint64_t primary_key() const {
             return candidate_name.value;
         }
@@ -53,7 +60,12 @@ namespace eosdac {
         eosio::indexed_by<"bycandidate"_n, eosio::const_mem_fun<candidate, uint64_t, &candidate::primary_key>>,
         eosio::indexed_by<"byvotes"_n, eosio::const_mem_fun<candidate, uint64_t, &candidate::by_number_votes>>,
         eosio::indexed_by<"byvotesrank"_n, eosio::const_mem_fun<candidate, uint64_t, &candidate::by_votes_rank>>,
-        eosio::indexed_by<"byreqpay"_n, eosio::const_mem_fun<candidate, uint64_t, &candidate::by_requested_pay>>>;
+        eosio::indexed_by<"byreqpay"_n, eosio::const_mem_fun<candidate, uint64_t, &candidate::by_requested_pay>>
+#ifdef VOTE_DECAY_STAGE_2
+        ,
+        eosio::indexed_by<"bydecayed"_n, eosio::const_mem_fun<candidate, uint64_t, &candidate::by_decayed_votes>>
+#endif
+        >;
 
     struct [[eosio::table("candidates2"), eosio::contract("daccustodian")]] candidate2 {
         eosio::name           candidate_name;
@@ -62,7 +74,6 @@ namespace eosdac {
         uint64_t              total_votes;
         uint8_t               is_active;
         eosio::time_point_sec custodian_end_time_stamp;
-        eosio::time_point_sec avg_vote_time_stamp;
 
         uint64_t primary_key() const {
             return candidate_name.value;

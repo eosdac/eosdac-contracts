@@ -311,6 +311,12 @@ namespace eosdac {
         ACTION resetcands(const name &dac_id);
 
 #endif
+#ifdef VOTE_DECAY_STAGE_1
+        ACTION migration1(const name dac_id, const uint8_t batch_size);
+#endif
+#ifdef VOTE_DECAY_STAGE_2
+        ACTION migration2(const name dac_id, const uint8_t batch_size);
+#endif
 
 #ifdef IS_DEV
         ACTION fillstate(const name &dac_id, contr_state &state);
