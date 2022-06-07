@@ -15,14 +15,12 @@ import {
 
 import { SharedTestObjects, NUMBER_OF_CANDIDATES } from '../TestHelpers';
 import * as chai from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
 const dayjs = require('dayjs');
 const utc = require('dayjs/plugin/utc');
 dayjs.extend(utc);
 import { DaccustodianCandidate } from './daccustodian';
 import * as deepEqualInAnyOrder from 'deep-equal-in-any-order';
 chai.use(deepEqualInAnyOrder);
-chai.use(chaiAsPromised);
 import * as moment from 'moment';
 let shared: SharedTestObjects;
 // const now = dayjs.utc();
