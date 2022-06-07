@@ -39,7 +39,8 @@ namespace eosdac {
         eosio::time_point_sec avg_vote_time_stamp;
 
         uint64_t by_decayed_votes() const {
-            return log2(total_votes) + double(avg_vote_time_stamp.sec_since_epoch()) / double(SECONDS_TO_DOUBLE);
+            return UINT64_MAX - uint64_t(log2(total_votes) +
+                                         double(avg_vote_time_stamp.sec_since_epoch()) / double(SECONDS_TO_DOUBLE));
         }
 #endif
         uint64_t primary_key() const {
