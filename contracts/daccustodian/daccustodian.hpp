@@ -337,15 +337,17 @@ namespace eosdac {
         ACTION setperm(const name &cand, const name &permission, const name &dac_id);
 
       private: // Private helper methods used by other actions.
-        void updateVoteWeight(name custodian, int64_t weight, name internal_dac_id, bool from_voting = false);
-        void updateVoteWeights(
-            const vector<name> &votes, int64_t vote_weight, name internal_dac_id, bool from_voting = false);
+        void    updateVoteWeight(name custodian, const std::optional<time_point_sec> vote_time_stamp, int64_t weight,
+               name dac_id, bool from_voting = false);
+        void    updateVoteWeights(const vector<name> &votes, const std::optional<time_point_sec> vote_time_stamp,
+               int64_t vote_weight, name internal_dac_id, bool from_voting = false);
         int64_t get_vote_weight(name voter, name dac_id);
-        void modifyVoteWeights(int64_t vote_weight, vector<name> oldVotes, vector<name> newVotes, name internal_dac_id,
-            bool from_voting = false);
-        void modifyProxiesWeight(int64_t vote_weight, name oldProxy, name newProxy, name dac_id);
-        void assertPeriodTime(contr_config &configs, contr_state2 &currentState);
-        void distributeMeanPay(name internal_dac_id);
+        void    modifyVoteWeights(int64_t vote_weight, vector<name> oldVotes,
+               std::optional<time_point_sec> oldVoteTimestamp, vector<name> newVotes, name dac_id,
+               bool from_voting = false);
+        void    modifyProxiesWeight(int64_t vote_weight, name oldProxy, name newProxy, name dac_id);
+        void    assertPeriodTime(contr_config &configs, contr_state2 &currentState);
+        void    distributeMeanPay(name internal_dac_id);
         vector<eosiosystem::permission_level_weight> get_perm_level_weights(
             const custodians_table &custodians, const name &dac_id);
         void add_all_auths(const name &accountToChange, const vector<eosiosystem::permission_level_weight> &weights,
@@ -369,7 +371,7 @@ namespace eosdac {
         void validateUnstakeAmount(const name &code, const name &cand, const asset &unstake_amount, const name &dac_id);
         void validateMinStake(name account, name dac_id);
         uint16_t       get_budget_percentage(const name &dac_id, const contr_state2 &state);
-        time_point_sec calculate_avg_vote_time_stamp(
-            const time_point_sec vote_time_before, const int64_t weight, const uint64_t total_votes);
+        time_point_sec calculate_avg_vote_time_stamp(const time_point_sec vote_time_before,
+            const time_point_sec vote_time_stamp, const int64_t weight, const uint64_t total_votes);
     };
 }; // namespace eosdac

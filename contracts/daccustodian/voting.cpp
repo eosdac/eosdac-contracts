@@ -27,7 +27,7 @@ ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, c
     int64_t vote_weight = get_vote_weight(voter, dac_id);
     if (existingVote != votes_cast_by_members.end()) {
 
-        modifyVoteWeights(vote_weight, existingVote->candidates, newvotes, dac_id);
+        modifyVoteWeights(vote_weight, existingVote->candidates, existingVote->vote_time_stamp, newvotes, dac_id);
 
         if (newvotes.size() == 0) {
             // Remove the vote if the array of candidates is empty
@@ -41,7 +41,7 @@ ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, c
             });
         }
     } else {
-        modifyVoteWeights(vote_weight, {}, newvotes, dac_id);
+        modifyVoteWeights(vote_weight, {}, {}, newvotes, dac_id);
 
         votes_cast_by_members.emplace(voter, [&](vote &v) {
             v.voter           = voter;
@@ -57,8 +57,9 @@ void daccustodian::modifyProxiesWeight(int64_t vote_weight, name oldProxy, name 
 
     auto oldProxyRow = proxies.find(oldProxy.value);
 
-    vector<name> oldProxyVotes = {};
-    vector<name> newProxyVotes = {};
+    vector<name>                  oldProxyVotes    = {};
+    vector<name>                  newProxyVotes    = {};
+    std::optional<time_point_sec> oldVoteTimestamp = {};
 
     if (oldProxyRow != proxies.end() && oldProxyRow->proxy == oldProxy) {
         proxies.modify(oldProxyRow, same_payer, [&](proxy &p) {
@@ -66,7 +67,8 @@ void daccustodian::modifyProxiesWeight(int64_t vote_weight, name oldProxy, name 
         });
         auto existingProxyVote = votes_cast_by_members.find(oldProxy.value);
         if (existingProxyVote != votes_cast_by_members.end() && existingProxyVote->voter == oldProxy) {
-            oldProxyVotes = existingProxyVote->candidates;
+            oldProxyVotes    = existingProxyVote->candidates;
+            oldVoteTimestamp = existingProxyVote->vote_time_stamp;
         }
     }
 
@@ -81,7 +83,7 @@ void daccustodian::modifyProxiesWeight(int64_t vote_weight, name oldProxy, name 
             newProxyVotes = existingProxyVote->candidates;
         }
     }
-    modifyVoteWeights(vote_weight, oldProxyVotes, newProxyVotes, dac_id);
+    modifyVoteWeights(vote_weight, oldProxyVotes, oldVoteTimestamp, newProxyVotes, dac_id);
 }
 
 ACTION daccustodian::voteproxy(const name &voter, const name &proxyName, const name &dac_id) {

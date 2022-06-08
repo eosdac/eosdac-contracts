@@ -32,7 +32,8 @@ ACTION daccustodian::weightobsv(const vector<account_weight_delta> &account_weig
             if (existingVote->proxy.value != 0) {
                 modifyProxiesWeight(awd.weight_delta, name{}, existingVote->proxy, dac_id);
             } else {
-                modifyVoteWeights(awd.weight_delta, {}, existingVote->candidates, dac_id);
+                modifyVoteWeights(
+                    awd.weight_delta, {}, existingVote->vote_time_stamp, existingVote->candidates, dac_id);
             }
         }
     }
