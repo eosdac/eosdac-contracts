@@ -311,10 +311,9 @@ namespace eosdac {
         ACTION resetcands(const name &dac_id);
 
 #endif
-#ifdef VOTE_DECAY_STAGE_1
         ACTION migration1(const name dac_id, const uint8_t batch_size);
-#endif
 #ifdef VOTE_DECAY_STAGE_2
+        ACTION fillcand2(const name dac_id, const std::vector<candidate2> &data);
         ACTION migration2(const name dac_id, const uint8_t batch_size);
 #endif
 
@@ -338,10 +337,12 @@ namespace eosdac {
         ACTION setperm(const name &cand, const name &permission, const name &dac_id);
 
       private: // Private helper methods used by other actions.
-        void    updateVoteWeight(name custodian, int64_t weight, name internal_dac_id);
-        void    updateVoteWeights(const vector<name> &votes, int64_t vote_weight, name internal_dac_id);
+        void updateVoteWeight(name custodian, int64_t weight, name internal_dac_id, bool from_voting = false);
+        void updateVoteWeights(
+            const vector<name> &votes, int64_t vote_weight, name internal_dac_id, bool from_voting = false);
         int64_t get_vote_weight(name voter, name dac_id);
-        void modifyVoteWeights(int64_t vote_weight, vector<name> oldVotes, vector<name> newVotes, name internal_dac_id);
+        void modifyVoteWeights(int64_t vote_weight, vector<name> oldVotes, vector<name> newVotes, name internal_dac_id,
+            bool from_voting = false);
         void modifyProxiesWeight(int64_t vote_weight, name oldProxy, name newProxy, name dac_id);
         void assertPeriodTime(contr_config &configs, contr_state2 &currentState);
         void distributeMeanPay(name internal_dac_id);
@@ -367,7 +368,8 @@ namespace eosdac {
         void             validateUnstake(name code, name cand, name dac_id);
         void validateUnstakeAmount(const name &code, const name &cand, const asset &unstake_amount, const name &dac_id);
         void validateMinStake(name account, name dac_id);
-        uint16_t get_budget_percentage(const name &dac_id, const contr_state2 &state);
-        int64_t  calculate_avg_vote_time_stamp_delta(const int64_t weight, const uint64_t total_votes);
+        uint16_t       get_budget_percentage(const name &dac_id, const contr_state2 &state);
+        time_point_sec calculate_avg_vote_time_stamp(
+            const time_point_sec vote_time_before, const int64_t weight, const uint64_t total_votes);
     };
 }; // namespace eosdac

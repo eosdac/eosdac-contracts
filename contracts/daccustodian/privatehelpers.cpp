@@ -1,7 +1,7 @@
 
 using namespace eosdac;
 
-void daccustodian::updateVoteWeight(name custodian, int64_t weight, name dac_id) {
+void daccustodian::updateVoteWeight(name custodian, int64_t weight, name dac_id, bool from_voting) {
     if (weight == 0) {
         print("\n Vote has no weight - No need to continue.");
         return;
@@ -26,27 +26,29 @@ void daccustodian::updateVoteWeight(name custodian, int64_t weight, name dac_id)
         if (c.total_votes == 0) {
             // TODO: What to do if c.total_votes is zero to prevent division by zero?
         } else {
-            const auto avg_vote_time_stamp = calculate_avg_vote_time_stamp_delta(weight, c.total_votes);
-            if (avg_vote_time_stamp >= 0) {
-                c.avg_vote_time_stamp += uint32_t(avg_vote_time_stamp);
-            } else {
-                c.avg_vote_time_stamp -= uint32_t(-avg_vote_time_stamp);
-            }
+            c.avg_vote_time_stamp = calculate_avg_vote_time_stamp(c.avg_vote_time_stamp, weight, c.total_votes);
         }
 
 #endif
     });
 }
 
-int64_t daccustodian::calculate_avg_vote_time_stamp_delta(const int64_t weight, const uint64_t total_votes) {
-    const auto delta      = int128_t(now().sec_since_epoch()) * int128_t(weight) / int128_t(total_votes);
+time_point_sec daccustodian::calculate_avg_vote_time_stamp(
+    const time_point_sec vote_time_before, const int64_t weight, const uint64_t total_votes) {
+    check(total_votes != 0, "division by zero, total_votes is 0");
+    check(vote_time_before <= now(), "vote_time_before is in the future: %s", vote_time_before);
+    const auto delta_seconds = int128_t(now().sec_since_epoch() - vote_time_before.sec_since_epoch()) *
+                               int128_t(weight) / int128_t(total_votes);
     const auto max_amount = std::numeric_limits<int64_t>::max();
-    check(delta <= max_amount, "multiplication overflow");
-    check(delta >= -max_amount, "multiplication underflow");
-    return delta;
+    check(delta_seconds <= max_amount, "multiplication overflow");
+    check(delta_seconds >= -max_amount, "multiplication underflow");
+    const auto new_seconds = int128_t(vote_time_before.sec_since_epoch()) + delta_seconds;
+    check(new_seconds >= 0, "new_seconds would turn negative");
+    check(new_seconds <= std::numeric_limits<uint32_t>::max(), "new_seconds does not fit into a uint32_t");
+    return time_point_sec{uint32_t(new_seconds)};
 }
 
-void daccustodian::updateVoteWeights(const vector<name> &votes, int64_t vote_weight, name dac_id) {
+void daccustodian::updateVoteWeights(const vector<name> &votes, int64_t vote_weight, name dac_id, bool from_voting) {
 
     for (const auto &cust : votes) {
         updateVoteWeight(cust, vote_weight, dac_id);
@@ -87,7 +89,8 @@ int64_t daccustodian::get_vote_weight(name voter, name dac_id) {
     return 0;
 }
 
-void daccustodian::modifyVoteWeights(int64_t vote_weight, vector<name> oldVotes, vector<name> newVotes, name dac_id) {
+void daccustodian::modifyVoteWeights(
+    int64_t vote_weight, vector<name> oldVotes, vector<name> newVotes, name dac_id, bool from_voting) {
     // This could be optimised with set diffing to avoid remove then add for unchanged votes. - later
 
     if (vote_weight == 0) {
@@ -114,8 +117,8 @@ void daccustodian::modifyVoteWeights(int64_t vote_weight, vector<name> oldVotes,
     currentState.set_total_weight_of_votes(total_weight_of_votes);
     currentState.save(get_self(), dac_id);
 
-    updateVoteWeights(oldVotes, -vote_weight, dac_id);
-    updateVoteWeights(newVotes, vote_weight, dac_id);
+    updateVoteWeights(oldVotes, -vote_weight, dac_id, from_voting);
+    updateVoteWeights(newVotes, vote_weight, dac_id, from_voting);
 }
 
 permission_level daccustodian::getCandidatePermission(name account, name dac_id) {

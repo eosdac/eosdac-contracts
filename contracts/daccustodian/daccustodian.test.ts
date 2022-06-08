@@ -53,6 +53,112 @@ describe('Daccustodian', () => {
   });
 
   let fill_time;
+
+  context('migration2', async () => {
+    const timestamp = new Date();
+    let expected, expected2;
+    const filldata = [
+      {
+        candidate_name: 'l121235fcc4a',
+        requestedpay: '15.0000 EOS',
+        locked_tokens: '0.0000 PERDAC',
+        total_votes: 0,
+        is_active: 1,
+        custodian_end_time_stamp: timestamp,
+      },
+      {
+        candidate_name: 'l1e1cc225412',
+        requestedpay: '15.0000 EOS',
+        locked_tokens: '0.0000 PERDAC',
+        total_votes: 1520000000,
+        is_active: 1,
+        custodian_end_time_stamp: timestamp,
+      },
+      {
+        candidate_name: 'l21c32ee2ef2',
+        requestedpay: '15.0000 EOS',
+        locked_tokens: '0.0000 PERDAC',
+        total_votes: 0,
+        is_active: 1,
+        custodian_end_time_stamp: timestamp,
+      },
+      {
+        candidate_name: 'l2a15133431c',
+        requestedpay: '15.0000 EOS',
+        locked_tokens: '0.0000 PERDAC',
+        total_votes: 0,
+        is_active: 1,
+        custodian_end_time_stamp: timestamp,
+      },
+      {
+        candidate_name: 'l2f4a333a411',
+        requestedpay: '25.0000 EOS',
+        locked_tokens: '0.0000 PERDAC',
+        total_votes: 0,
+        is_active: 1,
+        custodian_end_time_stamp: timestamp,
+      },
+      {
+        candidate_name: 'l3251de51b45',
+        requestedpay: '25.0000 EOS',
+        locked_tokens: '0.0000 PERDAC',
+        total_votes: 3040000000,
+        is_active: 1,
+        custodian_end_time_stamp: timestamp,
+      },
+      {
+        candidate_name: 'l33ea51eab1b',
+        requestedpay: '20.0000 EOS',
+        locked_tokens: '0.0000 PERDAC',
+        total_votes: 1520000000,
+        is_active: 1,
+        custodian_end_time_stamp: timestamp,
+      },
+    ];
+    before(async () => {});
+    context('fillcand2', async () => {
+      it('should work', async () => {
+        await shared.daccustodian_contract.fillcand2('fill2test', filldata);
+      });
+      it('should fill table', async () => {
+        expected = filldata.map((x) => {
+          x.custodian_end_time_stamp = withLocalOffset(
+            x.custodian_end_time_stamp
+          );
+          return x;
+        });
+        await assertRowsEqual(
+          shared.daccustodian_contract.candidates2Table({ scope: 'fill2test' }),
+          expected
+        );
+      });
+    });
+    context('migration2', async () => {
+      it('should work', async () => {
+        await shared.daccustodian_contract.migration2(
+          'fill2test',
+          filldata.length
+        );
+      });
+      it('should fill table', async () => {
+        expected2 = expected.map((x) => {
+          x.avg_vote_time_stamp = new Date(0);
+          return x;
+        });
+        await assertRowsEqual(
+          shared.daccustodian_contract.candidatesTable({ scope: 'fill2test' }),
+          expected
+        );
+      });
+      it('should clear table2', async () => {
+        await assertRowsEqual(
+          shared.daccustodian_contract.candidates2Table({ scope: 'fill2test' }),
+          []
+        );
+      });
+    });
+  });
+
   context('fillstate', async () => {
     let dacId = 'migratedac';
     before(async () => {
@@ -652,10 +758,14 @@ describe('Daccustodian', () => {
       });
     });
     context('After voting', async () => {
+      let expected_avg_vote_time_stamps = [];
       before(async () => {
         // Place votes for even number candidates and leave odd number without votes.
         // Only vote with the first 2 members
         for (const member of regMembers.slice(0, 2)) {
+          expected_avg_vote_time_stamps.push(
+            await expected_avg_vote_time_stamp(dacId, member, cands[0])
+          );
           await debugPromise(
             shared.daccustodian_contract.votecust(
               member.name,
@@ -666,6 +776,10 @@ describe('Daccustodian', () => {
             'voting custodian'
           );
         }
+        console.log(
+          'expected_avg_vote_time_stamps: ',
+          expected_avg_vote_time_stamps
+        );
       });
       it('votes table should have rows', async () => {
         const res = await shared.daccustodian_contract.votesTable({
@@ -688,26 +802,39 @@ describe('Daccustodian', () => {
         expect_recent(rows[1].vote_time_stamp);
       });
       it('only candidates with votes have total_votes values', async () => {
-        let votedCandidateResult = await shared.daccustodian_contract.candidatesTable(
+        let unvotedCandidateResult = await shared.daccustodian_contract.candidatesTable(
           {
             scope: dacId,
             limit: 1,
             lowerBound: cands[1].name,
           }
         );
-        chai.expect(votedCandidateResult.rows[0]).to.include({
-          total_votes: 0,
-        });
-        let unvotedCandidateResult = await shared.daccustodian_contract.candidatesTable(
+        console.log(
+          'unvotedCandidateResult: ',
+          JSON.stringify(unvotedCandidateResult, null, 2)
+        );
+        chai.expect(unvotedCandidateResult.rows[0].total_votes).to.equal(0);
+        chai
+          .expect(unvotedCandidateResult.rows[0].avg_vote_time_stamp.getTime())
+          .to.equal(expected_avg_vote_time_stamps[0].getTime());
+        console.log('cands[0].name: ', cands[0].name);
+        let votedCandidateResult = await shared.daccustodian_contract.candidatesTable(
           {
             scope: dacId,
             limit: 1,
             lowerBound: cands[0].name,
           }
         );
-        chai.expect(unvotedCandidateResult.rows[0]).to.include({
+        console.log(
+          'votedCandidateResult: ',
+          JSON.stringify(votedCandidateResult, null, 2)
+        );
+        chai.expect(votedCandidateResult.rows[0]).to.include({
           total_votes: 20_000_000,
         });
+        chai
+          .expect(votedCandidateResult.rows[0].avg_vote_time_stamp.getTime())
+          .to.equal(expected_avg_vote_time_stamps[1].getTime());
         await assertRowCount(
           shared.daccustodian_contract.votesTable({
             scope: dacId,
@@ -2724,4 +2851,44 @@ function now() {
 
 function expect_recent(datetime) {
   chai.expect(datetime).closeToTime(now(), 5);
+}
+
+async function expected_avg_vote_time_stamp(
+  dacId: string,
+  voter: Account,
+  candidate: Account
+) {
+  // get vote weight of voter (number of dac tokens)
+  // get dac token from dacdirectory
+  let res = await shared.dacdirectory_contract.dacsTable();
+  // console.log('dacsTable: ', JSON.stringify(res, null, 2));
+  const mydac = res.rows.find((x) => x.dac_id == dacId);
+  // console.log('mydac: ', mydac);
+  const mysymbol = mydac.symbol.sym;
+  const token_name = mysymbol.split(',')[1];
+  const vote_weight = await get_balance(
+    shared.dac_token_contract,
+    voter,
+    token_name
+  );
+
+  // get avg_vote_time_stamp of candidate
+  res = await shared.daccustodian_contract.candidatesTable({ scope: dacId });
+  // console.log('candidatesTable: ', JSON.stringify(res, null, 2));
+  const mycand = res.rows.find((x) => x.candidate_name == candidate.name);
+  // console.log('mycand: ', mycand);
+  const avg_vote_time_stamp = mycand.avg_vote_time_stamp;
+  const total_votes = mycand.total_votes;
+  if (total_votes == 0) {
+    return avg_vote_time_stamp;
+  }
+  console.log(
+    `voter ${voter.name} dacId: ${dacId} token_name: ${token_name} vote_weight: ${vote_weight} total_votes: ${total_votes}`
+  );
+  return new Date(
+    avg_vote_time_stamp.getTime() / 1000 +
+      ((new Date().getTime() / 1000 - avg_vote_time_stamp.getTime() / 1000) *
+        vote_weight) /
+        total_votes
+  );
 }

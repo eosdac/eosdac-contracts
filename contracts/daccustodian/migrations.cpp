@@ -1,7 +1,6 @@
 
-#ifdef VOTE_DECAY_STAGE_1
 // migrates from candidates to candidates2
-// after deployment of contract built with VOTE_DECAY_STAGE_1, run this
+// after deployment of contract, run this
 ACTION daccustodian::migration1(const name dac_id, const uint8_t batch_size) {
     auto    candidates1 = candidates_table{get_self(), dac_id.value};
     auto    candidates2 = candidates2_table{get_self(), dac_id.value};
@@ -19,9 +18,24 @@ ACTION daccustodian::migration1(const name dac_id, const uint8_t batch_size) {
         itr1 = candidates1.erase(itr1);
     }
 }
-#endif
 
 #ifdef VOTE_DECAY_STAGE_2
+
+// test action to fill candidates2 table in order to test migration2
+ACTION daccustodian::fillcand2(const name dac_id, const std::vector<candidate2> &data) {
+    auto candidates2 = candidates2_table{get_self(), dac_id.value};
+    for (const auto &c2 : data) {
+        candidates2.emplace(get_self(), [&](auto &x) {
+            x.candidate_name           = c2.candidate_name;
+            x.requestedpay             = c2.requestedpay;
+            x.locked_tokens            = c2.locked_tokens;
+            x.total_votes              = c2.total_votes;
+            x.is_active                = c2.is_active;
+            x.custodian_end_time_stamp = c2.custodian_end_time_stamp;
+        });
+    }
+}
+
 // migrates from candidates2 back to candidates
 // after deployment of contract built with VOTE_DECAY_STAGE_2, run this
 ACTION daccustodian::migration2(const name dac_id, const uint8_t batch_size) {
