@@ -28,7 +28,7 @@ void daccustodian::updateVoteWeight(name custodian, int64_t weight, name dac_id,
         } else {
             c.avg_vote_time_stamp = calculate_avg_vote_time_stamp(c.avg_vote_time_stamp, weight, c.total_votes);
         }
-
+        check(c.avg_vote_time_stamp <= now(), "avg_vote_time_stamp is in the future: %s", c.avg_vote_time_stamp);
 #endif
     });
 }
