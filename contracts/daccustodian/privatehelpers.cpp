@@ -50,13 +50,18 @@ void daccustodian::updateVoteWeight(name custodian, const std::optional<time_poi
 time_point_sec daccustodian::calculate_avg_vote_time_stamp(const time_point_sec vote_time_before,
     const time_point_sec vote_time_stamp, const int64_t weight, const uint64_t total_votes) {
     check(total_votes != 0, "division by zero, total_votes is 0");
-    check(vote_time_before <= now(), "vote_time_before is in the future: %s", vote_time_before);
-    const auto delta_seconds = int128_t(vote_time_stamp.sec_since_epoch()) * int128_t(weight) / int128_t(total_votes);
-    const auto max_amount    = std::numeric_limits<int64_t>::max();
+    const auto delta_seconds =
+        (int128_t(vote_time_stamp.sec_since_epoch()) - int128_t(vote_time_before.sec_since_epoch())) *
+        int128_t(weight) / int128_t(total_votes);
+    const auto max_amount = std::numeric_limits<int64_t>::max();
     check(delta_seconds <= max_amount, "multiplication overflow");
     check(delta_seconds >= -max_amount, "multiplication underflow");
-    const auto new_seconds = int128_t(vote_time_before.sec_since_epoch()) + delta_seconds;
-    check(new_seconds >= 0, "new_seconds would turn negative");
+    auto new_seconds = int128_t(vote_time_before.sec_since_epoch()) + delta_seconds;
+    print(fmt(
+        "time since last vote: %s delta_seconds: %s new_seconds: %s vote_time_stamp.sec_since_epoch(): %s vote_time_before.sec_since_epoch(): %s weight: %s total_votes: %s",
+        now().sec_since_epoch() - vote_time_stamp.sec_since_epoch(), int64_t(delta_seconds), int64_t(new_seconds),
+        vote_time_stamp.sec_since_epoch(), vote_time_before.sec_since_epoch(), weight, total_votes));
+
     check(new_seconds <= std::numeric_limits<uint32_t>::max(), "new_seconds does not fit into a uint32_t");
     const auto retval = time_point_sec{uint32_t(new_seconds)};
     check(retval <= now(),
