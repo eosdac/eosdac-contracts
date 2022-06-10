@@ -43,7 +43,7 @@ time_point_sec daccustodian::calculate_avg_vote_time_stamp(const time_point_sec 
     const time_point_sec vote_time_stamp, const int64_t weight, const uint64_t total_votes) {
     check(total_votes != 0, "division by zero, total_votes is 0");
     const auto delta_seconds =
-        (int128_t(vote_time_stamp.sec_since_epoch()) - int128_t(vote_time_before.sec_since_epoch())) *
+        abs(int128_t(vote_time_stamp.sec_since_epoch()) - int128_t(vote_time_before.sec_since_epoch())) *
         int128_t(weight) / int128_t(total_votes);
     const auto max_amount = std::numeric_limits<int64_t>::max();
     check(delta_seconds <= max_amount, "multiplication overflow");

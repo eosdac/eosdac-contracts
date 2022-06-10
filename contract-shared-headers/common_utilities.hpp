@@ -113,3 +113,12 @@ inline bool upsert(Table &table, const uint64_t pk, const eosio::name payer, con
 inline time_point_sec now() {
     return time_point_sec(current_time_point());
 }
+
+template <typename T>
+inline T abs(const T x) {
+    if (x < 0) {
+        return -x;
+    } else {
+        return x;
+    }
+}

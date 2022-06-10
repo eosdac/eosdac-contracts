@@ -2921,7 +2921,9 @@ async function get_expected_avg_vote_time_stamp(
       avg_vote_time_stamp = new Date(0);
     } else {
       const delta_milliseconds =
-        ((ourvote.vote_time_stamp.getTime() - avg_vote_time_stamp.getTime()) *
+        (Math.abs(
+          ourvote.vote_time_stamp.getTime() - avg_vote_time_stamp.getTime()
+        ) *
           (-1 * vote_weight)) /
         total_votes;
       let new_milliseconds = Math.floor(
@@ -2933,7 +2935,7 @@ async function get_expected_avg_vote_time_stamp(
   }
   total_votes += vote_weight;
   const delta_milliseconds =
-    ((now.getTime() - avg_vote_time_stamp.getTime()) * vote_weight) /
+    (Math.abs(now.getTime() - avg_vote_time_stamp.getTime()) * vote_weight) /
     total_votes;
   let new_milliseconds = Math.floor(
     avg_vote_time_stamp.getTime() + delta_milliseconds
