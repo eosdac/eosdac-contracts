@@ -1,11 +1,12 @@
 
 using namespace eosdac;
 
-void daccustodian::updateVoteWeight(name custodian, const std::optional<time_point_sec> vote_time_stamp, int64_t weight,
-    name dac_id, bool from_voting) {
+void daccustodian::updateVoteWeight(
+    name custodian, const time_point_sec vote_time_stamp, int64_t weight, name dac_id, bool from_voting) {
 
+    print(fmt("updateVoteWeight() %s ", vote_time_stamp.sec_since_epoch()));
     if (weight == 0) {
-        print("\n Vote has no weight - No need to continue.");
+        print("Vote has no weight - No need to continue. ");
         return;
     }
     candidates_table registered_candidates(_self, dac_id.value);
@@ -24,24 +25,23 @@ void daccustodian::updateVoteWeight(name custodian, const std::optional<time_poi
 
     registered_candidates.modify(candItr, same_payer, [&](auto &c) {
         if (weight > 0) {
+            print(fmt("c.total_votes from %s to %s ", c.total_votes, c.total_votes + weight));
             c.total_votes += weight;
         }
 #ifdef VOTE_DECAY_STAGE_2
-        if (vote_time_stamp) {
-            if (c.total_votes == 0) {
-                check(weight >= 0, "c.total_votes == 0 called with weight: %s dac_id: %s c.total_votes: %s", weight,
-                    dac_id, c.total_votes);
-                // TODO: What to do if c.total_votes is zero to prevent division by zero?
-                c.avg_vote_time_stamp = time_point_sec(0);
-            } else {
-                c.avg_vote_time_stamp =
-                    calculate_avg_vote_time_stamp(c.avg_vote_time_stamp, *vote_time_stamp, weight, c.total_votes);
-            }
+        if (c.total_votes == 0) {
+            check(weight >= 0, "c.total_votes == 0 called with weight: %s dac_id: %s c.total_votes: %s", weight, dac_id,
+                c.total_votes);
+            // TODO: What to do if c.total_votes is zero to prevent division by zero?
+            c.avg_vote_time_stamp = time_point_sec(0);
         } else {
-            check(false, "vote_time_stamp is null: %s  weight: %s total_votes: %s", weight, c.total_votes);
+            c.avg_vote_time_stamp =
+                calculate_avg_vote_time_stamp(c.avg_vote_time_stamp, vote_time_stamp, weight, c.total_votes);
         }
+
 #endif
         if (weight < 0) {
+            print(fmt("c.total_votes from %s to %s ", c.total_votes, c.total_votes + weight));
             c.total_votes += weight;
         }
     });
@@ -58,9 +58,10 @@ time_point_sec daccustodian::calculate_avg_vote_time_stamp(const time_point_sec 
     check(delta_seconds >= -max_amount, "multiplication underflow");
     auto new_seconds = int128_t(vote_time_before.sec_since_epoch()) + delta_seconds;
     print(fmt(
-        "time since last vote: %s delta_seconds: %s new_seconds: %s vote_time_stamp.sec_since_epoch(): %s vote_time_before.sec_since_epoch(): %s weight: %s total_votes: %s",
+        "DBG: time since last vote: %s delta_seconds: %s new_seconds: %s vote_time_stamp.sec_since_epoch(): %s vote_time_before.sec_since_epoch(): %s weight: %s total_votes: %s now: %s ",
         now().sec_since_epoch() - vote_time_stamp.sec_since_epoch(), int64_t(delta_seconds), int64_t(new_seconds),
-        vote_time_stamp.sec_since_epoch(), vote_time_before.sec_since_epoch(), weight, total_votes));
+        vote_time_stamp.sec_since_epoch(), vote_time_before.sec_since_epoch(), weight, total_votes,
+        now().sec_since_epoch()));
 
     check(new_seconds <= std::numeric_limits<uint32_t>::max(), "new_seconds does not fit into a uint32_t");
     const auto retval = time_point_sec{uint32_t(new_seconds)};
@@ -71,7 +72,7 @@ time_point_sec daccustodian::calculate_avg_vote_time_stamp(const time_point_sec 
     return retval;
 }
 
-void daccustodian::updateVoteWeights(const vector<name> &votes, const std::optional<time_point_sec> vote_time_stamp,
+void daccustodian::updateVoteWeights(const vector<name> &votes, const time_point_sec vote_time_stamp,
     int64_t vote_weight, name dac_id, bool from_voting) {
 
     for (const auto &cust : votes) {
@@ -141,7 +142,13 @@ void daccustodian::modifyVoteWeights(int64_t vote_weight, vector<name> oldVotes,
     currentState.set_total_weight_of_votes(total_weight_of_votes);
     currentState.save(get_self(), dac_id);
 
-    updateVoteWeights(oldVotes, oldVoteTimestamp, -vote_weight, dac_id, from_voting);
+    print(
+        fmt("updateVoteWeights oldVoteTimestamp: %s ", oldVoteTimestamp.value_or(time_point_sec(0)).sec_since_epoch()));
+
+    if (oldVoteTimestamp.has_value()) {
+        updateVoteWeights(oldVotes, *oldVoteTimestamp, -vote_weight, dac_id, from_voting);
+    }
+    print(fmt("updateVoteWeights now(): %s ", now().sec_since_epoch()));
     updateVoteWeights(newVotes, now(), vote_weight, dac_id, from_voting);
 }
 

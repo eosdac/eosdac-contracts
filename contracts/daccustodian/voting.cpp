@@ -7,7 +7,7 @@ ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, c
 
     require_auth(voter);
     assertValidMember(voter, dac_id);
-
+    print(fmt("DBG: ohai 1 %s ", voter));
     check(newvotes.size() <= configs.maxvotes,
         "ERR::VOTECUST_MAX_VOTES_EXCEEDED::Max number of allowed votes was exceeded.");
     std::set<name> dupSet{};
@@ -23,9 +23,11 @@ ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, c
     // Find a vote that has been cast by this voter previously.
     votes_table votes_cast_by_members(_self, dac_id.value);
     auto        existingVote = votes_cast_by_members.find(voter.value);
+    print("DBG: ohai 2 ");
 
     int64_t vote_weight = get_vote_weight(voter, dac_id);
     if (existingVote != votes_cast_by_members.end()) {
+        print("DBG: ohai 3.a ");
 
         modifyVoteWeights(vote_weight, existingVote->candidates, existingVote->vote_time_stamp, newvotes, dac_id);
 
@@ -41,6 +43,8 @@ ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, c
             });
         }
     } else {
+        print("DBG: ohai 3.b ");
+
         modifyVoteWeights(vote_weight, {}, {}, newvotes, dac_id);
 
         votes_cast_by_members.emplace(voter, [&](vote &v) {
@@ -49,6 +53,7 @@ ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, c
             v.vote_time_stamp = now();
         });
     }
+    print("DBG: ohai 4 ");
 }
 
 void daccustodian::modifyProxiesWeight(int64_t vote_weight, name oldProxy, name newProxy, name dac_id) {

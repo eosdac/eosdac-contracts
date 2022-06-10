@@ -743,18 +743,18 @@ describe('Daccustodian', () => {
     });
     context('After voting', async () => {
       it('only candidates with votes have total_votes values', async () => {
-        console.log('ohai 1');
+        console.log('ohai 1 ', regMembers[0].name);
         await vote_and_check(dacId, regMembers[0], cands[0]);
         await sleep(15000);
-        console.log('ohai 2');
+        console.log('ohai 2 ', regMembers[0].name);
 
         await vote_and_check(dacId, regMembers[0], cands[0]);
         await sleep(15000);
-        console.log('ohai 3');
+        console.log('ohai 3 ', regMembers[1].name);
 
         await vote_and_check(dacId, regMembers[1], cands[0]);
         await sleep(15000);
-        console.log('ohai 4');
+        console.log('ohai 4 ', regMembers[0].name);
 
         await vote_and_check(dacId, regMembers[0], cands[0]);
       });
@@ -2943,13 +2943,15 @@ async function get_expected_avg_vote_time_stamp(
     limit: 1,
     lowerBound: voter.name,
   });
-  const ourvote = res.rows.find((x) => x.candidates.includes(candidate.name));
+  const ourvote = res.rows.find((x) => x.voter == voter.name);
   console.log(
     'get_expected_avg_vote_time_stamp votesTable: ',
     JSON.stringify(res.rows, null, 2)
   );
   console.log('ourvotes: ', JSON.stringify(ourvote, null, 2));
   console.log('voter: ', voter.name);
+  const now = new Date();
+
   // reduce
   if (ourvote) {
     const delta_milliseconds =
@@ -2957,7 +2959,7 @@ async function get_expected_avg_vote_time_stamp(
         (-1 * vote_weight)) /
       total_votes;
     let new_milliseconds = Math.floor(
-      avg_vote_time_stamp.getTime() - delta_milliseconds
+      avg_vote_time_stamp.getTime() + delta_milliseconds
     );
     console.log('vote_weight: ', -1 * vote_weight);
     console.log('total_votes: ', total_votes);
@@ -2981,29 +2983,36 @@ async function get_expected_avg_vote_time_stamp(
     }
     avg_vote_time_stamp = new Date(new_milliseconds);
     total_votes -= vote_weight;
-    console.log('avg_vote_time_stamp after reduction: ', avg_vote_time_stamp);
+    console.log(
+      'avg_vote_time_stamp after reduction: ',
+      Math.floor(avg_vote_time_stamp.getTime() / 1000)
+    );
   }
 
   console.log(
     `voter ${voter.name} dacId: ${dacId} token_name: ${token_name} vote_weight: ${vote_weight} total_votes: ${total_votes}`
   );
   const delta_milliseconds =
-    ((new Date().getTime() - avg_vote_time_stamp.getTime()) * vote_weight) /
+    ((now.getTime() - avg_vote_time_stamp.getTime()) * vote_weight) /
     (total_votes + vote_weight);
   let new_milliseconds = Math.floor(
     avg_vote_time_stamp.getTime() + delta_milliseconds
   );
   console.log('vote_weight: ', vote_weight);
   console.log('total_votes: ', total_votes + vote_weight);
-  console.log('vote_time_stamp: ', new Date().getTime());
-  console.log('avg_vote_time_stamp: ', avg_vote_time_stamp);
-  console.log('vote_time_stamp.getTime(): ', new Date().getTime() / 1000);
+  console.log('vote_time_stamp: ', Math.floor(now.getTime() / 1000));
+  console.log('vote_time_before: ', avg_vote_time_stamp);
   console.log(
-    'avg_vote_time_stamp.getTime(): ',
-    avg_vote_time_stamp.getTime() / 1000
+    'vote_time_stamp.sec_since_epoch(): ',
+    Math.floor(now.getTime() / 1000)
+  );
+  console.log(
+    'vote_time_before.sec_since_epoch(): ',
+    Math.floor(avg_vote_time_stamp.getTime() / 1000)
   );
   console.log('delta_milliseconds: ', delta_milliseconds);
-  console.log('new_milliseconds: ', new_milliseconds / 1000);
+  console.log('new_seconds: ', Math.floor(new_milliseconds / 1000));
+  console.log('now: ', Math.floor(now.getTime() / 1000));
   if (new_milliseconds < 0) {
     console.log('B new_milliseconds would become negative: ', new_milliseconds);
   }

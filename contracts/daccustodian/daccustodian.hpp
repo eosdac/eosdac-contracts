@@ -337,10 +337,10 @@ namespace eosdac {
         ACTION setperm(const name &cand, const name &permission, const name &dac_id);
 
       private: // Private helper methods used by other actions.
-        void    updateVoteWeight(name custodian, const std::optional<time_point_sec> vote_time_stamp, int64_t weight,
-               name dac_id, bool from_voting = false);
-        void    updateVoteWeights(const vector<name> &votes, const std::optional<time_point_sec> vote_time_stamp,
-               int64_t vote_weight, name internal_dac_id, bool from_voting = false);
+        void    updateVoteWeight(name custodian, const time_point_sec vote_time_stamp, int64_t weight, name dac_id,
+               bool from_voting = false);
+        void    updateVoteWeights(const vector<name> &votes, const time_point_sec vote_time_stamp, int64_t vote_weight,
+               name internal_dac_id, bool from_voting = false);
         int64_t get_vote_weight(name voter, name dac_id);
         void    modifyVoteWeights(int64_t vote_weight, vector<name> oldVotes,
                std::optional<time_point_sec> oldVoteTimestamp, vector<name> newVotes, name dac_id,
