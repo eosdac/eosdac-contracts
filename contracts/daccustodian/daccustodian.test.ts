@@ -743,18 +743,14 @@ describe('Daccustodian', () => {
     });
     context('After voting', async () => {
       it('only candidates with votes have total_votes values', async () => {
-        console.log('ohai 1 ', regMembers[0].name);
         await vote_and_check(dacId, regMembers[0], cands[0]);
-        await sleep(15000);
-        console.log('ohai 2 ', regMembers[0].name);
+        await sleep(1000);
 
         await vote_and_check(dacId, regMembers[0], cands[0]);
-        await sleep(15000);
-        console.log('ohai 3 ', regMembers[1].name);
+        await sleep(1000);
 
         await vote_and_check(dacId, regMembers[1], cands[0]);
-        await sleep(15000);
-        console.log('ohai 4 ', regMembers[0].name);
+        await sleep(1000);
 
         await vote_and_check(dacId, regMembers[0], cands[0]);
       });
@@ -815,14 +811,10 @@ describe('Daccustodian', () => {
       });
     });
     context('After voting', async () => {
-      let expected_avg_vote_time_stamps = [];
       before(async () => {
         // Place votes for even number candidates and leave odd number without votes.
         // Only vote with the first 2 members
         for (const member of regMembers.slice(0, 2)) {
-          expected_avg_vote_time_stamps.push(
-            await expected_avg_vote_time_stamp(dacId, member, cands[0])
-          );
           await debugPromise(
             shared.daccustodian_contract.votecust(
               member.name,
@@ -833,10 +825,6 @@ describe('Daccustodian', () => {
             'voting custodian'
           );
         }
-        console.log(
-          'expected_avg_vote_time_stamps: ',
-          expected_avg_vote_time_stamps
-        );
       });
       it('votes table should have rows', async () => {
         const res = await shared.daccustodian_contract.votesTable({
@@ -866,15 +854,8 @@ describe('Daccustodian', () => {
             lowerBound: cands[1].name,
           }
         );
-        console.log(
-          'unvotedCandidateResult: ',
-          JSON.stringify(unvotedCandidateResult, null, 2)
-        );
+
         chai.expect(unvotedCandidateResult.rows[0].total_votes).to.equal(0);
-        chai
-          .expect(unvotedCandidateResult.rows[0].avg_vote_time_stamp.getTime())
-          .to.equal(expected_avg_vote_time_stamps[0].getTime());
-        console.log('cands[0].name: ', cands[0].name);
         let votedCandidateResult = await shared.daccustodian_contract.candidatesTable(
           {
             scope: dacId,
@@ -882,16 +863,10 @@ describe('Daccustodian', () => {
             lowerBound: cands[0].name,
           }
         );
-        console.log(
-          'votedCandidateResult: ',
-          JSON.stringify(votedCandidateResult, null, 2)
-        );
+
         chai.expect(votedCandidateResult.rows[0]).to.include({
           total_votes: 20_000_000,
         });
-        chai
-          .expect(votedCandidateResult.rows[0].avg_vote_time_stamp.getTime())
-          .to.equal(expected_avg_vote_time_stamps[1].getTime());
         await assertRowCount(
           shared.daccustodian_contract.votesTable({
             scope: dacId,
@@ -2918,24 +2893,17 @@ async function get_expected_avg_vote_time_stamp(
   // get vote weight of voter (number of dac tokens)
   // get dac token from dacdirectory
   let res = await shared.dacdirectory_contract.dacsTable();
-  // console.log('dacsTable: ', JSON.stringify(res, null, 2));
   const mydac = res.rows.find((x) => x.dac_id == dacId);
-  // console.log('mydac: ', mydac);
   const mysymbol = mydac.symbol.sym;
   const token_name = mysymbol.split(',')[1];
   const vote_weight =
     (await get_balance(shared.dac_token_contract, voter, token_name)) * 10000;
-  console.log('vote_weight: ', vote_weight);
+
   // get avg_vote_time_stamp of candidate
   res = await shared.daccustodian_contract.candidatesTable({ scope: dacId });
-  // console.log('candidatesTable: ', JSON.stringify(res, null, 2));
   const mycand = res.rows.find((x) => x.candidate_name == candidate.name);
-  // console.log('mycand: ', mycand);
   let avg_vote_time_stamp = mycand.avg_vote_time_stamp;
   let total_votes = mycand.total_votes;
-  // if (total_votes == 0) {
-  //   return avg_vote_time_stamp;
-  // }
 
   // see if there is an exisiting vote and deduct
   res = await shared.daccustodian_contract.votesTable({
@@ -2944,12 +2912,6 @@ async function get_expected_avg_vote_time_stamp(
     lowerBound: voter.name,
   });
   const ourvote = res.rows.find((x) => x.voter == voter.name);
-  console.log(
-    'get_expected_avg_vote_time_stamp votesTable: ',
-    JSON.stringify(res.rows, null, 2)
-  );
-  console.log('ourvotes: ', JSON.stringify(ourvote, null, 2));
-  console.log('voter: ', voter.name);
   const now = new Date();
 
   // reduce
@@ -2961,61 +2923,18 @@ async function get_expected_avg_vote_time_stamp(
     let new_milliseconds = Math.floor(
       avg_vote_time_stamp.getTime() + delta_milliseconds
     );
-    console.log('vote_weight: ', -1 * vote_weight);
-    console.log('total_votes: ', total_votes);
-    console.log('ourvote.vote_time_stamp: ', ourvote.vote_time_stamp);
-    console.log('avg_vote_time_stamp: ', avg_vote_time_stamp);
-    console.log(
-      'ourvote.vote_time_stamp.getTime(): ',
-      ourvote.vote_time_stamp.getTime() / 1000
-    );
-    console.log(
-      'avg_vote_time_stamp.getTime(): ',
-      avg_vote_time_stamp.getTime() / 1000
-    );
-    console.log('delta_milliseconds: ', delta_milliseconds);
-    console.log('new_milliseconds: ', new_milliseconds / 1000);
-    if (new_milliseconds < 0) {
-      console.log(
-        'A new_milliseconds would become negative: ',
-        new_milliseconds
-      );
-    }
+
     avg_vote_time_stamp = new Date(new_milliseconds);
     total_votes -= vote_weight;
-    console.log(
-      'avg_vote_time_stamp after reduction: ',
-      Math.floor(avg_vote_time_stamp.getTime() / 1000)
-    );
   }
 
-  console.log(
-    `voter ${voter.name} dacId: ${dacId} token_name: ${token_name} vote_weight: ${vote_weight} total_votes: ${total_votes}`
-  );
   const delta_milliseconds =
     ((now.getTime() - avg_vote_time_stamp.getTime()) * vote_weight) /
     (total_votes + vote_weight);
   let new_milliseconds = Math.floor(
     avg_vote_time_stamp.getTime() + delta_milliseconds
   );
-  console.log('vote_weight: ', vote_weight);
-  console.log('total_votes: ', total_votes + vote_weight);
-  console.log('vote_time_stamp: ', Math.floor(now.getTime() / 1000));
-  console.log('vote_time_before: ', avg_vote_time_stamp);
-  console.log(
-    'vote_time_stamp.sec_since_epoch(): ',
-    Math.floor(now.getTime() / 1000)
-  );
-  console.log(
-    'vote_time_before.sec_since_epoch(): ',
-    Math.floor(avg_vote_time_stamp.getTime() / 1000)
-  );
-  console.log('delta_milliseconds: ', delta_milliseconds);
-  console.log('new_seconds: ', Math.floor(new_milliseconds / 1000));
-  console.log('now: ', Math.floor(now.getTime() / 1000));
-  if (new_milliseconds < 0) {
-    console.log('B new_milliseconds would become negative: ', new_milliseconds);
-  }
+
   return new Date(new_milliseconds);
 }
 
@@ -3037,10 +2956,6 @@ async function vote_and_check(dacId, voter, candidate) {
       limit: 1,
       lowerBound: candidate.name,
     }
-  );
-  console.log(
-    'votedCandidateResult: ',
-    JSON.stringify(votedCandidateResult, null, 2)
   );
   chai
     .expect(votedCandidateResult.rows[0].candidate_name)
