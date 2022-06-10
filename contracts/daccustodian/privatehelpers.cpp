@@ -23,13 +23,10 @@ void daccustodian::updateVoteWeight(
     }
 
     registered_candidates.modify(candItr, same_payer, [&](auto &c) {
-        if (weight > 0) {
-            c.total_votes += weight;
-        }
+        c.total_votes += weight;
 #ifdef VOTE_DECAY_STAGE_2
         if (from_voting) {
             if (c.total_votes == 0) {
-                // TODO: What to do if c.total_votes is zero to prevent division by zero?
                 c.avg_vote_time_stamp = time_point_sec(0);
             } else {
                 c.avg_vote_time_stamp =
@@ -39,9 +36,6 @@ void daccustodian::updateVoteWeight(
             }
         }
 #endif
-        if (weight < 0) {
-            c.total_votes += weight;
-        }
     });
 }
 
