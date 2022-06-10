@@ -29,14 +29,16 @@ void daccustodian::updateVoteWeight(
             c.total_votes += weight;
         }
 #ifdef VOTE_DECAY_STAGE_2
-        if (c.total_votes == 0) {
-            check(weight >= 0, "c.total_votes == 0 called with weight: %s dac_id: %s c.total_votes: %s", weight, dac_id,
-                c.total_votes);
-            // TODO: What to do if c.total_votes is zero to prevent division by zero?
-            c.avg_vote_time_stamp = time_point_sec(0);
-        } else {
-            c.avg_vote_time_stamp =
-                calculate_avg_vote_time_stamp(c.avg_vote_time_stamp, vote_time_stamp, weight, c.total_votes);
+        if (from_voting) {
+            if (c.total_votes == 0) {
+                check(weight >= 0, "c.total_votes == 0 called with weight: %s dac_id: %s c.total_votes: %s", weight,
+                    dac_id, c.total_votes);
+                // TODO: What to do if c.total_votes is zero to prevent division by zero?
+                c.avg_vote_time_stamp = time_point_sec(0);
+            } else {
+                c.avg_vote_time_stamp =
+                    calculate_avg_vote_time_stamp(c.avg_vote_time_stamp, vote_time_stamp, weight, c.total_votes);
+            }
         }
 
 #endif
@@ -76,7 +78,7 @@ void daccustodian::updateVoteWeights(const vector<name> &votes, const time_point
     int64_t vote_weight, name dac_id, bool from_voting) {
 
     for (const auto &cust : votes) {
-        updateVoteWeight(cust, vote_time_stamp, vote_weight, dac_id);
+        updateVoteWeight(cust, vote_time_stamp, vote_weight, dac_id, from_voting);
     }
 
     int16_t vote_delta = votes.size() * vote_weight;

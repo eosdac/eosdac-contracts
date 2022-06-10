@@ -228,7 +228,7 @@ ACTION daccustodian::unregproxy(const name &proxy_member, const name &dac_id) {
         auto        existingVote = votes_cast_by_members.find(proxy_member.value);
         if (existingVote != votes_cast_by_members.end()) {
             modifyVoteWeights(
-                found_proxy->total_weight, existingVote->candidates, existingVote->vote_time_stamp, {}, dac_id);
+                found_proxy->total_weight, existingVote->candidates, existingVote->vote_time_stamp, {}, dac_id, false);
         }
     }
 

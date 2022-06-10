@@ -29,7 +29,7 @@ ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, c
     if (existingVote != votes_cast_by_members.end()) {
         print("DBG: ohai 3.a ");
 
-        modifyVoteWeights(vote_weight, existingVote->candidates, existingVote->vote_time_stamp, newvotes, dac_id);
+        modifyVoteWeights(vote_weight, existingVote->candidates, existingVote->vote_time_stamp, newvotes, dac_id, true);
 
         if (newvotes.size() == 0) {
             // Remove the vote if the array of candidates is empty
@@ -45,7 +45,7 @@ ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, c
     } else {
         print("DBG: ohai 3.b ");
 
-        modifyVoteWeights(vote_weight, {}, {}, newvotes, dac_id);
+        modifyVoteWeights(vote_weight, {}, {}, newvotes, dac_id, true);
 
         votes_cast_by_members.emplace(voter, [&](vote &v) {
             v.voter           = voter;
@@ -56,7 +56,8 @@ ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, c
     print("DBG: ohai 4 ");
 }
 
-void daccustodian::modifyProxiesWeight(int64_t vote_weight, name oldProxy, name newProxy, name dac_id) {
+void daccustodian::modifyProxiesWeight(
+    int64_t vote_weight, name oldProxy, name newProxy, name dac_id, bool from_voting) {
     proxies_table proxies(get_self(), dac_id.value);
     votes_table   votes_cast_by_members(_self, dac_id.value);
 
@@ -88,7 +89,7 @@ void daccustodian::modifyProxiesWeight(int64_t vote_weight, name oldProxy, name 
             newProxyVotes = existingProxyVote->candidates;
         }
     }
-    modifyVoteWeights(vote_weight, oldProxyVotes, oldVoteTimestamp, newProxyVotes, dac_id);
+    modifyVoteWeights(vote_weight, oldProxyVotes, oldVoteTimestamp, newProxyVotes, dac_id, from_voting);
 }
 
 ACTION daccustodian::voteproxy(const name &voter, const name &proxyName, const name &dac_id) {
@@ -150,5 +151,5 @@ ACTION daccustodian::voteproxy(const name &voter, const name &proxyName, const n
         newProxy = proxyName;
     }
 
-    modifyProxiesWeight(vote_weight, oldProxy, newProxy, dac_id);
+    modifyProxiesWeight(vote_weight, oldProxy, newProxy, dac_id, true);
 }

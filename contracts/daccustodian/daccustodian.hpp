@@ -337,15 +337,14 @@ namespace eosdac {
         ACTION setperm(const name &cand, const name &permission, const name &dac_id);
 
       private: // Private helper methods used by other actions.
-        void    updateVoteWeight(name custodian, const time_point_sec vote_time_stamp, int64_t weight, name dac_id,
-               bool from_voting = false);
+        void updateVoteWeight(
+            name custodian, const time_point_sec vote_time_stamp, int64_t weight, name dac_id, bool from_voting);
         void    updateVoteWeights(const vector<name> &votes, const time_point_sec vote_time_stamp, int64_t vote_weight,
-               name internal_dac_id, bool from_voting = false);
+               name internal_dac_id, bool from_voting);
         int64_t get_vote_weight(name voter, name dac_id);
         void    modifyVoteWeights(int64_t vote_weight, vector<name> oldVotes,
-               std::optional<time_point_sec> oldVoteTimestamp, vector<name> newVotes, name dac_id,
-               bool from_voting = false);
-        void    modifyProxiesWeight(int64_t vote_weight, name oldProxy, name newProxy, name dac_id);
+               std::optional<time_point_sec> oldVoteTimestamp, vector<name> newVotes, name dac_id, bool from_voting);
+        void    modifyProxiesWeight(int64_t vote_weight, name oldProxy, name newProxy, name dac_id, bool from_voting);
         void    assertPeriodTime(contr_config &configs, contr_state2 &currentState);
         void    distributeMeanPay(name internal_dac_id);
         vector<eosiosystem::permission_level_weight> get_perm_level_weights(
