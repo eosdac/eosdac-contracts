@@ -1,4 +1,6 @@
 #pragma once
+#include "common_utilities.hpp"
+#include "config.hpp"
 
 namespace eosdac {
 

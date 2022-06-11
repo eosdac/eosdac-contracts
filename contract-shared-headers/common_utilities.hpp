@@ -2,6 +2,7 @@
 #include <eosio/asset.hpp>
 #include <eosio/eosio.hpp>
 #include <eosio/symbol.hpp>
+#include <eosio/system.hpp>
 #include <experimental/type_traits>
 
 using namespace eosio;
