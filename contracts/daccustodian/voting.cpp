@@ -1,6 +1,7 @@
 using namespace eosdac;
 
 ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, const name &dac_id) {
+    check(dac_id == "testa"_n, "Voting is not yet enabled in the Planet DAOs.");
 
     candidates_table registered_candidates(_self, dac_id.value);
     contr_config     configs = contr_config::get_current_configs(_self, dac_id);
