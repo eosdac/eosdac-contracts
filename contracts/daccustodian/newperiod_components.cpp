@@ -70,11 +70,8 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
     candidates_table registered_candidates(get_self(), dac_id.value);
     contr_config     configs      = contr_config::get_current_configs(get_self(), dac_id);
     name             auth_account = dacdir::dac_for_id(dac_id).owner;
-#ifdef VOTE_DECAY_STAGE_2
-    auto byvotes = registered_candidates.get_index<"bydecayed"_n>();
-#else
-    auto byvotes = registered_candidates.get_index<"byvotesrank"_n>();
-#endif
+    auto             byvotes      = registered_candidates.get_index<"bydecayed"_n>();
+
     auto cand_itr = byvotes.begin();
 
     int32_t electcount            = configs.numelected;

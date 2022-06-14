@@ -311,11 +311,6 @@ namespace eosdac {
         ACTION resetcands(const name &dac_id);
 
 #endif
-        ACTION migration1(const name dac_id, const uint8_t batch_size);
-#ifdef VOTE_DECAY_STAGE_2
-        ACTION fillcand2(const name dac_id, const std::vector<candidate2> &data);
-        ACTION migration2(const name dac_id, const uint8_t batch_size);
-#endif
 
 #ifdef IS_DEV
         ACTION fillstate(const name &dac_id, contr_state &state);

@@ -24,7 +24,6 @@ void daccustodian::updateVoteWeight(
 
     registered_candidates.modify(candItr, same_payer, [&](auto &c) {
         c.total_votes += weight;
-#ifdef VOTE_DECAY_STAGE_2
         if (from_voting) {
             if (c.total_votes == 0) {
                 c.avg_vote_time_stamp = time_point_sec(0);
@@ -35,7 +34,6 @@ void daccustodian::updateVoteWeight(
                     c.avg_vote_time_stamp);
             }
         }
-#endif
     });
 }
 
