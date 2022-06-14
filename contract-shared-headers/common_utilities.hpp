@@ -2,6 +2,7 @@
 #include <eosio/asset.hpp>
 #include <eosio/eosio.hpp>
 #include <eosio/symbol.hpp>
+#include <eosio/system.hpp>
 #include <experimental/type_traits>
 
 using namespace eosio;
@@ -17,7 +18,9 @@ namespace eosdac {
         return (uint128_t{value} << 64) | longValue;
     }
 
-    static const uint128_t combine_ids(const uint64_t &x, const uint64_t &y) { return (uint128_t{x} << 64) | y; }
+    static const uint128_t combine_ids(const uint64_t &x, const uint64_t &y) {
+        return (uint128_t{x} << 64) | y;
+    }
 
     static const checksum256 combine_ids(const uint64_t &w, const uint64_t &x, const uint64_t &y, const uint64_t &z) {
         uint8_t arr[32];
@@ -105,5 +108,18 @@ inline bool upsert(Table &table, const uint64_t pk, const eosio::name payer, con
     } else {
         table.modify(itr, payer, updater);
         return false;
+    }
+}
+
+inline time_point_sec now() {
+    return time_point_sec(current_time_point());
+}
+
+template <typename T>
+inline T abs(const T x) {
+    if (x < 0) {
+        return -x;
+    } else {
+        return x;
     }
 }

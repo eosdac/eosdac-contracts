@@ -1,9 +1,11 @@
 
 using namespace eosdac;
 
-void daccustodian::updateVoteWeight(name custodian, int64_t weight, name dac_id) {
+void daccustodian::updateVoteWeight(
+    name custodian, const time_point_sec vote_time_stamp, int64_t weight, name dac_id, bool from_voting) {
+
     if (weight == 0) {
-        print("\n Vote has no weight - No need to continue.");
+        print("Vote has no weight - No need to continue. ");
         return;
     }
     candidates_table registered_candidates(_self, dac_id.value);
@@ -22,14 +24,38 @@ void daccustodian::updateVoteWeight(name custodian, int64_t weight, name dac_id)
 
     registered_candidates.modify(candItr, same_payer, [&](auto &c) {
         c.total_votes += weight;
-        eosio::print("\nchanging vote weight: ", custodian, " by ", weight);
+        if (from_voting) {
+            if (c.total_votes == 0) {
+                c.avg_vote_time_stamp = time_point_sec(0);
+            } else {
+                c.avg_vote_time_stamp =
+                    calculate_avg_vote_time_stamp(c.avg_vote_time_stamp, vote_time_stamp, weight, c.total_votes);
+                check(c.avg_vote_time_stamp <= now(), "avg_vote_time_stamp pushed into the future: %s",
+                    c.avg_vote_time_stamp);
+            }
+        }
     });
 }
 
-void daccustodian::updateVoteWeights(const vector<name> &votes, int64_t vote_weight, name dac_id) {
+time_point_sec daccustodian::calculate_avg_vote_time_stamp(const time_point_sec vote_time_before,
+    const time_point_sec vote_time_stamp, const int64_t weight, const uint64_t total_votes) {
+    check(total_votes != 0, "division by zero, total_votes is 0");
+    const auto delta_seconds =
+        abs(int128_t(vote_time_stamp.sec_since_epoch()) - int128_t(vote_time_before.sec_since_epoch())) *
+        int128_t(weight) / int128_t(total_votes);
+    const auto max_amount = std::numeric_limits<int64_t>::max();
+    check(delta_seconds <= max_amount, "multiplication overflow");
+    check(delta_seconds >= -max_amount, "multiplication underflow");
+    const auto new_seconds = int128_t(vote_time_before.sec_since_epoch()) + delta_seconds;
+    check(new_seconds <= std::numeric_limits<uint32_t>::max(), "new_seconds does not fit into a uint32_t");
+    return time_point_sec{uint32_t(new_seconds)};
+}
+
+void daccustodian::updateVoteWeights(const vector<name> &votes, const time_point_sec vote_time_stamp,
+    int64_t vote_weight, name dac_id, bool from_voting) {
 
     for (const auto &cust : votes) {
-        updateVoteWeight(cust, vote_weight, dac_id);
+        updateVoteWeight(cust, vote_time_stamp, vote_weight, dac_id, from_voting);
     }
 
     int16_t vote_delta = votes.size() * vote_weight;
@@ -67,7 +93,8 @@ int64_t daccustodian::get_vote_weight(name voter, name dac_id) {
     return 0;
 }
 
-void daccustodian::modifyVoteWeights(int64_t vote_weight, vector<name> oldVotes, vector<name> newVotes, name dac_id) {
+void daccustodian::modifyVoteWeights(int64_t vote_weight, vector<name> oldVotes,
+    std::optional<time_point_sec> oldVoteTimestamp, vector<name> newVotes, name dac_id, bool from_voting) {
     // This could be optimised with set diffing to avoid remove then add for unchanged votes. - later
 
     if (vote_weight == 0) {
@@ -94,8 +121,10 @@ void daccustodian::modifyVoteWeights(int64_t vote_weight, vector<name> oldVotes,
     currentState.set_total_weight_of_votes(total_weight_of_votes);
     currentState.save(get_self(), dac_id);
 
-    updateVoteWeights(oldVotes, -vote_weight, dac_id);
-    updateVoteWeights(newVotes, vote_weight, dac_id);
+    if (oldVoteTimestamp.has_value()) {
+        updateVoteWeights(oldVotes, *oldVoteTimestamp, -vote_weight, dac_id, from_voting);
+    }
+    updateVoteWeights(newVotes, now(), vote_weight, dac_id, from_voting);
 }
 
 permission_level daccustodian::getCandidatePermission(name account, name dac_id) {

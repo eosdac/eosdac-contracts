@@ -7,7 +7,6 @@ ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, c
 
     require_auth(voter);
     assertValidMember(voter, dac_id);
-
     check(newvotes.size() <= configs.maxvotes,
         "ERR::VOTECUST_MAX_VOTES_EXCEEDED::Max number of allowed votes was exceeded.");
     std::set<name> dupSet{};
@@ -27,7 +26,7 @@ ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, c
     int64_t vote_weight = get_vote_weight(voter, dac_id);
     if (existingVote != votes_cast_by_members.end()) {
 
-        modifyVoteWeights(vote_weight, existingVote->candidates, newvotes, dac_id);
+        modifyVoteWeights(vote_weight, existingVote->candidates, existingVote->vote_time_stamp, newvotes, dac_id, true);
 
         if (newvotes.size() == 0) {
             // Remove the vote if the array of candidates is empty
@@ -35,28 +34,33 @@ ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, c
             eosio::print("\n Removing empty vote.");
         } else {
             votes_cast_by_members.modify(existingVote, voter, [&](vote &v) {
-                v.candidates = newvotes;
-                v.proxy      = name();
+                v.candidates      = newvotes;
+                v.proxy           = name();
+                v.vote_time_stamp = now();
             });
         }
     } else {
-        modifyVoteWeights(vote_weight, {}, newvotes, dac_id);
+
+        modifyVoteWeights(vote_weight, {}, {}, newvotes, dac_id, true);
 
         votes_cast_by_members.emplace(voter, [&](vote &v) {
-            v.voter      = voter;
-            v.candidates = newvotes;
+            v.voter           = voter;
+            v.candidates      = newvotes;
+            v.vote_time_stamp = now();
         });
     }
 }
 
-void daccustodian::modifyProxiesWeight(int64_t vote_weight, name oldProxy, name newProxy, name dac_id) {
+void daccustodian::modifyProxiesWeight(
+    int64_t vote_weight, name oldProxy, name newProxy, name dac_id, bool from_voting) {
     proxies_table proxies(get_self(), dac_id.value);
     votes_table   votes_cast_by_members(_self, dac_id.value);
 
     auto oldProxyRow = proxies.find(oldProxy.value);
 
-    vector<name> oldProxyVotes = {};
-    vector<name> newProxyVotes = {};
+    vector<name>                  oldProxyVotes    = {};
+    vector<name>                  newProxyVotes    = {};
+    std::optional<time_point_sec> oldVoteTimestamp = {};
 
     if (oldProxyRow != proxies.end() && oldProxyRow->proxy == oldProxy) {
         proxies.modify(oldProxyRow, same_payer, [&](proxy &p) {
@@ -64,7 +68,8 @@ void daccustodian::modifyProxiesWeight(int64_t vote_weight, name oldProxy, name 
         });
         auto existingProxyVote = votes_cast_by_members.find(oldProxy.value);
         if (existingProxyVote != votes_cast_by_members.end() && existingProxyVote->voter == oldProxy) {
-            oldProxyVotes = existingProxyVote->candidates;
+            oldProxyVotes    = existingProxyVote->candidates;
+            oldVoteTimestamp = existingProxyVote->vote_time_stamp;
         }
     }
 
@@ -79,7 +84,7 @@ void daccustodian::modifyProxiesWeight(int64_t vote_weight, name oldProxy, name 
             newProxyVotes = existingProxyVote->candidates;
         }
     }
-    modifyVoteWeights(vote_weight, oldProxyVotes, newProxyVotes, dac_id);
+    modifyVoteWeights(vote_weight, oldProxyVotes, oldVoteTimestamp, newProxyVotes, dac_id, from_voting);
 }
 
 ACTION daccustodian::voteproxy(const name &voter, const name &proxyName, const name &dac_id) {
@@ -141,5 +146,5 @@ ACTION daccustodian::voteproxy(const name &voter, const name &proxyName, const n
         newProxy = proxyName;
     }
 
-    modifyProxiesWeight(vote_weight, oldProxy, newProxy, dac_id);
+    modifyProxiesWeight(vote_weight, oldProxy, newProxy, dac_id, true);
 }

@@ -1,10 +1,11 @@
 #pragma once
 
 #include "../../contract-shared-headers/dacdirectory_shared.hpp"
+#include "nft.hpp"
 #include <eosio/eosio.hpp>
 #include <eosio/multi_index.hpp>
 #include <eosio/symbol.hpp>
-#include "nft.hpp"
+#include <eosio/system.hpp>
 
 using namespace eosio;
 using namespace std;
