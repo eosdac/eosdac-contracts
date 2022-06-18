@@ -142,8 +142,9 @@ void daccustodian::validateMinStake(name account, name dac_id) {
 
     if (required_stake.quantity.amount > 0) {
         asset staked = eosdac::get_staked(account, required_stake.contract, required_stake.quantity.symbol);
-        print("Staked : ", staked, "\nRequired : ", required_stake.quantity);
-        check(staked.amount >= required_stake.quantity.amount, "ERR::VALIDATEMINSTAKE_NOT_ENOUGH::Not staked enough");
+        check(staked.amount >= required_stake.quantity.amount,
+            fmt("ERR::VALIDATEMINSTAKE_NOT_ENOUGH::Not staked enough. Required amount: %s. User has staked %s",
+                required_stake.quantity, staked));
     }
 }
 
