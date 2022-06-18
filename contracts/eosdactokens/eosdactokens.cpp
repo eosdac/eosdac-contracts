@@ -145,7 +145,8 @@ namespace eosdac {
     void eosdactokens::sub_balance(name owner, asset value) {
         accounts from_acnts(_self, owner.value);
 
-        const auto &from = from_acnts.get(value.symbol.code().raw(), fmt("eosdactokens::sub_balance Symbol %s not found", value.symbol));
+        const auto &from = from_acnts.get(
+            value.symbol.code().raw(), fmt("eosdactokens::sub_balance Symbol %s not found", value.symbol));
         check(from.balance.amount >= value.amount, "ERR::TRANSFER_OVERDRAWN::overdrawn balance");
 
         from_acnts.modify(from, owner, [&](auto &a) {
@@ -407,14 +408,10 @@ namespace eosdac {
         name  notify_contract    = (vote_contract) ? vote_contract : custodian_contract;
         asset current_stake      = eosdac::get_staked(account, get_self(), token_symbol);
 
-        vector<account_stake_delta> stake_deltas_sub = {{account, -current_stake, current_unstake_time}};
-        action(permission_level{get_self(), "notify"_n}, notify_contract, "stakeobsv"_n,
-            make_tuple(stake_deltas_sub, dac.dac_id))
-            .send();
-
-        vector<account_stake_delta> stake_deltas_add = {{account, current_stake, unstake_time}};
-        action(permission_level{get_self(), "notify"_n}, notify_contract, "stakeobsv"_n,
-            make_tuple(stake_deltas_add, dac.dac_id))
+        account_stake_delta         stake_deltas_sub = {account, -current_stake, current_unstake_time};
+        account_stake_delta         stake_deltas_add = {account, current_stake, unstake_time};
+        vector<account_stake_delta> deltas           = {stake_deltas_sub, stake_deltas_add};
+        action(permission_level{get_self(), "notify"_n}, notify_contract, "stakeobsv"_n, make_tuple(deltas, dac.dac_id))
             .send();
     }
 

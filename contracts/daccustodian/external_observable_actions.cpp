@@ -49,9 +49,19 @@ ACTION daccustodian::stakeobsv(const vector<account_stake_delta> &account_stake_
         "Must have auth of token or router contract to call stakeobsv");
 
     // check if the custodian is allowed to unstake beyond the minimum
+    std::map<name, asset> accounts_to_stake_amounts = {};
     for (auto asd : account_stake_deltas) {
-        if (asd.stake_delta.amount < 0) { // unstaking
-            validateUnstakeAmount(get_self(), asd.account, -asd.stake_delta, dac_id);
+
+        if (accounts_to_stake_amounts.find(asd.account) != accounts_to_stake_amounts.end()) {
+            accounts_to_stake_amounts[asd.account] += asd.stake_delta;
+        } else {
+            accounts_to_stake_amounts[asd.account] = asd.stake_delta;
+        }
+    }
+
+    for (const auto &[account, net_stake_asset] : accounts_to_stake_amounts) {
+        if (net_stake_asset.amount < 0) { // unstaking
+            validateUnstakeAmount(get_self(), account, -net_stake_asset, dac_id);
         }
     }
 }
