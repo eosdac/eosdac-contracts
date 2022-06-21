@@ -62,7 +62,9 @@ describe('Dacproposals', () => {
 
     await setup_planet();
 
-    await shared.initDac(dacId, '4,PROPDAC', '1000000.0000 PROPDAC', planet);
+    await shared.initDac(dacId, '4,PROPDAC', '1000000.0000 PROPDAC', {
+      planet,
+    });
     await shared.updateconfig(dacId, '12.0000 PROPDAC');
     eosiotoken = await ContractLoader.at('eosio.token');
     await chai.expect(

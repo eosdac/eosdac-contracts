@@ -61,7 +61,7 @@ describe('referendum', () => {
     user2 = await AccountManager.createAccount('user2');
     planet = await AccountManager.createAccount('omicrontheta');
 
-    await shared.initDac(dacId, '4,REF', '1000000.0000 REF', planet);
+    await shared.initDac(dacId, '4,REF', '1000000.0000 REF', { planet });
     await shared.updateconfig(dacId, '12.0000 REF');
     await setup_token();
 

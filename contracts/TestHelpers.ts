@@ -17,13 +17,13 @@ import { Msigworlds } from './msigworlds/msigworlds';
 import { Dacproposals } from './dacproposals/dacproposals';
 import { Dacescrow } from './dacescrow/dacescrow';
 import { Referendum } from './referendum/referendum';
+import { Stakevote } from './stakevote/stakevote';
 import { EosioToken } from '../../external_contracts/eosio.token/eosio.token';
 import { Atomicassets } from '../../external_contracts/atomicassets/atomicassets';
 
 import * as fs from 'fs';
 import * as path from 'path';
 
-export var NUMBER_OF_REG_MEMBERS = 16;
 export var NUMBER_OF_CANDIDATES = 7;
 
 export class SharedTestObjects {
@@ -42,6 +42,7 @@ export class SharedTestObjects {
   msigworlds_contract: Msigworlds;
   eosio_token_contract: EosioToken;
   referendum_contract: Referendum;
+  stakevote_contract: Stakevote;
   tokenIssuer: Account;
   atomicassets: Atomicassets;
 
@@ -49,6 +50,7 @@ export class SharedTestObjects {
   configured_dac_memberterms: string;
 
   NFT_COLLECTION: string;
+  NUMBER_OF_REG_MEMBERS = 16;
 
   constructor() {
     this.NFT_COLLECTION = 'alien.worlds';
@@ -64,7 +66,7 @@ export class SharedTestObjects {
 
   private async initAndGetSharedObjects() {
     console.log('Init eos blockchain');
-    // await sleep(500);
+    await sleep(1000);
     // EOSManager.initWithDefaults();
 
     this.auth_account = await debugPromise(
@@ -146,6 +148,14 @@ export class SharedTestObjects {
       'created referendum_contract'
     );
 
+    this.stakevote_contract = await debugPromise(
+      ContractDeployer.deployWithName<Stakevote>(
+        'contracts/stakevote/stakevote',
+        'stakevote'
+      ),
+      'created stakevote_contract'
+    );
+
     this.atomicassets = await ContractDeployer.deployWithName<Atomicassets>(
       'contracts/atomicassets/atomicassets',
       'atomicassets'
@@ -172,12 +182,12 @@ export class SharedTestObjects {
     dacId: string,
     symbol: string,
     initialAsset: string,
-    planet: ?Account
+    config?: any
   ) {
     await this.setup_new_auth_account();
     // Further setup after the inital singleton object have been created.
     await this.setup_tokens(initialAsset);
-    await this.register_dac_with_directory(dacId, symbol, planet);
+    await this.register_dac_with_directory(dacId, symbol, config);
     await this.setup_dac_memberterms(dacId, this.auth_account);
   }
 
@@ -211,7 +221,7 @@ export class SharedTestObjects {
   async getRegMembers(
     dacId: string,
     initialDacAsset: string,
-    count: number = NUMBER_OF_REG_MEMBERS
+    count: number = this.NUMBER_OF_REG_MEMBERS
   ): Promise<Account[]> {
     let newMembers = await AccountManager.createAccounts(count);
 
@@ -305,7 +315,7 @@ export class SharedTestObjects {
   private async register_dac_with_directory(
     dacId: string,
     tokenSymbol: string,
-    planet: ?Account
+    config?: any
   ) {
     let accounts = [
       {
@@ -321,10 +331,17 @@ export class SharedTestObjects {
         value: this.treasury_account.name,
       },
     ];
-    if (planet) {
+    if (config && config.planet) {
       accounts.push({
         key: Account_type.MSIGOWNED,
-        value: planet.name,
+        value: config.planet.name,
+      });
+    }
+    if (config && config.vote_weight_account) {
+      console.log('adding ', config.vote_weight_account.name);
+      accounts.push({
+        key: Account_type.VOTING,
+        value: config.vote_weight_account.name,
       });
     }
 

@@ -283,10 +283,10 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
             " symbol: ", found_dac.symbol.get_symbol());
 
         uint64_t token_current_supply = tokenStats->supply.amount;
-
+        print(fmt("DBG: token_current_supply: %s ", token_current_supply));
         double percent_of_current_voter_engagement =
             double(currentState.get_total_weight_of_votes()) / double(token_current_supply) * 100.0;
-
+        print(fmt("currentState.get_total_weight_of_votes(): %s ", currentState.get_total_weight_of_votes()));
         print("\n\nToken current supply as decimal units: ", token_current_supply,
             " total votes so far: ", currentState.get_total_weight_of_votes());
         print("\n\nNeed inital engagement of: ", configs.initial_vote_quorum_percent, "% to start the DAC.");
@@ -299,8 +299,9 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
 
         check(currentState.get_met_initial_votes_threshold() == true ||
                   percent_of_current_voter_engagement > configs.initial_vote_quorum_percent,
-            "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_ACTIVATE::Voter engagement %s is insufficient to activate the DAC (%s required).",
-            percent_of_current_voter_engagement, configs.initial_vote_quorum_percent);
+            "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_ACTIVATE::Voter engagement %s is insufficient to activate the DAC (%s required) token_current_supply: %s total_weight_of_votes: %s.",
+            percent_of_current_voter_engagement, configs.initial_vote_quorum_percent, token_current_supply,
+            currentState.get_total_weight_of_votes());
 
         check(percent_of_current_voter_engagement > configs.vote_quorum_percent,
             "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_PROCESS::Voter engagement is insufficient to process a new period");
