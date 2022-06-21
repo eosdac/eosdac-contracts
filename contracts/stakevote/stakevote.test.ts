@@ -61,6 +61,11 @@ describe('Stakevote', () => {
       let staker;
       before(async () => {
         staker = await AccountManager.createAccount();
+        const x = await get_from_state2(
+          dacId,
+          state_keys.total_weight_of_votes
+        );
+        console.log('total_weight_of_votes before: ', x);
       });
       it('should work', async () => {
         await shared.dac_token_contract.transfer(
@@ -84,7 +89,7 @@ describe('Stakevote', () => {
           dacId,
           state_keys.total_weight_of_votes
         );
-        console.log('total_weight_of_votes: ', x);
+        console.log('total_weight_of_votes after: ', x);
         // chai.expect(x).to.equal(32);
       });
     });

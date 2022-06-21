@@ -4,10 +4,13 @@
 
 #include "../../contract-shared-headers/dacdirectory_shared.hpp"
 #include "../../contract-shared-headers/eosdactokens_shared.hpp"
+#include "../../contract-shared-headers/safemath.hpp"
 
 using namespace eosio;
 using namespace eosdac;
 using namespace std;
+
+static constexpr uint32_t time_divisor{100000000};
 
 CONTRACT stakevote : public contract {
   public:

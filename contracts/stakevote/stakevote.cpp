@@ -22,7 +22,7 @@ void stakevote::stakeobsv(vector<account_stake_delta> stake_deltas, name dac_id)
     weight_table                 weights(get_self(), dac_id.value);
 
     for (auto asd : stake_deltas) {
-        int64_t weight_delta = asd.stake_delta.amount * asd.unstake_delay * (config.time_multiplier / pow(10, 8));
+        int64_t weight_delta = (S{asd.stake_delta.amount} * S<int64_t>{asd.unstake_delay}).value();
         auto    vw_itr       = weights.find(asd.account.value);
         if (vw_itr != weights.end()) {
             weights.modify(vw_itr, same_payer, [&](auto &v) {
