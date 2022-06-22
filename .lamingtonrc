@@ -19,6 +19,7 @@
     "referendum.cpp",
     "eosio.token.cpp",
     "stakevote.cpp",
-    "msigworlds.cpp"
+    "msigworlds.cpp",
+    "safemath.cpp"
   ]
 }

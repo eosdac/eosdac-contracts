@@ -1,12 +1,15 @@
+#include <eosio/eosio.hpp>
+#include <math.h>
+
 template <typename T>
 class S {
     T n;
 
   public:
     S(T a) : n(a) {
+        static_assert(std::is_unsigned_v<T> || std::is_signed_v<T>, "wrong type, only for numbers");
         static_assert(!std::is_same_v<T, int128_t>, "Cannot be used with int128_t");
         static_assert(!std::is_same_v<T, uint128_t>, "Cannot be used with uint128_t");
-        static_assert(std::is_integral<std::decay_t<T>>::value, "Floating point not implemented yet");
     };
 
     T value() const {
@@ -32,15 +35,17 @@ class S {
      */
     S &operator-=(const S a) {
         const auto max_amount = std::numeric_limits<T>::max();
-        if constexpr (std::is_unsigned_v<T>) {
+        if constexpr (std::is_floating_point_v<T>) {
+            n -= a.n;
+            eosio::check(!isinf(n), "infinity");
+            eosio::check(!isnan(n), "NaN");
+        } else if constexpr (std::is_unsigned_v<T>) {
             eosio::check(n >= a.n, "invalid unsigned subtraction: result would be negative");
-            const auto tmp = uint128_t(n) - uint128_t(a.n);
-            eosio::check(n <= max_amount, "subtraction overflow");
-            n = T(tmp);
+            n -= a.n;
         } else {
             const auto tmp = int128_t(n) - int128_t(a.n);
-            eosio::check(-max_amount <= n, "subtraction underflow");
-            eosio::check(n <= max_amount, "subtraction overflow");
+            eosio::check(-max_amount <= tmp, "signed subtraction underflow");
+            eosio::check(tmp <= max_amount, "signed subtraction overflow");
             n = T(tmp);
         }
         return *this;
@@ -51,14 +56,17 @@ class S {
      */
     S &operator+=(const S &a) {
         const auto max_amount = std::numeric_limits<T>::max();
-        if constexpr (std::is_unsigned_v<T>) {
-            const auto tmp = uint128_t(n) + uint128_t(a.n);
-            eosio::check(n <= max_amount, "addition overflow");
-            n = T(tmp);
+        if constexpr (std::is_floating_point_v<T>) {
+            n += a.n;
+            eosio::check(!isinf(n), "infinity");
+            eosio::check(!isnan(n), "NaN");
+        } else if constexpr (std::is_unsigned_v<T>) {
+            eosio::check(max_amount - n >= a.n, "unsigned wrap");
+            n += a.n;
         } else {
             const auto tmp = int128_t(n) + int128_t(a.n);
-            eosio::check(-max_amount <= n, "subtraction underflow");
-            eosio::check(n <= max_amount, "subtraction overflow");
+            eosio::check(-max_amount <= tmp, "signed addition underflow");
+            eosio::check(tmp <= max_amount, "signed addition overflow");
             n = T(tmp);
         }
         return *this;
@@ -67,19 +75,19 @@ class S {
     /**
      * Addition operator
      */
-    inline friend S operator+(const S &a, const S &b) {
+    inline friend T operator+(const S &a, const S &b) {
         S result = a;
         result += b;
-        return result;
+        return result.n;
     }
 
     /**
      * Subtraction operator
      */
-    inline friend S operator-(const S &a, const S &b) {
+    inline friend T operator-(const S &a, const S &b) {
         S result = a;
         result -= b;
-        return result;
+        return result.n;
     }
 
     /**
@@ -87,14 +95,18 @@ class S {
      */
     S &operator*=(const S &a) {
         auto max_amount = std::numeric_limits<T>::max();
-        if constexpr (std::is_unsigned_v<T>) {
+        if constexpr (std::is_floating_point_v<T>) {
+            n *= a.n;
+            eosio::check(!isinf(n), "infinity");
+            eosio::check(!isnan(n), "NaN");
+        } else if constexpr (std::is_unsigned_v<T>) {
             const auto tmp = uint128_t(n) * uint128_t(a.n);
-            eosio::check(tmp <= max_amount, "multiplication overflow");
+            eosio::check(tmp <= max_amount, "unsigned multiplication overflow");
             n = T(tmp);
         } else {
             const auto tmp = int128_t(n) * int128_t(a.n);
-            eosio::check(tmp <= max_amount, "multiplication overflow");
-            eosio::check(tmp >= -max_amount, "multiplication underflow");
+            eosio::check(tmp <= max_amount, "signed multiplication overflow");
+            eosio::check(tmp >= -max_amount, "signed multiplication underflow");
             n = T(tmp);
         }
         return *this;
@@ -103,17 +115,19 @@ class S {
     /**
      * Multiplication operator
      */
-    inline friend S operator*(const S &a, const S &b) {
+    inline friend T operator*(const S &a, const S &b) {
         S result = a;
         result *= b;
-        return result;
+        return result.n;
     }
 
     /**
      * Division assignment operator
      */
     S &operator/=(const S &a) {
+        const auto min_value = std::numeric_limits<T>::min();
         eosio::check(a.n != 0, "division by zero");
+        eosio::check(!(n == min_value && a.n == -1), "division overflow");
         n /= a.n;
         return *this;
     }
@@ -121,10 +135,10 @@ class S {
     /**
      * Division operator
      */
-    inline friend S operator/(const S &a, const S &b) {
+    inline friend T operator/(const S &a, const S &b) {
         S result = a;
         result /= b;
-        return result;
+        return result.n;
     }
 
     /**
