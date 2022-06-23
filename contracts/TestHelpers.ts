@@ -102,7 +102,7 @@ export class SharedTestObjects {
     // Configure Dac contracts
     this.dacdirectory_contract = await ContractDeployer.deployWithName(
       'contracts/dacdirectory/dacdirectory',
-      'dacdirectory'
+      'index.worlds'
     );
     this.daccustodian_contract = await debugPromise(
       ContractDeployer.deployWithName(
@@ -135,7 +135,7 @@ export class SharedTestObjects {
     this.msigworlds_contract = await debugPromise(
       ContractDeployer.deployWithName<Msigworlds>(
         'contracts/msigworlds/msigworlds',
-        'msig.world'
+        'msig.worlds'
       ),
       'created msigworlds_contract'
     );

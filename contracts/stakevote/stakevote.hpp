@@ -10,7 +10,7 @@ using namespace eosio;
 using namespace eosdac;
 using namespace std;
 
-static constexpr uint32_t time_divisor{100000000};
+static constexpr int64_t time_divisor{100000000};
 
 CONTRACT stakevote : public contract {
   public:
@@ -20,7 +20,7 @@ CONTRACT stakevote : public contract {
     using config_container = eosio::singleton<"config"_n, config_item>;
     struct [[eosio::table("config"), eosio::contract("stakevote")]] config_item {
         // time multiplier is measured in 10^-8 1 == 0.00000001
-        uint32_t time_multiplier = (uint32_t)100000000;
+        int64_t time_multiplier = 100000000;
 
         static config_item get_current_configs(eosio::name account, eosio::name scope) {
             check(config_container(account, scope.value).exists(), "Stake config not set.");

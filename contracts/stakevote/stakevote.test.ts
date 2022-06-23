@@ -66,6 +66,12 @@ describe('Stakevote', () => {
           state_keys.total_weight_of_votes
         );
         console.log('total_weight_of_votes before: ', x);
+
+        await shared.stakevote_contract.updateconfig(
+          { time_multiplier: 10 ** 8 },
+          dacId,
+          { from: shared.auth_account }
+        );
       });
       it('should work', async () => {
         await shared.dac_token_contract.transfer(
