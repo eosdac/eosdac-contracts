@@ -22,9 +22,9 @@ void stakevote::stakeobsv(const vector<account_stake_delta> &stake_deltas, const
     auto                         weights = weight_table{get_self(), dac_id.value};
 
     for (auto asd : stake_deltas) {
-        const double weight_delta_double = S{asd.stake_delta.amount}.to<double>() * S{asd.unstake_delay}.to<double>() *
-                                           (S{config.time_multiplier}.to<double>() / S{time_divisor});
-        const int64_t weight_delta = S{weight_delta_double}.to<int64_t>().value();
+        const auto weight_delta_s = S{asd.stake_delta.amount}.to<double>() * S{asd.unstake_delay}.to<double>() *
+                                    (S{config.time_multiplier}.to<double>() / S{time_divisor});
+        const int64_t weight_delta = weight_delta_s.to<int64_t>();
         auto          vw_itr       = weights.find(asd.account.value);
         if (vw_itr != weights.end()) {
             weights.modify(vw_itr, same_payer, [&](auto &v) {
@@ -97,9 +97,9 @@ void stakevote::collectwts(uint16_t batch_size, uint32_t unstake_time, name dac_
     while (stake != stakes.end() && counter < batch_size) {
         auto vw_itr = weights.find((stake->account).value);
         if (vw_itr == weights.end()) {
-            double weight_delta_double = S{(stake->stake).amount}.to<double>() * S{unstake_time}.to<double>() *
-                                         (S{config.time_multiplier}.to<double>() / S{time_divisor});
-            int64_t weight_delta = S{weight_delta_double}.to<int64_t>().value();
+            const auto weight_delta_s = S{(stake->stake).amount}.to<double>() * S{unstake_time}.to<double>() *
+                                        (S{config.time_multiplier}.to<double>() / S{time_divisor});
+            const int64_t weight_delta = weight_delta_s.to<int64_t>();
             weights.emplace(get_self(), [&](auto &v) {
                 v.voter  = stake->account;
                 v.weight = weight_delta;
