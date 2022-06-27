@@ -92,4 +92,28 @@ describe('Safemath', () => {
   it('nan should throw NaN error', async () => {
     await assertEOSErrorIncludesMessage(contract.nan(), 'NaN');
   });
+  it('convert1 should throw conversion overflow error', async () => {
+    await assertEOSErrorIncludesMessage(
+      contract.convert1(),
+      'conversion overflow'
+    );
+  });
+  it('convert2 should throw Cannot convert negative value to unsigned error', async () => {
+    await assertEOSErrorIncludesMessage(
+      contract.convert2(),
+      'Cannot convert negative value to unsigned'
+    );
+  });
+  it('convert3 should throw conversion overflow error', async () => {
+    await assertEOSErrorIncludesMessage(
+      contract.convert3(),
+      'conversion overflow'
+    );
+  });
+  it('convert4 should throw conversion overflow error', async () => {
+    await assertEOSErrorIncludesMessage(
+      contract.convert4(),
+      'conversion overflow'
+    );
+  });
 });

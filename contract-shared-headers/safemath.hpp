@@ -20,6 +20,18 @@ class S {
         return value();
     }
 
+    template <typename U>
+    auto to() {
+        const auto max = std::numeric_limits<U>::max();
+        if constexpr (std::is_unsigned_v<U>) {
+            eosio::check(n >= 0, "Cannot convert negative value to unsigned");
+        } else {
+            eosio::check(n >= -max, "conversion underflow. max: " + std::to_string(-max));
+        }
+        eosio::check(n <= max, "conversion overflow. max: " + std::to_string(max) + " n: " + std::to_string(n));
+        return S<U>{static_cast<U>(n)};
+    }
+
     /**
      * Unary minus operator
      *

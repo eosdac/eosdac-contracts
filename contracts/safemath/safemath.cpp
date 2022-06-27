@@ -127,4 +127,22 @@ CONTRACT safemath : public contract {
     ACTION nan() {
         S<float>{1.0} + S{NAN};
     }
+
+    ACTION convert1() {
+        S{256}.to<uint8_t>();
+    }
+    ACTION convert2() {
+        S{-1}.to<uint8_t>();
+    }
+
+    ACTION convert3() {
+        const auto max_value = std::numeric_limits<int32_t>::max();
+        const auto too_large = S{max_value}.to<int64_t>() + S{1}.to<int64_t>();
+        S{too_large}.to<int32_t>();
+    }
+
+    ACTION convert4() {
+        const auto max_value = std::numeric_limits<uint32_t>::max();
+        S{max_value}.to<int32_t>();
+    }
 };
