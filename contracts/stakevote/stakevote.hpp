@@ -42,9 +42,9 @@ CONTRACT stakevote : public contract {
     };
     using weight_table = eosio::multi_index<"weights"_n, vote_weight>;
 
-    ACTION stakeobsv(vector<account_stake_delta> stake_deltas, name dac_id);
-    ACTION balanceobsv(vector<account_balance_delta> balance_deltas, name dac_id);
-    ACTION updateconfig(config_item new_config, name dac_id);
+    ACTION stakeobsv(const vector<account_stake_delta> &stake_deltas, const name dac_id);
+    ACTION balanceobsv(const vector<account_balance_delta> &balance_deltas, const name dac_id);
+    ACTION updateconfig(config_item & new_config, const name dac_id);
 
     ACTION clearweights(uint16_t batch_size, name dac_id);
     ACTION collectwts(uint16_t batch_size, uint32_t unstake_time, name dac_id);

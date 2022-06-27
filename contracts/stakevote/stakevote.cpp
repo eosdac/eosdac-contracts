@@ -1,14 +1,14 @@
 #include "stakevote.hpp"
 #include <cmath>
 
-void stakevote::stakeobsv(vector<account_stake_delta> stake_deltas, name dac_id) {
-    auto       dac                = dacdir::dac_for_id(dac_id);
-    auto       token_contract     = dac.symbol.get_contract();
+void stakevote::stakeobsv(const vector<account_stake_delta> &stake_deltas, const name dac_id) {
+    const auto dac                = dacdir::dac_for_id(dac_id);
+    const auto token_contract     = dac.symbol.get_contract();
     const auto custodian_contract = dac.account_for_type_maybe(dacdir::CUSTODIAN);
 
     require_auth(token_contract);
 
-    auto config = config_item::get_current_configs(get_self(), dac_id);
+    const auto config = config_item::get_current_configs(get_self(), dac_id);
 
     // Forward all the stake notifications to allow custodian contract to forbid unstaking for a custodian
     if (custodian_contract) {
@@ -19,13 +19,13 @@ void stakevote::stakeobsv(vector<account_stake_delta> stake_deltas, name dac_id)
 
     // Send weightobsv to update the vote weights, update weights table
     vector<account_weight_delta> weight_deltas;
-    weight_table                 weights(get_self(), dac_id.value);
+    auto                         weights = weight_table{get_self(), dac_id.value};
 
     for (auto asd : stake_deltas) {
-        double weight_delta_double = S{asd.stake_delta.amount}.to<double>() * S{asd.unstake_delay}.to<double>() *
-                                     (S{config.time_multiplier}.to<double>() / S{time_divisor});
-        int64_t weight_delta = S{weight_delta_double}.to<int64_t>().value();
-        auto    vw_itr       = weights.find(asd.account.value);
+        const double weight_delta_double = S{asd.stake_delta.amount}.to<double>() * S{asd.unstake_delay}.to<double>() *
+                                           (S{config.time_multiplier}.to<double>() / S{time_divisor});
+        const int64_t weight_delta = S{weight_delta_double}.to<int64_t>().value();
+        auto          vw_itr       = weights.find(asd.account.value);
         if (vw_itr != weights.end()) {
             weights.modify(vw_itr, same_payer, [&](auto &v) {
                 v.weight += weight_delta;
@@ -47,18 +47,18 @@ void stakevote::stakeobsv(vector<account_stake_delta> stake_deltas, name dac_id)
     }
 }
 
-void stakevote::balanceobsv(vector<account_balance_delta> balance_deltas, name dac_id) {
-    auto dac            = dacdir::dac_for_id(dac_id);
-    auto token_contract = dac.symbol.get_contract();
+void stakevote::balanceobsv(const vector<account_balance_delta> &balance_deltas, const name dac_id) {
+    const auto dac            = dacdir::dac_for_id(dac_id);
+    const auto token_contract = dac.symbol.get_contract();
 
     require_auth(token_contract);
 
     // ignore
 }
 
-void stakevote::updateconfig(config_item new_config, name dac_id) {
-    auto dac          = dacdir::dac_for_id(dac_id);
-    auto auth_account = dac.owner;
+void stakevote::updateconfig(config_item &new_config, const name dac_id) {
+    const auto dac          = dacdir::dac_for_id(dac_id);
+    const auto auth_account = dac.owner;
     require_auth(auth_account);
     check(new_config.time_multiplier > 0, "time_multiplier must be greater than zero");
 
