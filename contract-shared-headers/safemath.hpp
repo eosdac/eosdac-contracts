@@ -16,12 +16,12 @@ class S {
         return n;
     }
 
-    explicit operator T() const {
+    operator T() const {
         return value();
     }
 
     template <typename U>
-    auto to() {
+    auto to() const {
         const auto max = std::numeric_limits<U>::max();
         if constexpr (std::is_unsigned_v<U>) {
             eosio::check(n >= 0, "Cannot convert negative value to unsigned");
@@ -87,19 +87,19 @@ class S {
     /**
      * Addition operator
      */
-    inline friend T operator+(const S &a, const S &b) {
+    inline friend S operator+(const S &a, const S &b) {
         S result = a;
         result += b;
-        return result.n;
+        return result;
     }
 
     /**
      * Subtraction operator
      */
-    inline friend T operator-(const S &a, const S &b) {
+    inline friend S operator-(const S &a, const S &b) {
         S result = a;
         result -= b;
-        return result.n;
+        return result;
     }
 
     /**
@@ -127,10 +127,10 @@ class S {
     /**
      * Multiplication operator
      */
-    inline friend T operator*(const S &a, const S &b) {
+    inline friend S operator*(const S &a, const S &b) {
         S result = a;
         result *= b;
-        return result.n;
+        return result;
     }
 
     /**
@@ -147,11 +147,16 @@ class S {
     /**
      * Division operator
      */
-    inline friend T operator/(const S &a, const S &b) {
+    inline friend S operator/(const S &a, const S &b) {
         S result = a;
         result /= b;
-        return result.n;
+        return result;
     }
+
+    /*----------------------------------------------------------------
+     * The following operator extravaganza can be shortened quite a bit
+     * with C++20 by implementing the starship operator.
+     */
 
     /**
      * Equality operator
@@ -161,9 +166,41 @@ class S {
     }
 
     /**
+     * Equality operator with anything that has a == operator
+     */
+    template <typename U>
+    friend bool operator==(const S &a, const U b) {
+        return a.n == b;
+    }
+
+    /**
+     * Equality operator with anything that has a == operator
+     */
+    template <typename U>
+    friend bool operator==(const U b, const S &a) {
+        return a.n == b;
+    }
+
+    /**
      * Inequality operator
      */
     friend bool operator!=(const S &a, const S &b) {
+        return !(a == b);
+    }
+
+    /**
+     * Inequality operator
+     */
+    template <typename U>
+    friend bool operator!=(const S &a, const U b) {
+        return !(a == b);
+    }
+
+    /**
+     * Inequality operator
+     */
+    template <typename U>
+    friend bool operator!=(const U b, const S &a) {
         return !(a == b);
     }
 
@@ -175,10 +212,42 @@ class S {
     }
 
     /**
+     * Less than operator
+     */
+    template <typename U>
+    friend bool operator<(const S &a, const U b) {
+        return a.n < b;
+    }
+
+    /**
+     * Less than operator
+     */
+    template <typename U>
+    friend bool operator<(const U b, const S &a) {
+        return a.n < b;
+    }
+
+    /**
      * Less or equal to operator
      */
     friend bool operator<=(const S &a, const S &b) {
         return a.n <= b.n;
+    }
+
+    /**
+     * Less or equal to operator
+     */
+    template <typename U>
+    friend bool operator<=(const S &a, const U b) {
+        return a.n <= b;
+    }
+
+    /**
+     * Less or equal to operator
+     */
+    template <typename U>
+    friend bool operator<=(const U b, const S &a) {
+        return a.n <= b;
     }
 
     /**
@@ -189,9 +258,40 @@ class S {
     }
 
     /**
+     * Greater than operator
+     */
+    template <typename U>
+    friend bool operator>(const S &a, const U b) {
+        return a.n > b;
+    }
+    /**
+     * Greater than operator
+     */
+    template <typename U>
+    friend bool operator>(const U b, const S &a) {
+        return a.n > b;
+    }
+
+    /**
      * Greater or equal to operator
      */
     friend bool operator>=(const S &a, const S &b) {
-        return a.n >= b.n;
+        return a.n >= b;
+    }
+
+    /**
+     * Greater or equal to operator
+     */
+    template <typename U>
+    friend bool operator>=(const S &a, const U b) {
+        return a.n >= b;
+    }
+
+    /**
+     * Greater or equal to operator
+     */
+    template <typename U>
+    friend bool operator>=(const U b, const S &a) {
+        return a.n >= b;
     }
 };

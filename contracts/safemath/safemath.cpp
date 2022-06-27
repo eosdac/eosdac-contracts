@@ -24,8 +24,6 @@ CONTRACT safemath : public contract {
         const auto x1  = S{a} * S{b} / S{c} + S{d} - S{e};
         const auto x1_ = a * b / c + d - e;
         check(x1 == x1_, "wrong result 6");
-        check(std::is_same_v<decltype(x1), decltype(x1_)>, fmt("wrong type 1 %s", x1));
-        check(std::is_same_v<decltype(S{a}), S<uint64_t>>, fmt("wrong type 2"));
 
         const auto x2  = S{a} - S{a};
         const auto x2_ = a - a;
@@ -49,8 +47,6 @@ CONTRACT safemath : public contract {
         const auto x1  = S{a} * S{b} / S{c} + S{d} - S{e};
         const auto x1_ = a * b / c + d - e;
         check(x1 == x1_, "wrong result 6");
-        check(std::is_same_v<decltype(x1), decltype(x1_)>, fmt("wrong type 1 %s", x1));
-        check(std::is_same_v<decltype(S{a}), S<int64_t>>, fmt("wrong type 2"));
 
         const auto x2  = S{a} - S{a};
         const auto x2_ = a - a;
@@ -75,8 +71,6 @@ CONTRACT safemath : public contract {
         const auto x1  = S{a} * S{b} / S{c} + S{d} - S{e};
         const auto x1_ = a * b / c + d - e;
         check(x1 == x1_, "wrong result 6");
-        check(std::is_same_v<decltype(x1), decltype(x1_)>, fmt("wrong type 1 %s", x1));
-        check(std::is_same_v<decltype(S{a}), S<double>>, fmt("wrong type 2"));
 
         const auto x2  = S{a} - S{a};
         const auto x2_ = a - a;
@@ -119,7 +113,6 @@ CONTRACT safemath : public contract {
     ACTION sdivoverflow() {
         const auto min_value = std::numeric_limits<int64_t>::min();
         const auto res       = S{min_value} / S<int64_t>{-1};
-        check(false, fmt("res: %s max: %s", res, min_value));
     }
     ACTION infinity() {
         S<float>{1.0} + S{INFINITY};
@@ -144,5 +137,16 @@ CONTRACT safemath : public contract {
     ACTION convert4() {
         const auto max_value = std::numeric_limits<uint32_t>::max();
         S{max_value}.to<int32_t>();
+    }
+
+    ACTION xxx1() {
+        // tests expressions with (). This should throw invalid usigned subtraction error.
+        S<uint32_t>{1} * S<uint32_t>{1} - (S<uint32_t>{1} * S<uint32_t>{2});
+    }
+
+    ACTION xxx2() {
+        const auto tmp = S<uint32_t>{2} * S<uint32_t>{3} + (S<uint32_t>{5} * S<uint32_t>{6});
+        const auto res = tmp.to<uint32_t>();
+        check(res == 36, "wrong result");
     }
 };

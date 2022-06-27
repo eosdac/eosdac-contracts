@@ -116,4 +116,13 @@ describe('Safemath', () => {
       'conversion overflow'
     );
   });
+  it('xxx1 should throw conversion overflow error', async () => {
+    await assertEOSErrorIncludesMessage(
+      contract.xxx1(),
+      'invalid unsigned subtraction'
+    );
+  });
+  it('xxx2 should work', async () => {
+    await contract.xxx2();
+  });
 });
