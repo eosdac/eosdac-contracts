@@ -56,6 +56,40 @@ describe('Stakevote', () => {
       );
 
       regMembers = await shared.getRegMembers(dacId, `100.0000 ${symbol}`);
+
+      await shared.stakevote_contract.updateconfig(
+        { time_multiplier: 10 ** 8 },
+        dacId,
+        { from: shared.auth_account }
+      );
+    });
+    context('Stakevote migration', async () => {
+      context('migration1', () => {
+        it('should work', async () => {
+          await shared.stakevote_contract.migration1(dacId);
+        });
+        it('should delete config singleton', async () => {
+          await assertRowCount(
+            shared.stakevote_contract.configTable({
+              scope: dacId,
+            }),
+            0
+          );
+        });
+      });
+      context('migration2', () => {
+        it('should work', async () => {
+          await shared.stakevote_contract.migration2(dacId);
+        });
+        it('should add config singleton', async () => {
+          await assertRowsEqual(
+            shared.stakevote_contract.configTable({
+              scope: dacId,
+            }),
+            [{ time_multiplier: 100000000 }]
+          );
+        });
+      });
     });
     context('staking', async () => {
       let staker;
@@ -66,12 +100,6 @@ describe('Stakevote', () => {
           state_keys.total_weight_of_votes
         );
         console.log('total_weight_of_votes before: ', x);
-
-        await shared.stakevote_contract.updateconfig(
-          { time_multiplier: 10 ** 8 },
-          dacId,
-          { from: shared.auth_account }
-        );
       });
       it('should work', async () => {
         await shared.dac_token_contract.transfer(
