@@ -10,7 +10,7 @@ using namespace eosio;
 using namespace eosdac;
 using namespace std;
 
-static constexpr double time_divisor{100000000};
+static constexpr int128_t time_divisor{100000000};
 
 CONTRACT stakevote : public contract {
   public:
