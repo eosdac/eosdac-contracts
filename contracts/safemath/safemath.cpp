@@ -149,4 +149,18 @@ CONTRACT safemath : public contract {
         const auto res = tmp.to<uint32_t>();
         check(res == 36, "wrong result");
     }
+
+    ACTION xxx3() {
+        const auto x   = S{std::numeric_limits<int64_t>::max()};
+        const auto tmp = x.to<int128_t>() * x.to<int128_t>() / x.to<int128_t>();
+        const auto res = tmp.to<int64_t>();
+        check(res == x, "wrong result res: %s x: %s", res, x);
+    }
+
+    ACTION xxx4() {
+        S{std::numeric_limits<int128_t>::min()} - S<int128_t>{1};
+    }
+    ACTION xxx5() {
+        S{std::numeric_limits<int128_t>::max()} - S<int128_t>{-1};
+    }
 };

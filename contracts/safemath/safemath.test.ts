@@ -125,4 +125,19 @@ describe('Safemath', () => {
   it('xxx2 should work', async () => {
     await contract.xxx2();
   });
+  it('xxx3 should work', async () => {
+    await contract.xxx3();
+  });
+  it('xxx4 should throw signed subtraction underflow error', async () => {
+    await assertEOSErrorIncludesMessage(
+      contract.xxx4(),
+      'signed subtraction underflow'
+    );
+  });
+  it('xxx5 should throw signed subtraction underflow error', async () => {
+    await assertEOSErrorIncludesMessage(
+      contract.xxx5(),
+      'signed subtraction overflow'
+    );
+  });
 });
