@@ -61,8 +61,8 @@ class S {
             eosio::check(n >= a.n, "invalid unsigned subtraction: result would be negative");
             n -= a.n;
         } else {
-            eosio::check(a.n <= 0 || n >= (min() + a.n), "signed subtraction underflow");
-            eosio::check(a.n >= 0 || n <= (max() + a.n), "signed subtraction overflow");
+            eosio::check(a.n <= 0 || n >= min() + a.n, "signed subtraction underflow");
+            eosio::check(a.n >= 0 || n <= max() + a.n, "signed subtraction overflow");
             n -= a.n;
         }
         return *this;
@@ -72,18 +72,16 @@ class S {
      * Addition Assignment  operator
      */
     S &operator+=(const S &a) {
-        const auto max = std::numeric_limits<T>::max();
-        const auto min = std::numeric_limits<T>::min();
         if constexpr (std::is_floating_point_v<T>) {
             n += a.n;
             eosio::check(!isinf(n), "infinity");
             eosio::check(!isnan(n), "NaN");
         } else if constexpr (std::is_unsigned_v<T>) {
-            eosio::check(max - n >= a.n, "unsigned wrap");
+            eosio::check(max() - n >= a.n, "unsigned wrap");
             n += a.n;
         } else {
-            eosio::check(a.n <= 0 || n <= (max - a.n), "signed addition overflow");
-            eosio::check(a.n >= 0 || n >= (min - a.n), "signed addition underflow");
+            eosio::check(a.n <= 0 || n <= max() - a.n, "signed addition overflow");
+            eosio::check(a.n >= 0 || n >= min() - a.n, "signed addition underflow");
             n += a.n;
         }
         return *this;
@@ -111,27 +109,25 @@ class S {
      * Multiplication assignment operator
      */
     S &operator*=(const S &a) {
-        const auto max = std::numeric_limits<T>::max();
-        const auto min = std::numeric_limits<T>::min();
         if constexpr (std::is_floating_point_v<T>) {
             n *= a.n;
             eosio::check(!isinf(n), "infinity");
             eosio::check(!isnan(n), "NaN");
         } else if constexpr (std::is_unsigned_v<T>) {
-            eosio::check(n <= (max / a.n), "unsigned multiplication overflow");
+            eosio::check(n <= max() / a.n, "unsigned multiplication overflow");
             n *= a.n;
         } else {
             if (n > 0) {
                 if (a.n > 0) {
-                    eosio::check(n <= (max / a.n), "signed multiplication overflow");
+                    eosio::check(n <= max() / a.n, "signed multiplication overflow");
                 } else {
-                    eosio::check(a.n >= (min / n), "signed multiplication underflow");
+                    eosio::check(a.n >= min() / n, "signed multiplication underflow");
                 }
             } else {
                 if (a.n > 0) {
-                    eosio::check(n >= (min / a.n), "signed multiplication underflow");
+                    eosio::check(n >= min() / a.n, "signed multiplication underflow");
                 } else {
-                    eosio::check(n == 0 || a.n >= (max / n), "signed multiplication overflow");
+                    eosio::check(n == 0 || a.n >= max() / n, "signed multiplication overflow");
                 }
             }
             n *= a.n;
