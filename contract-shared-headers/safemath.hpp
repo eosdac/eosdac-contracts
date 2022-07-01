@@ -44,8 +44,10 @@ class S {
      *
      */
     S operator-() const {
+        static_assert(std::is_signed_v<T>, "operator-() works only on signed");
         auto r = *this;
-        r.n    = -r.n;
+        eosio::check(n != min(), "overflow");
+        r.n = -r.n;
         return r;
     }
 

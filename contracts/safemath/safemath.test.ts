@@ -140,4 +140,7 @@ describe('Safemath', () => {
       'signed subtraction overflow'
     );
   });
+  it('yyy1 should throw overflow error', async () => {
+    await assertEOSErrorIncludesMessage(contract.yyy1(), 'overflow');
+  });
 });

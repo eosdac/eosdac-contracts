@@ -163,4 +163,8 @@ CONTRACT safemath : public contract {
     ACTION xxx5() {
         S{std::numeric_limits<int128_t>::max()} - S<int128_t>{-1};
     }
+
+    ACTION yyy1() {
+        const auto res = -S{std::numeric_limits<int64_t>::min()};
+    }
 };
