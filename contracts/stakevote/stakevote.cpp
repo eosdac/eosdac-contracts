@@ -1,5 +1,4 @@
 #include "stakevote.hpp"
-#include "migrations.cpp"
 #include <cmath>
 
 void stakevote::stakeobsv(const vector<account_stake_delta> &stake_deltas, const name dac_id) {

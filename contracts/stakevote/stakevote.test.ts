@@ -41,8 +41,8 @@ describe('Stakevote', () => {
     let dacId = 'stakedac';
     let symbol = 'STADAC';
     let precision = 4;
-    let supply = `30.0000 ${symbol}`;
-    let stake_amount = `1.0000 ${symbol}`;
+    let supply = `30000.0000 ${symbol}`;
+    let stake_amount = `1000.0000 ${symbol}`;
     let time_multiplier = 1;
     let regMembers: Account[];
 
@@ -64,34 +64,6 @@ describe('Stakevote', () => {
         dacId,
         { from: shared.auth_account }
       );
-    });
-    context('Stakevote migration', async () => {
-      context('migration1', () => {
-        it('should work', async () => {
-          await shared.stakevote_contract.migration1(dacId);
-        });
-        it('should delete config singleton', async () => {
-          await assertRowCount(
-            shared.stakevote_contract.configTable({
-              scope: dacId,
-            }),
-            0
-          );
-        });
-      });
-      context('migration2', () => {
-        it('should work', async () => {
-          await shared.stakevote_contract.migration2(dacId);
-        });
-        it('should add config singleton', async () => {
-          await assertRowsEqual(
-            shared.stakevote_contract.configTable({
-              scope: dacId,
-            }),
-            [{ time_multiplier: 10 ** 8 }]
-          );
-        });
-      });
     });
     context('staking', async () => {
       let staker;
@@ -259,11 +231,11 @@ describe('Stakevote', () => {
                   : 1;
               }).reverse();
               console.log('rs: ', JSON.stringify(rs, null, 2));
-              chai.expect(rs[0].total_votes).to.equal(80000000);
-              chai.expect(rs[1].total_votes).to.equal(80000000);
-              chai.expect(rs[2].total_votes).to.equal(80000000);
-              chai.expect(rs[3].total_votes).to.equal(40000000);
-              chai.expect(rs[4].total_votes).to.equal(40000000);
+              chai.expect(rs[0].total_votes).to.equal(100915200);
+              chai.expect(rs[1].total_votes).to.equal(100915200);
+              chai.expect(rs[2].total_votes).to.equal(100915200);
+              chai.expect(rs[3].total_votes).to.equal(50457600);
+              chai.expect(rs[4].total_votes).to.equal(50457600);
             });
           });
         });

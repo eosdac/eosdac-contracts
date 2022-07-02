@@ -17,12 +17,8 @@ CONTRACT stakevote : public contract {
     using contract::contract;
 
     struct [[eosio::table("config"), eosio::contract("stakevote")]] config_item {
-// time multiplier is measured in 10^-8 1 == 0.00000001
-#ifdef MIGRATION_STAGE_2
-        int64_t time_multiplier = 100000000;
-#else
-        uint16_t time_multiplier = (uint16_t)100000000;
-#endif
+        // time multiplier is measured in 10^-8 1 == 0.00000001
+        int64_t            time_multiplier = 100000000;
         static config_item get_current_configs(eosio::name account, eosio::name scope) {
             check(config_container(account, scope.value).exists(), "Stake config not set.");
             return config_container(account, scope.value).get();
@@ -51,10 +47,6 @@ CONTRACT stakevote : public contract {
     ACTION clearweights(uint16_t batch_size, name dac_id);
     ACTION collectwts(uint16_t batch_size, uint32_t unstake_time, name dac_id);
 
-    ACTION migration1(const name dac_id);
-#ifdef MIGRATION_STAGE_2
-    ACTION migration2(const name dac_id);
-#endif
     struct [[eosio::table("stakes"), eosio::contract("eosdactokens")]] stake_info {
         name  account;
         asset stake;
