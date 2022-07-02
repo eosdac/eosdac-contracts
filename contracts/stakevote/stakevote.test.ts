@@ -21,10 +21,14 @@ enum state_keys {
   lastclaimbudgettime = 5,
   budget_percentage = 6,
 }
+const minutes = 60;
+const hours = 60 * minutes;
+const days = 24 * hours;
+const months = 30 * days;
+const years = 365 * days;
 
 import { SharedTestObjects, NUMBER_OF_CANDIDATES } from '../TestHelpers';
 import * as chai from 'chai';
-
 let shared: SharedTestObjects;
 
 describe('Stakevote', () => {
@@ -37,25 +41,23 @@ describe('Stakevote', () => {
     let dacId = 'stakedac';
     let symbol = 'STADAC';
     let precision = 4;
+    let supply = `30.0000 ${symbol}`;
+    let stake_amount = `1.0000 ${symbol}`;
+    let time_multiplier = 1;
     let regMembers: Account[];
 
     before(async () => {
-      await shared.initDac(
-        dacId,
-        `${precision},${symbol}`,
-        `3000.0000 ${symbol}`,
-        {
-          vote_weight_account: shared.stakevote_contract,
-        }
-      );
+      await shared.initDac(dacId, `${precision},${symbol}`, supply, {
+        vote_weight_account: shared.stakevote_contract,
+      });
       await shared.updateconfig(dacId, `12.0000 ${symbol}`);
       await shared.dac_token_contract.stakeconfig(
-        { enabled: true, min_stake_time: 5, max_stake_time: 20 },
+        { enabled: true, min_stake_time: 2 * years, max_stake_time: 2 * years },
         `${precision},${symbol}`,
         { from: shared.auth_account }
       );
 
-      regMembers = await shared.getRegMembers(dacId, `100.0000 ${symbol}`);
+      regMembers = await shared.getRegMembers(dacId, stake_amount);
 
       await shared.stakevote_contract.updateconfig(
         { time_multiplier: 10 ** 8 },
@@ -86,7 +88,7 @@ describe('Stakevote', () => {
             shared.stakevote_contract.configTable({
               scope: dacId,
             }),
-            [{ time_multiplier: 100000000 }]
+            [{ time_multiplier: 10 ** 8 }]
           );
         });
       });
@@ -100,23 +102,24 @@ describe('Stakevote', () => {
           state_keys.total_weight_of_votes
         );
         console.log('total_weight_of_votes before: ', x);
+        await shared.stakevote_contract.updateconfig(
+          { time_multiplier },
+          dacId,
+          { from: shared.auth_account }
+        );
       });
       it('should work', async () => {
         await shared.dac_token_contract.transfer(
           shared.dac_token_contract.account.name,
           staker.name,
-          `100.0000 ${symbol}`,
+          stake_amount,
           '',
           { from: shared.dac_token_contract.account }
         );
 
-        await shared.dac_token_contract.stake(
-          staker.name,
-          `100.0000 ${symbol}`,
-          {
-            from: staker,
-          }
-        );
+        await shared.dac_token_contract.stake(staker.name, stake_amount, {
+          from: staker,
+        });
       });
       it('should update vote_weight', async () => {
         const x = await get_from_state2(
@@ -202,7 +205,7 @@ describe('Stakevote', () => {
               for (const member of regMembers) {
                 await shared.dac_token_contract.stake(
                   member.name,
-                  `100.0000 ${symbol}`,
+                  stake_amount,
                   {
                     from: member,
                   }
