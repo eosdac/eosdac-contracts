@@ -778,6 +778,13 @@ describe('Daccustodian', () => {
           value: ['int64', 20_000_000],
         });
       });
+      it('state should have increased the total_votes_on_candidates', async () => {
+        const actual = await get_from_state2(
+          dacId,
+          state_keys.total_votes_on_candidates
+        );
+        chai.expect(actual).to.equal(40_000_000);
+      });
     });
     context('vote values after transfers', async () => {
       it('assert preconditions for vote values for custodians', async () => {

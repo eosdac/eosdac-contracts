@@ -8,6 +8,8 @@
 #include "../../contract-shared-headers/config.hpp"
 #include "../../contract-shared-headers/daccustodian_shared.hpp"
 #include "../../contract-shared-headers/eosdactokens_shared.hpp"
+#include "../../contract-shared-headers/safemath.hpp"
+
 #include "external_types.hpp"
 
 using namespace std;
