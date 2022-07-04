@@ -55,12 +55,11 @@ void daccustodian::updateVoteWeights(const vector<name> &votes, const time_point
         updateVoteWeight(cust, vote_time_stamp, vote_weight, dac_id, from_voting);
     }
 
-    int16_t vote_delta = votes.size() * vote_weight;
-
+    const auto vote_delta = S{votes.size()}.to<int64_t>() * S{vote_weight};
     if (vote_delta != 0) {
         auto       currentState              = contr_state2::get_current_state(get_self(), dac_id);
         const auto total_votes_on_candidates = currentState.get_total_votes_on_candidates();
-        currentState.set_total_votes_on_candidates(total_votes_on_candidates + vote_delta);
+        currentState.set_total_votes_on_candidates(S{total_votes_on_candidates} + vote_delta);
         currentState.save(get_self(), dac_id);
     }
 }
