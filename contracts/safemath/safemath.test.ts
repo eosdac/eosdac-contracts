@@ -149,4 +149,10 @@ describe('Safemath', () => {
       'invalid unsigned subtraction'
     );
   });
+  it('yyy3 should work', async () => {
+    await contract.yyy3();
+  });
+  it('yyy4 should throw infinity error', async () => {
+    await assertEOSErrorIncludesMessage(contract.yyy4(), 'infinity');
+  });
 });
