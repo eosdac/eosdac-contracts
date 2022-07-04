@@ -4,6 +4,9 @@
 
 using namespace eosio;
 
+static constexpr auto constexpr_a = S<uint8_t>{1};
+static constexpr auto constexpr_b = S<uint8_t>{2};
+
 CONTRACT safemath : public contract {
   public:
     using contract::contract;
@@ -166,5 +169,8 @@ CONTRACT safemath : public contract {
 
     ACTION yyy1() {
         const auto res = -S{std::numeric_limits<int64_t>::min()};
+    }
+    ACTION yyy2() {
+        constexpr_a - constexpr_b;
     }
 };
