@@ -1,6 +1,7 @@
 #include "../../contract-shared-headers/safemath.hpp"
 #include "../../contract-shared-headers/common_utilities.hpp"
 #include <eosio/eosio.hpp>
+#include <math.h>
 
 using namespace eosio;
 
@@ -172,5 +173,11 @@ CONTRACT safemath : public contract {
     }
     ACTION yyy2() {
         constexpr_a - constexpr_b;
+    }
+    ACTION yyy3() {
+        S{1}.to<double>() - S{1}.to<double>();
+    }
+    ACTION yyy4() {
+        S{log2(0)} - S{1}.to<double>();
     }
 };
