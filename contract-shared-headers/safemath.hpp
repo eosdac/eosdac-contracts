@@ -6,7 +6,7 @@ class S {
     T n;
 
   public:
-    S(T a) : n(a) {
+    constexpr S(T a) : n(a) {
         static_assert(std::is_unsigned_v<T> || std::is_signed_v<T>, "wrong type, only for numbers");
     };
 
