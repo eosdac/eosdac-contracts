@@ -14,6 +14,7 @@
 #include "../../contract-shared-headers/daccustodian_shared.hpp"
 #include "../../contract-shared-headers/dacdirectory_shared.hpp"
 #include "../../contract-shared-headers/eosdactokens_shared.hpp"
+#include "../../contract-shared-headers/safemath.hpp"
 
 // WARNING : Do not use ENABLE_BINDING_VOTE if this will be a shared contract (ie RESTRICT_DAC should be set if
 // ENABLE_BINDING_VOTE==1)
@@ -60,7 +61,9 @@ CONTRACT referendum : public contract {
         name cand;
         name permission;
 
-        uint64_t primary_key() const { return cand.value; }
+        uint64_t primary_key() const {
+            return cand.value;
+        }
     };
 
     using candperms_table = multi_index<"candperms"_n, candperm>;
@@ -118,8 +121,12 @@ CONTRACT referendum : public contract {
         time_point_sec              expires;
         vector<action>              acts;
 
-        uint64_t primary_key() const { return referendum_id.value; }
-        uint64_t by_proposer() const { return proposer.value; }
+        uint64_t primary_key() const {
+            return referendum_id.value;
+        }
+        uint64_t by_proposer() const {
+            return proposer.value;
+        }
     };
     /* Have to use EOSLIB_SERIALIZE to work around problems with boost deserialization */
     EOSLIB_SERIALIZE(referendum_data,
@@ -131,7 +138,9 @@ CONTRACT referendum : public contract {
         name                    voter;
         std::map<name, uint8_t> votes; // <referendum_id, vote>
 
-        uint64_t primary_key() const { return voter.value; }
+        uint64_t primary_key() const {
+            return voter.value;
+        }
     };
     using votes_table = eosio::multi_index<"votes"_n, vote_info>;
 
@@ -139,7 +148,9 @@ CONTRACT referendum : public contract {
         name           account;
         extended_asset deposit;
 
-        uint64_t  primary_key() const { return account.value; }
+        uint64_t primary_key() const {
+            return account.value;
+        }
         uint128_t by_sym() const {
             return (uint128_t{deposit.contract.value} << 64) | deposit.get_extended_symbol().get_symbol().raw();
         };
