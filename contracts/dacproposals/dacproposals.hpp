@@ -7,6 +7,7 @@
 #include "../../contract-shared-headers/daccustodian_shared.hpp"
 #include "../../contract-shared-headers/dacdirectory_shared.hpp"
 #include "../../contract-shared-headers/eosdactokens_shared.hpp"
+#include "../../contract-shared-headers/safemath.hpp"
 
 using namespace eosio;
 using namespace std;
@@ -54,10 +55,18 @@ namespace eosdac {
             uint32_t       job_duration; // job duration in seconds
             uint16_t       category;
 
-            uint64_t primary_key() const { return proposal_id.value; }
-            uint64_t proposer_key() const { return proposer.value; }
-            uint64_t arbitrator_key() const { return arbitrator.value; }
-            uint64_t category_key() const { return uint64_t(category); }
+            uint64_t primary_key() const {
+                return proposal_id.value;
+            }
+            uint64_t proposer_key() const {
+                return proposer.value;
+            }
+            uint64_t arbitrator_key() const {
+                return arbitrator.value;
+            }
+            uint64_t category_key() const {
+                return uint64_t(category);
+            }
 
             bool has_not_expired() const {
                 time_point_sec time_now = time_point_sec(current_time_point().sec_since_epoch());
@@ -122,11 +131,19 @@ namespace eosdac {
             optional<name>     delegatee;
             optional<string>   comment_hash;
 
-            uint64_t primary_key() const { return vote_id; }
-            uint64_t voter_key() const { return voter.value; }
+            uint64_t primary_key() const {
+                return vote_id;
+            }
+            uint64_t voter_key() const {
+                return voter.value;
+            }
 
-            uint64_t  proposal_key() const { return proposal_id.value_or(name{0}).value; }
-            uint64_t  category_key() const { return category_id.value_or(UINT64_MAX); }
+            uint64_t proposal_key() const {
+                return proposal_id.value_or(name{0}).value;
+            }
+            uint64_t category_key() const {
+                return category_id.value_or(UINT64_MAX);
+            }
             uint128_t get_prop_and_voter() const {
                 return combine_ids(proposal_id.value_or(name{0}).value, voter.value);
             }

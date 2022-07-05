@@ -551,20 +551,18 @@ namespace eosdac {
 
         // Tally all the direct + delegated proposal + delegated category vote values
         print("\n Tally votes:\n");
-        int16_t approved_count = 0;
+        auto approved_count = S{0}.to<int16_t>();
         for (auto approval : approval_proposal_votes) {
-            auto    addedPropWeight     = delegated_proposal_votes[approval];
-            auto    addedCategoryWeight = category_delegate_votes[approval];
-            int16_t weight_to_add       = (1 + addedPropWeight + addedCategoryWeight);
+            const auto addedPropWeight     = delegated_proposal_votes[approval];
+            const auto addedCategoryWeight = category_delegate_votes[approval];
+            const auto weight_to_add =
+                S{1}.to<int16_t>() + S{addedPropWeight}.to<int16_t>() + S{addedCategoryWeight}.to<int16_t>();
             print("\n\n Approver: ", approval,
                 "   1 "
                 "\n + delegated for proposal: ",
                 addedPropWeight, "\n + delegated for category: ", addedCategoryWeight);
             approved_count += weight_to_add;
         }
-
-        print("\napproved_count: ", approved_count, "\n");
-
         return approved_count;
     }
 

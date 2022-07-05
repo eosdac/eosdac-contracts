@@ -770,13 +770,11 @@ describe('Daccustodian', () => {
         );
       });
       it('state should have increased the total_weight_of_votes', async () => {
-        let dacState = await shared.daccustodian_contract.state2Table({
-          scope: dacId,
-        });
-        chai.expect(dacState.rows[0].data).to.deep.include({
-          key: 1,
-          value: ['int64', 20_000_000],
-        });
+        const actual = await get_from_state2(
+          dacId,
+          state_keys.total_weight_of_votes
+        );
+        chai.expect(actual).to.equal(20_000_000);
       });
       it('state should have increased the total_votes_on_candidates', async () => {
         const actual = await get_from_state2(

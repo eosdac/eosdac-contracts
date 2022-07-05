@@ -106,8 +106,8 @@ void referendum::propose(name proposer, name referendum_id, uint8_t type, uint8_
         }
 
         // transfer fee to treasury account
-        const auto       dac              = dacdir::dac_for_id(dac_id);
-        const auto       treasury_account = dac.account_for_type(dacdir::TREASURY);
+        const auto   dac              = dacdir::dac_for_id(dac_id);
+        const auto   treasury_account = dac.account_for_type(dacdir::TREASURY);
         const string fee_memo         = fmt("Fee for referendum id %s", referendum_id);
         eosio::action(eosio::permission_level{get_self(), "active"_n}, fee_required.contract, "transfer"_n,
             make_tuple(get_self(), treasury_account, fee_required.quantity, fee_memo))
@@ -409,13 +409,13 @@ uint8_t referendum::calculateStatus(name referendum_id, name dac_id) {
         current_all     = current_yes + current_no + current_abstain;
 
         // check we have made quorum
-        double yes_percentage = 0.0;
         if (total >= quorum) {
             // quorum has been reached, check we have passed
-            yes_percentage =
-                (double(current_yes) / double(current_all)) * 10000.0; // multiply by 10000 to get integer with 2 dp
-            pass_rate = config.pass[ref->type];
-            if (uint64_t(yes_percentage) >= pass_rate) {
+            const auto yes_percentage_s = (S{current_yes}.to<double>() / S{current_all}.to<double>()) *
+                                          S{10000.0}; // multiply by 10000 to get integer with 2
+            yes_percentage = yes_percentage_s.to<uint64_t>();
+            pass_rate      = config.pass[ref->type];
+            if (yes_percentage >= pass_rate) {
                 status = referendum_status::STATUS_PASSING;
             } else {
                 status = referendum_status::STATUS_FAILING;
@@ -428,7 +428,7 @@ uint8_t referendum::calculateStatus(name referendum_id, name dac_id) {
             ", pass rate : ", pass_rate, ", current rate : ", current_all, ", total : ", total, ", yes : ", current_yes,
             "double: ", double(current_yes), "all double: ", double(current_all), ", yes% : ", yes_percentage,
             " status: ", status);
-    } 
+    }
 
     return status;
 }
@@ -444,7 +444,7 @@ void referendum::proposeMsig(referendum_data ref, name dac_id) {
     // Calculate expiry as 30 days
     uint32_t time_now = current_time_point().sec_since_epoch();
     trx.expiration    = time_point_sec(time_now + (60 * 60 * 24 * 30));
-    
+
     // Get required auths
     candidates_table candidates(custodian_contract, dac_id.value);
     candperms_table  candperms(custodian_contract, dac_id.value);
@@ -472,10 +472,8 @@ void referendum::proposeMsig(referendum_data ref, name dac_id) {
         cand_itr++;
         count++;
     }
-    const auto metadata = map<string, string>{
-      {"title", fmt("REFERENDUM: %s", ref.title)},
-      {"description", fmt("Automated submission of passing referendum number %s", ref.referendum_id)}
-    };
+    const auto metadata = map<string, string>{{"title", fmt("REFERENDUM: %s", ref.title)},
+        {"description", fmt("Automated submission of passing referendum number %s", ref.referendum_id)}};
 
     action(permission_level{get_self(), "active"_n}, MSIG_CONTRACT, "propose"_n,
         make_tuple(get_self(), proposal_name, reqd_perms, dac_id, metadata, trx))
