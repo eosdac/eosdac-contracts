@@ -1,6 +1,7 @@
 #pragma once
 #include "common_utilities.hpp"
 #include "config.hpp"
+#include "safemath.hpp"
 
 namespace eosdac {
 
@@ -18,11 +19,11 @@ namespace eosdac {
         }
 
         uint64_t by_votes_rank() const {
-            return static_cast<uint64_t>(UINT64_MAX - total_votes);
+            return UINT64_MAX - total_votes;
         }
 
         uint64_t by_requested_pay() const {
-            return static_cast<uint64_t>(requestedpay.amount);
+            return S{requestedpay.amount}.to<uint64_t>();
         }
     };
 
@@ -40,20 +41,24 @@ namespace eosdac {
         eosio::time_point_sec avg_vote_time_stamp;
 
         uint64_t by_decayed_votes() const {
-            return UINT64_MAX - uint64_t(log2(total_votes) +
-                                         double(avg_vote_time_stamp.sec_since_epoch()) / double(SECONDS_TO_DOUBLE));
+            // log(0) is -infinity, so we always add 1. This does not change the order of the index.
+            const auto log = S{log2(total_votes + 1)};
+            const auto x =
+                log + S{avg_vote_time_stamp.sec_since_epoch()}.to<double>() / S{SECONDS_TO_DOUBLE}.to<double>();
+
+            return S{UINT64_MAX} - x.to<uint64_t>();
         }
         uint64_t primary_key() const {
             return candidate_name.value;
         }
         uint64_t by_number_votes() const {
-            return static_cast<uint64_t>(total_votes);
+            return total_votes;
         }
         uint64_t by_votes_rank() const {
-            return static_cast<uint64_t>(UINT64_MAX - total_votes);
+            return UINT64_MAX - total_votes;
         }
         uint64_t by_requested_pay() const {
-            return static_cast<uint64_t>(requestedpay.amount);
+            return S{requestedpay.amount}.to<uint64_t>();
         }
     };
 
