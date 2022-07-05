@@ -24,8 +24,6 @@ namespace eosdac {
         using contract::contract;
         eosdactokens(name s, name code, datastream<const char *> ds);
 
-        struct stake_config;
-
         ACTION create(name issuer, asset maximum_supply, bool transfer_locked);
         ACTION issue(name to, asset quantity, string memo);
         ACTION unlock(asset unlock);
@@ -49,7 +47,9 @@ namespace eosdac {
             name  account;
             asset stake;
 
-            uint64_t primary_key() const { return account.value; }
+            uint64_t primary_key() const {
+                return account.value;
+            }
         };
         using stakes_table = multi_index<"stakes"_n, stake_info>;
 
@@ -59,8 +59,12 @@ namespace eosdac {
             asset          stake;
             time_point_sec release_time;
 
-            uint64_t primary_key() const { return key; }
-            uint64_t by_account() const { return account.value; }
+            uint64_t primary_key() const {
+                return key;
+            }
+            uint64_t by_account() const {
+                return account.value;
+            }
         };
         using unstakes_table = multi_index<"unstakes"_n, unstake_info,
             indexed_by<"byaccount"_n, const_mem_fun<unstake_info, uint64_t, &unstake_info::by_account>>>;
@@ -69,31 +73,20 @@ namespace eosdac {
             name     account;
             uint32_t delay;
 
-            uint64_t primary_key() const { return account.value; }
+            uint64_t primary_key() const {
+                return account.value;
+            }
         };
         using staketimes_table = multi_index<"staketime"_n, staketime_info>;
-
-        using stateconfig_container = eosio::singleton<"stakeconfig"_n, stake_config>;
-        struct [[eosio::table("stakeconfig"), eosio::contract("eosdactokens")]] stake_config {
-            bool     enabled        = false;
-            uint32_t min_stake_time = uint32_t(60 * 60 * 24 * 3);
-            uint32_t max_stake_time = uint32_t(60 * 60 * 24 * 30 * 9);
-
-            static stake_config get_current_configs(eosio::name account, eosio::name scope) {
-                return stateconfig_container(account, scope.value).get_or_default(stake_config());
-            }
-
-            void save(eosio::name account, eosio::name scope, eosio::name payer = same_payer) {
-                stateconfig_container(account, scope.value).set(*this, payer);
-            }
-        };
 
         TABLE member {
             name sender;
             // agreed terms version
             uint64_t agreedtermsversion;
 
-            uint64_t primary_key() const { return sender.value; }
+            uint64_t primary_key() const {
+                return sender.value;
+            }
         };
 
         using regmembers = multi_index<"members"_n, member>;
@@ -107,8 +100,12 @@ namespace eosdac {
 
             termsinfo(string _terms, string _hash, uint64_t _version) : terms(_terms), hash(_hash), version(_version) {}
 
-            uint64_t primary_key() const { return version; }
-            uint64_t by_latest_version() const { return UINT64_MAX - version; }
+            uint64_t primary_key() const {
+                return version;
+            }
+            uint64_t by_latest_version() const {
+                return UINT64_MAX - version;
+            }
 
             EOSLIB_SERIALIZE(termsinfo, (terms)(hash)(version))
         };
@@ -125,7 +122,9 @@ namespace eosdac {
         TABLE account {
             asset balance;
 
-            uint64_t primary_key() const { return balance.symbol.code().raw(); }
+            uint64_t primary_key() const {
+                return balance.symbol.code().raw();
+            }
         };
 
         TABLE currency_stats {
@@ -134,7 +133,9 @@ namespace eosdac {
             name  issuer;
             bool  transfer_locked = false;
 
-            uint64_t primary_key() const { return supply.symbol.code().raw(); }
+            uint64_t primary_key() const {
+                return supply.symbol.code().raw();
+            }
         };
 
         using accounts = eosio::multi_index<"accounts"_n, account>;
