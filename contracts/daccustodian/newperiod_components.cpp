@@ -85,8 +85,7 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
                 "ERR::NEWPERIOD_EXPECTED_CAND_NOT_FOUND::Corrupt data: Trying to set a lockup delay on candidate leaving office.");
             registered_candidates.modify(reg_candidate, same_payer, [&](candidate &c) {
                 eosio::print("Lockup stake for release delay.");
-                c.custodian_end_time_stamp =
-                    S{time_point_sec(current_time_point().sec_since_epoch()} + S{configs.lockup_release_time_delay});
+                c.custodian_end_time_stamp = now() + configs.lockup_release_time_delay;
             });
             cust_itr = custodians.erase(cust_itr);
         }
@@ -113,8 +112,7 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
 
             byvotes.modify(cand_itr, same_payer, [&](candidate &c) {
                 eosio::print("Lockup stake for release delay.");
-                c.custodian_end_time_stamp =
-                    S{time_point_sec(current_time_point())} + S{configs.lockup_release_time_delay};
+                c.custodian_end_time_stamp = now() + configs.lockup_release_time_delay;
             });
 
             currentCustodianCount++;
