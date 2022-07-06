@@ -86,7 +86,7 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
             registered_candidates.modify(reg_candidate, same_payer, [&](candidate &c) {
                 eosio::print("Lockup stake for release delay.");
                 c.custodian_end_time_stamp =
-                    time_point_sec(current_time_point().sec_since_epoch() + configs.lockup_release_time_delay);
+                    S{time_point_sec(current_time_point().sec_since_epoch()} + S{configs.lockup_release_time_delay});
             });
             cust_itr = custodians.erase(cust_itr);
         }
@@ -113,7 +113,8 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
 
             byvotes.modify(cand_itr, same_payer, [&](candidate &c) {
                 eosio::print("Lockup stake for release delay.");
-                c.custodian_end_time_stamp = time_point_sec(current_time_point()) + configs.lockup_release_time_delay;
+                c.custodian_end_time_stamp =
+                    S{time_point_sec(current_time_point())} + S{configs.lockup_release_time_delay};
             });
 
             currentCustodianCount++;

@@ -1,8 +1,12 @@
 #include "../../contract-shared-headers/safemath.hpp"
 #include "../../contract-shared-headers/common_utilities.hpp"
 #include <eosio/eosio.hpp>
+#include <math.h>
 
 using namespace eosio;
+
+static constexpr auto constexpr_a = S<uint8_t>{1};
+static constexpr auto constexpr_b = S<uint8_t>{2};
 
 CONTRACT safemath : public contract {
   public:
@@ -166,5 +170,14 @@ CONTRACT safemath : public contract {
 
     ACTION yyy1() {
         const auto res = -S{std::numeric_limits<int64_t>::min()};
+    }
+    ACTION yyy2() {
+        constexpr_a - constexpr_b;
+    }
+    ACTION yyy3() {
+        S{1}.to<double>() - S{1}.to<double>();
+    }
+    ACTION yyy4() {
+        S{log2(0)} - S{1}.to<double>();
     }
 };

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <eosio/eosio.hpp>
 #include <math.h>
 
@@ -6,7 +8,7 @@ class S {
     T n;
 
   public:
-    S(T a) : n(a) {
+    constexpr S(T a) : n(a) {
         static_assert(std::is_unsigned_v<T> || std::is_signed_v<T>, "wrong type, only for numbers");
     };
 
@@ -29,11 +31,10 @@ class S {
     template <typename U>
     auto to() const {
         const auto max_u = std::numeric_limits<U>::max();
-        const auto min_u = std::numeric_limits<U>::min();
         if constexpr (std::is_unsigned_v<U>) {
             eosio::check(n >= 0, "Cannot convert negative value to unsigned");
         } else {
-            eosio::check(n >= min_u, "conversion underflow");
+            eosio::check(n >= -max_u, "conversion underflow");
         }
         eosio::check(n <= max_u, "conversion overflow");
         return S<U>{static_cast<U>(n)};
