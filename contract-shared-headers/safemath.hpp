@@ -166,6 +166,23 @@ class S {
         return result;
     }
 
+    /**
+     * x to the power of y function for integers
+     */
+    S ipow(const T exponent) {
+        static_assert(std::is_integral_v<T>, "wrong type, pow is only for integers");
+        eosio::check(exponent >= 0, "pow: exponent must be non-negative");
+        S result = *this;
+        if (exponent == 0) {
+            result.n = 1;
+        } else {
+            for (auto i = exponent; --i;) {
+                result.n *= n;
+            }
+        }
+        return result;
+    }
+
     /*----------------------------------------------------------------
      * The following operator extravaganza can be shortened quite a bit
      * with C++20 by implementing the starship operator.

@@ -155,4 +155,7 @@ describe('Safemath', () => {
   it('yyy4 should throw infinity error', async () => {
     await assertEOSErrorIncludesMessage(contract.yyy4(), 'infinity');
   });
+  it('yyy5 should work', async () => {
+    await contract.yyy5();
+  });
 });
