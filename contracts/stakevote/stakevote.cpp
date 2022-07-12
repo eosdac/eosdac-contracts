@@ -100,12 +100,14 @@ void stakevote::collectwts(uint16_t batch_size, uint32_t unstake_time, name dac_
     while (stake != stakes.end() && counter < batch_size) {
         auto vw_itr = weights.find((stake->account).value);
         if (vw_itr == weights.end()) {
-            const auto weight_delta_s = S{(stake->stake).amount}.to<int128_t>() * S{unstake_time}.to<int128_t>() *
+            const auto weight_delta_quorum = (stake->stake).amount;
+            const auto weight_delta_s      = S{(stake->stake).amount}.to<int128_t>() * S{unstake_time}.to<int128_t>() *
                                         S{config.time_multiplier}.to<int128_t>() / S{time_divisor};
             const int64_t weight_delta = weight_delta_s.to<int64_t>();
             weights.emplace(get_self(), [&](auto &v) {
-                v.voter  = stake->account;
-                v.weight = weight_delta;
+                v.voter         = stake->account;
+                v.weight        = weight_delta;
+                v.weight_quorum = weight_delta_quorum;
             });
         }
 
