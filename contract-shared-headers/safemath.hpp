@@ -12,19 +12,19 @@ class S {
         static_assert(std::is_unsigned_v<T> || std::is_signed_v<T>, "wrong type, only for numbers");
     };
 
-    T value() const {
+    constexpr T value() const {
         return n;
     }
 
-    operator T() const {
+    constexpr operator T() const {
         return value();
     }
 
-    T min() const {
+    constexpr T min() const {
         return std::numeric_limits<T>::min();
     }
 
-    T max() const {
+    constexpr T max() const {
         return std::numeric_limits<T>::max();
     }
 

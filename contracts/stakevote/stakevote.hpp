@@ -33,6 +33,7 @@ CONTRACT stakevote : public contract {
     struct [[eosio::table("weights"), eosio::contract("stakevote")]] vote_weight {
         eosio::name voter;
         uint64_t    weight;
+        uint64_t    weight_quorum;
 
         uint64_t primary_key() const {
             return voter.value;

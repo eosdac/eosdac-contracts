@@ -72,6 +72,7 @@ namespace eosdac {
     struct [[eosio::table]] vote_weight {
         eosio::name voter;
         uint64_t    weight;
+        uint64_t    weight_quorum;
 
         uint64_t primary_key() const {
             return voter.value;

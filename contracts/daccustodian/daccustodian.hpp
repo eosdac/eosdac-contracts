@@ -336,14 +336,15 @@ namespace eosdac {
       private: // Private helper methods used by other actions.
         void updateVoteWeight(
             name custodian, const time_point_sec vote_time_stamp, int64_t weight, name dac_id, bool from_voting);
-        void    updateVoteWeights(const vector<name> &votes, const time_point_sec vote_time_stamp, int64_t vote_weight,
-               name internal_dac_id, bool from_voting);
-        int64_t get_vote_weight(name voter, name dac_id);
-        void    modifyVoteWeights(int64_t vote_weight, vector<name> oldVotes,
-               std::optional<time_point_sec> oldVoteTimestamp, vector<name> newVotes, name dac_id, bool from_voting);
-        void    modifyProxiesWeight(int64_t vote_weight, name oldProxy, name newProxy, name dac_id, bool from_voting);
-        void    assertPeriodTime(contr_config &configs, contr_state2 &currentState);
-        void    distributeMeanPay(name internal_dac_id);
+        void updateVoteWeights(const vector<name> &votes, const time_point_sec vote_time_stamp, int64_t vote_weight,
+            name internal_dac_id, bool from_voting);
+        std::pair<int64_t, int64_t> get_vote_weight(name voter, name dac_id);
+        void                        modifyVoteWeights(const account_weight_delta &awd, const vector<name> &oldVotes,
+                                   const std::optional<time_point_sec> &oldVoteTimestamp, const vector<name> &newVotes, const name dac_id,
+                                   const bool from_voting);
+        void modifyProxiesWeight(int64_t vote_weight, name oldProxy, name newProxy, name dac_id, bool from_voting);
+        void assertPeriodTime(contr_config &configs, contr_state2 &currentState);
+        void distributeMeanPay(name internal_dac_id);
         vector<eosiosystem::permission_level_weight> get_perm_level_weights(
             const custodians_table &custodians, const name &dac_id);
         void add_all_auths(const name &accountToChange, const vector<eosiosystem::permission_level_weight> &weights,

@@ -22,6 +22,7 @@ void stakevote::stakeobsv(const vector<account_stake_delta> &stake_deltas, const
     auto                         weights = weight_table{get_self(), dac_id.value};
 
     for (auto asd : stake_deltas) {
+        const auto weight_delta_quorum = asd.stake_delta.amount;
         const auto weight_delta_s = S{asd.stake_delta.amount}.to<int128_t>() * S{asd.unstake_delay}.to<int128_t>() *
                                     S{config.time_multiplier}.to<int128_t>() / S{time_divisor};
         const int64_t weight_delta = weight_delta_s.to<int64_t>();
@@ -29,15 +30,17 @@ void stakevote::stakeobsv(const vector<account_stake_delta> &stake_deltas, const
         if (vw_itr != weights.end()) {
             weights.modify(vw_itr, same_payer, [&](auto &v) {
                 v.weight += weight_delta;
+                v.weight_quorum += weight_delta_quorum;
             });
         } else {
             weights.emplace(get_self(), [&](auto &v) {
-                v.voter  = asd.account;
-                v.weight = weight_delta;
+                v.voter         = asd.account;
+                v.weight        = weight_delta;
+                v.weight_quorum = weight_delta_quorum;
             });
         }
 
-        weight_deltas.push_back({asd.account, weight_delta});
+        weight_deltas.push_back({asd.account, weight_delta, weight_delta_quorum});
     }
 
     if (custodian_contract) {

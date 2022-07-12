@@ -824,13 +824,11 @@ describe('Daccustodian', () => {
         chai.expect(updatedCandVoteValue).to.equal(17_000_000);
       });
       it('total vote values on state should have changed', async () => {
-        let dacState = await shared.daccustodian_contract.state2Table({
-          scope: dacId,
-        });
-        chai.expect(dacState.rows[0].data).to.deep.include({
-          key: 1,
-          value: ['int64', 17_000_000],
-        });
+        const actual = await get_from_state2(
+          dacId,
+          state_keys.total_weight_of_votes
+        );
+        chai.expect(actual).to.equal(20_000_000);
       });
     });
   });

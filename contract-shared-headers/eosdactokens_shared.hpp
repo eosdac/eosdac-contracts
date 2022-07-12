@@ -38,6 +38,7 @@ namespace eosdac {
     struct account_weight_delta {
         eosio::name account;
         int64_t     weight_delta;
+        int64_t     weight_delta_quorum;
     };
 
     // This is a reference to the member struct as used in the eosdactoken contract.

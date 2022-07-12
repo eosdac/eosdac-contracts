@@ -25,10 +25,11 @@ ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, c
     votes_table votes_cast_by_members(_self, dac_id.value);
     auto        existingVote = votes_cast_by_members.find(voter.value);
 
-    int64_t vote_weight = get_vote_weight(voter, dac_id);
+    const auto [vote_weight, vote_weight_quorum] = get_vote_weight(voter, dac_id);
     if (existingVote != votes_cast_by_members.end()) {
 
-        modifyVoteWeights(vote_weight, existingVote->candidates, existingVote->vote_time_stamp, newvotes, dac_id, true);
+        modifyVoteWeights({voter, vote_weight, vote_weight_quorum}, existingVote->candidates,
+            existingVote->vote_time_stamp, newvotes, dac_id, true);
 
         if (newvotes.size() == 0) {
             // Remove the vote if the array of candidates is empty
@@ -43,7 +44,7 @@ ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, c
         }
     } else {
 
-        modifyVoteWeights(vote_weight, {}, {}, newvotes, dac_id, true);
+        modifyVoteWeights({voter, vote_weight, vote_weight_quorum}, {}, {}, newvotes, dac_id, true);
 
         votes_cast_by_members.emplace(voter, [&](vote &v) {
             v.voter           = voter;
@@ -86,7 +87,8 @@ void daccustodian::modifyProxiesWeight(
             newProxyVotes = existingProxyVote->candidates;
         }
     }
-    modifyVoteWeights(vote_weight, oldProxyVotes, oldVoteTimestamp, newProxyVotes, dac_id, from_voting);
+    modifyVoteWeights(
+        {name{}, vote_weight, vote_weight}, oldProxyVotes, oldVoteTimestamp, newProxyVotes, dac_id, from_voting);
 }
 
 ACTION daccustodian::voteproxy(const name &voter, const name &proxyName, const name &dac_id) {
@@ -117,7 +119,7 @@ ACTION daccustodian::voteproxy(const name &voter, const name &proxyName, const n
     name oldProxy;
     name newProxy;
 
-    int64_t vote_weight = get_vote_weight(voter, dac_id);
+    const auto [vote_weight, vote_weight_quorum] = get_vote_weight(voter, dac_id);
 
     // Find a vote that has been cast by this voter previously.
     auto existingVote = votes_cast_by_members.find(voter.value);

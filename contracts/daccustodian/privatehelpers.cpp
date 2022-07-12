@@ -57,7 +57,7 @@ void daccustodian::updateVoteWeights(const vector<name> &votes, const time_point
     }
 }
 
-int64_t daccustodian::get_vote_weight(name voter, name dac_id) {
+std::pair<int64_t, int64_t> daccustodian::get_vote_weight(name voter, name dac_id) {
 
     dacdir::dac found_dac = dacdir::dac_for_id(dac_id);
 
@@ -68,25 +68,26 @@ int64_t daccustodian::get_vote_weight(name voter, name dac_id) {
         weights weights_table(*vote_contract, dac_id.value);
         auto    weight_itr = weights_table.find(voter.value);
         if (weight_itr != weights_table.end()) {
-            return weight_itr->weight;
+            return {weight_itr->weight, weight_itr->weight_quorum};
         }
     } else {
         accounts accountstable(token_symbol.get_contract(), voter.value);
 
         const auto ac = accountstable.find(token_symbol.get_symbol().code().raw());
         if (ac != accountstable.end()) {
-            return ac->balance.amount;
+            return {ac->balance.amount, ac->balance.amount};
         }
     }
 
-    return 0;
+    return {0, 0};
 }
 
-void daccustodian::modifyVoteWeights(int64_t vote_weight, vector<name> oldVotes,
-    std::optional<time_point_sec> oldVoteTimestamp, vector<name> newVotes, name dac_id, bool from_voting) {
+void daccustodian::modifyVoteWeights(const account_weight_delta &awd, const vector<name> &oldVotes,
+    const std::optional<time_point_sec> &oldVoteTimestamp, const vector<name> &newVotes, const name dac_id,
+    const bool from_voting) {
     // This could be optimised with set diffing to avoid remove then add for unchanged votes. - later
 
-    if (vote_weight == 0) {
+    if (awd.weight_delta == 0) {
         print("Voter has no weight therefore no need to update vote weights");
         return;
     }
@@ -96,19 +97,19 @@ void daccustodian::modifyVoteWeights(int64_t vote_weight, vector<name> oldVotes,
     auto total_weight_of_votes = S{currentState.get_total_weight_of_votes()};
 
     if (oldVotes.size() == 0)
-        total_weight_of_votes += S{vote_weight};
+        total_weight_of_votes += S{awd.weight_delta_quorum};
 
     // Leaving voter -> Remove the tokens to the total weight.
     if (newVotes.size() == 0)
-        total_weight_of_votes -= S{vote_weight};
+        total_weight_of_votes -= S{awd.weight_delta_quorum};
 
     currentState.set_total_weight_of_votes(total_weight_of_votes);
     currentState.save(get_self(), dac_id);
 
     if (oldVoteTimestamp.has_value()) {
-        updateVoteWeights(oldVotes, *oldVoteTimestamp, -vote_weight, dac_id, from_voting);
+        updateVoteWeights(oldVotes, *oldVoteTimestamp, -awd.weight_delta, dac_id, from_voting);
     }
-    updateVoteWeights(newVotes, now(), vote_weight, dac_id, from_voting);
+    updateVoteWeights(newVotes, now(), awd.weight_delta, dac_id, from_voting);
 }
 
 permission_level daccustodian::getCandidatePermission(name account, name dac_id) {
