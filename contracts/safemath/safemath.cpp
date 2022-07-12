@@ -189,4 +189,11 @@ CONTRACT safemath : public contract {
         check(S{-2}.ipow(3) == -8, "wrong result 5");
         check(S{0}.ipow(3) == 0, "wrong result 6");
     }
+
+    ACTION zzz1() {
+        S{2ull}.ipow(100ull);
+    }
+    ACTION zzz2() {
+        check(S{1ull}.ipow(100ull) == 1, "wrong result");
+    }
 };

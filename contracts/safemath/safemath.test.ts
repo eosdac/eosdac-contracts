@@ -158,4 +158,13 @@ describe('Safemath', () => {
   it('yyy5 should work', async () => {
     await contract.yyy5();
   });
+  it('zzz1 should overflow rather than time out', async () => {
+    await assertEOSErrorIncludesMessage(
+      contract.zzz1(),
+      'unsigned multiplication overflow'
+    );
+  });
+  it('zzz2 should work', async () => {
+    await contract.zzz2();
+  });
 });

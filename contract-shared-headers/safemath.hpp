@@ -173,11 +173,13 @@ class S {
         static_assert(std::is_integral_v<T>, "wrong type, pow is only for integers");
         eosio::check(exponent >= 0, "pow: exponent must be non-negative");
         S result = *this;
-        if (exponent == 0) {
-            result.n = 1;
-        } else {
-            for (auto i = exponent; --i;) {
-                result.n *= n;
+        if (n != 1) {
+            if (exponent == 0) {
+                result.n = 1;
+            } else {
+                for (auto i = exponent; --i;) {
+                    result *= n;
+                }
             }
         }
         return result;
