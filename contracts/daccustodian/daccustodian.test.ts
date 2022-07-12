@@ -796,6 +796,13 @@ describe('Daccustodian', () => {
         let initialVoteValue = votedCandidateResult.rows[0].total_votes;
         chai.expect(initialVoteValue).to.equal(20_000_000);
       });
+      it('total vote values on state before transfer', async () => {
+        const actual = await get_from_state2(
+          dacId,
+          state_keys.total_weight_of_votes
+        );
+        chai.expect(actual).to.equal(20_000_000);
+      });
       it('assert preconditions for total vote values on state', async () => {
         let dacState = await shared.daccustodian_contract.state2Table({
           scope: dacId,
@@ -823,12 +830,12 @@ describe('Daccustodian', () => {
         let updatedCandVoteValue = votedCandidateResult.rows[0].total_votes;
         chai.expect(updatedCandVoteValue).to.equal(17_000_000);
       });
-      it('total vote values on state should have changed', async () => {
+      it('total vote values on state should reduced as well', async () => {
         const actual = await get_from_state2(
           dacId,
           state_keys.total_weight_of_votes
         );
-        chai.expect(actual).to.equal(20_000_000);
+        chai.expect(actual).to.equal(17_000_000);
       });
     });
   });

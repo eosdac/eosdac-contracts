@@ -9,7 +9,8 @@ ACTION daccustodian::balanceobsv(const vector<account_balance_delta> &account_ba
     for (account_balance_delta balanceDelta : account_balance_deltas) {
         check(dacSymbol == balanceDelta.balance_delta.symbol,
             "ERR::INCORRECT_SYMBOL_DELTA::Incorrect symbol in balance_delta");
-        weightDeltas.push_back({balanceDelta.account, balanceDelta.balance_delta.amount});
+        weightDeltas.push_back(
+            {balanceDelta.account, balanceDelta.balance_delta.amount, balanceDelta.balance_delta.amount});
     }
 
     weightobsv(weightDeltas, dac_id);
