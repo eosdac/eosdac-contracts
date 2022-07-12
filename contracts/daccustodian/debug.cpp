@@ -18,7 +18,8 @@ void daccustodian::resetcands(const name &dac_id) {
 
     while (cand != candidates.end()) {
         candidates.modify(cand, same_payer, [&](candidate &c) {
-            c.total_votes = 0;
+            c.total_votes         = 0;
+            c.avg_vote_time_stamp = eosio::time_point_sec();
         });
 
         cand++;

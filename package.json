@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "lamington build",
+    "build-debug": "lamington build -DDEBUG",
     "test": "lamington test -DIS_DEV",
     "start": "lamington start eos",
     "stop": "lamington stop eos",

@@ -7,6 +7,23 @@
 
 namespace eosdac {
 
+    struct stake_config;
+
+    using stakeconfig_container = eosio::singleton<"stakeconfig"_n, stake_config>;
+    struct [[eosio::table("stakeconfig"), eosio::contract("eosdactokens")]] stake_config {
+        bool     enabled        = false;
+        uint32_t min_stake_time = 3 * DAYS;
+        uint32_t max_stake_time = 9 * MONTHS;
+
+        static stake_config get_current_configs(eosio::name account, eosio::name scope) {
+            return stakeconfig_container(account, scope.value).get_or_default(stake_config());
+        }
+
+        void save(eosio::name account, eosio::name scope, eosio::name payer = same_payer) {
+            stakeconfig_container(account, scope.value).set(*this, payer);
+        }
+    };
+
     struct account_stake_delta {
         name     account;
         asset    stake_delta;
@@ -21,6 +38,7 @@ namespace eosdac {
     struct account_weight_delta {
         eosio::name account;
         int64_t     weight_delta;
+        int64_t     weight_delta_quorum;
     };
 
     // This is a reference to the member struct as used in the eosdactoken contract.
@@ -30,7 +48,9 @@ namespace eosdac {
         /// Hash of agreed terms
         uint64_t agreedterms;
 
-        uint64_t primary_key() const { return sender.value; }
+        uint64_t primary_key() const {
+            return sender.value;
+        }
     };
 
     // This is a reference to the termsinfo struct as used in the eosdactoken contract.
@@ -39,7 +59,9 @@ namespace eosdac {
         std::string hash;
         uint64_t    version;
 
-        uint64_t primary_key() const { return version; }
+        uint64_t primary_key() const {
+            return version;
+        }
     };
 
     using memterms = eosio::multi_index<"memberterms"_n, termsinfo>;
@@ -47,7 +69,9 @@ namespace eosdac {
     struct account {
         eosio::asset balance;
 
-        uint64_t primary_key() const { return balance.symbol.code().raw(); }
+        uint64_t primary_key() const {
+            return balance.symbol.code().raw();
+        }
     };
 
     TABLE currency_stats {
@@ -56,7 +80,9 @@ namespace eosdac {
         name  issuer;
         bool  transfer_locked = false;
 
-        uint64_t primary_key() const { return supply.symbol.code().raw(); }
+        uint64_t primary_key() const {
+            return supply.symbol.code().raw();
+        }
     };
 
     using stats      = eosio::multi_index<"stat"_n, currency_stats>;
@@ -67,7 +93,9 @@ namespace eosdac {
         name  account;
         asset stake;
 
-        uint64_t primary_key() const { return account.value; }
+        uint64_t primary_key() const {
+            return account.value;
+        }
     };
     using stakes_table = multi_index<"stakes"_n, stake_info>;
 
@@ -77,9 +105,13 @@ namespace eosdac {
         asset          stake;
         time_point_sec release_time;
 
-        uint64_t primary_key() const { return key; }
-        uint64_t by_account() const { return account.value; }
-        bool     released() const {
+        uint64_t primary_key() const {
+            return key;
+        }
+        uint64_t by_account() const {
+            return account.value;
+        }
+        bool released() const {
             const auto now = time_point_sec(current_time_point());
             return now > release_time;
         }
@@ -91,29 +123,33 @@ namespace eosdac {
         name     account;
         uint32_t delay;
 
-        uint64_t primary_key() const { return account.value; }
+        uint64_t primary_key() const {
+            return account.value;
+        }
     };
     using staketimes_table = multi_index<"staketime"_n, staketime_info>;
 
     asset get_supply(name code, symbol_code sym) {
         stats       statstable(code, sym.raw());
-        const auto &st = statstable.get(sym.raw(), fmt("eosdactokens::get_supply symbol %s not found in statstable", sym));
+        const auto &st =
+            statstable.get(sym.raw(), fmt("eosdactokens::get_supply symbol %s not found in statstable", sym));
         return st.supply;
     }
 
     asset get_balance(name owner, name code, symbol_code sym) {
         accounts    accountstable(code, owner.value);
-        const auto &ac = accountstable.get(sym.raw(), fmt("eosdactokens::get_balance user %s has no %s balance", owner, sym));
+        const auto &ac =
+            accountstable.get(sym.raw(), fmt("eosdactokens::get_balance user %s has no %s balance", owner, sym));
         return ac.balance;
     }
-    
+
     asset get_balance_graceful(name owner, name code, symbol sym) {
-        accounts    accountstable(code, owner.value);
+        accounts   accountstable(code, owner.value);
         const auto itr = accountstable.find(sym.code().raw());
-        if(itr != accountstable.end()) {
-          return itr->balance;          
+        if (itr != accountstable.end()) {
+            return itr->balance;
         } else {
-          return asset{0, sym};
+            return asset{0, sym};
         }
     }
 
@@ -173,8 +209,8 @@ namespace eosdac {
         regmembers reg_members(member_terms_account, dac_id.value);
         memterms   memberterms(member_terms_account, dac_id.value);
 
-        const auto &regmem =
-            reg_members.get(member.value, fmt("ERR::GENERAL_REG_MEMBER_NOT_FOUND::Account %s is not registered with members.", member));
+        const auto &regmem = reg_members.get(
+            member.value, fmt("ERR::GENERAL_REG_MEMBER_NOT_FOUND::Account %s is not registered with members.", member));
         eosio::check((regmem.agreedterms != 0),
             "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_ANY_TERMS::Account has not agreed to any terms");
         auto latest_member_terms = (--memberterms.end());

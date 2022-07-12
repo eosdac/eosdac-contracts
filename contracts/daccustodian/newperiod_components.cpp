@@ -85,8 +85,7 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
                 "ERR::NEWPERIOD_EXPECTED_CAND_NOT_FOUND::Corrupt data: Trying to set a lockup delay on candidate leaving office.");
             registered_candidates.modify(reg_candidate, same_payer, [&](candidate &c) {
                 eosio::print("Lockup stake for release delay.");
-                c.custodian_end_time_stamp =
-                    S{time_point_sec(current_time_point().sec_since_epoch()} + S{configs.lockup_release_time_delay});
+                c.custodian_end_time_stamp = now() + configs.lockup_release_time_delay;
             });
             cust_itr = custodians.erase(cust_itr);
         }
@@ -113,8 +112,7 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
 
             byvotes.modify(cand_itr, same_payer, [&](candidate &c) {
                 eosio::print("Lockup stake for release delay.");
-                c.custodian_end_time_stamp =
-                    S{time_point_sec(current_time_point())} + S{configs.lockup_release_time_delay};
+                c.custodian_end_time_stamp = now() + configs.lockup_release_time_delay;
             });
 
             currentCustodianCount++;
@@ -284,19 +282,24 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
             " symbol: ", found_dac.symbol.get_symbol());
 
         uint64_t token_current_supply = tokenStats->supply.amount;
+
+        auto         tokenStakeConfig = stake_config::get_current_configs(found_dac.symbol.get_contract(), dac_id);
+        const double percent_of_current_voter_engagement =
+            S{currentState.get_total_weight_of_votes()}.to<double>() / S{token_current_supply}.to<double>() * S{100.0};
+
+        // if (tokenStakeConfig.enabled &&
+        //     found_dac.account_for_type_maybe(dacdir::account_type::VOTE_WEIGHT).has_value()) {
+        //     uint8_t  precision                         = tokenStats->supply.symbol.precision();
+        //     uint64_t token_current_supply_whole_tokens = tokenStats->supply.amount / pow(10, precision);
+        //     uint64_t max_total_stake_weight = token_current_supply_whole_tokens * tokenStakeConfig.max_stake_time;
+        //
+        //     percent_of_current_voter_engagement =
+        //         double(currentState.get_total_weight_of_votes()) / double(max_total_stake_weight) * 100.0;
+        // } else {
+        //     percent_of_current_voter_engagement =
+        //         double(currentState.get_total_weight_of_votes()) / double(token_current_supply) * 100.0;
+        // }
         print(fmt("DBG: token_current_supply: %s ", token_current_supply));
-        double percent_of_current_voter_engagement =
-            double(currentState.get_total_weight_of_votes()) / double(token_current_supply) * 100.0;
-        print(fmt("currentState.get_total_weight_of_votes(): %s ", currentState.get_total_weight_of_votes()));
-        print("\n\nToken current supply as decimal units: ", token_current_supply,
-            " total votes so far: ", currentState.get_total_weight_of_votes());
-        print("\n\nNeed inital engagement of: ", configs.initial_vote_quorum_percent, "% to start the DAC.");
-        print("\n\nToken supply: ", token_current_supply * 0.0001,
-            " total votes so far: ", currentState.get_total_weight_of_votes() * 0.0001);
-        print("\n\nNeed initial engagement of: ", configs.initial_vote_quorum_percent, "% to start the DAC.");
-        print("\n\nNeed ongoing engagement of: ", configs.vote_quorum_percent,
-            "% to allow new periods to trigger after initial activation.");
-        print("\n\nPercent of current voter engagement: ", percent_of_current_voter_engagement, "\n\n");
 
         check(currentState.get_met_initial_votes_threshold() == true ||
                   percent_of_current_voter_engagement > configs.initial_vote_quorum_percent,

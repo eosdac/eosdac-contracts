@@ -180,4 +180,20 @@ CONTRACT safemath : public contract {
     ACTION yyy4() {
         S{log2(0)} - S{1}.to<double>();
     }
+
+    ACTION yyy5() {
+        check(S{10}.ipow(3) == 1000, "wrong result 1 ");
+        check(S{10}.ipow(6) == 1000000, "wrong result 2");
+        check(S{2}.ipow(3) == 8, "wrong result 3");
+        check(S{2}.ipow(0) == 1, "wrong result 4");
+        check(S{-2}.ipow(3) == -8, "wrong result 5");
+        check(S{0}.ipow(3) == 0, "wrong result 6");
+    }
+
+    ACTION zzz1() {
+        S{2ull}.ipow(100ull);
+    }
+    ACTION zzz2() {
+        check(S{1ull}.ipow(100ull) == 1, "wrong result");
+    }
 };

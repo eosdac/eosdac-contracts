@@ -12,19 +12,19 @@ class S {
         static_assert(std::is_unsigned_v<T> || std::is_signed_v<T>, "wrong type, only for numbers");
     };
 
-    T value() const {
+    constexpr T value() const {
         return n;
     }
 
-    operator T() const {
+    constexpr operator T() const {
         return value();
     }
 
-    T min() const {
+    constexpr T min() const {
         return std::numeric_limits<T>::min();
     }
 
-    T max() const {
+    constexpr T max() const {
         return std::numeric_limits<T>::max();
     }
 
@@ -163,6 +163,25 @@ class S {
     inline friend S operator/(const S &a, const S &b) {
         S result = a;
         result /= b;
+        return result;
+    }
+
+    /**
+     * x to the power of y function for integers
+     */
+    S ipow(const T exponent) {
+        static_assert(std::is_integral_v<T>, "wrong type, pow is only for integers");
+        eosio::check(exponent >= 0, "pow: exponent must be non-negative");
+        S result = *this;
+        if (n != 1) {
+            if (exponent == 0) {
+                result.n = 1;
+            } else {
+                for (auto i = exponent; --i;) {
+                    result *= n;
+                }
+            }
+        }
         return result;
     }
 

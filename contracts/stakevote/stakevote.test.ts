@@ -93,13 +93,12 @@ describe('Stakevote', () => {
           from: staker,
         });
       });
-      it('should update vote_weight', async () => {
+      it('before voting, total_weight_of_votes should be zero', async () => {
         const x = await get_from_state2(
           dacId,
           state_keys.total_weight_of_votes
         );
-        console.log('total_weight_of_votes after: ', x);
-        // chai.expect(x).to.equal(32);
+        chai.expect(x).to.equal(0);
       });
     });
     context('without an activation account', async () => {
@@ -186,11 +185,12 @@ describe('Stakevote', () => {
             });
             it('staking should update vote_weight', async () => {
               const expected_weight_of_votes =
-                shared.NUMBER_OF_REG_MEMBERS * 1000000;
+                shared.NUMBER_OF_REG_MEMBERS * 10000000;
               const x = await get_from_state2(
                 dacId,
                 state_keys.total_weight_of_votes
               );
+              chai.expect(x).to.equal(expected_weight_of_votes);
               console.log(
                 'staking should update vote_weight total_weight_of_votes: ',
                 x
