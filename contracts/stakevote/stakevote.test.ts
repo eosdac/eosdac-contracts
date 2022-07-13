@@ -269,6 +269,8 @@ describe('Stakevote', () => {
     });
     context('stakevoting voting', async () => {
       let voter: Account;
+      let total_weight_of_votes_beginning;
+      let total_votes_on_candidates_beginning;
       before(async () => {
         voter = await AccountManager.createAccount();
         await shared.dac_token_contract.memberreg(
@@ -287,6 +289,7 @@ describe('Stakevote', () => {
             dacId,
             state_keys.total_weight_of_votes
           );
+          total_weight_of_votes_beginning = total_weight_of_votes_before;
           console.log(
             'before voting: total_weight_of_votes: ',
             total_weight_of_votes_before
@@ -297,6 +300,7 @@ describe('Stakevote', () => {
             dacId,
             state_keys.total_votes_on_candidates
           );
+          total_votes_on_candidates_beginning = total_votes_on_candidates_before;
           console.log(
             'before voting: total_votes_on_candidates: ',
             total_votes_on_candidates_before
@@ -383,6 +387,107 @@ describe('Stakevote', () => {
         });
         it('should not increase total_votes_on_candidates', async () => {
           const expected = total_votes_on_candidates_before;
+          const x = await get_from_state2(
+            dacId,
+            state_keys.total_votes_on_candidates
+          );
+          console.log('after voting: total_votes_on_candidates: ', x);
+          chai.expect(x).to.equal(expected);
+        });
+      });
+      context('removing vote', async () => {
+        let total_weight_of_votes_before;
+        let total_votes_on_candidates_before;
+        it('before voting: total_weight_of_votes', async () => {
+          total_weight_of_votes_before = await get_from_state2(
+            dacId,
+            state_keys.total_weight_of_votes
+          );
+          console.log(
+            'before voting: total_weight_of_votes: ',
+            total_weight_of_votes_before
+          );
+        });
+        it('before voting: total_votes_on_candidates', async () => {
+          total_votes_on_candidates_before = await get_from_state2(
+            dacId,
+            state_keys.total_votes_on_candidates
+          );
+          console.log(
+            'before voting: total_votes_on_candidates: ',
+            total_votes_on_candidates_before
+          );
+        });
+        it('should work', async () => {
+          const cust1 = candidates[0];
+          await shared.daccustodian_contract.votecust(
+            voter.name,
+            [cust1.name],
+            dacId,
+            {
+              from: voter,
+            }
+          );
+        });
+        it('should not decrease total_weight_of_votes', async () => {
+          const expected = total_weight_of_votes_before;
+          const x = await get_from_state2(
+            dacId,
+            state_keys.total_weight_of_votes
+          );
+          console.log('after voting: total_weight_of_votes: ', x);
+          chai.expect(x).to.equal(expected);
+        });
+        it('should not decrease total_votes_on_candidates', async () => {
+          const expected = total_votes_on_candidates_before;
+          const x = await get_from_state2(
+            dacId,
+            state_keys.total_votes_on_candidates
+          );
+          console.log('after voting: total_votes_on_candidates: ', x);
+          chai.expect(x).to.equal(expected);
+        });
+      });
+      context('removing all votes', async () => {
+        let total_weight_of_votes_before;
+        let total_votes_on_candidates_before;
+        it('before voting: total_weight_of_votes', async () => {
+          total_weight_of_votes_before = await get_from_state2(
+            dacId,
+            state_keys.total_weight_of_votes
+          );
+          console.log(
+            'before voting: total_weight_of_votes: ',
+            total_weight_of_votes_before
+          );
+        });
+        it('before voting: total_votes_on_candidates', async () => {
+          total_votes_on_candidates_before = await get_from_state2(
+            dacId,
+            state_keys.total_votes_on_candidates
+          );
+          console.log(
+            'before voting: total_votes_on_candidates: ',
+            total_votes_on_candidates_before
+          );
+        });
+        it('should work', async () => {
+          const cust1 = candidates[0];
+          await shared.daccustodian_contract.votecust(voter.name, [], dacId, {
+            from: voter,
+          });
+        });
+        it('should restore original total_weight_of_votes', async () => {
+          const expected = total_weight_of_votes_beginning;
+          const x = await get_from_state2(
+            dacId,
+            state_keys.total_weight_of_votes
+          );
+          console.log('after voting: total_weight_of_votes: ', x);
+          chai.expect(x).to.equal(expected);
+        });
+        it('should restore original total_votes_on_candidates', async () => {
+          const expected = total_votes_on_candidates_beginning;
           const x = await get_from_state2(
             dacId,
             state_keys.total_votes_on_candidates
