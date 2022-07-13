@@ -31,6 +31,24 @@ import { SharedTestObjects, NUMBER_OF_CANDIDATES } from '../TestHelpers';
 import * as chai from 'chai';
 let shared: SharedTestObjects;
 
+/* Asset class to be moved to lamginton later */
+class Asset {
+  amount: Number;
+  symbol: string;
+  precision: Number;
+  constructor(amount, symbol, precision = 4) {
+    this.amount = amount;
+    this.symbol = symbol;
+    this.precision = precision;
+  }
+  toString() {
+    return `${this.amount.toFixed(this.precision)} ${this.symbol}`;
+  }
+  amount_raw() {
+    return this.amount * 10 ** this.precision;
+  }
+}
+
 describe('Stakevote', () => {
   before(async () => {
     shared = await SharedTestObjects.getInstance();
@@ -42,27 +60,37 @@ describe('Stakevote', () => {
     let symbol = 'STADAC';
     let precision = 4;
     let supply = `30000.0000 ${symbol}`;
-    let stake_amount = `1000.0000 ${symbol}`;
+    // let stake_amount = `1000.0000 ${symbol}`;
+    let stake_amount = new Asset(1000, symbol);
+    let stake_delay = 2 * years;
     let time_multiplier = 1;
     let regMembers: Account[];
-
+    let candidates: Account[];
     before(async () => {
       await shared.initDac(dacId, `${precision},${symbol}`, supply, {
         vote_weight_account: shared.stakevote_contract,
       });
       await shared.updateconfig(dacId, `12.0000 ${symbol}`);
       await shared.dac_token_contract.stakeconfig(
-        { enabled: true, min_stake_time: 2 * years, max_stake_time: 2 * years },
+        {
+          enabled: true,
+          min_stake_time: stake_delay,
+          max_stake_time: stake_delay,
+        },
         `${precision},${symbol}`,
         { from: shared.auth_account }
       );
 
-      regMembers = await shared.getRegMembers(dacId, stake_amount);
+      regMembers = await shared.getRegMembers(dacId, stake_amount.toString());
 
       await shared.stakevote_contract.updateconfig(
         { time_multiplier: 10 ** 8 },
         dacId,
         { from: shared.auth_account }
+      );
+      candidates = await shared.getStakeObservedCandidates(
+        dacId,
+        `12.0000 ${symbol}`
       );
     });
     context('staking', async () => {
@@ -84,14 +112,18 @@ describe('Stakevote', () => {
         await shared.dac_token_contract.transfer(
           shared.dac_token_contract.account.name,
           staker.name,
-          stake_amount,
+          stake_amount.toString(),
           '',
           { from: shared.dac_token_contract.account }
         );
 
-        await shared.dac_token_contract.stake(staker.name, stake_amount, {
-          from: staker,
-        });
+        await shared.dac_token_contract.stake(
+          staker.name,
+          stake_amount.toString(),
+          {
+            from: staker,
+          }
+        );
       });
       it('before voting, total_weight_of_votes should be zero', async () => {
         const x = await get_from_state2(
@@ -104,13 +136,7 @@ describe('Stakevote', () => {
     context('without an activation account', async () => {
       context('before a dac has commenced periods', async () => {
         context('with enough INITIAL candidate value voting', async () => {
-          let candidates: Account[];
           before(async () => {
-            candidates = await shared.getStakeObservedCandidates(
-              dacId,
-              `12.0000 ${symbol}`
-            );
-
             for (const member of regMembers) {
               await debugPromise(
                 shared.daccustodian_contract.votecust(
@@ -176,7 +202,7 @@ describe('Stakevote', () => {
               for (const member of regMembers) {
                 await shared.dac_token_contract.stake(
                   member.name,
-                  stake_amount,
+                  stake_amount.toString(),
                   {
                     from: member,
                   }
@@ -238,6 +264,236 @@ describe('Stakevote', () => {
               chai.expect(rs[4].total_votes).to.equal(50457600);
             });
           });
+        });
+      });
+    });
+    context('stakevoting voting', async () => {
+      let voter: Account;
+      let total_weight_of_votes_beginning;
+      let total_votes_on_candidates_beginning;
+      before(async () => {
+        voter = await AccountManager.createAccount();
+        await shared.dac_token_contract.memberreg(
+          voter.name,
+          shared.configured_dac_memberterms,
+          dacId,
+          { from: voter }
+        );
+        await stake(voter, stake_amount.toString());
+      });
+      context('for 1 candidate', async () => {
+        let total_weight_of_votes_before;
+        let total_votes_on_candidates_before;
+        it('before voting: total_weight_of_votes', async () => {
+          total_weight_of_votes_before = await get_from_state2(
+            dacId,
+            state_keys.total_weight_of_votes
+          );
+          total_weight_of_votes_beginning = total_weight_of_votes_before;
+          console.log(
+            'before voting: total_weight_of_votes: ',
+            total_weight_of_votes_before
+          );
+        });
+        it('before voting: total_votes_on_candidates', async () => {
+          total_votes_on_candidates_before = await get_from_state2(
+            dacId,
+            state_keys.total_votes_on_candidates
+          );
+          total_votes_on_candidates_beginning = total_votes_on_candidates_before;
+          console.log(
+            'before voting: total_votes_on_candidates: ',
+            total_votes_on_candidates_before
+          );
+        });
+        it('should work', async () => {
+          const cust1 = candidates[0];
+          await shared.daccustodian_contract.votecust(
+            voter.name,
+            [cust1.name],
+            dacId,
+            {
+              from: voter,
+            }
+          );
+        });
+        it('should update total_weight_of_votes', async () => {
+          const expected =
+            total_weight_of_votes_before + stake_amount.amount_raw();
+          const x = await get_from_state2(
+            dacId,
+            state_keys.total_weight_of_votes
+          );
+          console.log('after voting: total_weight_of_votes: ', x);
+          chai.expect(x).to.equal(expected);
+        });
+        it('should update total_votes_on_candidates', async () => {
+          const expected = await get_expected_vote_weight(
+            stake_amount.amount_raw(),
+            2 * years,
+            dacId
+          );
+          const x = await get_from_state2(
+            dacId,
+            state_keys.total_votes_on_candidates
+          );
+          console.log('after voting: total_votes_on_candidates: ', x);
+          chai.expect(parseInt(x, 10)).to.equal(expected);
+        });
+      });
+      context('for 2nd candidate', async () => {
+        let total_weight_of_votes_before;
+        let total_votes_on_candidates_before;
+        it('before voting: total_weight_of_votes', async () => {
+          total_weight_of_votes_before = await get_from_state2(
+            dacId,
+            state_keys.total_weight_of_votes
+          );
+          console.log(
+            'before voting: total_weight_of_votes: ',
+            total_weight_of_votes_before
+          );
+        });
+        it('before voting: total_votes_on_candidates', async () => {
+          total_votes_on_candidates_before = await get_from_state2(
+            dacId,
+            state_keys.total_votes_on_candidates
+          );
+          console.log(
+            'before voting: total_votes_on_candidates: ',
+            total_votes_on_candidates_before
+          );
+        });
+        it('should work', async () => {
+          const cust1 = candidates[0];
+          const cust2 = candidates[1];
+          await shared.daccustodian_contract.votecust(
+            voter.name,
+            [cust1.name, cust2.name],
+            dacId,
+            {
+              from: voter,
+            }
+          );
+        });
+        it('should not increase total_weight_of_votes', async () => {
+          const expected = total_weight_of_votes_before;
+          const x = await get_from_state2(
+            dacId,
+            state_keys.total_weight_of_votes
+          );
+          console.log('after voting: total_weight_of_votes: ', x);
+          chai.expect(x).to.equal(expected);
+        });
+        it('should not increase total_votes_on_candidates', async () => {
+          const expected = total_votes_on_candidates_before;
+          const x = await get_from_state2(
+            dacId,
+            state_keys.total_votes_on_candidates
+          );
+          console.log('after voting: total_votes_on_candidates: ', x);
+          chai.expect(x).to.equal(expected);
+        });
+      });
+      context('removing vote', async () => {
+        let total_weight_of_votes_before;
+        let total_votes_on_candidates_before;
+        it('before voting: total_weight_of_votes', async () => {
+          total_weight_of_votes_before = await get_from_state2(
+            dacId,
+            state_keys.total_weight_of_votes
+          );
+          console.log(
+            'before voting: total_weight_of_votes: ',
+            total_weight_of_votes_before
+          );
+        });
+        it('before voting: total_votes_on_candidates', async () => {
+          total_votes_on_candidates_before = await get_from_state2(
+            dacId,
+            state_keys.total_votes_on_candidates
+          );
+          console.log(
+            'before voting: total_votes_on_candidates: ',
+            total_votes_on_candidates_before
+          );
+        });
+        it('should work', async () => {
+          const cust1 = candidates[0];
+          await shared.daccustodian_contract.votecust(
+            voter.name,
+            [cust1.name],
+            dacId,
+            {
+              from: voter,
+            }
+          );
+        });
+        it('should not decrease total_weight_of_votes', async () => {
+          const expected = total_weight_of_votes_before;
+          const x = await get_from_state2(
+            dacId,
+            state_keys.total_weight_of_votes
+          );
+          console.log('after voting: total_weight_of_votes: ', x);
+          chai.expect(x).to.equal(expected);
+        });
+        it('should not decrease total_votes_on_candidates', async () => {
+          const expected = total_votes_on_candidates_before;
+          const x = await get_from_state2(
+            dacId,
+            state_keys.total_votes_on_candidates
+          );
+          console.log('after voting: total_votes_on_candidates: ', x);
+          chai.expect(x).to.equal(expected);
+        });
+      });
+      context('removing all votes', async () => {
+        let total_weight_of_votes_before;
+        let total_votes_on_candidates_before;
+        it('before voting: total_weight_of_votes', async () => {
+          total_weight_of_votes_before = await get_from_state2(
+            dacId,
+            state_keys.total_weight_of_votes
+          );
+          console.log(
+            'before voting: total_weight_of_votes: ',
+            total_weight_of_votes_before
+          );
+        });
+        it('before voting: total_votes_on_candidates', async () => {
+          total_votes_on_candidates_before = await get_from_state2(
+            dacId,
+            state_keys.total_votes_on_candidates
+          );
+          console.log(
+            'before voting: total_votes_on_candidates: ',
+            total_votes_on_candidates_before
+          );
+        });
+        it('should work', async () => {
+          const cust1 = candidates[0];
+          await shared.daccustodian_contract.votecust(voter.name, [], dacId, {
+            from: voter,
+          });
+        });
+        it('should restore original total_weight_of_votes', async () => {
+          const expected = total_weight_of_votes_beginning;
+          const x = await get_from_state2(
+            dacId,
+            state_keys.total_weight_of_votes
+          );
+          console.log('after voting: total_weight_of_votes: ', x);
+          chai.expect(x).to.equal(expected);
+        });
+        it('should restore original total_votes_on_candidates', async () => {
+          const expected = total_votes_on_candidates_beginning;
+          const x = await get_from_state2(
+            dacId,
+            state_keys.total_votes_on_candidates
+          );
+          console.log('after voting: total_votes_on_candidates: ', x);
+          chai.expect(x).to.equal(expected);
         });
       });
     });
@@ -310,7 +566,7 @@ async function setup_permissions() {
 async function stake(user, amount) {
   await shared.dac_token_contract.transfer(
     shared.dac_token_contract.account.name,
-    newUser1.name,
+    user.name,
     amount,
     '',
     { from: shared.dac_token_contract.account }
@@ -330,4 +586,13 @@ async function get_from_state2(dacId, key) {
       return x.value[1];
     }
   }
+}
+
+async function get_expected_vote_weight(stake_amount, unstake_delay, dac_id) {
+  const time_divisor = 100000000;
+  const time_multiplier = (
+    await shared.stakevote_contract.configTable({ scope: dac_id })
+  ).rows[0].time_multiplier;
+  console.log('stakevote time_multiplier: ', time_multiplier);
+  return (stake_amount * unstake_delay * time_multiplier) / time_divisor;
 }
