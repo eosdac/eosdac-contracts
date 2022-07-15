@@ -10,6 +10,17 @@ void daccustodian::resetvotes(const name &voter, const name &dac_id) {
     votes_cast_by_members.erase(existingVote);
 }
 
+void daccustodian::resetstate(const name &dac_id) {
+    require_auth(get_self());
+    auto currentState = contr_state2::get_current_state(get_self(), dac_id);
+
+    currentState.set_total_weight_of_votes(0);
+    currentState.set_total_votes_on_candidates(0);
+    currentState.set_number_active_candidates(0);
+    currentState.set_met_initial_votes_threshold(false);
+    currentState.save(get_self(), dac_id);
+}
+
 void daccustodian::resetcands(const name &dac_id) {
     require_auth(get_self());
 

@@ -165,7 +165,7 @@ void daccustodian::removeCustodian(name cust, name dac_id) {
     allocateCustodians(true, dac_id);
 
     // Update the auths to give control to the new set of custodians.
-    setCustodianAuths(dac_id);
+    setMsigAuths(dac_id);
 }
 
 void daccustodian::removeCandidate(name cand, bool lockupStake, name dac_id) {

@@ -151,7 +151,7 @@ void daccustodian::add_auth_to_account(const name &accountToChange, const uint8_
         .send();
 }
 
-void daccustodian::add_all_auths(const name            &accountToChange,
+void daccustodian::add_all_auths(const name &           accountToChange,
     const vector<eosiosystem::permission_level_weight> &weights, const name &dac_id, const bool msig) {
     const auto current_config = contr_config::get_current_configs(get_self(), dac_id);
 
@@ -168,26 +168,13 @@ void daccustodian::add_all_auths(const name            &accountToChange,
 }
 
 void daccustodian::setMsigAuths(name dac_id) {
-    const auto custodians           = custodians_table{get_self(), dac_id.value};
-    const auto dac                  = dacdir::dac_for_id(dac_id);
-    const auto current_config       = contr_config::get_current_configs(get_self(), dac_id);
-    const auto accountToChangeMaybe = dac.account_for_type_maybe(dacdir::MSIGOWNED);
-    if (!accountToChangeMaybe) {
-        return;
-    }
-    const auto accountToChange = *accountToChangeMaybe;
+    const auto custodians      = custodians_table{get_self(), dac_id.value};
+    const auto dac             = dacdir::dac_for_id(dac_id);
+    const auto current_config  = contr_config::get_current_configs(get_self(), dac_id);
+    const auto accountToChange = dac.account_for_type_maybe(dacdir::MSIGOWNED).value_or(dac.owner);
 
     auto weights = get_perm_level_weights(custodians, dac_id);
-
     add_all_auths(accountToChange, weights, dac_id, true);
-}
-
-void daccustodian::setCustodianAuths(name dac_id) {
-    const auto custodians = custodians_table{get_self(), dac_id.value};
-    const auto dac        = dacdir::dac_for_id(dac_id);
-    const auto weights    = get_perm_level_weights(custodians, dac_id);
-
-    add_all_auths(dac.owner, weights, dac_id);
 }
 
 asset balance_for_type(const dacdir::dac &dac, const dacdir::account_type type) {
@@ -322,7 +309,6 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
     allocateCustodians(false, dac_id);
 
     // Set the auths on the dacauthority account
-    setCustodianAuths(dac_id);
     setMsigAuths(dac_id);
 
     currentState.lastperiodtime = current_block_time();

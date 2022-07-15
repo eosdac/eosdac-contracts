@@ -311,6 +311,7 @@ namespace eosdac {
 #ifdef DEBUG
         ACTION resetvotes(const name &voter, const name &dac_id);
         ACTION resetcands(const name &dac_id);
+        ACTION resetstate(const name &dac_id);
 
 #endif
 
@@ -354,7 +355,6 @@ namespace eosdac {
         void add_auth_to_account(const name &accountToChange, const uint8_t threshold, const name &permission,
             const name &parent, vector<eosiosystem::permission_level_weight> weights, const bool msig = false);
         void setMsigAuths(name dac_id);
-        void setCustodianAuths(name internal_dac_id);
         void transferCustodianBudget(const dacdir::dac &dac);
         void removeCustodian(name cust, name internal_dac_id);
         void removeCandidate(name cust, bool lockupStake, name internal_dac_id);
