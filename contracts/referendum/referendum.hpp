@@ -9,6 +9,7 @@
 #include <eosio/symbol.hpp>
 #include <eosio/transaction.hpp>
 #include <limits.h>
+#include <numeric>
 
 #include "../../contract-shared-headers/config.hpp"
 #include "../../contract-shared-headers/daccustodian_shared.hpp"
@@ -127,10 +128,45 @@ CONTRACT referendum : public contract {
         uint64_t by_proposer() const {
             return proposer.value;
         }
+
+        std::pair<uint64_t, std::map<uint8_t, uint64_t>> quorum_votes(
+            const name contract, const name dac_id, const config_item &config) const {
+            if (voting_type == count_type::COUNT_TOKEN) {
+                return {config.quorum_token.at(type), token_votes};
+            } else {
+                return {config.quorum_account.at(type), account_votes};
+            }
+        }
+
+        referendum_status get_status(const name contract, const name dac_id) const {
+            const auto config          = config_item::get_current_configs(contract, dac_id);
+            const auto [quorum, votes] = quorum_votes(contract, dac_id, config);
+            const auto current_yes     = votes.at(VOTE_YES);
+            const auto current_no      = votes.at(VOTE_NO);
+            const auto current_abstain = votes.at(VOTE_ABSTAIN);
+            const auto current_all     = S{current_yes} + S{current_no} + S{current_abstain};
+            const auto pass_rate       = config.pass.at(type); // integer with 2 decimals
+            const auto time_now        = current_time_point().sec_since_epoch();
+            const auto total =
+                std::accumulate(votes.begin(), votes.end(), S{uint64_t{}}, [](const auto acc, const auto &x) {
+                    return acc + S{x.second};
+                });
+            if (time_now >= expires.sec_since_epoch()) {
+                return STATUS_OPEN;
+            }
+
+            if (total < quorum) {
+                return STATUS_QUORUM_NOT_MET;
+            }
+
+            // quorum has been reached, check we have passed
+            const auto yes_percentage_s = (S{current_yes}.to<double>() / current_all.to<double>()) *
+                                          S{10000.0}; // multiply by 10000 to get integer with 2
+            const auto yes_percentage = narrow_cast<uint64_t>(yes_percentage_s);
+            return yes_percentage >= pass_rate ? STATUS_PASSING : STATUS_FAILING;
+        }
     };
-    /* Have to use EOSLIB_SERIALIZE to work around problems with boost deserialization */
-    EOSLIB_SERIALIZE(referendum_data,
-        (referendum_id)(proposer)(type)(voting_type)(status)(title)(content_ref)(token_votes)(account_votes)(expires)(acts));
+
     using referenda_table = eosio::multi_index<"referendums"_n, referendum_data,
         indexed_by<"byproposer"_n, const_mem_fun<referendum_data, uint64_t, &referendum_data::by_proposer>>>;
 
@@ -170,10 +206,9 @@ CONTRACT referendum : public contract {
 
         return (res > 0);
     }
-    bool    hasAuth(vector<action> acts);
-    uint8_t calculateStatus(name referendum_id, name dac_id);
-    void    proposeMsig(referendum_data ref, name dac_id);
-    void    checkDAC(name dac_id);
+    bool hasAuth(vector<action> acts);
+    void proposeMsig(referendum_data ref, name dac_id);
+    void checkDAC(name dac_id);
 
   public:
     using contract::contract;

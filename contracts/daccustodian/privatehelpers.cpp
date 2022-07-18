@@ -16,7 +16,7 @@ void daccustodian::updateVoteWeight(
         return; // trying to avoid throwing errors from here since it's unrelated to a transfer action.?!?!?!?!
     }
     registered_candidates.modify(candItr, same_payer, [&](auto &c) {
-        c.total_votes = S{c.total_votes} + S{weight};
+        c.total_votes = S<uint64_t>{c.total_votes}.to<int64_t>() + S{weight};
         if (from_voting) {
             if (c.total_votes == 0) {
                 c.avg_vote_time_stamp = time_point_sec(0);
@@ -35,7 +35,7 @@ time_point_sec daccustodian::calculate_avg_vote_time_stamp(const time_point_sec 
 
     const auto initial     = S{vote_time_before.sec_since_epoch()}.to<int128_t>();
     const auto current     = S{vote_time_stamp.sec_since_epoch()}.to<int128_t>();
-    const auto time_delta  = abs(current - initial);
+    const auto time_delta  = (current - initial).abs();
     const auto new_seconds = initial + time_delta * S{weight}.to<int128_t>() / S{total_votes}.to<int128_t>();
 
     return time_point_sec{new_seconds.to<uint32_t>()};

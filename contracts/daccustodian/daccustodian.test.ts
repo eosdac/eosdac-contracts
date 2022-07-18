@@ -781,7 +781,7 @@ describe('Daccustodian', () => {
           dacId,
           state_keys.total_votes_on_candidates
         );
-        chai.expect(actual).to.equal(40_000_000);
+        chai.expect(actual).to.equal(20_000_000);
       });
     });
     context('vote values after transfers', async () => {

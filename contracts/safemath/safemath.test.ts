@@ -95,25 +95,25 @@ describe('Safemath', () => {
   it('convert1 should throw conversion overflow error', async () => {
     await assertEOSErrorIncludesMessage(
       contract.convert1(),
-      'conversion overflow'
+      'Invalid narrow cast'
     );
   });
   it('convert2 should throw Cannot convert negative value to unsigned error', async () => {
     await assertEOSErrorIncludesMessage(
       contract.convert2(),
-      'Cannot convert negative value to unsigned'
+      'Invalid narrow cast'
     );
   });
   it('convert3 should throw conversion overflow error', async () => {
     await assertEOSErrorIncludesMessage(
       contract.convert3(),
-      'conversion overflow'
+      'Invalid narrow cast'
     );
   });
   it('convert4 should throw conversion overflow error', async () => {
     await assertEOSErrorIncludesMessage(
       contract.convert4(),
-      'conversion overflow'
+      'Invalid narrow cast'
     );
   });
   it('xxx1 should throw conversion overflow error', async () => {
@@ -166,5 +166,20 @@ describe('Safemath', () => {
   });
   it('zzz2 should work', async () => {
     await contract.zzz2();
+  });
+  it('zzz3 should fail with signed multiplication overflow', async () => {
+    await assertEOSErrorIncludesMessage(
+      contract.zzz3(),
+      'signed multiplication overflow'
+    );
+  });
+  it('zzz4 should work', async () => {
+    await contract.zzz4();
+  });
+  it('zzz5 should work', async () => {
+    await contract.zzz5();
+  });
+  it('const1 should work', async () => {
+    await contract.const1();
   });
 });

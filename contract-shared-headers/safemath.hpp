@@ -1,14 +1,28 @@
 #pragma once
 
+#include "common_utilities.hpp"
 #include <eosio/eosio.hpp>
 #include <math.h>
+
+/**
+ * @brief narrow_cast is just an alias for static_cast but it makes it explicit that
+ * that the programmer intended to narrowcast a value while accepting conversion
+ * losses (e.g. from float to int rounding down).
+ * Adapted from: https://github.com/microsoft/GSL/blob/main/include/gsl/util (MIT licensed)
+ *
+ * @param u: the value to downcast to type T
+ */
+template <class T, class U>
+constexpr T narrow_cast(U &&u) {
+    return static_cast<T>(std::forward<U>(u));
+}
 
 template <typename T>
 class S {
     T n;
 
   public:
-    constexpr S(T a) : n(a) {
+    explicit constexpr S(T a) : n(a) {
         static_assert(std::is_unsigned_v<T> || std::is_signed_v<T>, "wrong type, only for numbers");
     };
 
@@ -20,34 +34,37 @@ class S {
         return value();
     }
 
-    constexpr T min() const {
+    static constexpr T min() {
         return std::numeric_limits<T>::min();
     }
 
-    constexpr T max() const {
+    static constexpr T max() {
         return std::numeric_limits<T>::max();
     }
 
-    template <typename U>
-    auto to() const {
-        const auto max_u = std::numeric_limits<U>::max();
-        if constexpr (std::is_unsigned_v<U>) {
-            eosio::check(n >= 0, "Cannot convert negative value to unsigned");
-        } else {
-            eosio::check(n >= -max_u, "conversion underflow");
+    // a checked version of narrow_cast() that throws if the cast changed the value
+    // Adapted from: https://github.com/microsoft/GSL/blob/main/include/gsl/narrow (MIT licensed)
+    template <typename U, typename std::enable_if<std::is_arithmetic<U>::value>::type * = nullptr>
+    constexpr S<U> to() const {
+        static_assert(!std::is_floating_point_v<T> || !std::is_integral_v<U>,
+            "Conversion from floating point to integral is not lossless");
+        constexpr const auto is_different_signedness = (std::is_signed<U>::value != std::is_signed<T>::value);
+
+        const auto u = narrow_cast<U>(n);
+        if (static_cast<T>(u) != n || (is_different_signedness && ((u < U{}) != (n < T{})))) {
+            ::check(false, "Invalid narrow cast");
         }
-        eosio::check(n <= max_u, "conversion overflow");
-        return S<U>{static_cast<U>(n)};
+        return S<U>{u};
     }
 
     /**
      * Unary minus operator
      *
      */
-    S operator-() const {
+    constexpr S operator-() const {
         static_assert(std::is_signed_v<T>, "operator-() works only on signed");
         auto r = *this;
-        eosio::check(n != min(), "overflow");
+        ::check(n != min(), "overflow");
         r.n = -r.n;
         return r;
     }
@@ -55,17 +72,17 @@ class S {
     /**
      * Subtraction assignment operator
      */
-    S &operator-=(const S a) {
+    constexpr S &operator-=(const S a) {
         if constexpr (std::is_floating_point_v<T>) {
             n -= a.n;
-            eosio::check(!isinf(n), "infinity");
-            eosio::check(!isnan(n), "NaN");
+            ::check(!isinf(n), "infinity");
+            ::check(!isnan(n), "NaN");
         } else if constexpr (std::is_unsigned_v<T>) {
-            eosio::check(n >= a.n, "invalid unsigned subtraction: result would be negative");
+            ::check(n >= a.n, "invalid unsigned subtraction: result would be negative");
             n -= a.n;
         } else {
-            eosio::check(a.n <= 0 || n >= min() + a.n, "signed subtraction underflow");
-            eosio::check(a.n >= 0 || n <= max() + a.n, "signed subtraction overflow");
+            ::check(a.n <= 0 || n >= min() + a.n, "signed subtraction underflow");
+            ::check(a.n >= 0 || n <= max() + a.n, "signed subtraction overflow");
             n -= a.n;
         }
         return *this;
@@ -74,17 +91,17 @@ class S {
     /**
      * Addition Assignment  operator
      */
-    S &operator+=(const S &a) {
+    constexpr S &operator+=(const S &a) {
         if constexpr (std::is_floating_point_v<T>) {
             n += a.n;
-            eosio::check(!isinf(n), "infinity");
-            eosio::check(!isnan(n), "NaN");
+            ::check(!isinf(n), "infinity");
+            ::check(!isnan(n), "NaN");
         } else if constexpr (std::is_unsigned_v<T>) {
-            eosio::check(max() - n >= a.n, "unsigned wrap");
+            ::check(max() - n >= a.n, "unsigned wrap");
             n += a.n;
         } else {
-            eosio::check(a.n <= 0 || n <= max() - a.n, "signed addition overflow");
-            eosio::check(a.n >= 0 || n >= min() - a.n, "signed addition underflow");
+            ::check(a.n <= 0 || n <= max() - a.n, "signed addition overflow");
+            ::check(a.n >= 0 || n >= min() - a.n, "signed addition underflow");
             n += a.n;
         }
         return *this;
@@ -93,7 +110,9 @@ class S {
     /**
      * Addition operator
      */
-    inline friend S operator+(const S &a, const S &b) {
+    template <typename U, typename V>
+    constexpr friend S<T> operator+(const U &a, const V &b) {
+        static_assert(std::is_same_v<U, V>, "Types don't match");
         S result = a;
         result += b;
         return result;
@@ -102,7 +121,9 @@ class S {
     /**
      * Subtraction operator
      */
-    inline friend S operator-(const S &a, const S &b) {
+    template <typename U, typename V>
+    constexpr friend S operator-(const U &a, const V &b) {
+        static_assert(std::is_same_v<U, V>, "Types don't match");
         S result = a;
         result -= b;
         return result;
@@ -111,26 +132,26 @@ class S {
     /**
      * Multiplication assignment operator
      */
-    S &operator*=(const S &a) {
+    constexpr S &operator*=(const S &a) {
         if constexpr (std::is_floating_point_v<T>) {
             n *= a.n;
-            eosio::check(!isinf(n), "infinity");
-            eosio::check(!isnan(n), "NaN");
+            ::check(!isinf(n), "infinity");
+            ::check(!isnan(n), "NaN");
         } else if constexpr (std::is_unsigned_v<T>) {
-            eosio::check(n <= max() / a.n, "unsigned multiplication overflow");
+            ::check(n <= max() / a.n, "unsigned multiplication overflow");
             n *= a.n;
         } else {
             if (n > 0) {
                 if (a.n > 0) {
-                    eosio::check(n <= max() / a.n, "signed multiplication overflow");
+                    ::check(n <= max() / a.n, "signed multiplication overflow");
                 } else {
-                    eosio::check(a.n >= min() / n, "signed multiplication underflow");
+                    ::check(a.n >= min() / n, "signed multiplication underflow");
                 }
             } else {
                 if (a.n > 0) {
-                    eosio::check(n >= min() / a.n, "signed multiplication underflow");
+                    ::check(n >= min() / a.n, "signed multiplication underflow");
                 } else {
-                    eosio::check(n == 0 || a.n >= max() / n, "signed multiplication overflow");
+                    ::check(n == 0 || a.n >= max() / n, "signed multiplication overflow");
                 }
             }
             n *= a.n;
@@ -141,7 +162,9 @@ class S {
     /**
      * Multiplication operator
      */
-    inline friend S operator*(const S &a, const S &b) {
+    template <typename U, typename V>
+    constexpr friend S operator*(const U &a, const V &b) {
+        static_assert(std::is_same_v<U, V>, "Types don't match");
         S result = a;
         result *= b;
         return result;
@@ -150,9 +173,9 @@ class S {
     /**
      * Division assignment operator
      */
-    S &operator/=(const S &a) {
-        eosio::check(a.n != 0, "division by zero");
-        eosio::check(!(n == min() && a.n == -1), "division overflow");
+    constexpr S &operator/=(const S &a) {
+        ::check(a.n != 0, "division by zero");
+        ::check(!(n == min() && a.n == -1), "division overflow");
         n /= a.n;
         return *this;
     }
@@ -160,29 +183,53 @@ class S {
     /**
      * Division operator
      */
-    inline friend S operator/(const S &a, const S &b) {
+    template <typename U, typename V>
+    constexpr friend S operator/(const U &a, const V &b) {
+        static_assert(std::is_same_v<U, V>, "Types don't match");
         S result = a;
         result /= b;
         return result;
     }
 
     /**
-     * x to the power of y function for integers
+     * Checked abs function. Contrary to the abs function from math.h, this will
+     * also work with int128_t data types.
      */
-    S ipow(const T exponent) {
+    constexpr S<T> abs() {
+        S r = *this;
+        if (n < T{}) {
+            r = -r;
+        }
+        return r;
+    }
+
+    /**
+     * Checked x to the power of y function for integers
+     */
+    template <typename U>
+    constexpr S ipow(U x) {
+        static_assert(std::is_same_v<T, U>, "Types don't match");
         static_assert(std::is_integral_v<T>, "wrong type, pow is only for integers");
-        eosio::check(exponent >= 0, "pow: exponent must be non-negative");
-        S result = *this;
-        if (n != 1) {
-            if (exponent == 0) {
-                result.n = 1;
-            } else {
-                for (auto i = exponent; --i;) {
-                    result *= n;
+        ::check(x >= 0, "pow: exponent must be non-negative");
+        S r = *this;
+        if (x == 0) {
+            r.n = 1;
+        } else {
+            auto y = S{T{1}};
+            while (x > 1) {
+                if ((x % 2) == 0) { // even
+                    r *= r;
+                    x /= 2;
+                } else { // odd
+                    y *= r;
+                    r *= r;
+                    x = (x - 1) / 2;
                 }
             }
+            r *= y;
         }
-        return result;
+
+        return r;
     }
 
     /*----------------------------------------------------------------
@@ -193,137 +240,125 @@ class S {
     /**
      * Equality operator
      */
-    friend bool operator==(const S &a, const S &b) {
+    constexpr friend bool operator==(const S &a, const S &b) {
         return a.n == b.n;
     }
 
     /**
      * Equality operator with anything that has a == operator
      */
-    template <typename U>
-    friend bool operator==(const S &a, const U b) {
+    constexpr friend bool operator==(const S &a, const T b) {
         return a.n == b;
     }
 
     /**
      * Equality operator with anything that has a == operator
      */
-    template <typename U>
-    friend bool operator==(const U b, const S &a) {
+    constexpr friend bool operator==(const T b, const S &a) {
         return a.n == b;
     }
 
     /**
      * Inequality operator
      */
-    friend bool operator!=(const S &a, const S &b) {
+    constexpr friend bool operator!=(const S &a, const S &b) {
         return !(a == b);
     }
 
     /**
      * Inequality operator
      */
-    template <typename U>
-    friend bool operator!=(const S &a, const U b) {
+    constexpr friend bool operator!=(const S &a, const T b) {
         return !(a == b);
     }
 
     /**
      * Inequality operator
      */
-    template <typename U>
-    friend bool operator!=(const U b, const S &a) {
+    constexpr friend bool operator!=(const T b, const S &a) {
         return !(a == b);
     }
 
     /**
      * Less than operator
      */
-    friend bool operator<(const S &a, const S &b) {
+    constexpr friend bool operator<(const S &a, const S &b) {
         return a.n < b.n;
     }
 
     /**
      * Less than operator
      */
-    template <typename U>
-    friend bool operator<(const S &a, const U b) {
+    constexpr friend bool operator<(const S &a, const T b) {
         return a.n < b;
     }
 
     /**
      * Less than operator
      */
-    template <typename U>
-    friend bool operator<(const U b, const S &a) {
+    constexpr friend bool operator<(const T b, const S &a) {
         return a.n < b;
     }
 
     /**
      * Less or equal to operator
      */
-    friend bool operator<=(const S &a, const S &b) {
+    constexpr friend bool operator<=(const S &a, const S &b) {
         return a.n <= b.n;
     }
 
     /**
      * Less or equal to operator
      */
-    template <typename U>
-    friend bool operator<=(const S &a, const U b) {
+    constexpr friend bool operator<=(const S &a, const T b) {
         return a.n <= b;
     }
 
     /**
      * Less or equal to operator
      */
-    template <typename U>
-    friend bool operator<=(const U b, const S &a) {
+    constexpr friend bool operator<=(const T b, const S &a) {
         return a.n <= b;
     }
 
     /**
      * Greater than operator
      */
-    friend bool operator>(const S &a, const S &b) {
+    constexpr friend bool operator>(const S &a, const S &b) {
         return a.n > b.n;
     }
 
     /**
      * Greater than operator
      */
-    template <typename U>
-    friend bool operator>(const S &a, const U b) {
+    constexpr friend bool operator>(const S &a, const T b) {
         return a.n > b;
     }
     /**
      * Greater than operator
      */
-    template <typename U>
-    friend bool operator>(const U b, const S &a) {
+    constexpr friend bool operator>(const T b, const S &a) {
         return a.n > b;
     }
 
     /**
      * Greater or equal to operator
      */
-    friend bool operator>=(const S &a, const S &b) {
+    constexpr friend bool operator>=(const S &a, const S &b) {
         return a.n >= b;
     }
 
     /**
      * Greater or equal to operator
      */
-    template <typename U>
-    friend bool operator>=(const S &a, const U b) {
+    constexpr friend bool operator>=(const S &a, const T b) {
         return a.n >= b;
     }
 
     /**
      * Greater or equal to operator
      */
-    template <typename U>
-    friend bool operator>=(const U b, const S &a) {
+    constexpr friend bool operator>=(const T b, const S &a) {
         return a.n >= b;
     }
 };
