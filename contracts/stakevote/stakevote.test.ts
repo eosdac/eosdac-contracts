@@ -328,11 +328,13 @@ describe('Stakevote', () => {
           chai.expect(x).to.equal(expected);
         });
         it('should update total_votes_on_candidates', async () => {
-          const expected = await get_expected_vote_weight(
-            stake_amount.amount_raw(),
-            2 * years,
-            dacId
-          );
+          const expected =
+            total_votes_on_candidates_before +
+            (await get_expected_vote_weight(
+              stake_amount.amount_raw(),
+              2 * years,
+              dacId
+            ));
           const x = await get_from_state2(
             dacId,
             state_keys.total_votes_on_candidates

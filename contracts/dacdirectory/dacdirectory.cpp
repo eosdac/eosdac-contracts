@@ -13,8 +13,6 @@ namespace eosdac {
             map<uint8_t, string> refs, map<uint8_t, eosio::name> accounts) {
             require_auth(owner);
 
-            const vector<name> forbidden{
-                "admin"_n, "builder"_n, "members"_n, "dacauthority"_n, "daccustodian"_n, "eosdactokens"_n};
             check(std::find(forbidden.begin(), forbidden.end(), dac_id) == forbidden.end(),
                 "ERR::DAC_FORBIDDEN_NAME::DAC ID is forbidden");
             auto existing = _dacs.find(dac_id.value);

@@ -79,7 +79,7 @@ inline char *fmt(const std::string_view format, Args const &...args) {
  * helpful error messages.
  */
 template <typename... Args>
-inline void check(bool pred, const std::string_view format, Args const &...args) {
+constexpr void check(const bool pred, const std::string_view format, Args const &...args) {
     if (!pred) {
         const auto msg = fmt(format, args...);
         check(pred, msg);
@@ -113,13 +113,4 @@ inline bool upsert(Table &table, const uint64_t pk, const eosio::name payer, con
 
 inline time_point_sec now() {
     return time_point_sec(current_time_point());
-}
-
-template <typename T>
-inline T abs(const T x) {
-    if (x < 0) {
-        return -x;
-    } else {
-        return x;
-    }
 }

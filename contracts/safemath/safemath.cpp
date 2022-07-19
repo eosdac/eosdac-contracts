@@ -1,12 +1,21 @@
 #include "../../contract-shared-headers/safemath.hpp"
 #include "../../contract-shared-headers/common_utilities.hpp"
 #include <eosio/eosio.hpp>
+#include <experimental/type_traits>
 #include <math.h>
 
 using namespace eosio;
 
 static constexpr auto constexpr_a = S<uint8_t>{1};
 static constexpr auto constexpr_b = S<uint8_t>{2};
+
+static constexpr auto constexpr_c = S<int64_t>{1} - S<int64_t>{2};
+
+template <typename R1, typename R2>
+using can_plus = decltype(std::declval<R1>() + std::declval<R2>());
+
+template <typename R1, typename R2>
+using can_equal = decltype(std::declval<R1>() == std::declval<R2>());
 
 CONTRACT safemath : public contract {
   public:
@@ -149,9 +158,8 @@ CONTRACT safemath : public contract {
     }
 
     ACTION xxx2() {
-        const auto tmp = S<uint32_t>{2} * S<uint32_t>{3} + (S<uint32_t>{5} * S<uint32_t>{6});
-        const auto res = tmp.to<uint32_t>();
-        check(res == 36, "wrong result");
+        const auto res = S<uint32_t>{2} * S<uint32_t>{3} + (S<uint32_t>{5} * S<uint32_t>{6});
+        check(res == uint32_t{36}, "wrong result");
     }
 
     ACTION xxx3() {
@@ -182,18 +190,52 @@ CONTRACT safemath : public contract {
     }
 
     ACTION yyy5() {
-        check(S{10}.ipow(3) == 1000, "wrong result 1 ");
+        check(S{10}.ipow(3) == 1000, "wrong result 1: %s expected %s", S{10}.ipow(3), 1000);
         check(S{10}.ipow(6) == 1000000, "wrong result 2");
         check(S{2}.ipow(3) == 8, "wrong result 3");
         check(S{2}.ipow(0) == 1, "wrong result 4");
         check(S{-2}.ipow(3) == -8, "wrong result 5");
         check(S{0}.ipow(3) == 0, "wrong result 6");
+        check(S{int8_t{2}}.ipow(int8_t{6}) == int8_t{64}, "wrong result 7");
     }
 
     ACTION zzz1() {
         S{2ull}.ipow(100ull);
     }
     ACTION zzz2() {
-        check(S{1ull}.ipow(100ull) == 1, "wrong result");
+        check(S{1ull}.ipow(100ull) == 1ull, "wrong result");
+    }
+    ACTION zzz3() {
+        S{int8_t{2}}.ipow(int8_t{7});
+    }
+    ACTION zzz4() {
+        S<uint64_t>{0}.to<int64_t>();
+    }
+    ACTION zzz5() {
+        S<int128_t>{1}.to<uint128_t>();
+    }
+
+    /*
+     * this test is checked at compile time. if it compiles, test has passed.
+     */
+    ACTION compile() {
+        constexpr bool can_compile1 =
+            std::experimental::is_detected_v<can_plus, decltype(S<int16_t>{1}), decltype(S<uint16_t>{2})>;
+        static_assert(!can_compile1, "operator+() should not compile with diffferent number types");
+
+        constexpr bool can_compile2 =
+            std::experimental::is_detected_v<can_equal, decltype(S<int16_t>{1}), decltype(S<uint16_t>{2})>;
+        static_assert(!can_compile2, "operator==() should not compile with diffferent number types");
+
+        constexpr bool can_compile3 = std::experimental::is_detected_v<can_equal, decltype(S{1u}), decltype(2)>;
+        static_assert(!can_compile3, "operator==() should not compile with diffferent number types");
+
+        constexpr bool can_compile4 = std::experimental::is_detected_v<can_equal, decltype(S{1u}), decltype(2u)>;
+        static_assert(can_compile4, "operator==() should compile with same number types");
+
+        constexpr auto a = S{1}.to<uint128_t>();
+    }
+    ACTION const1() {
+        check(constexpr_c == S{int64_t{-1}}, "wrong result");
     }
 };

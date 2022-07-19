@@ -42,6 +42,9 @@ namespace eosdac {
           private:
             void upsert_nft(const uint64_t id, const std::optional<name> old_owner_optional, const name new_owner);
 
+            static constexpr auto forbidden =
+                array{"admin"_n, "builder"_n, "members"_n, "dacauthority"_n, "daccustodian"_n, "eosdactokens"_n};
+
           protected:
             dac_table _dacs;
         };

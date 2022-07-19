@@ -241,13 +241,10 @@ void referendum::vote(name voter, name referendum_id, uint8_t vote, name dac_id)
 
 void referendum::updatestatus(name referendum_id, name dac_id) {
     checkDAC(dac_id);
-    referenda_table referenda(get_self(), dac_id.value);
-
-    uint8_t new_status = calculateStatus(referendum_id, dac_id);
-
-    auto ref = referenda.find(referendum_id.value);
-    check(ref != referenda.end(), "ERR::REFERENDUM_NOT_FOUND::Referendum not found");
-    referenda.modify(*ref, same_payer, [&](auto &r) {
+    auto       referenda = referenda_table{get_self(), dac_id.value};
+    const auto ref = referenda.require_find(referendum_id.value, "ERR::REFERENDUM_NOT_FOUND::Referendum not found");
+    const auto new_status = ref->get_status(get_self(), dac_id);
+    referenda.modify(ref, same_payer, [&](auto &r) {
         r.status = new_status;
     });
 }
@@ -265,11 +262,9 @@ void referendum::cancel(name referendum_id, name dac_id) {
 void referendum::exec(name referendum_id, name dac_id) {
     checkDAC(dac_id);
     referenda_table referenda(get_self(), dac_id.value);
-    auto            ref = referenda.find(referendum_id.value);
+    auto            ref = referenda.require_find(referendum_id.value, "ERR:REFERENDUM_NOT_FOUND::Referendum not found");
+    const auto      calculated_status = ref->get_status(get_self(), dac_id);
 
-    uint8_t calculated_status = calculateStatus(referendum_id, dac_id);
-
-    check(ref != referenda.end(), "ERR:REFERENDUM_NOT_FOUND::Referendum not found");
     check(ref->type < vote_type::TYPE_OPINION, "ERR::CANNOT_EXEC::Cannot exec this type of referendum");
     check(ref->acts.size(), "ERR::NO_ACTION::No action to execute");
     check(ref->status == referendum_status::STATUS_PASSING,
@@ -373,64 +368,6 @@ void referendum::checkDAC(name dac_id) {
 #ifdef RESTRICT_DAC
     check(dac_id == name(RESTRICT_DAC), "DAC not permitted");
 #endif
-}
-
-uint8_t referendum::calculateStatus(name referendum_id, name dac_id) {
-    referenda_table referenda(get_self(), dac_id.value);
-    auto            ref = referenda.find(referendum_id.value);
-    check(ref != referenda.end(), "ERR:REFERENDUM_NOT_FOUND::Referendum not found");
-
-    config_item config = config_item::get_current_configs(get_self(), dac_id);
-    uint64_t    quorum = 0, current_yes = 0, current_no = 0, current_abstain = 0, current_all = 0;
-    uint16_t    pass_rate      = config.pass[ref->type]; // integer with 2 decimals
-    uint8_t     status         = referendum_status::STATUS_OPEN;
-    uint32_t    time_now       = current_time_point().sec_since_epoch();
-    uint64_t    yes_percentage = 0;
-
-    map<uint8_t, uint64_t> votes;
-
-    if (time_now < ref->expires.sec_since_epoch()) {
-        if (ref->voting_type == count_type::COUNT_TOKEN) {
-            quorum = config.quorum_token[ref->type];
-            votes  = ref->token_votes;
-        } else {
-            quorum = config.quorum_account[ref->type];
-            votes  = ref->account_votes;
-        }
-
-        uint64_t total = 0;
-        for (auto v : votes) {
-            total += v.second;
-        }
-
-        current_yes     = votes.at(vote_choice::VOTE_YES);
-        current_no      = votes.at(vote_choice::VOTE_NO);
-        current_abstain = votes.at(vote_choice::VOTE_ABSTAIN);
-        current_all     = current_yes + current_no + current_abstain;
-
-        // check we have made quorum
-        if (total >= quorum) {
-            // quorum has been reached, check we have passed
-            const auto yes_percentage_s = (S{current_yes}.to<double>() / S{current_all}.to<double>()) *
-                                          S{10000.0}; // multiply by 10000 to get integer with 2
-            yes_percentage = yes_percentage_s.to<uint64_t>();
-            pass_rate      = config.pass[ref->type];
-            if (yes_percentage >= pass_rate) {
-                status = referendum_status::STATUS_PASSING;
-            } else {
-                status = referendum_status::STATUS_FAILING;
-            }
-        } else {
-            status = referendum_status::STATUS_QUORUM_NOT_MET;
-        }
-
-        print("referendum id : ", referendum_id, ", dac id : ", dac_id, ", quorum : ", quorum,
-            ", pass rate : ", pass_rate, ", current rate : ", current_all, ", total : ", total, ", yes : ", current_yes,
-            "double: ", double(current_yes), "all double: ", double(current_all), ", yes% : ", yes_percentage,
-            " status: ", status);
-    }
-
-    return status;
 }
 
 void referendum::proposeMsig(referendum_data ref, name dac_id) {
