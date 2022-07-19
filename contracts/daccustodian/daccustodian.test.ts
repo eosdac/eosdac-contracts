@@ -1225,6 +1225,7 @@ describe('Daccustodian', () => {
           );
           context('with enough candidates to fill the configs', async () => {
             let candidates: Account[];
+            let number_of_custodians = 5;
             before(async () => {
               candidates = await shared.getStakeObservedCandidates(
                 dacId,
@@ -1273,7 +1274,7 @@ describe('Daccustodian', () => {
                   scope: dacId,
                   limit: 20,
                 }),
-                5
+                number_of_custodians
               );
             });
             it('Should have highest ranked votes in custodians', async () => {
@@ -1318,17 +1319,43 @@ describe('Daccustodian', () => {
                   a.perm_name.localeCompare(b.perm_name)
               );
 
+              const custodians = await shared.daccustodian_contract.custodiansTable(
+                {
+                  scope: dacId,
+                  limit: 20,
+                }
+              );
+              const expected_accounts = custodians.rows.map((row) => {
+                return {
+                  permission: {
+                    actor: row.cust_name,
+                    permission: 'active',
+                  },
+                  weight: 1,
+                };
+              });
+
               let ownerPermission = permissions[0];
               let ownerRequiredAuth = ownerPermission.required_auth;
               chai.expect(ownerPermission.parent).to.eq('owner');
               chai.expect(ownerPermission.perm_name).to.eq('active');
               chai.expect(ownerRequiredAuth.threshold).to.eq(1);
+              chai.expect(ownerRequiredAuth.keys.length).to.eq(1);
 
               let adminPermission = permissions[1];
               let adminRequiredAuth = adminPermission.required_auth;
               chai.expect(adminPermission.parent).to.eq('one');
               chai.expect(adminPermission.perm_name).to.eq('admin');
               chai.expect(adminRequiredAuth.threshold).to.eq(1);
+              chai.expect(adminRequiredAuth.accounts).to.deep.equal([
+                {
+                  permission: {
+                    actor: shared.daccustodian_contract.account.name,
+                    permission: 'eosio.code',
+                  },
+                  weight: 1,
+                },
+              ]);
 
               let highPermission = permissions[2];
               let highRequiredAuth = highPermission.required_auth;
@@ -1337,8 +1364,7 @@ describe('Daccustodian', () => {
               chai.expect(highRequiredAuth.threshold).to.eq(4);
 
               let highAccounts = highRequiredAuth.accounts;
-              chai.expect(highAccounts.length).to.eq(5);
-              chai.expect(highAccounts[0].weight).to.eq(1);
+              chai.expect(highAccounts).to.deep.equal(expected_accounts);
 
               let lowPermission = permissions[3];
               let lowRequiredAuth = lowPermission.required_auth;
@@ -1348,8 +1374,7 @@ describe('Daccustodian', () => {
               chai.expect(lowRequiredAuth.threshold).to.eq(2);
 
               let lowAccounts = lowRequiredAuth.accounts;
-              chai.expect(lowAccounts.length).to.eq(5);
-              chai.expect(lowAccounts[0].weight).to.eq(1);
+              chai.expect(lowAccounts).to.deep.equal(expected_accounts);
 
               let medPermission = permissions[4];
               let medRequiredAuth = medPermission.required_auth;
@@ -1359,8 +1384,7 @@ describe('Daccustodian', () => {
               chai.expect(medRequiredAuth.threshold).to.eq(3);
 
               let medAccounts = medRequiredAuth.accounts;
-              chai.expect(medAccounts.length).to.eq(5);
-              chai.expect(medAccounts[0].weight).to.eq(1);
+              chai.expect(medAccounts).to.deep.equal(expected_accounts);
 
               let onePermission = account.permissions[5];
               let oneRequiredAuth = onePermission.required_auth;
@@ -1368,10 +1392,8 @@ describe('Daccustodian', () => {
               chai.expect(onePermission.parent).to.eq('low');
               chai.expect(onePermission.perm_name).to.eq('one');
               chai.expect(oneRequiredAuth.threshold).to.eq(1);
-
               let oneAccounts = oneRequiredAuth.accounts;
-              chai.expect(oneAccounts.length).to.eq(5);
-              chai.expect(oneAccounts[0].weight).to.eq(1);
+              chai.expect(oneAccounts).to.deep.equal(expected_accounts);
             });
           });
           // it('should succeed setting up testuser', async () => {
@@ -2433,7 +2455,6 @@ describe('Daccustodian', () => {
         );
       });
       it('should work', async () => {
-        console.log('dacId: ', dacId);
         await shared.daccustodian_contract.setbudget(dacId, 123);
       });
       it('should set table entry', async () => {
@@ -2446,7 +2467,6 @@ describe('Daccustodian', () => {
         );
       });
       it('setting again', async () => {
-        console.log('dacId: ', dacId);
         await shared.daccustodian_contract.setbudget(dacId, 234);
       });
       it('should update existing table entry', async () => {
@@ -2704,7 +2724,6 @@ async function setup_nfts() {
 }
 async function setup_test_user(testuser: Account, tokenSymbol: string) {
   // const testuser = await AccountManager.createAccount('clienttest');
-  console.log(`testuser: ${JSON.stringify(testuser, null, 2)}`);
   await shared.dac_token_contract.transfer(
     shared.dac_token_contract.account.name,
     testuser.name,
