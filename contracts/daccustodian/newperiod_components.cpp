@@ -151,7 +151,7 @@ void daccustodian::add_auth_to_account(const name &accountToChange, const uint8_
         .send();
 }
 
-void daccustodian::add_all_auths(const name &           accountToChange,
+void daccustodian::add_all_auths(const name            &accountToChange,
     const vector<eosiosystem::permission_level_weight> &weights, const name &dac_id, const bool msig) {
     const auto current_config = contr_config::get_current_configs(get_self(), dac_id);
 
@@ -171,10 +171,12 @@ void daccustodian::setMsigAuths(name dac_id) {
     const auto custodians      = custodians_table{get_self(), dac_id.value};
     const auto dac             = dacdir::dac_for_id(dac_id);
     const auto current_config  = contr_config::get_current_configs(get_self(), dac_id);
-    const auto accountToChange = dac.account_for_type_maybe(dacdir::MSIGOWNED).value_or(dac.owner);
+    const auto msigowned_opt   = dac.account_for_type_maybe(dacdir::MSIGOWNED);
+    const auto is_msig         = msigowned_opt.has_value();
+    const auto accountToChange = msigowned_opt.value_or(dac.owner);
 
     auto weights = get_perm_level_weights(custodians, dac_id);
-    add_all_auths(accountToChange, weights, dac_id, true);
+    add_all_auths(accountToChange, weights, dac_id, is_msig);
 }
 
 asset balance_for_type(const dacdir::dac &dac, const dacdir::account_type type) {
