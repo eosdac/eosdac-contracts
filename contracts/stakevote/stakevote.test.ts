@@ -63,7 +63,8 @@ describe('Stakevote', () => {
     // let stake_amount = `1000.0000 ${symbol}`;
     let stake_amount = new Asset(1000, symbol);
     let stake_delay = 2 * years;
-    let time_multiplier = 1;
+    let time_multiplier = 10000;
+    let stake_duration_factor = 10;
     let regMembers: Account[];
     let candidates: Account[];
     before(async () => {
@@ -84,7 +85,7 @@ describe('Stakevote', () => {
       regMembers = await shared.getRegMembers(dacId, stake_amount.toString());
 
       await shared.stakevote_contract.updateconfig(
-        { time_multiplier: 10 ** 8 },
+        { time_multiplier: 10 ** 8, stake_duration_factor },
         dacId,
         { from: shared.auth_account }
       );
@@ -103,7 +104,7 @@ describe('Stakevote', () => {
         );
         console.log('total_weight_of_votes before: ', x);
         await shared.stakevote_contract.updateconfig(
-          { time_multiplier },
+          { time_multiplier, stake_duration_factor },
           dacId,
           { from: shared.auth_account }
         );
@@ -332,7 +333,7 @@ describe('Stakevote', () => {
             total_votes_on_candidates_before +
             (await get_expected_vote_weight(
               stake_amount.amount_raw(),
-              2 * years,
+              stake_delay,
               dacId
             ));
           const x = await get_from_state2(
@@ -592,9 +593,18 @@ async function get_from_state2(dacId, key) {
 
 async function get_expected_vote_weight(stake_amount, unstake_delay, dac_id) {
   const time_divisor = 100000000;
-  const time_multiplier = (
+  const config = (
     await shared.stakevote_contract.configTable({ scope: dac_id })
-  ).rows[0].time_multiplier;
-  console.log('stakevote time_multiplier: ', time_multiplier);
-  return (stake_amount * unstake_delay * time_multiplier) / time_divisor;
+  ).rows[0];
+  const time_multiplier = config.time_multiplier;
+  const stake_duration_factor = config.stake_duration_factor;
+  console.log('time_multiplier: ' + time_multiplier);
+  console.log('stake_duration_factor: ', stake_duration_factor);
+  const max_stake_time = 2 * years;
+  return (
+    (stake_amount *
+      (1 + (stake_duration_factor * unstake_delay) / max_stake_time) *
+      time_multiplier) /
+    time_divisor
+  );
 }

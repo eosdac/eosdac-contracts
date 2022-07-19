@@ -18,7 +18,8 @@ CONTRACT stakevote : public contract {
 
     struct [[eosio::table("config"), eosio::contract("stakevote")]] config_item {
         // time multiplier is measured in 10^-8 1 == 0.00000001
-        int64_t            time_multiplier = time_divisor;
+        int64_t            time_multiplier       = time_divisor;
+        int64_t            stake_duration_factor = 10;
         static config_item get_current_configs(eosio::name account, eosio::name scope) {
             check(config_container(account, scope.value).exists(), "Stake config not set.");
             return config_container(account, scope.value).get();

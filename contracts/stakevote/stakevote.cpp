@@ -23,7 +23,10 @@ void stakevote::stakeobsv(const vector<account_stake_delta> &stake_deltas, const
 
     for (auto asd : stake_deltas) {
         const auto weight_delta_quorum = asd.stake_delta.amount;
-        const auto weight_delta_s = S{asd.stake_delta.amount}.to<int128_t>() * S{asd.unstake_delay}.to<int128_t>() *
+        const auto max_stake_time      = S{2 * YEARS}.to<int128_t>();
+        const auto weight_delta_s      = S{asd.stake_delta.amount}.to<int128_t>() *
+                                    (S{int128_t{1}} + S{config.stake_duration_factor}.to<int128_t>() *
+                                                          S{asd.unstake_delay}.to<int128_t>() / max_stake_time) *
                                     S{config.time_multiplier}.to<int128_t>() / time_divisor;
         const int64_t weight_delta = weight_delta_s.to<int64_t>();
         auto          vw_itr       = weights.find(asd.account.value);
