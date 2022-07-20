@@ -287,20 +287,6 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
         const double percent_of_current_voter_engagement =
             S{currentState.get_total_weight_of_votes()}.to<double>() / S{token_current_supply}.to<double>() * S{100.0};
 
-        // if (tokenStakeConfig.enabled &&
-        //     found_dac.account_for_type_maybe(dacdir::account_type::VOTE_WEIGHT).has_value()) {
-        //     uint8_t  precision                         = tokenStats->supply.symbol.precision();
-        //     uint64_t token_current_supply_whole_tokens = tokenStats->supply.amount / pow(10, precision);
-        //     uint64_t max_total_stake_weight = token_current_supply_whole_tokens * tokenStakeConfig.max_stake_time;
-        //
-        //     percent_of_current_voter_engagement =
-        //         double(currentState.get_total_weight_of_votes()) / double(max_total_stake_weight) * 100.0;
-        // } else {
-        //     percent_of_current_voter_engagement =
-        //         double(currentState.get_total_weight_of_votes()) / double(token_current_supply) * 100.0;
-        // }
-        print(fmt("DBG: token_current_supply: %s ", token_current_supply));
-
         check(currentState.get_met_initial_votes_threshold() == true ||
                   percent_of_current_voter_engagement > configs.initial_vote_quorum_percent,
             "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_ACTIVATE::Voter engagement %s is insufficient to activate the DAC (%s required) token_current_supply: %s total_weight_of_votes: %s.",
