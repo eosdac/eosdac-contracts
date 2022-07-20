@@ -8,7 +8,9 @@ void stakevote::stakeobsv(const vector<account_stake_delta> &stake_deltas, const
 
     require_auth(token_contract);
 
-    const auto config = config_item::get_current_configs(get_self(), dac_id);
+    const auto config         = config_item::get_current_configs(get_self(), dac_id);
+    const auto token_config   = stake_config::get_current_configs(token_contract, dac_id);
+    const auto max_stake_time = S{token_config.max_stake_time}.to<int128_t>();
 
     // Forward all the stake notifications to allow custodian contract to forbid unstaking for a custodian
     if (custodian_contract) {
@@ -21,9 +23,8 @@ void stakevote::stakeobsv(const vector<account_stake_delta> &stake_deltas, const
     vector<account_weight_delta> weight_deltas;
     auto                         weights = weight_table{get_self(), dac_id.value};
 
-    for (auto asd : stake_deltas) {
+    for (const auto &asd : stake_deltas) {
         const auto weight_delta_quorum = asd.stake_delta.amount;
-        const auto max_stake_time      = S{2 * YEARS}.to<int128_t>();
         const auto weight_delta_s      = S{asd.stake_delta.amount}.to<int128_t>() *
                                     (S{int128_t{1}} + S{config.stake_duration_factor}.to<int128_t>() *
                                                           S{asd.unstake_delay}.to<int128_t>() / max_stake_time) *
