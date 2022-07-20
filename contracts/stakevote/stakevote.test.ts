@@ -27,6 +27,8 @@ const days = 24 * hours;
 const months = 30 * days;
 const years = 12 * months;
 
+const STAKE_DURATION_FACTOR = 10;
+
 import { SharedTestObjects, NUMBER_OF_CANDIDATES } from '../TestHelpers';
 import * as chai from 'chai';
 let shared: SharedTestObjects;
@@ -580,14 +582,13 @@ async function get_expected_vote_weight(stake_amount, unstake_delay, dac_id) {
     await shared.stakevote_contract.configTable({ scope: dac_id })
   ).rows[0];
   const time_multiplier = config.time_multiplier;
-  const stake_duration_factor = config.stake_duration_factor;
   const res = await shared.dac_token_contract.stakeconfigTable({
     scope: dac_id,
   });
   const max_stake_time = res.rows[0].max_stake_time;
   return (
     (stake_amount *
-      (1 + (stake_duration_factor * unstake_delay) / max_stake_time) *
+      (1 + (STAKE_DURATION_FACTOR * unstake_delay) / max_stake_time) *
       time_multiplier) /
     time_divisor
   );
