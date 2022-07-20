@@ -25,7 +25,7 @@ const minutes = 60;
 const hours = 60 * minutes;
 const days = 24 * hours;
 const months = 30 * days;
-const years = 365 * days;
+const years = 12 * months;
 
 import { SharedTestObjects, NUMBER_OF_CANDIDATES } from '../TestHelpers';
 import * as chai from 'chai';
@@ -258,11 +258,32 @@ describe('Stakevote', () => {
                   : 1;
               }).reverse();
               console.log('rs: ', JSON.stringify(rs, null, 2));
-              chai.expect(rs[0].total_votes).to.equal(100915200);
-              chai.expect(rs[1].total_votes).to.equal(100915200);
-              chai.expect(rs[2].total_votes).to.equal(100915200);
-              chai.expect(rs[3].total_votes).to.equal(50457600);
-              chai.expect(rs[4].total_votes).to.equal(50457600);
+
+              const single_voter_weight = await get_expected_vote_weight(
+                stake_amount.amount_raw(),
+                stake_delay,
+                dacId
+              );
+
+              chai
+                .expect(rs[0].total_votes)
+                .to.equal(shared.NUMBER_OF_REG_MEMBERS * single_voter_weight);
+              chai
+                .expect(rs[1].total_votes)
+                .to.equal(shared.NUMBER_OF_REG_MEMBERS * single_voter_weight);
+              chai
+                .expect(rs[2].total_votes)
+                .to.equal(shared.NUMBER_OF_REG_MEMBERS * single_voter_weight);
+              chai
+                .expect(rs[3].total_votes)
+                .to.equal(
+                  (shared.NUMBER_OF_REG_MEMBERS * single_voter_weight) / 2
+                );
+              chai
+                .expect(rs[4].total_votes)
+                .to.equal(
+                  (shared.NUMBER_OF_REG_MEMBERS * single_voter_weight) / 2
+                );
             });
           });
         });
@@ -285,6 +306,14 @@ describe('Stakevote', () => {
       context('for 1 candidate', async () => {
         let total_weight_of_votes_before;
         let total_votes_on_candidates_before;
+        it('stakeconfig should be set correctly', async () => {
+          const res = await shared.dac_token_contract.stakeconfigTable({
+            scope: dacId,
+          });
+
+          const max_stake_time = res.rows[0].max_stake_time;
+          chai.expect(max_stake_time).to.equal(stake_delay);
+        });
         it('before voting: total_weight_of_votes', async () => {
           total_weight_of_votes_before = await get_from_state2(
             dacId,
@@ -598,9 +627,10 @@ async function get_expected_vote_weight(stake_amount, unstake_delay, dac_id) {
   ).rows[0];
   const time_multiplier = config.time_multiplier;
   const stake_duration_factor = config.stake_duration_factor;
-  console.log('time_multiplier: ' + time_multiplier);
-  console.log('stake_duration_factor: ', stake_duration_factor);
-  const max_stake_time = 2 * years;
+  const res = await shared.dac_token_contract.stakeconfigTable({
+    scope: dac_id,
+  });
+  const max_stake_time = res.rows[0].max_stake_time;
   return (
     (stake_amount *
       (1 + (stake_duration_factor * unstake_delay) / max_stake_time) *
