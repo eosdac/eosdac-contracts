@@ -42,6 +42,16 @@ class S {
         return std::numeric_limits<T>::max();
     }
 
+    std::string to_string() const {
+        if constexpr (std::is_same_v<T, int128_t>) {
+            return std::to_string(to<int64_t>());
+        } else if constexpr (std::is_same_v<T, uint128_t>) {
+            return std::to_string(to<uint64_t>());
+        } else {
+            return std::to_string(n);
+        }
+    }
+
     // a checked version of narrow_cast() that throws if the cast changed the value
     // Adapted from: https://github.com/microsoft/GSL/blob/main/include/gsl/narrow (MIT licensed)
     template <typename U, typename std::enable_if<std::is_arithmetic<U>::value>::type * = nullptr>

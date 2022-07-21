@@ -10,7 +10,8 @@ using namespace eosio;
 using namespace eosdac;
 using namespace std;
 
-static constexpr auto time_divisor = S{10}.ipow(8).to<int128_t>();
+static constexpr auto time_divisor          = S{10}.ipow(8).to<int128_t>();
+static constexpr auto stake_duration_factor = S{10}.to<int128_t>();
 
 CONTRACT stakevote : public contract {
   public:

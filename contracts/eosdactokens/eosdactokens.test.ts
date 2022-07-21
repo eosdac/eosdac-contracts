@@ -238,6 +238,50 @@ describe('EOSDacTokens', () => {
         validAuths
       );
     });
+    context('stakeconfig', async () => {
+      let dacowner: Account;
+      before(async () => {
+        dacowner = await l.AccountManager.createAccount();
+        await shared.dacdirectory_contract.regdac(
+          dacowner.name,
+          'stakeconfig',
+          {
+            contract: shared.dac_token_contract.account.name,
+            sym: '4,STA',
+          },
+          'abc dac_title',
+          [],
+          [
+            {
+              key: Account_type.CUSTODIAN,
+              value: shared.daccustodian_contract.account.name,
+            },
+          ],
+          {
+            auths: [{ actor: dacowner.name, permission: 'active' }],
+          }
+        );
+      });
+      it('should work', async () => {
+        await shared.dac_token_contract.stakeconfig(
+          { enabled: true, min_stake_time: 123, max_stake_time: 456 },
+          '4,STA',
+          { from: dacowner }
+        );
+      });
+      it('should set the config values', async () => {
+        const res = await shared.dac_token_contract.stakeconfigTable({
+          scope: 'stakeconfig',
+        });
+        chai.expect(res.rows).to.deep.equal([
+          {
+            enabled: true,
+            min_stake_time: 123,
+            max_stake_time: 456,
+          },
+        ]);
+      });
+    });
     context('stake', async () => {
       context('stake without staking enabled', async () => {
         it('should fail with staking not enabled error', async () => {

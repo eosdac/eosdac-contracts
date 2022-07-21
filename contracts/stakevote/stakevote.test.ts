@@ -25,7 +25,9 @@ const minutes = 60;
 const hours = 60 * minutes;
 const days = 24 * hours;
 const months = 30 * days;
-const years = 365 * days;
+const years = 12 * months;
+
+const STAKE_DURATION_FACTOR = 10;
 
 import { SharedTestObjects, NUMBER_OF_CANDIDATES } from '../TestHelpers';
 import * as chai from 'chai';
@@ -63,7 +65,7 @@ describe('Stakevote', () => {
     // let stake_amount = `1000.0000 ${symbol}`;
     let stake_amount = new Asset(1000, symbol);
     let stake_delay = 2 * years;
-    let time_multiplier = 1;
+    let time_multiplier = 10000;
     let regMembers: Account[];
     let candidates: Account[];
     before(async () => {
@@ -101,7 +103,6 @@ describe('Stakevote', () => {
           dacId,
           state_keys.total_weight_of_votes
         );
-        console.log('total_weight_of_votes before: ', x);
         await shared.stakevote_contract.updateconfig(
           { time_multiplier },
           dacId,
@@ -217,10 +218,6 @@ describe('Stakevote', () => {
                 state_keys.total_weight_of_votes
               );
               chai.expect(x).to.equal(expected_weight_of_votes);
-              console.log(
-                'staking should update vote_weight total_weight_of_votes: ',
-                x
-              );
             });
             it('should succeed with custodians populated', async () => {
               await shared.daccustodian_contract.newperiod(
@@ -256,12 +253,32 @@ describe('Stakevote', () => {
                   ? 0
                   : 1;
               }).reverse();
-              console.log('rs: ', JSON.stringify(rs, null, 2));
-              chai.expect(rs[0].total_votes).to.equal(100915200);
-              chai.expect(rs[1].total_votes).to.equal(100915200);
-              chai.expect(rs[2].total_votes).to.equal(100915200);
-              chai.expect(rs[3].total_votes).to.equal(50457600);
-              chai.expect(rs[4].total_votes).to.equal(50457600);
+
+              const single_voter_weight = await get_expected_vote_weight(
+                stake_amount.amount_raw(),
+                stake_delay,
+                dacId
+              );
+
+              chai
+                .expect(rs[0].total_votes)
+                .to.equal(shared.NUMBER_OF_REG_MEMBERS * single_voter_weight);
+              chai
+                .expect(rs[1].total_votes)
+                .to.equal(shared.NUMBER_OF_REG_MEMBERS * single_voter_weight);
+              chai
+                .expect(rs[2].total_votes)
+                .to.equal(shared.NUMBER_OF_REG_MEMBERS * single_voter_weight);
+              chai
+                .expect(rs[3].total_votes)
+                .to.equal(
+                  (shared.NUMBER_OF_REG_MEMBERS * single_voter_weight) / 2
+                );
+              chai
+                .expect(rs[4].total_votes)
+                .to.equal(
+                  (shared.NUMBER_OF_REG_MEMBERS * single_voter_weight) / 2
+                );
             });
           });
         });
@@ -284,16 +301,20 @@ describe('Stakevote', () => {
       context('for 1 candidate', async () => {
         let total_weight_of_votes_before;
         let total_votes_on_candidates_before;
+        it('stakeconfig should be set correctly', async () => {
+          const res = await shared.dac_token_contract.stakeconfigTable({
+            scope: dacId,
+          });
+
+          const max_stake_time = res.rows[0].max_stake_time;
+          chai.expect(max_stake_time).to.equal(stake_delay);
+        });
         it('before voting: total_weight_of_votes', async () => {
           total_weight_of_votes_before = await get_from_state2(
             dacId,
             state_keys.total_weight_of_votes
           );
           total_weight_of_votes_beginning = total_weight_of_votes_before;
-          console.log(
-            'before voting: total_weight_of_votes: ',
-            total_weight_of_votes_before
-          );
         });
         it('before voting: total_votes_on_candidates', async () => {
           total_votes_on_candidates_before = await get_from_state2(
@@ -301,10 +322,6 @@ describe('Stakevote', () => {
             state_keys.total_votes_on_candidates
           );
           total_votes_on_candidates_beginning = total_votes_on_candidates_before;
-          console.log(
-            'before voting: total_votes_on_candidates: ',
-            total_votes_on_candidates_before
-          );
         });
         it('should work', async () => {
           const cust1 = candidates[0];
@@ -324,7 +341,6 @@ describe('Stakevote', () => {
             dacId,
             state_keys.total_weight_of_votes
           );
-          console.log('after voting: total_weight_of_votes: ', x);
           chai.expect(x).to.equal(expected);
         });
         it('should update total_votes_on_candidates', async () => {
@@ -332,14 +348,13 @@ describe('Stakevote', () => {
             total_votes_on_candidates_before +
             (await get_expected_vote_weight(
               stake_amount.amount_raw(),
-              2 * years,
+              stake_delay,
               dacId
             ));
           const x = await get_from_state2(
             dacId,
             state_keys.total_votes_on_candidates
           );
-          console.log('after voting: total_votes_on_candidates: ', x);
           chai.expect(parseInt(x, 10)).to.equal(expected);
         });
       });
@@ -351,19 +366,11 @@ describe('Stakevote', () => {
             dacId,
             state_keys.total_weight_of_votes
           );
-          console.log(
-            'before voting: total_weight_of_votes: ',
-            total_weight_of_votes_before
-          );
         });
         it('before voting: total_votes_on_candidates', async () => {
           total_votes_on_candidates_before = await get_from_state2(
             dacId,
             state_keys.total_votes_on_candidates
-          );
-          console.log(
-            'before voting: total_votes_on_candidates: ',
-            total_votes_on_candidates_before
           );
         });
         it('should work', async () => {
@@ -384,7 +391,6 @@ describe('Stakevote', () => {
             dacId,
             state_keys.total_weight_of_votes
           );
-          console.log('after voting: total_weight_of_votes: ', x);
           chai.expect(x).to.equal(expected);
         });
         it('should not increase total_votes_on_candidates', async () => {
@@ -393,7 +399,6 @@ describe('Stakevote', () => {
             dacId,
             state_keys.total_votes_on_candidates
           );
-          console.log('after voting: total_votes_on_candidates: ', x);
           chai.expect(x).to.equal(expected);
         });
       });
@@ -405,19 +410,11 @@ describe('Stakevote', () => {
             dacId,
             state_keys.total_weight_of_votes
           );
-          console.log(
-            'before voting: total_weight_of_votes: ',
-            total_weight_of_votes_before
-          );
         });
         it('before voting: total_votes_on_candidates', async () => {
           total_votes_on_candidates_before = await get_from_state2(
             dacId,
             state_keys.total_votes_on_candidates
-          );
-          console.log(
-            'before voting: total_votes_on_candidates: ',
-            total_votes_on_candidates_before
           );
         });
         it('should work', async () => {
@@ -437,7 +434,6 @@ describe('Stakevote', () => {
             dacId,
             state_keys.total_weight_of_votes
           );
-          console.log('after voting: total_weight_of_votes: ', x);
           chai.expect(x).to.equal(expected);
         });
         it('should not decrease total_votes_on_candidates', async () => {
@@ -446,7 +442,6 @@ describe('Stakevote', () => {
             dacId,
             state_keys.total_votes_on_candidates
           );
-          console.log('after voting: total_votes_on_candidates: ', x);
           chai.expect(x).to.equal(expected);
         });
       });
@@ -458,19 +453,11 @@ describe('Stakevote', () => {
             dacId,
             state_keys.total_weight_of_votes
           );
-          console.log(
-            'before voting: total_weight_of_votes: ',
-            total_weight_of_votes_before
-          );
         });
         it('before voting: total_votes_on_candidates', async () => {
           total_votes_on_candidates_before = await get_from_state2(
             dacId,
             state_keys.total_votes_on_candidates
-          );
-          console.log(
-            'before voting: total_votes_on_candidates: ',
-            total_votes_on_candidates_before
           );
         });
         it('should work', async () => {
@@ -485,7 +472,6 @@ describe('Stakevote', () => {
             dacId,
             state_keys.total_weight_of_votes
           );
-          console.log('after voting: total_weight_of_votes: ', x);
           chai.expect(x).to.equal(expected);
         });
         it('should restore original total_votes_on_candidates', async () => {
@@ -494,7 +480,6 @@ describe('Stakevote', () => {
             dacId,
             state_keys.total_votes_on_candidates
           );
-          console.log('after voting: total_votes_on_candidates: ', x);
           chai.expect(x).to.equal(expected);
         });
       });
@@ -592,9 +577,18 @@ async function get_from_state2(dacId, key) {
 
 async function get_expected_vote_weight(stake_amount, unstake_delay, dac_id) {
   const time_divisor = 100000000;
-  const time_multiplier = (
+  const config = (
     await shared.stakevote_contract.configTable({ scope: dac_id })
-  ).rows[0].time_multiplier;
-  console.log('stakevote time_multiplier: ', time_multiplier);
-  return (stake_amount * unstake_delay * time_multiplier) / time_divisor;
+  ).rows[0];
+  const time_multiplier = config.time_multiplier;
+  const res = await shared.dac_token_contract.stakeconfigTable({
+    scope: dac_id,
+  });
+  const max_stake_time = res.rows[0].max_stake_time;
+  return (
+    (stake_amount *
+      (1 + (STAKE_DURATION_FACTOR * unstake_delay) / max_stake_time) *
+      time_multiplier) /
+    time_divisor
+  );
 }

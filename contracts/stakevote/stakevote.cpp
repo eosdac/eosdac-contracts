@@ -8,7 +8,9 @@ void stakevote::stakeobsv(const vector<account_stake_delta> &stake_deltas, const
 
     require_auth(token_contract);
 
-    const auto config = config_item::get_current_configs(get_self(), dac_id);
+    const auto config         = config_item::get_current_configs(get_self(), dac_id);
+    const auto token_config   = stake_config::get_current_configs(token_contract, dac_id);
+    const auto max_stake_time = S{token_config.max_stake_time}.to<int128_t>();
 
     // Forward all the stake notifications to allow custodian contract to forbid unstaking for a custodian
     if (custodian_contract) {
@@ -21,12 +23,14 @@ void stakevote::stakeobsv(const vector<account_stake_delta> &stake_deltas, const
     vector<account_weight_delta> weight_deltas;
     auto                         weights = weight_table{get_self(), dac_id.value};
 
-    for (auto asd : stake_deltas) {
+    for (const auto &asd : stake_deltas) {
         const auto weight_delta_quorum = asd.stake_delta.amount;
-        const auto weight_delta_s = S{asd.stake_delta.amount}.to<int128_t>() * S{asd.unstake_delay}.to<int128_t>() *
-                                    S{config.time_multiplier}.to<int128_t>() / time_divisor;
+        const auto weight_delta_s =
+            S{asd.stake_delta.amount}.to<int128_t>() *
+            (S{int128_t{1}} + stake_duration_factor * S{asd.unstake_delay}.to<int128_t>() / max_stake_time) *
+            S{config.time_multiplier}.to<int128_t>() / time_divisor;
         const int64_t weight_delta = weight_delta_s.to<int64_t>();
-        auto          vw_itr       = weights.find(asd.account.value);
+        const auto    vw_itr       = weights.find(asd.account.value);
         if (vw_itr != weights.end()) {
             weights.modify(vw_itr, same_payer, [&](auto &v) {
                 v.weight += weight_delta;
@@ -84,9 +88,13 @@ void stakevote::clearweights(uint16_t batch_size, name dac_id) {
 
 void stakevote::collectwts(uint16_t batch_size, uint32_t unstake_time, name dac_id) {
     require_auth(get_self());
-    weight_table weights(get_self(), dac_id.value);
-    stakes_table stakes("token.worlds"_n, dac_id.value);
-    auto         config = config_item::get_current_configs(get_self(), dac_id);
+    auto       weights        = weight_table{get_self(), dac_id.value};
+    const auto stakes         = stakes_table{"token.worlds"_n, dac_id.value};
+    const auto config         = config_item::get_current_configs(get_self(), dac_id);
+    const auto dac            = dacdir::dac_for_id(dac_id);
+    const auto token_contract = dac.symbol.get_contract();
+    const auto token_config   = stake_config::get_current_configs(token_contract, dac_id);
+    const auto max_stake_time = S{token_config.max_stake_time}.to<int128_t>();
 
     auto lastWeight = weights.end();
     if (lastWeight != weights.begin()) {
@@ -94,15 +102,17 @@ void stakevote::collectwts(uint16_t batch_size, uint32_t unstake_time, name dac_
     }
     check(stakes.begin() != stakes.end(), "No stakes found.");
 
-    auto stake = lastWeight != weights.end() ? stakes.find((lastWeight->voter).value) : stakes.begin();
-
+    auto stake   = lastWeight != weights.end() ? stakes.find((lastWeight->voter).value) : stakes.begin();
     auto counter = 0;
     while (stake != stakes.end() && counter < batch_size) {
-        auto vw_itr = weights.find((stake->account).value);
+        const auto vw_itr = weights.find((stake->account).value);
         if (vw_itr == weights.end()) {
             const auto weight_delta_quorum = (stake->stake).amount;
-            const auto weight_delta_s      = S{(stake->stake).amount}.to<int128_t>() * S{unstake_time}.to<int128_t>() *
-                                        S{config.time_multiplier}.to<int128_t>() / time_divisor;
+            const auto weight_delta_s =
+                S{(stake->stake).amount}.to<int128_t>() *
+                (S{int128_t{1}} + stake_duration_factor * S{unstake_time}.to<int128_t>() / max_stake_time) *
+                S{config.time_multiplier}.to<int128_t>() / time_divisor;
+
             const int64_t weight_delta = weight_delta_s.to<int64_t>();
             weights.emplace(get_self(), [&](auto &v) {
                 v.voter         = stake->account;

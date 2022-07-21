@@ -17,6 +17,7 @@ static constexpr uint32_t MINUTES{60};
 static constexpr uint32_t HOURS{60 * MINUTES};
 static constexpr uint32_t DAYS{24 * HOURS};
 static constexpr uint32_t MONTHS{30 * DAYS};
+static constexpr uint32_t YEARS{12 * MONTHS};
 
 // TODO: Fill in final value for SECONDS_TO_DOUBLE
 static constexpr uint32_t SECONDS_TO_DOUBLE{30 * DAYS};
