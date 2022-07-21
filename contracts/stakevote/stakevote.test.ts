@@ -66,7 +66,6 @@ describe('Stakevote', () => {
     let stake_amount = new Asset(1000, symbol);
     let stake_delay = 2 * years;
     let time_multiplier = 10000;
-    let stake_duration_factor = 10;
     let regMembers: Account[];
     let candidates: Account[];
     before(async () => {
@@ -87,7 +86,7 @@ describe('Stakevote', () => {
       regMembers = await shared.getRegMembers(dacId, stake_amount.toString());
 
       await shared.stakevote_contract.updateconfig(
-        { time_multiplier: 10 ** 8, stake_duration_factor },
+        { time_multiplier: 10 ** 8 },
         dacId,
         { from: shared.auth_account }
       );
@@ -105,7 +104,7 @@ describe('Stakevote', () => {
           state_keys.total_weight_of_votes
         );
         await shared.stakevote_contract.updateconfig(
-          { time_multiplier, stake_duration_factor },
+          { time_multiplier },
           dacId,
           { from: shared.auth_account }
         );
