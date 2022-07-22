@@ -201,20 +201,26 @@ namespace eosdac {
         return staked;
     }
 
-    static void assertValidMember(eosio::name member, eosio::name dac_id) {
+    static void assertValidMembers(const std::vector<name> &members, eosio::name dac_id) {
         eosio::name member_terms_account;
 
         member_terms_account =
             dacdir::dac_for_id(dac_id).symbol.get_contract(); // Need this line without the temp block
         regmembers reg_members(member_terms_account, dac_id.value);
         memterms   memberterms(member_terms_account, dac_id.value);
+        auto       latest_member_terms = (--memberterms.end());
+        for (const auto member : members) {
+            const auto &regmem = reg_members.get(member.value,
+                fmt("ERR::GENERAL_REG_MEMBER_NOT_FOUND::Account %s is not registered with members.", member));
+            eosio::check((regmem.agreedterms != 0),
+                "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_ANY_TERMS::Account has not agreed to any terms");
+            eosio::check(latest_member_terms->version == regmem.agreedterms,
+                "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_LATEST_TERMS::Agreed terms isn't the latest.");
+        }
+    }
 
-        const auto &regmem = reg_members.get(
-            member.value, fmt("ERR::GENERAL_REG_MEMBER_NOT_FOUND::Account %s is not registered with members.", member));
-        eosio::check((regmem.agreedterms != 0),
-            "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_ANY_TERMS::Account has not agreed to any terms");
-        auto latest_member_terms = (--memberterms.end());
-        eosio::check(latest_member_terms->version == regmem.agreedterms,
-            "ERR::GENERAL_MEMBER_HAS_NOT_AGREED_TO_LATEST_TERMS::Agreed terms isn't the latest.");
+    static void assertValidMember(name member, eosio::name dac_id) {
+        auto members = std::vector{member};
+        assertValidMembers(members, dac_id);
     }
 } // namespace eosdac

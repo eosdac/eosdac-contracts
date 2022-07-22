@@ -12,6 +12,7 @@ ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, c
     check(newvotes.size() <= configs.maxvotes,
         "ERR::VOTECUST_MAX_VOTES_EXCEEDED::Max number of allowed votes was exceeded.");
     std::set<name> dupSet{};
+    assertValidMembers(newvotes, dac_id);
     for (name vote : newvotes) {
         check(
             dupSet.insert(vote).second, "ERR::VOTECUST_DUPLICATE_VOTES::Added duplicate votes for the same candidate.");

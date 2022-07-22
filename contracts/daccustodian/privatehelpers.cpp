@@ -47,13 +47,6 @@ void daccustodian::updateVoteWeights(const vector<name> &votes, const time_point
     for (const auto &cust : votes) {
         updateVoteWeight(cust, vote_time_stamp, vote_weight, dac_id, from_voting);
     }
-
-    if (votes.size() > 0) {
-        auto       currentState              = contr_state2::get_current_state(get_self(), dac_id);
-        const auto total_votes_on_candidates = currentState.get_total_votes_on_candidates();
-        currentState.set_total_votes_on_candidates(S{total_votes_on_candidates} + S{vote_weight});
-        currentState.save(get_self(), dac_id);
-    }
 }
 
 std::pair<int64_t, int64_t> daccustodian::get_vote_weight(name voter, name dac_id) {
@@ -93,16 +86,23 @@ void daccustodian::modifyVoteWeights(const account_weight_delta &awd, const vect
     auto currentState = contr_state2::get_current_state(get_self(), dac_id);
 
     // New voter -> Add the tokens to the total weight.
-    auto total_weight_of_votes = S{currentState.get_total_weight_of_votes()};
+    auto total_weight_of_votes            = S{currentState.get_total_weight_of_votes()};
+    auto total_stake_time_weight_of_votes = currentState.get_total_votes_on_candidates();
 
-    if (oldVotes.size() == 0)
+    if (oldVotes.size() == 0) {
         total_weight_of_votes += S{awd.weight_delta_quorum};
+        total_stake_time_weight_of_votes += S{awd.weight_delta};
+    }
 
     // Leaving voter -> Remove the tokens to the total weight.
-    if (newVotes.size() == 0)
+    if (newVotes.size() == 0) {
         total_weight_of_votes -= S{awd.weight_delta_quorum};
+        total_stake_time_weight_of_votes -= S{awd.weight_delta};
+    }
 
     currentState.set_total_weight_of_votes(total_weight_of_votes);
+    currentState.set_total_votes_on_candidates(total_stake_time_weight_of_votes);
+
     currentState.save(get_self(), dac_id);
 
     if (oldVoteTimestamp.has_value()) {
