@@ -20,9 +20,15 @@ struct [[eosio::table("proposals"), eosio::contract("msigworlds")]] proposal {
     uint8_t                            state = PropState::PENDING;
     std::map<std::string, std::string> metadata;
 
-    uint64_t primary_key() const { return proposal_name.value; }
-    uint64_t by_propser() const { return proposer.value; }
-    uint64_t by_mod_date() const { return modified_date.utc_seconds; }
+    uint64_t primary_key() const {
+        return proposal_name.value;
+    }
+    uint64_t by_propser() const {
+        return proposer.value;
+    }
+    uint64_t by_mod_date() const {
+        return modified_date.utc_seconds;
+    }
 };
 typedef eosio::multi_index<"proposals"_n, proposal,
     indexed_by<"proposer"_n, const_mem_fun<proposal, uint64_t, &proposal::by_propser>>,
@@ -42,7 +48,9 @@ struct [[eosio::table("approvals"), eosio::contract("msigworlds")]] approvals_in
     std::vector<approval> requested_approvals;
     std::vector<approval> provided_approvals;
 
-    uint64_t primary_key() const { return proposal_name.value; }
+    uint64_t primary_key() const {
+        return proposal_name.value;
+    }
 };
 typedef eosio::multi_index<"approvals"_n, approvals_info> approvals;
 
@@ -50,7 +58,9 @@ struct [[eosio::table("invals"), eosio::contract("msigworlds")]] invalidation {
     name       account;
     time_point last_invalidation_time;
 
-    uint64_t primary_key() const { return account.value; }
+    uint64_t primary_key() const {
+        return account.value;
+    }
 };
 typedef eosio::multi_index<"invals"_n, invalidation> invalidations;
 
@@ -59,14 +69,20 @@ struct [[eosio::table("blockedactns"), eosio::contract("msigworlds")]] blocked_a
     name     account;
     name     action;
 
-    uint64_t  primary_key() const { return id; }
-    uint128_t contract_and_actions() const { return (uint128_t)account.value << 64 | action.value; }
+    uint64_t primary_key() const {
+        return id;
+    }
+    uint128_t contract_and_actions() const {
+        return (uint128_t)account.value << 64 | action.value;
+    }
 };
 typedef eosio::multi_index<"blockedactns"_n, blocked_action,
     indexed_by<"contractns"_n, const_mem_fun<blocked_action, uint128_t, &blocked_action::contract_and_actions>>>
     blocked_actions;
 
-TABLE serial { uint64_t id = 0; };
+TABLE serial {
+    uint64_t id = 0;
+};
 using serial_singleton = eosio::singleton<"serial"_n, serial>;
 
 /**
@@ -178,6 +194,16 @@ class [[eosio::contract("msigworlds")]] multisig : public eosio::contract {
     ACTION exec(name proposal_name, name executer, name dac_id);
 
     /**
+     * @brief Checks the current auth condition of the MSIG proposal before trying to execute the transaction. In all
+     * cases an error will be thrown to prevent writing to the blockchain but the error trace will signal if the
+     * transaction is authorised yet.
+     *
+     * @param proposal_name
+     * @param dac_id
+     */
+    ACTION checkauth(name proposal_name, name dac_id);
+
+    /**
      * @brief cleanup action cleans up the table entries for msigs after are completed. Keeping the records in the
      * tables after execution/cancellation rather than deleting facilitates querying the contract to check on msigs
      * that have either completed or cancled without needing offchain dbs.
@@ -208,4 +234,5 @@ class [[eosio::contract("msigworlds")]] multisig : public eosio::contract {
 
   private:
     uint64_t next_id(name dac_id);
+    void     _unapprove(name proposal_name, permission_level level, name dac_id, bool throw_if_not_previously_approved);
 };

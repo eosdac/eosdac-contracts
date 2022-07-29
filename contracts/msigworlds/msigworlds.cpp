@@ -62,7 +62,7 @@ void multisig::propose(name proposer, name proposal_name, std::vector<permission
 
     auto packed_requested = pack(requested);
     auto res              = check_transaction_authorization(
-                     trx_pos, size, (const char *)0, 0, packed_requested.data(), packed_requested.size());
+        trx_pos, size, (const char *)0, 0, packed_requested.data(), packed_requested.size());
 
     check(res > 0, "msigworlds::propose preflight transaction authorization check failed");
 
@@ -98,7 +98,7 @@ void multisig::approve(
     }
 
     proposals proptable(get_self(), dac_id.value);
-    auto     &prop = proptable.get(proposal_name.value, "proposal not found");
+    auto &    prop = proptable.get(proposal_name.value, "proposal not found");
     check(prop.state == PropState::PENDING,
         "ERR::PROP_NOT_PENDING::proposal can only be approved while in pending state");
 
@@ -112,11 +112,15 @@ void multisig::approve(
         std::find_if(apps_it->requested_approvals.begin(), apps_it->requested_approvals.end(), [&](const approval &a) {
             return a.level == level;
         });
-    check(itr != apps_it->requested_approvals.end(), "approval is not on the list of requested approvals");
 
-    apptable.modify(apps_it, same_payer, [&](auto &a) {
+    auto        is_requested_approval = itr != apps_it->requested_approvals.end();
+    eosio::name ram_payer             = is_requested_approval ? same_payer : level.actor;
+
+    apptable.modify(apps_it, ram_payer, [&](auto &a) {
         a.provided_approvals.push_back(approval{level, current_time_point()});
-        a.requested_approvals.erase(itr);
+        if (is_requested_approval) {
+            a.requested_approvals.erase(itr);
+        }
     });
 
     transaction_header trx_header = get_trx_header(prop.packed_transaction.data(), prop.packed_transaction.size());
@@ -139,6 +143,15 @@ void multisig::approve(
 }
 
 void multisig::unapprove(name proposal_name, permission_level level, name dac_id) {
+    _unapprove(proposal_name, level, dac_id, true);
+}
+
+void multisig::deny(name proposal_name, permission_level level, name dac_id) {
+    _unapprove(proposal_name, level, dac_id, false);
+}
+
+void multisig::_unapprove(
+    name proposal_name, permission_level level, name dac_id, bool throw_if_not_previously_approved) {
     if (level.permission == "eosio.code"_n) {
         check(get_sender() == level.actor, "wrong contract sent `unapprove` action for eosio.code permmission");
     } else {
@@ -151,14 +164,21 @@ void multisig::unapprove(name proposal_name, permission_level level, name dac_id
         std::find_if(apps_it->provided_approvals.begin(), apps_it->provided_approvals.end(), [&](const approval &a) {
             return a.level == level;
         });
-    check(itr != apps_it->provided_approvals.end(), "no approval previously granted");
-    apptable.modify(apps_it, same_payer, [&](auto &a) {
-        a.requested_approvals.push_back(approval{level, current_time_point()});
-        a.provided_approvals.erase(itr);
-    });
+
+    auto approvals_previously_granted = itr != apps_it->provided_approvals.end();
+
+    if (throw_if_not_previously_approved)
+        check(approvals_previously_granted, "no approval previously granted");
+
+    if (approvals_previously_granted) {
+        apptable.modify(apps_it, same_payer, [&](auto &a) {
+            a.requested_approvals.push_back(approval{level, current_time_point()});
+            a.provided_approvals.erase(itr);
+        });
+    }
 
     proposals proptable(get_self(), dac_id.value);
-    auto     &prop = proptable.get(proposal_name.value, "proposal not found");
+    auto &    prop = proptable.get(proposal_name.value, "proposal not found");
     check(prop.state == PropState::PENDING,
         "ERR::PROP_NOT_PENDING::proposal can only be changed while in pending state.");
 
@@ -178,51 +198,23 @@ void multisig::unapprove(name proposal_name, permission_level level, name dac_id
     });
 }
 
-void multisig::deny(name proposal_name, permission_level level, name dac_id) {
-    if (level.permission == "eosio.code"_n) {
-        check(get_sender() == level.actor, "wrong contract sent `deny` action for eosio.code permmission");
-    } else {
-        require_auth(level);
-    }
-
-    approvals apptable(get_self(), dac_id.value);
-    auto      apps_it = apptable.find(proposal_name.value);
-    auto      itr =
-        std::find_if(apps_it->provided_approvals.begin(), apps_it->provided_approvals.end(), [&](const approval &a) {
-            return a.level == level;
-        });
-    if (itr != apps_it->provided_approvals.end()) {
-        apptable.modify(apps_it, same_payer, [&](auto &a) {
-            a.requested_approvals.push_back(approval{level, current_time_point()});
-            a.provided_approvals.erase(itr);
-        });
-    }
+void multisig::checkauth(name proposal_name, name dac_id) {
     proposals proptable(get_self(), dac_id.value);
-    auto     &prop = proptable.get(proposal_name.value, "proposal not found");
-    check(
-        prop.state == PropState::PENDING, "ERR::PROP_NOT_PENDING::proposal can only be denied while in pending state.");
-
-    if (prop.earliest_exec_time.has_value()) {
-        auto table_op = [](auto &&, auto &&) {};
-        if (!trx_is_authorized(
-                get_approvals_and_adjust_table(get_self(), proposal_name, table_op, dac_id), prop.packed_transaction)) {
-            proptable.modify(prop, same_payer, [&](auto &p) {
-                p.earliest_exec_time = std::optional<time_point>{};
-            });
-        }
+    auto &    prop     = proptable.get(proposal_name.value, "proposal not found");
+    auto      table_op = [](auto &&, auto &&) {};
+    if (trx_is_authorized(
+            get_approvals_and_adjust_table(get_self(), proposal_name, table_op, dac_id), prop.packed_transaction)) {
+        check(false, "Approved: Transaction has sufficient approvals to execute");
+    } else {
+        check(false, "Unapproved: Transaction has insufficient to approvals to execute");
     }
-
-    auto prop_itr = proptable.iterator_to(prop);
-    proptable.modify(prop_itr, same_payer, [&](proposal &p) {
-        p.modified_date = current_time_point();
-    });
 }
 
 void multisig::cancel(name proposal_name, name canceler, name dac_id) {
     require_auth(canceler);
 
     proposals proptable(get_self(), dac_id.value);
-    auto     &prop = proptable.get(proposal_name.value, "proposal not found");
+    auto &    prop = proptable.get(proposal_name.value, "proposal not found");
 
     if (canceler != prop.proposer) {
         check(unpack<transaction_header>(prop.packed_transaction).expiration <
@@ -237,19 +229,13 @@ void multisig::cancel(name proposal_name, name canceler, name dac_id) {
         p.modified_date = current_time_point();
         p.state         = PropState::CANCELLED;
     });
-
-    // proptable.erase(prop);
-
-    // approvals apptable(get_self(), dac_id.value);
-    // auto apps_it = apptable.require_find(proposal_name.value, "ERR::NO_APPROVALS_FOUND::No approvals were
-    // found."); apptable.erase(apps_it);
 }
 
 void multisig::exec(name proposal_name, name executer, name dac_id) {
     require_auth(executer);
 
     proposals proptable(get_self(), dac_id.value);
-    auto     &prop = proptable.get(proposal_name.value, "proposal not found");
+    auto &    prop = proptable.get(proposal_name.value, "proposal not found");
     check(prop.state == PropState::PENDING,
         "ERR::PROP_EXEC_NOT_PENDING::The same proposal cannot be executed mulitple times.");
 
@@ -288,7 +274,7 @@ void multisig::exec(name proposal_name, name executer, name dac_id) {
 
 void multisig::cleanup(name proposal_name, name dac_id) {
     proposals proptable(get_self(), dac_id.value);
-    auto     &prop = proptable.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::proposal not found");
+    auto &    prop = proptable.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::proposal not found");
     check(prop.state != PropState::PENDING,
         "ERR::PROPOSAL_CLEANUP_STILL_PENDING::proposal cannot be cleared before being executed or cancelled.");
 
