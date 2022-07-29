@@ -7,8 +7,6 @@ import {
   assertMissingAuthority,
   EOSManager,
   sleep,
-  debugPromise,
-  assertRowsEqualStrict,
   assertRowCount,
 } from 'lamington';
 import { SharedTestObjects } from '../TestHelpers';
@@ -36,7 +34,7 @@ export const currentHeadTimeWithAddedSeconds = async (seconds: number) => {
   return date;
 };
 
-describe('msigworlds', () => {
+describe.only('msigworlds', () => {
   let shared: SharedTestObjects;
 
   before(async () => {
@@ -416,16 +414,13 @@ describe('msigworlds', () => {
     });
     context('with existing proposal', async () => {
       context('for unrequested auth', async () => {
-        it('should fail with approval not on list found error', async () => {
-          await assertEOSErrorIncludesMessage(
-            msigworlds.approve(
-              'prop1',
-              { actor: owner3.name, permission: 'active' },
-              'dac1',
-              null,
-              { from: owner3 }
-            ),
-            'approval is not on the list of requested approvals'
+        it('should succeed', async () => {
+          await msigworlds.approve(
+            'prop1',
+            { actor: owner3.name, permission: 'active' },
+            'dac1',
+            null,
+            { from: owner3 }
           );
         });
       });
@@ -453,7 +448,8 @@ describe('msigworlds', () => {
           expect(matching.requested_approvals[0].time).to.equal(
             '1970-01-01T00:00:00.000'
           );
-          expect(matching.provided_approvals[0].level.actor).to.equal('owner2');
+          expect(matching.provided_approvals[0].level.actor).to.equal('owner3');
+          expect(matching.provided_approvals[1].level.actor).to.equal('owner2');
           expect(new Date(matching.provided_approvals[0].time)).to.afterDate(
             new Date('2022-01-01T00:00:00.000')
           );
@@ -506,9 +502,9 @@ describe('msigworlds', () => {
             await assertEOSErrorIncludesMessage(
               msigworlds.unapprove(
                 'prop1',
-                { actor: owner3.name, permission: 'active' },
+                { actor: owner1.name, permission: 'active' },
                 'dac1',
-                { from: owner3 }
+                { from: owner1 }
               ),
               'no approval previously granted'
             );
@@ -537,7 +533,7 @@ describe('msigworlds', () => {
             expect(matching.requested_approvals[0].time).to.equal(
               '1970-01-01T00:00:00.000'
             );
-            expect(matching.provided_approvals).to.empty;
+            expect(matching.provided_approvals.length).to.equal(1);
             expect(matching.requested_approvals[1].level.actor).to.equal(
               'owner2'
             );
@@ -580,7 +576,7 @@ describe('msigworlds', () => {
               'dac1',
               { from: owner1 }
             ),
-            'proposal not found'
+            'ERR::NO_APPROVALS_FOUND'
           );
         });
       });

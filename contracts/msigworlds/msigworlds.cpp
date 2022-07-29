@@ -165,13 +165,17 @@ void multisig::_unapprove(
             return a.level == level;
         });
 
-    if (throw_if_not_previously_approved)
-        check(itr != apps_it->provided_approvals.end(), "no approval previously granted");
+    auto approvals_previously_granted = itr != apps_it->provided_approvals.end();
 
-    apptable.modify(apps_it, same_payer, [&](auto &a) {
-        a.requested_approvals.push_back(approval{level, current_time_point()});
-        a.provided_approvals.erase(itr);
-    });
+    if (throw_if_not_previously_approved)
+        check(approvals_previously_granted, "no approval previously granted");
+
+    if (approvals_previously_granted) {
+        apptable.modify(apps_it, same_payer, [&](auto &a) {
+            a.requested_approvals.push_back(approval{level, current_time_point()});
+            a.provided_approvals.erase(itr);
+        });
+    }
 
     proposals proptable(get_self(), dac_id.value);
     auto &    prop = proptable.get(proposal_name.value, "proposal not found");
