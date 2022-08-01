@@ -3,15 +3,15 @@ using namespace eosdac;
 void daccustodian::distributeMeanPay(name dac_id) {
     custodians_table  custodians(get_self(), dac_id.value);
     pending_pay_table pending_pay(get_self(), dac_id.value);
-    contr_config      configs = contr_config::get_current_configs(get_self(), dac_id);
+    const auto        globals = dacglobals::current(get_self(), dac_id);
     name              owner   = dacdir::dac_for_id(dac_id).owner;
 
     // Find the mean pay using a temporary vector to hold the requestedpay amounts.
-    extended_asset total = configs.requested_pay_max - configs.requested_pay_max;
+    extended_asset total = globals.get_requested_pay_max() - globals.get_requested_pay_max();
     int64_t        count = 0;
     for (auto cust : custodians) {
         if (total.get_extended_symbol().get_symbol() == cust.requestedpay.symbol) {
-            if (cust.requestedpay.amount <= configs.requested_pay_max.quantity.amount) {
+            if (cust.requestedpay.amount <= globals.get_requested_pay_max().quantity.amount) {
                 total += extended_asset(cust.requestedpay, total.contract);
             }
             count += 1;
@@ -54,12 +54,12 @@ void daccustodian::distributeMeanPay(name dac_id) {
     print("distribute mean pay");
 }
 
-void daccustodian::assertPeriodTime(contr_config &configs, contr_state2 &currentState) {
+void daccustodian::assertPeriodTime(const dacglobals &globals) {
     time_point_sec timestamp        = time_point_sec(eosio::current_time_point());
-    uint32_t       periodBlockCount = (timestamp - currentState.lastperiodtime.sec_since_epoch()).sec_since_epoch();
-    check(periodBlockCount > configs.periodlength,
+    uint32_t       periodBlockCount = (timestamp - globals.get_lastperiodtime().sec_since_epoch()).sec_since_epoch();
+    check(periodBlockCount > globals.get_periodlength(),
         "ERR::NEWPERIOD_EARLY::New period is being called too soon. Period length is %s periodBlockCount: %s",
-        configs.periodlength, periodBlockCount);
+        globals.get_periodlength(), periodBlockCount);
 }
 
 void daccustodian::allocateCustodians(bool early_election, name dac_id) {
@@ -68,13 +68,13 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
 
     custodians_table custodians(get_self(), dac_id.value);
     candidates_table registered_candidates(get_self(), dac_id.value);
-    contr_config     configs      = contr_config::get_current_configs(get_self(), dac_id);
+    const auto       globals      = dacglobals::current(get_self(), dac_id);
     name             auth_account = dacdir::dac_for_id(dac_id).owner;
     auto             byvotes      = registered_candidates.get_index<"bydecayed"_n>();
 
     auto cand_itr = byvotes.begin();
 
-    int32_t electcount            = configs.numelected;
+    int32_t electcount            = globals.get_numelected();
     uint8_t currentCustodianCount = 0;
 
     if (!early_election) {
@@ -85,7 +85,7 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
                 "ERR::NEWPERIOD_EXPECTED_CAND_NOT_FOUND::Corrupt data: Trying to set a lockup delay on candidate leaving office.");
             registered_candidates.modify(reg_candidate, same_payer, [&](candidate &c) {
                 eosio::print("Lockup stake for release delay.");
-                c.custodian_end_time_stamp = now() + configs.lockup_release_time_delay;
+                c.custodian_end_time_stamp = now() + globals.get_lockup_release_time_delay();
             });
             cust_itr = custodians.erase(cust_itr);
         }
@@ -112,7 +112,7 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
 
             byvotes.modify(cand_itr, same_payer, [&](candidate &c) {
                 eosio::print("Lockup stake for release delay.");
-                c.custodian_end_time_stamp = now() + configs.lockup_release_time_delay;
+                c.custodian_end_time_stamp = now() + globals.get_lockup_release_time_delay();
             });
 
             currentCustodianCount++;
@@ -153,16 +153,15 @@ void daccustodian::add_auth_to_account(const name &accountToChange, const uint8_
 
 void daccustodian::add_all_auths(const name            &accountToChange,
     const vector<eosiosystem::permission_level_weight> &weights, const name &dac_id, const bool msig) {
-    const auto current_config = contr_config::get_current_configs(get_self(), dac_id);
+    const auto globals = dacglobals::current(get_self(), dac_id);
+
+    add_auth_to_account(accountToChange, globals.get_auth_threshold_high(), HIGH_PERMISSION, "active"_n, weights, msig);
 
     add_auth_to_account(
-        accountToChange, current_config.auth_threshold_high, HIGH_PERMISSION, "active"_n, weights, msig);
+        accountToChange, globals.get_auth_threshold_mid(), MEDIUM_PERMISSION, HIGH_PERMISSION, weights, msig);
 
     add_auth_to_account(
-        accountToChange, current_config.auth_threshold_mid, MEDIUM_PERMISSION, HIGH_PERMISSION, weights, msig);
-
-    add_auth_to_account(
-        accountToChange, current_config.auth_threshold_low, LOW_PERMISSION, MEDIUM_PERMISSION, weights, msig);
+        accountToChange, globals.get_auth_threshold_low(), LOW_PERMISSION, MEDIUM_PERMISSION, weights, msig);
 
     add_auth_to_account(accountToChange, 1, ONE_PERMISSION, LOW_PERMISSION, weights, msig);
 }
@@ -170,7 +169,6 @@ void daccustodian::add_all_auths(const name            &accountToChange,
 void daccustodian::setMsigAuths(name dac_id) {
     const auto custodians      = custodians_table{get_self(), dac_id.value};
     const auto dac             = dacdir::dac_for_id(dac_id);
-    const auto current_config  = contr_config::get_current_configs(get_self(), dac_id);
     const auto msigowned_opt   = dac.account_for_type_maybe(dacdir::MSIGOWNED);
     const auto is_msig         = msigowned_opt.has_value();
     const auto accountToChange = msigowned_opt.value_or(dac.owner);
@@ -187,22 +185,23 @@ asset balance_for_type(const dacdir::dac &dac, const dacdir::account_type type) 
 ACTION daccustodian::setbudget(const name &dac_id, const uint16_t percentage) {
     require_auth(get_self());
 
-    auto state = contr_state2::get_current_state(get_self(), dac_id);
-    state.set_budget_percentage(percentage);
-    state.save(get_self(), dac_id);
+    auto globals = dacglobals::current(get_self(), dac_id);
+    globals.set_budget_percentage(percentage);
+    globals.save(get_self(), dac_id);
 }
 
 ACTION daccustodian::unsetbudget(const name &dac_id) {
     require_auth(get_self());
 
-    auto state = contr_state2::get_current_state(get_self(), dac_id);
-    state.unset_budget_percentage();
-    state.save(get_self(), dac_id);
+    auto globals = dacglobals::current(get_self(), dac_id);
+    globals.unset_budget_percentage();
+    globals.save(get_self(), dac_id);
 }
 
 ACTION daccustodian::claimbudget(const name &dac_id) {
-    auto state = contr_state2::get_current_state(get_self(), dac_id);
-    check(state.get_lastclaimbudgettime() < state.lastperiodtime, "Claimbudget can only be called once per period");
+    auto globals = dacglobals::current(get_self(), dac_id);
+    check(globals.get_lastclaimbudgettime() < globals.get_lastperiodtime(),
+        "Claimbudget can only be called once per period");
     const auto dac              = dacdir::dac_for_id(dac_id);
     const auto treasury_account = dac.account_for_type(dacdir::TREASURY);
 
@@ -214,7 +213,7 @@ ACTION daccustodian::claimbudget(const name &dac_id) {
     const auto recipient        = spendings_account ? *spendings_account : auth_account;
     const auto auth_balance     = eosdac::get_balance_graceful(auth_account, TLM_TOKEN_CONTRACT, TLM_SYM);
     const auto treasury_balance = balance_for_type(dac, dacdir::TREASURY);
-    const auto p                = get_budget_percentage(dac_id, state);
+    const auto p                = get_budget_percentage(dac_id, globals);
 
     // percentage value is scaled by 100, so to calculate percent we need to divide by (100 * 100 == 10000)
     const auto amount = std::min(treasury_balance, auth_balance - treasury_balance * p / 10000);
@@ -224,19 +223,21 @@ ACTION daccustodian::claimbudget(const name &dac_id) {
             .send();
     }
 
-    state.set_lastclaimbudgettime(time_point_sec(current_time_point()));
-    state.save(get_self(), dac_id);
+    globals.set_lastclaimbudgettime(time_point_sec(current_time_point()));
+    globals.save(get_self(), dac_id);
 }
 
 #ifdef IS_DEV
-ACTION daccustodian::fillstate(const name &dac_id, contr_state &state) {
-    state.save(get_self(), dac_id, get_self());
+#ifdef OLDSTUFF
+ACTION daccustodian::fillstate(const name &dac_id, contr_state2 &state) {
+    // state.save(get_self(), dac_id, get_self());
 }
+#endif
 #endif
 
 ACTION daccustodian::migratestate(const name &dac_id) {
-    check(!statecontainer2(get_self(), dac_id.value).exists(), "Already migrated dac %s", dac_id);
-    auto new_state = contr_state2::get_current_state(get_self(), dac_id);
+    check(!dacglobals_singleton(get_self(), dac_id.value).exists(), "Already migrated dac %s", dac_id);
+    auto new_state = dacglobals::current(get_self(), dac_id);
     new_state.save(get_self(), dac_id);
 }
 
@@ -249,9 +250,8 @@ ACTION daccustodian::newperiod(const string &message, const name &dac_id) {
 
 ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
     /* This is a housekeeping method, it can be called by anyone by design */
-    contr_config configs      = contr_config::get_current_configs(get_self(), dac_id);
-    auto         currentState = contr_state2::get_current_state(get_self(), dac_id);
-    assertPeriodTime(configs, currentState);
+    auto globals = dacglobals::current(get_self(), dac_id);
+    assertPeriodTime(globals);
 
     dacdir::dac found_dac          = dacdir::dac_for_id(dac_id);
     const auto  activation_account = found_dac.account_for_type_maybe(dacdir::ACTIVATION);
@@ -274,19 +274,19 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
 
         auto         tokenStakeConfig = stake_config::get_current_configs(found_dac.symbol.get_contract(), dac_id);
         const double percent_of_current_voter_engagement =
-            S{currentState.get_total_weight_of_votes()}.to<double>() / S{token_current_supply}.to<double>() * S{100.0};
+            S{globals.get_total_weight_of_votes()}.to<double>() / S{token_current_supply}.to<double>() * S{100.0};
 
-        check(currentState.get_met_initial_votes_threshold() == true ||
-                  percent_of_current_voter_engagement > configs.initial_vote_quorum_percent,
+        check(globals.get_met_initial_votes_threshold() == true ||
+                  percent_of_current_voter_engagement > globals.get_initial_vote_quorum_percent(),
             "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_ACTIVATE::Voter engagement %s is insufficient to activate the DAC (%s required) token_current_supply: %s total_weight_of_votes: %s.",
-            percent_of_current_voter_engagement, configs.initial_vote_quorum_percent, token_current_supply,
-            currentState.get_total_weight_of_votes());
+            percent_of_current_voter_engagement, globals.get_initial_vote_quorum_percent(), token_current_supply,
+            globals.get_total_weight_of_votes());
 
-        check(percent_of_current_voter_engagement > configs.vote_quorum_percent,
+        check(percent_of_current_voter_engagement > globals.get_vote_quorum_percent(),
             "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_PROCESS::Voter engagement is insufficient to process a new period");
     }
 
-    currentState.set_met_initial_votes_threshold(true);
+    globals.set_met_initial_votes_threshold(true);
 
     // Distribute Pay is called before allocateCustodians is called to ensure custodians are paid for the just passed
     // period. This also implies custodians should not be paid the first time this is called.
@@ -299,12 +299,12 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
     // Set the auths on the dacauthority account
     setMsigAuths(dac_id);
 
-    currentState.lastperiodtime = current_block_time();
-    currentState.save(get_self(), dac_id);
+    globals.set_lastperiodtime(current_block_time().to_time_point());
+    globals.save(get_self(), dac_id);
 }
 
-uint16_t daccustodian::get_budget_percentage(const name &dac_id, const contr_state2 &state) {
-    const auto percentage = state.get_budget_percentage();
+uint16_t daccustodian::get_budget_percentage(const name &dac_id, const dacglobals &globals) {
+    const auto percentage = globals.maybe_get_budget_percentage();
     if (percentage) {
         return *percentage;
     } else {

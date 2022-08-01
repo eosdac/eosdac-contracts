@@ -4,7 +4,7 @@ using namespace eosdac;
 ACTION daccustodian::claimpay(const uint64_t payid, const name &dac_id) {
     auto        pending_pay = pending_pay_table{get_self(), dac_id.value};
     const auto  dac         = dacdir::dac_for_id(dac_id);
-    const auto  configs     = contr_config::get_current_configs(get_self(), dac_id);
+    const auto  globals     = dacglobals::current(get_self(), dac_id);
     const auto &payClaim    = pending_pay.get(payid, "ERR::CLAIMPAY_INVALID_CLAIM_ID::Invalid pay claim id.");
 
     assertValidMember(payClaim.receiver, dac_id);
@@ -14,7 +14,7 @@ ACTION daccustodian::claimpay(const uint64_t payid, const name &dac_id) {
     string     memo;
     const auto memo_message = "Custodian Pay. Thank you."s;
 
-    if (configs.should_pay_via_service_provider) {
+    if (globals.get_should_pay_via_service_provider()) {
         const auto service_account = dac.account_for_type(dacdir::SERVICE);
         memo                       = payClaim.receiver.to_string() + ":" + memo_message + ":" + to_string(payid);
         print("constructed memo for the service contract: " + memo);
@@ -27,7 +27,7 @@ ACTION daccustodian::claimpay(const uint64_t payid, const name &dac_id) {
     }
 
     const auto token_holder = dac.account_for_type(dacdir::TREASURY);
-    action(permission_level{token_holder, "xfer"_n}, configs.requested_pay_max.contract, "transfer"_n,
+    action(permission_level{token_holder, "xfer"_n}, globals.get_requested_pay_max().contract, "transfer"_n,
         std::make_tuple(token_holder, payment_destination, payClaim.quantity.quantity, memo))
         .send();
 

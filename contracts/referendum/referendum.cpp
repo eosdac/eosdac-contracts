@@ -392,10 +392,9 @@ void referendum::proposeMsig(referendum_data ref, name dac_id) {
 
     vector<permission_level> reqd_perms;
 
-    contr_config custodian_config = contr_config::get_current_configs(custodian_contract, dac_id);
-
-    uint8_t count    = 0;
-    uint8_t num_reqs = min(255, custodian_config.numelected * 2);
+    const auto globals  = dacglobals::current(custodian_contract, dac_id);
+    uint8_t    count    = 0;
+    uint8_t    num_reqs = min(255, globals.get_numelected() * 2);
 
     while (count < num_reqs && cand_itr != cand_idx.end()) {
         name perm_name   = "active"_n;
