@@ -15,8 +15,6 @@
 
 using namespace std;
 
-#ifdef OLDSTUFF
-
 /**
  * simple getter/setter
  **/
@@ -49,8 +47,6 @@ using namespace std;
         check(search != data.end(), "Cannot unset " #name ", no value set");                                           \
         data.erase(state_keys::name);                                                                                  \
     }
-
-#endif
 
 /**
  * simple getter/setter
@@ -168,7 +164,6 @@ namespace eosdac {
     };
     using weights = eosio::multi_index<"weights"_n, vote_weight>;
 
-#ifdef OLDSTUFF
     struct contr_config;
     using configscontainer = eosio::singleton<"config2"_n, contr_config>;
 
@@ -237,7 +232,7 @@ namespace eosdac {
         };
 
         static contr_state2 get_current_state(const eosio::name account, const eosio::name scope) {
-            return statecontainer2(account, scope.value).get();
+            return statecontainer2(account, scope.value).get_or_default(contr_state2{});
         }
 
         void save(const eosio::name account, const eosio::name scope) {
@@ -276,7 +271,6 @@ namespace eosdac {
         PROPERTY(uint32_t, number_active_candidates);
         PROPERTY(int64_t, total_votes_on_candidates);
     };
-#endif
 
     struct [[eosio::table("votes"), eosio::contract("daccustodian")]] vote {
         name                  voter;
@@ -382,10 +376,8 @@ namespace eosdac {
 
         void save(const eosio::name account, const eosio::name scope) {
             dacglobals_singleton(account, scope.value).set(*this, account);
-#ifdef OLDSTUFF
             configscontainer(account, scope.value).remove();
             statecontainer2(account, scope.value).remove();
-#endif
         }
         /**
          * What follows are type-safe getters/setters for polymorphic map values
@@ -414,10 +406,9 @@ namespace eosdac {
         PROPERTY2(eosio::extended_asset, requested_pay_max);
 
         static dacglobals get_migrated_state(const eosio::name account, const eosio::name dac_id) {
-            auto new_state = dacglobals();
+            auto new_state = dacglobals{};
 
-// migrate from state2
-#ifdef OLDSTUFF
+            // migrate from state2
             const auto state_2 = contr_state2::get_current_state(account, dac_id);
             const auto p       = state_2.get_budget_percentage();
             if (p) {
@@ -444,7 +435,7 @@ namespace eosdac {
             new_state.set_auth_threshold_low(config_2.auth_threshold_low);
             new_state.set_lockup_release_time_delay(config_2.lockup_release_time_delay);
             new_state.set_requested_pay_max(config_2.requested_pay_max);
-#endif
+
             return new_state;
         }
     };
@@ -454,7 +445,7 @@ namespace eosdac {
       public:
         daccustodian(name s, name code, datastream<const char *> ds) : contract(s, code, ds) {}
 
-        ACTION updateconfige(dacglobals &newconfig, const name &dac_id);
+        ACTION updateconfige(const contr_config &new_config, const name &dac_id);
         // ACTION transferobsv(name from, name to, asset quantity, name dac_id);
         ACTION balanceobsv(const vector<account_balance_delta> &account_balance_deltas, const name &dac_id);
         ACTION stakeobsv(const vector<account_stake_delta> &account_stake_deltas, const name &dac_id);
@@ -498,9 +489,7 @@ namespace eosdac {
 #endif
 
 #ifdef IS_DEV
-#ifdef OLDSTUFF
-        ACTION fillstate(const name &dac_id, contr_state2 &state);
-#endif
+        ACTION fillstate(const name &dac_id);
 #endif
         /**
          * This action is used to register a custom permission that will be used in the multisig instead of active.

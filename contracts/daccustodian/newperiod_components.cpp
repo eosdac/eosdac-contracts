@@ -228,11 +228,17 @@ ACTION daccustodian::claimbudget(const name &dac_id) {
 }
 
 #ifdef IS_DEV
-#ifdef OLDSTUFF
-ACTION daccustodian::fillstate(const name &dac_id, contr_state2 &state) {
-    // state.save(get_self(), dac_id, get_self());
+ACTION daccustodian::fillstate(const name &dac_id) {
+    auto config = contr_config{};
+    config.save(get_self(), dac_id, get_self());
+
+    auto state2 = contr_state2{};
+    state2.set_budget_percentage(123);
+    state2.save(get_self(), dac_id);
+
+    auto globals = dacglobals::current(get_self(), dac_id);
+    globals.save(get_self(), dac_id);
 }
-#endif
 #endif
 
 ACTION daccustodian::migratestate(const name &dac_id) {
