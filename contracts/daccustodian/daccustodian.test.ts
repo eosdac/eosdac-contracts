@@ -58,74 +58,108 @@ describe('Daccustodian', () => {
     let dacId = 'migratedac';
     before(async () => {
       fill_time = new Date();
-      await shared.daccustodian_contract.fillstate(dacId, {
-        lastperiodtime: fill_time,
-        total_weight_of_votes: -123,
-        total_votes_on_candidates: -234,
-        number_active_candidates: 456,
-        met_initial_votes_threshold: true,
-      });
+
+      await shared.daccustodian_contract.fillstate(dacId);
     });
-    it('should create table entries', async () => {
-      const res = await shared.daccustodian_contract.stateTable({
+    it('dacglobal data should have been migrated from config and state2', async () => {
+      const res = await shared.daccustodian_contract.dacglobalsTable({
         scope: dacId,
       });
       const s = res.rows[0];
-      chai.expect(s.lastperiodtime).equalTime(withLocalOffset(fill_time));
-      chai.expect(s.total_weight_of_votes).to.equal(-123);
-      chai.expect(s.total_votes_on_candidates).to.equal(-234);
-      chai.expect(s.number_active_candidates).to.equal(456);
-      chai.expect(s.met_initial_votes_threshold).to.be.true;
+      console.log('s:', JSON.stringify(s, null, 2));
+      chai.expect(s.data).to.deep.equal([
+        {
+          key: 'auth_threshold_high',
+          value: ['uint8', 0],
+        },
+        {
+          key: 'auth_threshold_low',
+          value: ['uint8', 0],
+        },
+        {
+          key: 'auth_threshold_mid',
+          value: ['uint8', 0],
+        },
+        {
+          key: 'budget_percentage',
+          value: ['uint32', 123],
+        },
+        {
+          key: 'initial_vote_quorum_percent',
+          value: ['uint32', 0],
+        },
+        {
+          key: 'lastclaimbudgettime',
+          value: ['time_point_sec', '1970-01-01T00:00:00'],
+        },
+        {
+          key: 'lastperiodtime',
+          value: ['time_point_sec', '1970-01-01T00:00:00'],
+        },
+        {
+          key: 'lockup_release_time_delay',
+          value: ['uint32', 0],
+        },
+        {
+          key: 'lockupasset',
+          value: [
+            'extended_asset',
+            {
+              quantity: '0 ',
+              contract: '',
+            },
+          ],
+        },
+        {
+          key: 'maxvotes',
+          value: ['uint8', 5],
+        },
+        {
+          key: 'met_initial_votes_threshold',
+          value: ['bool', 0],
+        },
+        {
+          key: 'number_active_candidates',
+          value: ['uint32', 0],
+        },
+        {
+          key: 'numelected',
+          value: ['uint8', 3],
+        },
+        {
+          key: 'periodlength',
+          value: ['uint32', 604800],
+        },
+        {
+          key: 'requested_pay_max',
+          value: [
+            'extended_asset',
+            {
+              quantity: '0 ',
+              contract: '',
+            },
+          ],
+        },
+        {
+          key: 'should_pay_via_service_provider',
+          value: ['bool', 0],
+        },
+        {
+          key: 'total_votes_on_candidates',
+          value: ['int64', 0],
+        },
+        {
+          key: 'total_weight_of_votes',
+          value: ['int64', 0],
+        },
+        {
+          key: 'vote_quorum_percent',
+          value: ['uint32', 0],
+        },
+      ]);
     });
   });
-  context('migratestate', async () => {
-    let dacId = 'migratedac';
 
-    it('should work', async () => {
-      await shared.daccustodian_contract.migratestate(dacId);
-    });
-    it('calling a second time should fail with already migrated error', async () => {
-      // call something else to prevent duplicate transaction error
-      await shared.daccustodian_contract.migratestate('decoydac');
-      await sleep(500);
-
-      await assertEOSErrorIncludesMessage(
-        shared.daccustodian_contract.migratestate(dacId),
-        'Already migrated dac'
-      );
-    });
-    it('should create table2 entries', async () => {
-      const res = await shared.daccustodian_contract.state2Table({
-        scope: dacId,
-      });
-      const s = res.rows[0];
-      chai.expect(s.lastperiodtime).equalTime(withLocalOffset(fill_time));
-      chai.expect(s.data).deep.contains({
-        key: 2,
-        value: ['int64', -234],
-      });
-      chai.expect(s.data).deep.contains({
-        key: 3,
-        value: ['uint32', 456],
-      });
-      chai.expect(s.data).deep.contains({
-        key: 4,
-        value: ['bool', 1],
-      });
-      chai.expect(s.data).deep.contains({
-        key: 5,
-        value: ['time_point_sec', '1970-01-01T00:00:00'],
-      });
-    });
-    it('should delete old table entries', async () => {
-      await assertRowCount(
-        shared.daccustodian_contract.stateTable({
-          scope: dacId,
-        }),
-        0
-      );
-    });
-  });
   context('updateconfige', async () => {
     let dacId = 'custodiandac';
     before(async () => {
@@ -421,31 +455,105 @@ describe('Daccustodian', () => {
         dacId,
         { from: shared.auth_account }
       );
+
+      const resx = await shared.daccustodian_contract.dacglobalsTable({
+        scope: dacId,
+        limit: 1,
+      });
+      console.log(JSON.stringify(resx, null, 2));
       await assertRowsEqual(
-        shared.daccustodian_contract.config2Table({
+        shared.daccustodian_contract.dacglobalsTable({
           scope: dacId,
           limit: 1,
         }),
         [
           {
-            numelected: 5,
-            maxvotes: 4,
-            requested_pay_max: {
-              contract: 'eosio.token',
-              quantity: '30.0000 EOS',
-            },
-            periodlength: 5,
-            initial_vote_quorum_percent: 31,
-            vote_quorum_percent: 15,
-            auth_threshold_high: 4,
-            auth_threshold_mid: 3,
-            auth_threshold_low: 2,
-            lockupasset: {
-              contract: shared.dac_token_contract.account.name,
-              quantity: '12.0000 CUSDAC',
-            },
-            should_pay_via_service_provider: false,
-            lockup_release_time_delay: 1233,
+            data: [
+              {
+                key: 'auth_threshold_high',
+                value: ['uint8', 4],
+              },
+              {
+                key: 'auth_threshold_low',
+                value: ['uint8', 2],
+              },
+              {
+                key: 'auth_threshold_mid',
+                value: ['uint8', 3],
+              },
+              {
+                key: 'initial_vote_quorum_percent',
+                value: ['uint32', 31],
+              },
+              {
+                key: 'lastclaimbudgettime',
+                value: ['time_point_sec', '1970-01-01T00:00:00'],
+              },
+              {
+                key: 'lastperiodtime',
+                value: ['time_point_sec', '1970-01-01T00:00:00'],
+              },
+              {
+                key: 'lockup_release_time_delay',
+                value: ['uint32', 1233],
+              },
+              {
+                key: 'lockupasset',
+                value: [
+                  'extended_asset',
+                  {
+                    quantity: '12.0000 CUSDAC',
+                    contract: 'eosdactokens',
+                  },
+                ],
+              },
+              {
+                key: 'maxvotes',
+                value: ['uint8', 4],
+              },
+              {
+                key: 'met_initial_votes_threshold',
+                value: ['bool', 0],
+              },
+              {
+                key: 'number_active_candidates',
+                value: ['uint32', 0],
+              },
+              {
+                key: 'numelected',
+                value: ['uint8', 5],
+              },
+              {
+                key: 'periodlength',
+                value: ['uint32', 5],
+              },
+              {
+                key: 'requested_pay_max',
+                value: [
+                  'extended_asset',
+                  {
+                    quantity: '30.0000 EOS',
+                    contract: 'eosio.token',
+                  },
+                ],
+              },
+              {
+                key: 'should_pay_via_service_provider',
+                value: ['bool', 0],
+              },
+              {
+                key: 'total_votes_on_candidates',
+                value: ['int64', 0],
+              },
+              {
+                key: 'total_weight_of_votes',
+                value: ['int64', 0],
+              },
+              {
+                key: 'vote_quorum_percent',
+                value: ['uint32', 15],
+              },
+            ],
           },
         ]
       );
@@ -695,12 +803,13 @@ describe('Daccustodian', () => {
           chai.expect(cand).has.property('candidate_name');
         }
       });
-      it('state should have 0 the total_weight_of_votes', async () => {
-        let dacState = await shared.daccustodian_contract.state2Table({
+      it('dacglobals should have 0 the total_weight_of_votes', async () => {
+        let dacState = await shared.daccustodian_contract.dacglobalsTable({
           scope: dacId,
         });
+        console.log('dacState: ', JSON.stringify(dacState, null, 2));
         chai.expect(dacState.rows[0].data).to.deep.include({
-          key: 1,
+          key: 'total_weight_of_votes',
           value: ['int64', 0],
         });
       });
@@ -770,16 +879,16 @@ describe('Daccustodian', () => {
         );
       });
       it('state should have increased the total_weight_of_votes', async () => {
-        const actual = await get_from_state2(
+        const actual = await get_from_dacglobals(
           dacId,
-          state_keys.total_weight_of_votes
+          'total_weight_of_votes'
         );
         chai.expect(actual).to.equal(20_000_000);
       });
       it('state should have increased the total_votes_on_candidates', async () => {
-        const actual = await get_from_state2(
+        const actual = await get_from_dacglobals(
           dacId,
-          state_keys.total_votes_on_candidates
+          'total_votes_on_candidates'
         );
         chai.expect(actual).to.equal(20_000_000);
       });
@@ -797,20 +906,18 @@ describe('Daccustodian', () => {
         chai.expect(initialVoteValue).to.equal(20_000_000);
       });
       it('total vote values on state before transfer', async () => {
-        const actual = await get_from_state2(
+        const actual = await get_from_dacglobals(
           dacId,
-          state_keys.total_weight_of_votes
+          'total_weight_of_votes'
         );
         chai.expect(actual).to.equal(20_000_000);
       });
       it('assert preconditions for total vote values on state', async () => {
-        let dacState = await shared.daccustodian_contract.state2Table({
-          scope: dacId,
-        });
-        chai.expect(dacState.rows[0].data).to.deep.include({
-          key: 1,
-          value: ['int64', 20_000_000],
-        });
+        const actual = await get_from_dacglobals(
+          dacId,
+          'total_weight_of_votes'
+        );
+        chai.expect(actual).to.equal(20_000_000);
       });
       it('after transfer to non-voter values should reduce for candidates and total values', async () => {
         await shared.dac_token_contract.transfer(
@@ -831,9 +938,9 @@ describe('Daccustodian', () => {
         chai.expect(updatedCandVoteValue).to.equal(17_000_000);
       });
       it('total vote values on state should reduced as well', async () => {
-        const actual = await get_from_state2(
+        const actual = await get_from_dacglobals(
           dacId,
-          state_keys.total_weight_of_votes
+          'total_weight_of_votes'
         );
         chai.expect(actual).to.equal(17_000_000);
       });
@@ -921,13 +1028,11 @@ describe('Daccustodian', () => {
         );
       });
       it('state should have increased the total_weight_of_votes', async () => {
-        let dacState = await shared.daccustodian_contract.state2Table({
-          scope: dacId,
-        });
-        chai.expect(dacState.rows[0].data).to.deep.include({
-          key: 1,
-          value: ['int64', 20_000_000],
-        });
+        const actual = await get_from_dacglobals(
+          dacId,
+          'total_weight_of_votes'
+        );
+        chai.expect(actual).to.equal(20_000_000);
       });
     });
     context('Before registering as a proxy', async () => {
@@ -1021,13 +1126,11 @@ describe('Daccustodian', () => {
         );
       });
       it('state should have increased the total_weight_of_votes', async () => {
-        let dacState = await shared.daccustodian_contract.state2Table({
-          scope: dacId,
-        });
-        chai.expect(dacState.rows[0].data).to.deep.include({
-          key: 1,
-          value: ['int64', 30_000_000],
-        });
+        const actual = await get_from_dacglobals(
+          dacId,
+          'total_weight_of_votes'
+        );
+        chai.expect(actual).to.equal(30_000_000);
       });
       context('vote values after transfers', async () => {
         it('assert preconditions for vote values for custodians', async () => {
@@ -1042,13 +1145,11 @@ describe('Daccustodian', () => {
           chai.expect(initialVoteValue).to.equal(30_000_000);
         });
         it('assert preconditions for total vote values on state', async () => {
-          let dacState = await shared.daccustodian_contract.state2Table({
-            scope: dacId,
-          });
-          chai.expect(dacState.rows[0].data).to.deep.include({
-            key: 1,
-            value: ['int64', 30_000_000],
-          });
+          const actual = await get_from_dacglobals(
+            dacId,
+            'total_weight_of_votes'
+          );
+          chai.expect(actual).to.equal(30_000_000);
         });
         it('after transfer to non-voter values should reduce for candidates and total values', async () => {
           await shared.dac_token_contract.transfer(
@@ -1069,13 +1170,11 @@ describe('Daccustodian', () => {
           chai.expect(updatedCandVoteValue).to.equal(27_000_000); // should be 27,000,000
         });
         it('total vote values on state should have changed', async () => {
-          let dacState = await shared.daccustodian_contract.state2Table({
-            scope: dacId,
-          });
-          chai.expect(dacState.rows[0].data).to.deep.include({
-            key: 1,
-            value: ['int64', 27_000_000],
-          });
+          const actual = await get_from_dacglobals(
+            dacId,
+            'total_weight_of_votes'
+          );
+          chai.expect(actual).to.equal(27_000_000);
         });
       });
       context('after unregproxy', async () => {
@@ -1125,13 +1224,11 @@ describe('Daccustodian', () => {
             chai.expect(updatedCandVoteValue).to.equal(20_000_000);
           });
           it('total vote values on state should have changed', async () => {
-            let dacState = await shared.daccustodian_contract.state2Table({
-              scope: dacId,
-            });
-            chai.expect(dacState.rows[0].data).to.deep.include({
-              key: 1,
-              value: ['int64', 20_000_000],
-            });
+            const actual = await get_from_dacglobals(
+              dacId,
+              'total_weight_of_votes'
+            );
+            chai.expect(actual).to.equal(20_000_000);
           });
         }
       );
@@ -1807,14 +1904,10 @@ describe('Daccustodian', () => {
       });
       context('for an unelected candidate', async () => {
         it('should succeed', async () => {
-          let beforeState = await shared.daccustodian_contract.state2Table({
-            scope: dacId,
-            limit: 1,
-          });
-
-          var numberActiveCandidatesBefore = beforeState.rows[0].data.find(
-            (x) => x.key == 3
-          ).value[1];
+          let numberActiveCandidatesBefore = await get_from_dacglobals(
+            dacId,
+            'number_active_candidates'
+          );
 
           await shared.daccustodian_contract.withdrawcane(
             unelectedCandidateToResign.name,
@@ -1831,13 +1924,11 @@ describe('Daccustodian', () => {
             .expect(candidates.rows[0].custodian_end_time_stamp)
             .to.be.equalDate(new Date(0));
           chai.expect(candidates.rows[0].is_active).to.be.equal(0);
-          let afterState = await shared.daccustodian_contract.state2Table({
-            scope: dacId,
-            limit: 1,
-          });
-          var numberActiveCandidatesAfter = afterState.rows[0].data.find(
-            (x) => x.key == 3
-          ).value[1];
+
+          var numberActiveCandidatesAfter = await get_from_dacglobals(
+            dacId,
+            'number_active_candidates'
+          );
           chai
             .expect(numberActiveCandidatesAfter)
             .to.be.equal(numberActiveCandidatesBefore - 1);
@@ -1928,14 +2019,10 @@ describe('Daccustodian', () => {
       });
       context('for an unelected candidate', async () => {
         it('should succeed', async () => {
-          let beforeState = await shared.daccustodian_contract.state2Table({
-            scope: dacId,
-            limit: 1,
-          });
-
-          var numberActiveCandidatesBefore = beforeState.rows[0].data.find(
-            (x) => x.key == 3
-          ).value[1];
+          var numberActiveCandidatesBefore = await get_from_dacglobals(
+            dacId,
+            'number_active_candidates'
+          );
 
           await shared.daccustodian_contract.firecand(
             unelectedCandidateToFire.name,
@@ -1953,13 +2040,11 @@ describe('Daccustodian', () => {
             .expect(candidates.rows[0].custodian_end_time_stamp)
             .to.be.afterDate(new Date(0));
           chai.expect(candidates.rows[0].is_active).to.be.equal(0);
-          let afterState = await shared.daccustodian_contract.state2Table({
-            scope: dacId,
-            limit: 1,
-          });
-          var numberActiveCandidatesAfter = afterState.rows[0].data.find(
-            (x) => x.key == 3
-          ).value[1];
+
+          var numberActiveCandidatesAfter = await get_from_dacglobals(
+            dacId,
+            'number_active_candidates'
+          );
           chai
             .expect(numberActiveCandidatesAfter)
             .to.be.equal(numberActiveCandidatesBefore - 1);
@@ -2366,11 +2451,10 @@ describe('Daccustodian', () => {
           );
         });
         it('should update lastclaimbudgettime', async () => {
-          const res = await shared.daccustodian_contract.state2Table({
-            scope: dacId,
-          });
-          const lastclaimbudgettime = res.rows[0].data.find((x) => x.key == 5)
-            .value[1];
+          const lastclaimbudgettime = await get_from_dacglobals(
+            dacId,
+            'lastclaimbudgettime'
+          );
           chai
             .expect(dayjs.utc().unix() - dayjs.utc(lastclaimbudgettime).unix())
             .to.be.below(5);
@@ -2458,21 +2542,19 @@ describe('Daccustodian', () => {
         await shared.daccustodian_contract.setbudget(dacId, 123);
       });
       it('should set table entry', async () => {
-        const res = await shared.daccustodian_contract.state2Table({
-          scope: dacId,
-        });
-        const budget_percentage = await get_from_state2(
+        const budget_percentage = await get_from_dacglobals(
           dacId,
-          state_keys.budget_percentage
+          'budget_percentage'
         );
+        chai.expect(budget_percentage).to.equal(123);
       });
       it('setting again', async () => {
         await shared.daccustodian_contract.setbudget(dacId, 234);
       });
       it('should update existing table entry', async () => {
-        const budget_percentage = await get_from_state2(
+        const budget_percentage = await get_from_dacglobals(
           dacId,
-          state_keys.budget_percentage
+          'budget_percentage'
         );
         chai.expect(budget_percentage).to.equal(234);
       });
@@ -2480,16 +2562,16 @@ describe('Daccustodian', () => {
         await shared.daccustodian_contract.setbudget('abcd', 345);
       });
       it('should create table entry', async () => {
-        const budget_percentage = await get_from_state2(
+        const budget_percentage = await get_from_dacglobals(
           'abcd',
-          state_keys.budget_percentage
+          'budget_percentage'
         );
         chai.expect(budget_percentage).to.equal(345);
       });
       it("other dac's table entry should stay untouched", async () => {
-        const budget_percentage = await get_from_state2(
+        const budget_percentage = await get_from_dacglobals(
           dacId,
-          state_keys.budget_percentage
+          'budget_percentage'
         );
         chai.expect(budget_percentage).to.equal(234);
       });
@@ -2512,16 +2594,16 @@ describe('Daccustodian', () => {
         await shared.daccustodian_contract.unsetbudget('abcd');
       });
       it('should remove table entry', async () => {
-        const budget_percentage = await get_from_state2(
+        const budget_percentage = await get_from_dacglobals(
           'abcd',
-          state_keys.budget_percentage
+          'budget_percentage'
         );
         chai.expect(budget_percentage).to.be.undefined;
       });
       it('should should not delete anything else', async () => {
-        const budget_percentage = await get_from_state2(
+        const budget_percentage = await get_from_dacglobals(
           dacId,
-          state_keys.budget_percentage
+          'budget_percentage'
         );
         chai.expect(budget_percentage).to.equal(234);
       });
@@ -2748,7 +2830,7 @@ async function expected_budget_transfer_amount(
     'TLM'
   );
 
-  let percentage = await get_from_state2(dacId, state_keys.budget_percentage);
+  let percentage = await get_from_dacglobals(dacId, 'budget_percentage');
   if (percentage !== undefined) {
     // we have manually set budget percentage
     chai.expect(assert_manual).to.be.true;
@@ -2789,8 +2871,8 @@ async function get_balance(
   return 0.0;
 }
 
-async function get_from_state2(dacId, key) {
-  const res = await shared.daccustodian_contract.state2Table({
+async function get_from_dacglobals(dacId, key) {
+  const res = await shared.daccustodian_contract.dacglobalsTable({
     scope: dacId,
   });
   const data = res.rows[0].data;
