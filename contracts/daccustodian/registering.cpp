@@ -6,19 +6,18 @@ using namespace eosdac;
 ACTION daccustodian::nominatecane(const name &cand, const asset &requestedpay, const name &dac_id) {
     require_auth(cand);
     assertValidMember(cand, dac_id);
-    auto         currentState = contr_state2::get_current_state(_self, dac_id);
-    contr_config configs      = contr_config::get_current_configs(_self, dac_id);
+    auto globals = dacglobals::current(get_self(), dac_id);
 
     check(requestedpay.amount >= 0, "ERR::UPDATEREQPAY_UNDER_ZERO::Requested pay amount must not be negative.");
-    // This implicitly asserts that the symbol of requestedpay matches the configs.max pay.
-    check(requestedpay <= configs.requested_pay_max.quantity,
+    // This implicitly asserts that the symbol of requestedpay matches the globals.max pay.
+    check(requestedpay <= globals.get_requested_pay_max().quantity,
         "ERR::NOMINATECAND_PAY_LIMIT_EXCEEDED::Requested pay limit for a candidate was exceeded.");
 
     validateMinStake(cand, dac_id);
 
-    const auto number_active_candidates = currentState.get_number_active_candidates();
-    currentState.set_number_active_candidates(number_active_candidates + 1);
-    currentState.save(get_self(), dac_id);
+    const auto number_active_candidates = globals.get_number_active_candidates();
+    globals.set_number_active_candidates(number_active_candidates + 1);
+    globals.save(get_self(), dac_id);
 
     candidates_table registered_candidates(get_self(), dac_id.value);
 
@@ -31,7 +30,7 @@ ACTION daccustodian::nominatecane(const name &cand, const asset &requestedpay, c
             c.requestedpay = requestedpay;
         });
     } else {
-        extended_asset required_stake = configs.lockupasset;
+        extended_asset required_stake = globals.get_lockupasset();
 
         // locked_tokens is now ignored, staking is done in the token contract
         auto zero_tokens   = required_stake.quantity;
@@ -101,13 +100,13 @@ ACTION daccustodian::appointcust(const vector<name> &custs, const name &dac_id) 
     name        auth_account = dac.owner;
     require_auth(auth_account);
 
-    contr_config     configs = contr_config::get_current_configs(_self, dac_id);
+    const auto       globals = dacglobals::current(get_self(), dac_id);
     custodians_table custodians(_self, dac_id.value);
     check(custodians.begin() == custodians.end(), "ERR:CUSTODIANS_NOT_EMPTY::Custodians table is not empty");
     candidates_table candidates(_self, dac_id.value);
 
-    extended_asset lockup   = configs.lockupasset;
-    extended_asset req_pay  = configs.requested_pay_max;
+    extended_asset lockup   = globals.get_lockupasset();
+    extended_asset req_pay  = globals.get_requested_pay_max();
     lockup.quantity.amount  = 0;
     req_pay.quantity.amount = 0;
 
@@ -137,8 +136,8 @@ ACTION daccustodian::appointcust(const vector<name> &custs, const name &dac_id) 
 void daccustodian::validateMinStake(name account, name dac_id) {
     auto dac_inst = dacdir::dac_for_id(dac_id);
 
-    contr_config   configs        = contr_config::get_current_configs(get_self(), dac_id);
-    extended_asset required_stake = configs.lockupasset;
+    const auto     globals        = dacglobals::current(get_self(), dac_id);
+    extended_asset required_stake = globals.get_lockupasset();
 
     if (required_stake.quantity.amount > 0) {
         asset staked = eosdac::get_staked(account, required_stake.contract, required_stake.quantity.symbol);
@@ -169,12 +168,11 @@ void daccustodian::removeCustodian(name cust, name dac_id) {
 }
 
 void daccustodian::removeCandidate(name cand, bool lockupStake, name dac_id) {
-    auto         currentState = contr_state2::get_current_state(_self, dac_id);
-    contr_config configs      = contr_config::get_current_configs(_self, dac_id);
+    auto globals = dacglobals::current(get_self(), dac_id);
 
-    const auto number_active_candidates = currentState.get_number_active_candidates();
-    currentState.set_number_active_candidates(number_active_candidates - 1);
-    currentState.save(_self, dac_id);
+    const auto number_active_candidates = globals.get_number_active_candidates();
+    globals.set_number_active_candidates(number_active_candidates - 1);
+    globals.save(_self, dac_id);
 
     candidates_table registered_candidates(_self, dac_id.value);
     candperms_table  cand_perms(_self, dac_id.value);
@@ -188,7 +186,7 @@ void daccustodian::removeCandidate(name cand, bool lockupStake, name dac_id) {
         cand_perms.erase(perm);
     }
 
-    auto end_time_stamp = eosio::current_time_point() + time_point_sec(configs.lockup_release_time_delay);
+    auto end_time_stamp = eosio::current_time_point() + time_point_sec(globals.get_lockup_release_time_delay());
 
     eosio::print("Remove from nominated candidate by setting them to inactive.");
     // Set the is_active flag to false instead of deleting in order to retain votes if they return to he dac.

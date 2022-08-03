@@ -17,7 +17,7 @@ ACTION daccustodian::updatereqpay(const name &cand, const asset &requestedpay, c
     candidates_table registered_candidates(_self, dac_id.value);
 
     check(requestedpay.amount >= 0, "ERR::UPDATEREQPAY_UNDER_ZERO::Requested pay amount must not be negative.");
-    check(requestedpay <= contr_config::get_current_configs(_self, dac_id).requested_pay_max.quantity,
+    check(requestedpay <= dacglobals::current(get_self(), dac_id).get_requested_pay_max().quantity,
         "ERR::UPDATEREQPAY_EXCESS_MAX_PAY::Requested pay amount limit for a candidate was exceeded.");
     const auto &reg_candidate = registered_candidates.get(
         cand.value, "ERR::UPDATEREQPAY_NOT_CURRENT_REG_CANDIDATE::Candidate is not already registered.");

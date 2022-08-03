@@ -34,7 +34,7 @@ export const currentHeadTimeWithAddedSeconds = async (seconds: number) => {
   return date;
 };
 
-describe.only('msigworlds', () => {
+describe('msigworlds', () => {
   let shared: SharedTestObjects;
 
   before(async () => {

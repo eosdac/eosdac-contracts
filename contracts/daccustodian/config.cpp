@@ -32,10 +32,21 @@ ACTION daccustodian::updateconfige(const contr_config &new_config, const name &d
         check(dacForScope.account_for_type_maybe(dacdir::SERVICE).has_value(),
             "ERR::UPDATECONFIG_NO_SERVICE_ACCOUNT should_pay_via_service_provider is true, but no SERVICE account is set.");
     }
-    configscontainer config_singleton(_self, dac_id.value);
-    config_singleton.set(new_config, owner);
+    auto globals = dacglobals::current(get_self(), dac_id);
 
-    auto currentState = contr_state2::get_current_state(_self, dac_id);
-    currentState.save(_self, dac_id);
+    globals.set_lockupasset(new_config.lockupasset);
+    globals.set_maxvotes(new_config.maxvotes);
+    globals.set_numelected(new_config.numelected);
+    globals.set_periodlength(new_config.periodlength);
+    globals.set_should_pay_via_service_provider(new_config.should_pay_via_service_provider);
+    globals.set_initial_vote_quorum_percent(new_config.initial_vote_quorum_percent);
+    globals.set_vote_quorum_percent(new_config.vote_quorum_percent);
+    globals.set_auth_threshold_high(new_config.auth_threshold_high);
+    globals.set_auth_threshold_mid(new_config.auth_threshold_mid);
+    globals.set_auth_threshold_low(new_config.auth_threshold_low);
+    globals.set_lockup_release_time_delay(new_config.lockup_release_time_delay);
+    globals.set_requested_pay_max(new_config.requested_pay_max);
+
+    globals.save(get_self(), dac_id);
     print("Succesfully updated the daccustodian config for: ", dac_id);
 }

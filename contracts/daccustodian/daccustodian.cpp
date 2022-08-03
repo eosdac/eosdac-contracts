@@ -3,7 +3,7 @@
 #include <eosio/singleton.hpp>
 #include <eosio/transaction.hpp>
 
-#include "daccustodian.hpp"
+#include "../../contract-shared-headers/daccustodian_shared.hpp"
 #include <eosio/crypto.hpp>
 #include <eosio/multi_index.hpp>
 #include <string>

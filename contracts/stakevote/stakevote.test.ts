@@ -99,7 +99,7 @@ describe('Stakevote', () => {
       let staker;
       before(async () => {
         staker = await AccountManager.createAccount();
-        const x = await get_from_state2(
+        const x = await get_from_dacglobals(
           dacId,
           state_keys.total_weight_of_votes
         );
@@ -127,10 +127,7 @@ describe('Stakevote', () => {
         );
       });
       it('before voting, total_weight_of_votes should be zero', async () => {
-        const x = await get_from_state2(
-          dacId,
-          state_keys.total_weight_of_votes
-        );
+        const x = await get_from_dacglobals(dacId, 'total_weight_of_votes');
         chai.expect(x).to.equal(0);
       });
     });
@@ -213,9 +210,9 @@ describe('Stakevote', () => {
             it('staking should update vote_weight', async () => {
               const expected_weight_of_votes =
                 shared.NUMBER_OF_REG_MEMBERS * 10000000;
-              const x = await get_from_state2(
+              const x = await get_from_dacglobals(
                 dacId,
-                state_keys.total_weight_of_votes
+                'total_weight_of_votes'
               );
               chai.expect(x).to.equal(expected_weight_of_votes);
             });
@@ -310,16 +307,16 @@ describe('Stakevote', () => {
           chai.expect(max_stake_time).to.equal(stake_delay);
         });
         it('before voting: total_weight_of_votes', async () => {
-          total_weight_of_votes_before = await get_from_state2(
+          total_weight_of_votes_before = await get_from_dacglobals(
             dacId,
-            state_keys.total_weight_of_votes
+            'total_weight_of_votes'
           );
           total_weight_of_votes_beginning = total_weight_of_votes_before;
         });
         it('before voting: total_votes_on_candidates', async () => {
-          total_votes_on_candidates_before = await get_from_state2(
+          total_votes_on_candidates_before = await get_from_dacglobals(
             dacId,
-            state_keys.total_votes_on_candidates
+            'total_votes_on_candidates'
           );
           total_votes_on_candidates_beginning = total_votes_on_candidates_before;
         });
@@ -337,10 +334,7 @@ describe('Stakevote', () => {
         it('should update total_weight_of_votes', async () => {
           const expected =
             total_weight_of_votes_before + stake_amount.amount_raw();
-          const x = await get_from_state2(
-            dacId,
-            state_keys.total_weight_of_votes
-          );
+          const x = await get_from_dacglobals(dacId, 'total_weight_of_votes');
           chai.expect(x).to.equal(expected);
         });
         it('should update total_votes_on_candidates', async () => {
@@ -351,9 +345,9 @@ describe('Stakevote', () => {
               stake_delay,
               dacId
             ));
-          const x = await get_from_state2(
+          const x = await get_from_dacglobals(
             dacId,
-            state_keys.total_votes_on_candidates
+            'total_votes_on_candidates'
           );
           chai.expect(parseInt(x, 10)).to.equal(expected);
         });
@@ -362,15 +356,15 @@ describe('Stakevote', () => {
         let total_weight_of_votes_before;
         let total_votes_on_candidates_before;
         it('before voting: total_weight_of_votes', async () => {
-          total_weight_of_votes_before = await get_from_state2(
+          total_weight_of_votes_before = await get_from_dacglobals(
             dacId,
-            state_keys.total_weight_of_votes
+            'total_weight_of_votes'
           );
         });
         it('before voting: total_votes_on_candidates', async () => {
-          total_votes_on_candidates_before = await get_from_state2(
+          total_votes_on_candidates_before = await get_from_dacglobals(
             dacId,
-            state_keys.total_votes_on_candidates
+            'total_votes_on_candidates'
           );
         });
         it('should work', async () => {
@@ -387,17 +381,14 @@ describe('Stakevote', () => {
         });
         it('should not increase total_weight_of_votes', async () => {
           const expected = total_weight_of_votes_before;
-          const x = await get_from_state2(
-            dacId,
-            state_keys.total_weight_of_votes
-          );
+          const x = await get_from_dacglobals(dacId, 'total_weight_of_votes');
           chai.expect(x).to.equal(expected);
         });
         it('should not increase total_votes_on_candidates', async () => {
           const expected = total_votes_on_candidates_before;
-          const x = await get_from_state2(
+          const x = await get_from_dacglobals(
             dacId,
-            state_keys.total_votes_on_candidates
+            'total_votes_on_candidates'
           );
           chai.expect(x).to.equal(expected);
         });
@@ -406,15 +397,15 @@ describe('Stakevote', () => {
         let total_weight_of_votes_before;
         let total_votes_on_candidates_before;
         it('before voting: total_weight_of_votes', async () => {
-          total_weight_of_votes_before = await get_from_state2(
+          total_weight_of_votes_before = await get_from_dacglobals(
             dacId,
-            state_keys.total_weight_of_votes
+            'total_weight_of_votes'
           );
         });
         it('before voting: total_votes_on_candidates', async () => {
-          total_votes_on_candidates_before = await get_from_state2(
+          total_votes_on_candidates_before = await get_from_dacglobals(
             dacId,
-            state_keys.total_votes_on_candidates
+            'total_votes_on_candidates'
           );
         });
         it('should work', async () => {
@@ -430,17 +421,14 @@ describe('Stakevote', () => {
         });
         it('should not decrease total_weight_of_votes', async () => {
           const expected = total_weight_of_votes_before;
-          const x = await get_from_state2(
-            dacId,
-            state_keys.total_weight_of_votes
-          );
+          const x = await get_from_dacglobals(dacId, 'total_weight_of_votes');
           chai.expect(x).to.equal(expected);
         });
         it('should not decrease total_votes_on_candidates', async () => {
           const expected = total_votes_on_candidates_before;
-          const x = await get_from_state2(
+          const x = await get_from_dacglobals(
             dacId,
-            state_keys.total_votes_on_candidates
+            'total_votes_on_candidates'
           );
           chai.expect(x).to.equal(expected);
         });
@@ -449,15 +437,15 @@ describe('Stakevote', () => {
         let total_weight_of_votes_before;
         let total_votes_on_candidates_before;
         it('before voting: total_weight_of_votes', async () => {
-          total_weight_of_votes_before = await get_from_state2(
+          total_weight_of_votes_before = await get_from_dacglobals(
             dacId,
-            state_keys.total_weight_of_votes
+            'total_weight_of_votes'
           );
         });
         it('before voting: total_votes_on_candidates', async () => {
-          total_votes_on_candidates_before = await get_from_state2(
+          total_votes_on_candidates_before = await get_from_dacglobals(
             dacId,
-            state_keys.total_votes_on_candidates
+            'total_votes_on_candidates'
           );
         });
         it('should work', async () => {
@@ -468,17 +456,14 @@ describe('Stakevote', () => {
         });
         it('should restore original total_weight_of_votes', async () => {
           const expected = total_weight_of_votes_beginning;
-          const x = await get_from_state2(
-            dacId,
-            state_keys.total_weight_of_votes
-          );
+          const x = await get_from_dacglobals(dacId, 'total_weight_of_votes');
           chai.expect(x).to.equal(expected);
         });
         it('should restore original total_votes_on_candidates', async () => {
           const expected = total_votes_on_candidates_beginning;
-          const x = await get_from_state2(
+          const x = await get_from_dacglobals(
             dacId,
-            state_keys.total_votes_on_candidates
+            'total_votes_on_candidates'
           );
           chai.expect(x).to.equal(expected);
         });
@@ -563,8 +548,8 @@ async function stake(user, amount) {
   });
 }
 
-async function get_from_state2(dacId, key) {
-  const res = await shared.daccustodian_contract.state2Table({
+async function get_from_dacglobals(dacId, key) {
+  const res = await shared.daccustodian_contract.dacglobalsTable({
     scope: dacId,
   });
   const data = res.rows[0].data;

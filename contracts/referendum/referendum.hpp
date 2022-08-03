@@ -32,32 +32,6 @@ using namespace std;
 CONTRACT referendum : public contract {
 
   public:
-    struct contr_config;
-    using configscontainer = eosio::singleton<"config2"_n, contr_config>;
-
-    struct [[eosio::table("config2"), eosio::contract("daccustodian")]] contr_config {
-        eosio::extended_asset lockupasset;
-        uint8_t               maxvotes     = 5;
-        uint8_t               numelected   = 3;
-        uint32_t              periodlength = 7 * 24 * 60 * 60;
-        bool                  should_pay_via_service_provider;
-        uint32_t              initial_vote_quorum_percent;
-        uint32_t              vote_quorum_percent;
-        uint8_t               auth_threshold_high;
-        uint8_t               auth_threshold_mid;
-        uint8_t               auth_threshold_low;
-        uint32_t              lockup_release_time_delay;
-        eosio::extended_asset requested_pay_max;
-
-        static contr_config get_current_configs(eosio::name account, eosio::name scope) {
-            return configscontainer(account, scope.value).get_or_default(contr_config());
-        }
-
-        void save(eosio::name account, eosio::name scope, eosio::name payer = same_payer) {
-            configscontainer(account, scope.value).set(*this, payer);
-        }
-    };
-
     struct [[eosio::table("candperms"), eosio::contract("daccustodian")]] candperm {
         name cand;
         name permission;
