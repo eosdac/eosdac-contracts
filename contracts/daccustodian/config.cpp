@@ -32,6 +32,11 @@ ACTION daccustodian::updateconfige(const contr_config &new_config, const name &d
         check(dacForScope.account_for_type_maybe(dacdir::SERVICE).has_value(),
             "ERR::UPDATECONFIG_NO_SERVICE_ACCOUNT should_pay_via_service_provider is true, but no SERVICE account is set.");
     }
+
+    check(new_config.lockupasset.quantity.symbol == dacForScope.symbol.get_symbol(),
+        "Symbol mismatch dac symbol is %s but symbol given is %s", dacForScope.symbol.get_symbol(),
+        new_config.lockupasset.quantity.symbol);
+
     auto globals = dacglobals::current(get_self(), dac_id);
 
     globals.set_lockupasset(new_config.lockupasset);
