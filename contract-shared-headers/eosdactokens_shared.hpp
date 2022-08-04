@@ -119,6 +119,9 @@ namespace eosdac {
     using unstakes_table = multi_index<"unstakes"_n, unstake_info,
         indexed_by<"byaccount"_n, const_mem_fun<unstake_info, uint64_t, &unstake_info::by_account>>>;
 
+    struct staketime_info;
+    using staketimes_table = multi_index<"staketime"_n, staketime_info>;
+
     TABLE staketime_info {
         name     account;
         uint32_t delay;
@@ -126,8 +129,14 @@ namespace eosdac {
         uint64_t primary_key() const {
             return account.value;
         }
+
+        static uint32_t get_delay(const name account, const name dac_id, const name user) {
+            const auto config     = stake_config::get_current_configs(account, dac_id);
+            const auto staketimes = staketimes_table{account, dac_id.value};
+            const auto existing   = staketimes.find(user.value);
+            return existing != staketimes.end() ? existing->delay : config.min_stake_time;
+        }
     };
-    using staketimes_table = multi_index<"staketime"_n, staketime_info>;
 
     asset get_supply(name code, symbol_code sym) {
         stats       statstable(code, sym.raw());

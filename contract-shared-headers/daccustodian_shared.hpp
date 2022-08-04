@@ -119,7 +119,7 @@ namespace eosdac {
         eosio::asset          locked_tokens;
         uint64_t              total_votes;
         uint8_t               is_active;
-        eosio::time_point_sec custodian_end_time_stamp;
+        eosio::time_point_sec custodian_end_time_stamp; // currently unused
         eosio::time_point_sec avg_vote_time_stamp;
 
         uint64_t by_decayed_votes() const {
@@ -224,11 +224,11 @@ namespace eosdac {
     struct [[eosio::table("state2"), eosio::contract("daccustodian")]] contr_state2 {
         eosio::time_point_sec                  lastperiodtime = time_point_sec(0);
         std::map<uint8_t, state_value_variant> data           = {
-            {state_keys::total_weight_of_votes, int64_t(0)},
-            {state_keys::total_votes_on_candidates, int64_t(0)},
-            {state_keys::number_active_candidates, uint32_t(0)},
-            {state_keys::met_initial_votes_threshold, false},
-            {state_keys::lastclaimbudgettime, time_point_sec(0)},
+                      {state_keys::total_weight_of_votes, int64_t(0)},
+                      {state_keys::total_votes_on_candidates, int64_t(0)},
+                      {state_keys::number_active_candidates, uint32_t(0)},
+                      {state_keys::met_initial_votes_threshold, false},
+                      {state_keys::lastclaimbudgettime, time_point_sec(0)},
         };
 
         static contr_state2 get_current_state(const eosio::name account, const eosio::name scope) {
