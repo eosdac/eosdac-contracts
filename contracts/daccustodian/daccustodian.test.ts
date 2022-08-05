@@ -701,7 +701,7 @@ describe('Daccustodian', () => {
               shared.dac_token_contract.transfer(
                 shared.dac_token_contract.account.name,
                 newUser1.name,
-                '1000.00 NOMDAC',
+                '12.00 NOMDAC',
                 '',
                 { from: shared.dac_token_contract.account }
               ),
