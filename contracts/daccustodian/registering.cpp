@@ -114,12 +114,11 @@ ACTION daccustodian::appointcust(const vector<name> &custs, const name &dac_id) 
         auto cand = candidates.find(cust.value);
         if (cand == candidates.end()) {
             candidates.emplace(auth_account, [&](candidate &c) {
-                c.candidate_name           = cust;
-                c.requestedpay             = req_pay.quantity;
-                c.locked_tokens            = lockup.quantity;
-                c.total_votes              = 0;
-                c.is_active                = 1;
-                c.custodian_end_time_stamp = time_point_sec(0);
+                c.candidate_name = cust;
+                c.requestedpay   = req_pay.quantity;
+                c.locked_tokens  = lockup.quantity;
+                c.total_votes    = 0;
+                c.is_active      = 1;
             });
         }
 
@@ -134,16 +133,20 @@ ACTION daccustodian::appointcust(const vector<name> &custs, const name &dac_id) 
 // private methods for the above actions
 
 void daccustodian::validateMinStake(name account, name dac_id) {
-    auto dac_inst = dacdir::dac_for_id(dac_id);
-
-    const auto     globals        = dacglobals::current(get_self(), dac_id);
-    extended_asset required_stake = globals.get_lockupasset();
+    const auto globals        = dacglobals::current(get_self(), dac_id);
+    const auto required_stake = globals.get_lockupasset();
 
     if (required_stake.quantity.amount > 0) {
-        asset staked = eosdac::get_staked(account, required_stake.contract, required_stake.quantity.symbol);
-        check(staked.amount >= required_stake.quantity.amount,
-            fmt("ERR::VALIDATEMINSTAKE_NOT_ENOUGH::Not staked enough. Required amount: %s. User has staked %s",
-                required_stake.quantity, staked));
+        const auto staked = eosdac::get_staked(account, required_stake.contract, required_stake.quantity.symbol);
+
+        check(staked >= required_stake.quantity,
+            "ERR::VALIDATEMINSTAKE_NOT_ENOUGH::Not staked enough. You staked %s, but need to stake at least %s", staked,
+            required_stake.quantity);
+
+        const auto delay     = staketime_info::get_delay(get_self(), dac_id, account);
+        const auto min_delay = globals.get_lockup_release_time_delay();
+        check(delay >= min_delay, "ERR::VALIDATEMINSTAKE_NOT_LONG_ENOUGH::Staketime must be at least %s but is %s",
+            min_delay, delay);
     }
 }
 
@@ -186,16 +189,10 @@ void daccustodian::removeCandidate(name cand, bool lockupStake, name dac_id) {
         cand_perms.erase(perm);
     }
 
-    auto end_time_stamp = eosio::current_time_point() + time_point_sec(globals.get_lockup_release_time_delay());
-
     eosio::print("Remove from nominated candidate by setting them to inactive.");
     // Set the is_active flag to false instead of deleting in order to retain votes if they return to he dac.
     registered_candidates.modify(reg_candidate, same_payer, [&](candidate &c) {
         c.is_active = 0;
-        if (lockupStake) {
-            eosio::print("Lockup stake for release delay.");
-            c.custodian_end_time_stamp = end_time_stamp;
-        }
     });
 }
 

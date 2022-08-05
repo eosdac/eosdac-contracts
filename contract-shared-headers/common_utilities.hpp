@@ -58,7 +58,7 @@ inline std::string toString(const T &x) {
     if constexpr (std::is_same<T, std::string>::value) {
         return x;
     } else if constexpr (std::is_same<T, eosio::symbol>::value) {
-        return x.code().to_string();
+        return std::to_string(x.precision()) + "," + x.code().to_string();
     } else if constexpr (has_to_string<T>::value) {
         return x.to_string();
     } else {

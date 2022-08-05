@@ -614,6 +614,87 @@ describe('Daccustodian', () => {
             );
           });
         });
+        context('wit insufficient staketime', async () => {
+          before(async () => {
+            await shared.daccustodian_contract.updateconfige(
+              {
+                numelected: 5,
+                maxvotes: 4,
+                requested_pay_max: {
+                  contract: 'eosio.token',
+                  quantity: '25.0000 EOS',
+                },
+                periodlength: 5,
+                initial_vote_quorum_percent: 31,
+                vote_quorum_percent: 15,
+                auth_threshold_high: 4,
+                auth_threshold_mid: 3,
+                auth_threshold_low: 2,
+                lockupasset: {
+                  contract: shared.dac_token_contract.account.name,
+                  quantity: '12.00 NOMDAC',
+                },
+                should_pay_via_service_provider: false,
+                lockup_release_time_delay: 259201,
+              },
+              dacId,
+              { from: shared.auth_account }
+            );
+            await debugPromise(
+              shared.dac_token_contract.transfer(
+                shared.dac_token_contract.account.name,
+                newUser1.name,
+                '1000.00 NOMDAC',
+                '',
+                { from: shared.dac_token_contract.account }
+              ),
+              'failed to preload the user with enough tokens for staking'
+            );
+            await debugPromise(
+              shared.dac_token_contract.stake(newUser1.name, '1000.00 NOMDAC', {
+                from: newUser1,
+              }),
+              'failed staking'
+            );
+          });
+          it('should fail with ERR::VALIDATEMINSTAKE_NOT_LONG_ENOUGH', async () => {
+            await assertEOSErrorIncludesMessage(
+              shared.daccustodian_contract.nominatecane(
+                newUser1.name,
+                '25.0000 EOS',
+                dacId,
+                { from: newUser1 }
+              ),
+              'ERR::VALIDATEMINSTAKE_NOT_LONG_ENOUGH'
+            );
+          });
+          after(async () => {
+            await shared.daccustodian_contract.updateconfige(
+              {
+                numelected: 5,
+                maxvotes: 4,
+                requested_pay_max: {
+                  contract: 'eosio.token',
+                  quantity: '25.0000 EOS',
+                },
+                periodlength: 5,
+                initial_vote_quorum_percent: 31,
+                vote_quorum_percent: 15,
+                auth_threshold_high: 4,
+                auth_threshold_mid: 3,
+                auth_threshold_low: 2,
+                lockupasset: {
+                  contract: shared.dac_token_contract.account.name,
+                  quantity: '12.00 NOMDAC',
+                },
+                should_pay_via_service_provider: false,
+                lockup_release_time_delay: 5,
+              },
+              dacId,
+              { from: shared.auth_account }
+            );
+          });
+        });
         context('with sufficient staked funds', async () => {
           before(async () => {
             await debugPromise(
@@ -799,7 +880,6 @@ describe('Daccustodian', () => {
               cand.requestedpay == '20.0000 EOS' ||
               cand.requestedpay == '25.0000 EOS'
           ).to.be.true;
-          chai.expect(cand.custodian_end_time_stamp).to.equalDate(new Date(0));
           chai.expect(cand).has.property('candidate_name');
         }
       });
@@ -1808,9 +1888,6 @@ describe('Daccustodian', () => {
                     upperBound: electedCandidateToResign.name,
                   }
                 );
-                chai
-                  .expect(candidates.rows[0].custodian_end_time_stamp)
-                  .to.be.greaterThan(new Date(Date.now()));
               });
             }
           );
@@ -1897,9 +1974,6 @@ describe('Daccustodian', () => {
             lowerBound: electedCandidateToResign.name,
             upperBound: electedCandidateToResign.name,
           });
-          chai
-            .expect(candidates.rows[0].custodian_end_time_stamp)
-            .to.be.afterTime(new Date(Date.now()));
         });
       });
       context('for an unelected candidate', async () => {
@@ -1920,9 +1994,7 @@ describe('Daccustodian', () => {
             lowerBound: unelectedCandidateToResign.name,
             upperBound: unelectedCandidateToResign.name,
           });
-          chai
-            .expect(candidates.rows[0].custodian_end_time_stamp)
-            .to.be.equalDate(new Date(0));
+
           chai.expect(candidates.rows[0].is_active).to.be.equal(0);
 
           var numberActiveCandidatesAfter = await get_from_dacglobals(
@@ -2012,9 +2084,6 @@ describe('Daccustodian', () => {
             lowerBound: electedCandidateToFire.name,
             upperBound: electedCandidateToFire.name,
           });
-          chai
-            .expect(candidates.rows[0].custodian_end_time_stamp)
-            .to.be.afterTime(new Date(Date.now()));
         });
       });
       context('for an unelected candidate', async () => {
@@ -2036,9 +2105,7 @@ describe('Daccustodian', () => {
             lowerBound: unelectedCandidateToFire.name,
             upperBound: unelectedCandidateToFire.name,
           });
-          chai
-            .expect(candidates.rows[0].custodian_end_time_stamp)
-            .to.be.afterDate(new Date(0));
+
           chai.expect(candidates.rows[0].is_active).to.be.equal(0);
 
           var numberActiveCandidatesAfter = await get_from_dacglobals(
@@ -2128,9 +2195,6 @@ describe('Daccustodian', () => {
             lowerBound: electedCandidateToFire.name,
             upperBound: electedCandidateToFire.name,
           });
-          chai
-            .expect(candidates.rows[0].custodian_end_time_stamp)
-            .to.be.afterTime(new Date(Date.now()));
         });
       });
       context('for an unelected candidate', async () => {
@@ -2261,9 +2325,6 @@ describe('Daccustodian', () => {
         limit: 20,
       });
       chai.expect(candidates.rows.length).equals(5);
-      chai
-        .expect(candidates.rows[0].custodian_end_time_stamp)
-        .to.be.equalDate(new Date(0));
 
       chai.expect(candidates.rows[0].requestedpay).to.equal('0.0000 EOS');
       chai.expect(candidates.rows[0].locked_tokens).to.equal('0.0000 APPDAC');

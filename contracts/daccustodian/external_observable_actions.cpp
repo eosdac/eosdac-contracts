@@ -70,23 +70,11 @@ void daccustodian::validateUnstakeAmount(
     const name &code, const name &cand, const asset &unstake_amount, const name &dac_id) {
     // Will assert if adc_id not found
     check(unstake_amount.amount > 0, "ERR::NEGATIVE_UNSTAKE::Unstake amount must be positive");
-    auto dac            = dacdir::dac_for_id(dac_id);
-    auto token_contract = dac.symbol.get_contract();
 
-    candidates_table registered_candidates(code, dac_id.value);
-    auto             reg_candidate = registered_candidates.find(cand.value);
+    const auto registered_candidates = candidates_table{code, dac_id.value};
+    const auto reg_candidate         = registered_candidates.find(cand.value);
     if (reg_candidate != registered_candidates.end()) {
-        extended_asset lockup_asset  = dacglobals::current(code, dac_id).get_lockupasset();
-        auto           current_stake = eosdac::get_staked(cand, token_contract, unstake_amount.symbol);
-
-        print(" Current stake : ", current_stake, ", Unstake amount : ", unstake_amount);
         check(!reg_candidate->is_active,
             "ERR::CANNOT_UNSTAKE_REGISTERED::Cannot unstake because you are registered as a candidate, use withdrawcane to unregister.");
-
-        if (reg_candidate->custodian_end_time_stamp > time_point_sec(eosio::current_time_point())) {
-            // Still under restrictions
-            check(current_stake >= lockup_asset.quantity,
-                "ERR::CANNOT_UNSTAKE::Cannot unstake because stake is locked by the custodian agreement");
-        }
     }
 }
