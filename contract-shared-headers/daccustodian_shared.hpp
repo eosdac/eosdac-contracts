@@ -6,12 +6,12 @@
 #include <eosio/singleton.hpp>
 #include <eosio/time.hpp>
 
-#include "../../contract-shared-headers/common_utilities.hpp"
-#include "../../contract-shared-headers/config.hpp"
-#include "../../contract-shared-headers/daccustodian_shared.hpp"
-#include "../../contract-shared-headers/eosdactokens_shared.hpp"
-#include "../../contract-shared-headers/safemath.hpp"
+#include "common_utilities.hpp"
+#include "config.hpp"
+#include "daccustodian_shared.hpp"
+#include "eosdactokens_shared.hpp"
 #include "external_types.hpp"
+#include "safemath.hpp"
 
 using namespace std;
 
