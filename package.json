@@ -23,7 +23,6 @@
   "homepage": "https://github.com/eosdac/eosdac_contracts#readme",
   "devDependencies": {
     "@types/chai": "^4.2.3",
-    "@types/chai-as-promised": "^7.1.2",
     "@types/chai-datetime": "0.0.33",
     "@types/mocha": "^5.2.7",
     "chai": "^4.2.0",
