@@ -27,7 +27,6 @@
     "@types/chai-datetime": "0.0.33",
     "@types/mocha": "^5.2.7",
     "chai": "^4.2.0",
-    "chai-as-promised": "^7.1.1",
     "chai-datetime": "^1.5.0",
     "eosjs": "^20.0.0",
     "eosjs-ecc": "^4.0.4",
