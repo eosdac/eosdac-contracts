@@ -2426,28 +2426,16 @@ describe('Daccustodian', () => {
         await setup_nfts();
       });
       it('nftcache table should contain our NFT', async () => {
-        await assertRowsEqual(
-          shared.dacdirectory_contract.nftcacheTable({
-            scope: dacId,
-          }),
-          [
-            {
-              nft_id: '1099511627776',
-              schema_name: BUDGET_SCHEMA,
-              value: 400,
-            },
-            {
-              nft_id: '1099511627777',
-              schema_name: BUDGET_SCHEMA,
-              value: 500,
-            },
-            {
-              nft_id: '1099511627778',
-              schema_name: BUDGET_SCHEMA,
-              value: 300,
-            },
-          ]
-        );
+        const res = await shared.dacdirectory_contract.nftcacheTable({
+          scope: dacId,
+        });
+        const rows = res.rows;
+        chai.expect(rows[0].schema_name).to.equal(BUDGET_SCHEMA);
+        chai.expect(rows[0].value).to.equal(400);
+        chai.expect(rows[1].schema_name).to.equal(BUDGET_SCHEMA);
+        chai.expect(rows[1].value).to.equal(500);
+        chai.expect(rows[2].schema_name).to.equal(BUDGET_SCHEMA);
+        chai.expect(rows[2].value).to.equal(300);
       });
     });
     context('when newperiod is called without claimbudget', async () => {
@@ -2754,18 +2742,12 @@ describe('Daccustodian', () => {
           'deposit nft',
           { from: new Account('eosio') }
         );
-        await assertRowsEqual(
-          shared.dacdirectory_contract.nftcacheTable({
-            scope: dacId,
-          }),
-          [
-            {
-              schema_name: BUDGET_SCHEMA,
-              nft_id: '1099511627777',
-              value: 500,
-            },
-          ]
-        );
+        const res = await shared.dacdirectory_contract.nftcacheTable({
+          scope: dacId,
+        });
+        const rows = res.rows;
+        chai.expect(rows[0].schema_name).to.equal(BUDGET_SCHEMA);
+        chai.expect(rows[0].value).to.equal(500);
       });
     });
     context('index', async () => {
@@ -2778,25 +2760,58 @@ describe('Daccustodian', () => {
 
 /* Use a fresh instance to prevent caching of results */
 function get_atomic() {
+  const { RpcApi } = require('atomicassets');
+  const fetch = require('node-fetch');
+
   return new RpcApi('http://localhost:8888', 'atomicassets', {
     fetch,
   });
 }
 
-async function setup_nfts() {
-  await shared.atomicassets.createcol(
-    shared.eosio_token_contract.account.name,
-    NFT_COLLECTION,
-    true,
-    [
-      shared.eosio_token_contract.account.name,
-      shared.daccustodian_contract.name,
-    ],
-    [shared.dacdirectory_contract.name],
-    '0.01',
-    '',
-    { from: shared.eosio_token_contract.account }
+async function getTemplateId(schema_name: string, name: string) {
+  const atomic = get_atomic();
+  const templates = await atomic.getCollectionTemplates(NFT_COLLECTION);
+  const objects = await Promise.all(templates.map((x) => x.toObject()));
+  console.log(`getTemplateId schema_name: ${schema_name} name: ${name}`);
+  console.log(JSON.stringify(objects, null, 2));
+  return parseInt(
+    objects.find((x) => {
+      return (
+        x.schema.schema_name == schema_name && x.immutableData.name == name
+      );
+    }).template_id,
+    10
   );
+}
+async function setup_nfts() {
+  const atomic = get_atomic();
+  try {
+    const collection = await atomic.getCollection(NFT_COLLECTION);
+    await shared.atomicassets.addnotifyacc(
+      NFT_COLLECTION,
+      shared.dacdirectory_contract.name,
+      { from: shared.eosio_token_contract.account }
+    );
+  } catch (e) {
+    if (!String(e).includes('Error: Row not found for')) {
+      // raise unknown errors
+      throw e;
+    }
+    await shared.atomicassets.createcol(
+      shared.eosio_token_contract.account.name,
+      NFT_COLLECTION,
+      true,
+      [
+        shared.eosio_token_contract.account.name,
+        shared.daccustodian_contract.name,
+      ],
+      [shared.dacdirectory_contract.name],
+      '0.01',
+      '',
+      { from: shared.eosio_token_contract.account }
+    );
+  }
+
   await shared.atomicassets.createschema(
     shared.eosio_token_contract.account.name,
     NFT_COLLECTION,
@@ -2808,6 +2823,7 @@ async function setup_nfts() {
     ],
     { from: shared.eosio_token_contract.account }
   );
+
   await shared.atomicassets.createtempl(
     shared.eosio_token_contract.account.name,
     NFT_COLLECTION,
@@ -2815,15 +2831,17 @@ async function setup_nfts() {
     true,
     true,
     100,
-    '',
+    [{ key: 'name', value: ['string', 'budget_nft'] }],
     { from: shared.eosio_token_contract.account }
   );
+
+  const template_id = await getTemplateId(BUDGET_SCHEMA, 'budget_nft');
 
   await shared.atomicassets.mintasset(
     shared.eosio_token_contract.account.name,
     NFT_COLLECTION,
     BUDGET_SCHEMA,
-    1,
+    template_id,
     shared.auth_account.name,
     [
       { key: 'cardid', value: ['uint16', 1] },
@@ -2834,11 +2852,12 @@ async function setup_nfts() {
     [],
     { from: shared.eosio_token_contract.account }
   );
+
   await shared.atomicassets.mintasset(
     shared.eosio_token_contract.account.name,
     NFT_COLLECTION,
     BUDGET_SCHEMA,
-    1,
+    template_id,
     shared.auth_account.name,
     [
       { key: 'cardid', value: ['uint16', 1] },
@@ -2853,7 +2872,7 @@ async function setup_nfts() {
     shared.eosio_token_contract.account.name,
     NFT_COLLECTION,
     BUDGET_SCHEMA,
-    1,
+    template_id,
     shared.auth_account.name,
     [
       { key: 'cardid', value: ['uint16', 1] },
@@ -3036,4 +3055,9 @@ async function vote_and_check(dacId, voter, candidate) {
   chai
     .expect(votedCandidateResult.rows[0].avg_vote_time_stamp)
     .to.closeToTime(expected_avg_vote_time_stamp, 1);
+}
+
+let first_id: number = 2 ** 40;
+function asset_id(n: number) {
+  return String(n + first_id - 1);
 }

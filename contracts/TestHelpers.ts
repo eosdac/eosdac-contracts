@@ -139,7 +139,7 @@ export class SharedTestObjects {
       'atomicassets',
       'atomicassets'
     );
-    this.atomicassets.account.addCodePermission();
+    await this.atomicassets.account.addCodePermission();
     await this.atomicassets.init({ from: this.atomicassets.account });
 
     // Other objects
@@ -643,7 +643,25 @@ export class SharedTestObjects {
         this.daccustodian_contract.account.name,
         'owner',
         '',
-        UpdateAuth.AuthorityToSet.forAccount(this.auth_account, 'active')
+        UpdateAuth.AuthorityToSet.explicitAuthorities(
+          1,
+          [
+            {
+              permission: {
+                actor: this.auth_account.name,
+                permission: 'active',
+              },
+              weight: 1,
+            },
+          ],
+          [
+            {
+              key: this.daccustodian_contract.account.publicKey,
+              weight: 1,
+            },
+          ],
+          []
+        )
       ),
       'changing owner of daccustodian'
     );
@@ -654,7 +672,25 @@ export class SharedTestObjects {
         this.daccustodian_contract.account.name,
         'active',
         'owner',
-        UpdateAuth.AuthorityToSet.forAccount(this.auth_account, 'active')
+        UpdateAuth.AuthorityToSet.explicitAuthorities(
+          1,
+          [
+            {
+              permission: {
+                actor: this.auth_account.name,
+                permission: 'active',
+              },
+              weight: 1,
+            },
+          ],
+          [
+            {
+              key: this.daccustodian_contract.account.publicKey,
+              weight: 1,
+            },
+          ],
+          []
+        )
       ),
       'change active of daccustodian'
     );
@@ -819,21 +855,28 @@ export class SharedTestObjects {
 
     this.tokenIssuer = await AccountManager.createAccount('tokenissuer');
 
-    await this.eosio_token_contract.create(
-      this.tokenIssuer.name,
-      '1000000000.0000 TLM',
-      {
-        from: this.eosio_token_contract.account,
+    try {
+      await this.eosio_token_contract.create(
+        this.tokenIssuer.name,
+        '1000000000.0000 TLM',
+        {
+          from: this.eosio_token_contract.account,
+        }
+      );
+      await this.eosio_token_contract.issue(
+        this.tokenIssuer.name,
+        '10000000.0000 TLM',
+        'initial deposit',
+        {
+          from: this.tokenIssuer,
+        }
+      );
+    } catch (e) {
+      console.log(JSON.stringify(e, null, 2));
+      if (!e.details[0].message.includes('token with symbol already exists')) {
+        throw e;
       }
-    );
-    await this.eosio_token_contract.issue(
-      this.tokenIssuer.name,
-      '10000000.0000 TLM',
-      'initial deposit',
-      {
-        from: this.tokenIssuer,
-      }
-    );
+    }
   }
 }
 
