@@ -3056,8 +3056,3 @@ async function vote_and_check(dacId, voter, candidate) {
     .expect(votedCandidateResult.rows[0].avg_vote_time_stamp)
     .to.closeToTime(expected_avg_vote_time_stamp, 1);
 }
-
-let first_id: number = 2 ** 40;
-function asset_id(n: number) {
-  return String(n + first_id - 1);
-}
