@@ -2403,6 +2403,13 @@ describe('Daccustodian', () => {
         { from: shared.auth_account }
       );
     });
+    context('without proper auth', async () => {
+      it('claimbudget should fail with auth error', async () => {
+        await assertMissingAuthority(
+          shared.daccustodian_contract.claimbudget(dacId, { from: somebody })
+        );
+      });
+    });
     context('with no budget NFTs', async () => {
       before(async () => {
         await shared.daccustodian_contract.newperiod(
@@ -2416,7 +2423,9 @@ describe('Daccustodian', () => {
       });
       it('claimbudget should fail', async () => {
         await assertEOSErrorIncludesMessage(
-          shared.daccustodian_contract.claimbudget(dacId),
+          shared.daccustodian_contract.claimbudget(dacId, {
+            from: shared.auth_account,
+          }),
           'Dac with ID budgetdac does not own any budget NFTs'
         );
       });
@@ -2483,7 +2492,9 @@ describe('Daccustodian', () => {
       'claimbudget when transfer amount is bigger than treasury',
       async () => {
         before(async () => {
-          await shared.daccustodian_contract.claimbudget(dacId);
+          await shared.daccustodian_contract.claimbudget(dacId, {
+            from: shared.auth_account,
+          });
         });
         it('should only transfer treasury balance', async () => {
           await assertBalanceEqual(
@@ -2513,7 +2524,9 @@ describe('Daccustodian', () => {
     context('calling claimbudget twice in the same period', async () =>
       it('should fail', async () => {
         await assertEOSErrorIncludesMessage(
-          shared.daccustodian_contract.claimbudget(dacId),
+          shared.daccustodian_contract.claimbudget(dacId, {
+            from: shared.auth_account,
+          }),
           'Claimbudget can only be called once per period'
         );
       })
@@ -2554,7 +2567,9 @@ describe('Daccustodian', () => {
             dacId,
             false
           );
-          await shared.daccustodian_contract.claimbudget(dacId);
+          await shared.daccustodian_contract.claimbudget(dacId, {
+            from: shared.auth_account,
+          });
         });
         it('should transfer amount according to formula', async () => {
           const expected_treasury_balance_after =
@@ -2686,7 +2701,9 @@ describe('Daccustodian', () => {
           dacId,
           true
         );
-        await shared.daccustodian_contract.claimbudget(dacId);
+        await shared.daccustodian_contract.claimbudget(dacId, {
+          from: shared.auth_account,
+        });
       });
       it('should transfer amount according to formula', async () => {
         const expected_treasury_balance_after =
