@@ -2494,22 +2494,52 @@ describe('Daccustodian', () => {
     context(
       'claimbudget when transfer amount is bigger than treasury',
       async () => {
+        let expected_transfer_amount;
+        let treasury_balance_before;
+        let auth_balance_before;
         before(async () => {
+          expected_transfer_amount = await expected_budget_transfer_amount(
+            dacId,
+            false
+          );
+
+          treasury_balance_before = await get_balance(
+            shared.eosio_token_contract,
+            shared.treasury_account,
+            'TLM'
+          );
+          auth_balance_before = await get_balance(
+            shared.eosio_token_contract,
+            shared.auth_account,
+            'TLM'
+          );
           await shared.daccustodian_contract.claimbudget(dacId);
         });
         it('should only transfer treasury balance', async () => {
-          await assertBalanceEqual(
-            shared.eosio_token_contract.accountsTable({
-              scope: shared.treasury_account.name,
-            }),
-            '0.0000 TLM'
+          console.log('treasury_balance_before: ', treasury_balance_before);
+          console.log('auth_balance_before: ', auth_balance_before);
+          console.log('expected_transfer_amount: ', expected_transfer_amount);
+          const expected_treasury_balance_after =
+            treasury_balance_before - expected_transfer_amount;
+          const expected_auth_balance_after =
+            auth_balance_before + expected_transfer_amount;
+
+          const actual_treasury_balance = await get_balance(
+            shared.eosio_token_contract,
+            shared.treasury_account,
+            'TLM'
           );
-          await assertBalanceEqual(
-            shared.eosio_token_contract.accountsTable({
-              scope: shared.auth_account.name,
-            }),
-            '150.0000 TLM'
+          const actual_auth_balance = await get_balance(
+            shared.eosio_token_contract,
+            shared.auth_account,
+            'TLM'
           );
+          chai
+            .expect(actual_treasury_balance)
+            .to.equal(expected_treasury_balance_after);
+          chai
+            .expect(actual_auth_balance)
+            .to.equal(expected_auth_balance_after);
         });
         it('should update lastclaimbudgettime', async () => {
           const lastclaimbudgettime = await get_from_dacglobals(
@@ -2907,11 +2937,10 @@ async function expected_budget_transfer_amount(
     const nft_with_highest_value = budget_nfts[0];
     percentage = nft_with_highest_value.value;
   }
-
-  return Math.min(
-    treasury_balance,
-    auth_balance - (treasury_balance * percentage) / 10000
-  );
+  const allocation_for_period = (treasury_balance * percentage) / 10000;
+  const rounded_allocation_for_period = Math.max(allocation_for_period, 10);
+  const amount_to_transfer = rounded_allocation_for_period - auth_balance;
+  return Math.max(0, Math.min(treasury_balance, amount_to_transfer));
 }
 
 async function get_balance(
