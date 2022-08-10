@@ -2,8 +2,6 @@ import * as l from 'lamington';
 
 import { SharedTestObjects } from '../TestHelpers';
 import * as chai from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
-chai.use(chaiAsPromised);
 
 describe('Dacdirectory', () => {
   let shared: SharedTestObjects;

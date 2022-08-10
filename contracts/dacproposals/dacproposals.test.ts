@@ -18,9 +18,6 @@ import { EosioToken } from '../external_contracts/eosio.token/eosio.token';
 import { SharedTestObjects } from '../TestHelpers';
 import * as chai from 'chai';
 
-import * as chaiAsPromised from 'chai-as-promised';
-
-chai.use(chaiAsPromised);
 let shared: SharedTestObjects;
 
 enum VoteType {
@@ -67,13 +64,11 @@ describe('Dacproposals', () => {
     });
     await shared.updateconfig(dacId, '12.0000 PROPDAC');
     eosiotoken = await ContractLoader.at('eosio.token');
-    await chai.expect(
-      shared.dac_token_contract.stakeconfig(
-        { enabled: true, min_stake_time: 5, max_stake_time: 20 },
-        '4,PROPDAC',
-        { from: shared.auth_account }
-      )
-    ).to.eventually.be.fulfilled;
+    await shared.dac_token_contract.stakeconfig(
+      { enabled: true, min_stake_time: 5, max_stake_time: 20 },
+      '4,PROPDAC',
+      { from: shared.auth_account }
+    );
 
     regMembers = await shared.getRegMembers(dacId, '20000.0000 PROPDAC');
     propDacCustodians = await shared.getStakeObservedCandidates(
@@ -109,18 +104,16 @@ describe('Dacproposals', () => {
     });
     context('with valid auth', async () => {
       it('should succeed', async () => {
-        await chai.expect(
-          shared.dacproposals_contract.updateconfig(
-            {
-              proposal_threshold: proposeApproveTheshold,
-              finalize_threshold: 3,
-              approval_duration: 130,
-              transfer_delay: 3,
-            },
-            dacId,
-            { from: shared.auth_account }
-          )
-        ).to.eventually.be.fulfilled;
+        await shared.dacproposals_contract.updateconfig(
+          {
+            proposal_threshold: proposeApproveTheshold,
+            finalize_threshold: 3,
+            approval_duration: 130,
+            transfer_delay: 3,
+          },
+          dacId,
+          { from: shared.auth_account }
+        );
       });
       it('should have correct config in config table', async () => {
         await assertRowsEqual(
@@ -246,23 +239,21 @@ describe('Dacproposals', () => {
       });
       context('with valid params', async () => {
         it('should succeed', async () => {
-          await chai.expect(
-            shared.dacproposals_contract.createprop(
-              proposer1Account.name,
-              'title',
-              'summary',
-              arbitrator.name,
-              { quantity: '100.0000 EOS', contract: 'eosio.token' },
-              { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
-              proposalHash,
-              newpropid,
-              category,
-              150,
-              dacId,
-              { from: proposer1Account }
-            ),
-            ''
-          ).to.eventually.be.fulfilled;
+          await shared.dacproposals_contract.createprop(
+            proposer1Account.name,
+            'title',
+            'summary',
+            arbitrator.name,
+            { quantity: '100.0000 EOS', contract: 'eosio.token' },
+            { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+            proposalHash,
+            newpropid,
+            category,
+            150,
+            dacId,
+            { from: proposer1Account }
+          ),
+            '';
         });
       });
       context('with duplicate id', async () => {
@@ -292,22 +283,20 @@ describe('Dacproposals', () => {
       });
       context('with valid params as an additional proposal', async () => {
         it('should succeed', async () => {
-          await chai.expect(
-            shared.dacproposals_contract.createprop(
-              proposer1Account.name,
-              'title',
-              'summary',
-              arbitrator.name,
-              { quantity: '100.0000 EOS', contract: 'eosio.token' },
-              { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
-              proposalHash,
-              otherfoundpropid,
-              category,
-              150,
-              dacId,
-              { from: proposer1Account }
-            )
-          ).to.eventually.be.fulfilled;
+          await shared.dacproposals_contract.createprop(
+            proposer1Account.name,
+            'title',
+            'summary',
+            arbitrator.name,
+            { quantity: '100.0000 EOS', contract: 'eosio.token' },
+            { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+            proposalHash,
+            otherfoundpropid,
+            category,
+            150,
+            dacId,
+            { from: proposer1Account }
+          );
         });
       });
     });
@@ -384,26 +373,24 @@ describe('Dacproposals', () => {
         });
         context('proposal_deny vote', async () => {
           it('should succeed', async () => {
-            await chai.expect(
-              shared.dacproposals_contract.voteprop(
-                propDacCustodians[0].name,
-                newpropid,
-                VoteType.vote_deny,
-                dacId,
-                {
-                  auths: [
-                    {
-                      actor: propDacCustodians[0].name,
-                      permission: 'active',
-                    },
-                    {
-                      actor: shared.auth_account.name,
-                      permission: 'active',
-                    },
-                  ],
-                }
-              )
-            ).to.eventually.be.fulfilled;
+            await shared.dacproposals_contract.voteprop(
+              propDacCustodians[0].name,
+              newpropid,
+              VoteType.vote_deny,
+              dacId,
+              {
+                auths: [
+                  {
+                    actor: propDacCustodians[0].name,
+                    permission: 'active',
+                  },
+                  {
+                    actor: shared.auth_account.name,
+                    permission: 'active',
+                  },
+                ],
+              }
+            );
           });
         });
         context('proposal_approve vote 2 ', async () => {
@@ -480,23 +467,21 @@ describe('Dacproposals', () => {
     let delgatepropid = 'delegateprop';
     context('without valid auth', async () => {
       before(async () => {
-        await chai.expect(
-          shared.dacproposals_contract.createprop(
-            proposer1Account.name,
-            'startwork_title',
-            'startwork_summary',
-            arbitrator.name,
-            { quantity: '101.0000 EOS', contract: 'eosio.token' },
-            { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
-            'asdfasdfasdfasdfasdfasdfasdffdsa',
-            delgatepropid, // proposal id
-            category,
-            150, // approval duration
-            dacId,
-            { from: proposer1Account }
-          ),
-          ''
-        ).to.eventually.be.fulfilled;
+        await shared.dacproposals_contract.createprop(
+          proposer1Account.name,
+          'startwork_title',
+          'startwork_summary',
+          arbitrator.name,
+          { quantity: '101.0000 EOS', contract: 'eosio.token' },
+          { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+          'asdfasdfasdfasdfasdfasdfasdffdsa',
+          delgatepropid, // proposal id
+          category,
+          150, // approval duration
+          dacId,
+          { from: proposer1Account }
+        ),
+          '';
       });
       it('should fail with invalid auth error', async () => {
         await assertMissingAuthority(
@@ -575,26 +560,24 @@ describe('Dacproposals', () => {
       context('proposal in pending_approval state', async () => {
         context('delegate vote', async () => {
           it('should succeed', async () => {
-            await chai.expect(
-              shared.dacproposals_contract.delegatevote(
-                propDacCustodians[0].name,
-                delgatepropid, // proposal id
-                propDacCustodians[1].name,
-                dacId,
-                {
-                  auths: [
-                    {
-                      actor: propDacCustodians[0].name,
-                      permission: 'active',
-                    },
-                    {
-                      actor: shared.auth_account.name,
-                      permission: 'active',
-                    },
-                  ],
-                }
-              )
-            ).eventually.be.fulfilled;
+            await shared.dacproposals_contract.delegatevote(
+              propDacCustodians[0].name,
+              delgatepropid, // proposal id
+              propDacCustodians[1].name,
+              dacId,
+              {
+                auths: [
+                  {
+                    actor: propDacCustodians[0].name,
+                    permission: 'active',
+                  },
+                  {
+                    actor: shared.auth_account.name,
+                    permission: 'active',
+                  },
+                ],
+              }
+            );
           });
         });
       });
@@ -603,23 +586,21 @@ describe('Dacproposals', () => {
   context('comment', async () => {
     let commentPropId = 'commentprop';
     before(async () => {
-      await chai.expect(
-        shared.dacproposals_contract.createprop(
-          proposer1Account.name,
-          'title',
-          'summary',
-          arbitrator.name,
-          { quantity: '100.0000 EOS', contract: 'eosio.token' },
-          { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
-          proposalHash,
-          commentPropId,
-          category,
-          150,
-          dacId,
-          { from: proposer1Account }
-        ),
-        ''
-      ).to.eventually.be.fulfilled;
+      await shared.dacproposals_contract.createprop(
+        proposer1Account.name,
+        'title',
+        'summary',
+        arbitrator.name,
+        { quantity: '100.0000 EOS', contract: 'eosio.token' },
+        { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+        proposalHash,
+        commentPropId,
+        category,
+        150,
+        dacId,
+        { from: proposer1Account }
+      ),
+        '';
     });
     context('without valid auth', async () => {
       it('should fail with invalid auth error', async () => {
@@ -677,27 +658,25 @@ describe('Dacproposals', () => {
 
     context('with custodian only auth', async () => {
       it('should succeed', async () => {
-        await chai.expect(
-          shared.dacproposals_contract.comment(
-            propDacCustodians[3].name,
-            commentPropId, // proposal id
-            'some comment',
-            'a comment category',
-            dacId,
-            {
-              auths: [
-                {
-                  actor: propDacCustodians[3].name,
-                  permission: 'active',
-                },
-                {
-                  actor: shared.auth_account.name,
-                  permission: 'active',
-                },
-              ],
-            }
-          )
-        ).eventually.to.be.fulfilled;
+        await shared.dacproposals_contract.comment(
+          propDacCustodians[3].name,
+          commentPropId, // proposal id
+          'some comment',
+          'a comment category',
+          dacId,
+          {
+            auths: [
+              {
+                actor: propDacCustodians[3].name,
+                permission: 'active',
+              },
+              {
+                actor: shared.auth_account.name,
+                permission: 'active',
+              },
+            ],
+          }
+        );
       });
     });
   });
@@ -896,24 +875,22 @@ describe('Dacproposals', () => {
       });
 
       it('should succeed', async () => {
-        await chai.expect(
-          shared.dacproposals_contract.startwork(
-            newpropid, // proposal id
-            dacId,
-            {
-              auths: [
-                {
-                  actor: proposer1Account.name,
-                  permission: 'active',
-                },
-                {
-                  actor: shared.auth_account.name,
-                  permission: 'active',
-                },
-              ],
-            }
-          )
-        ).to.eventually.be.fulfilled;
+        await shared.dacproposals_contract.startwork(
+          newpropid, // proposal id
+          dacId,
+          {
+            auths: [
+              {
+                actor: proposer1Account.name,
+                permission: 'active',
+              },
+              {
+                actor: shared.auth_account.name,
+                permission: 'active',
+              },
+            ],
+          }
+        );
       });
       context('Without delay', async () => {
         it('should populate the escrow table', async () => {
@@ -974,57 +951,51 @@ describe('Dacproposals', () => {
     context('proposal with short expiry', async () => {
       let propId = 'shortexpprop';
       it('should create a proposal with a short expiry', async () => {
-        await chai.expect(
-          shared.dacproposals_contract.updateconfig(
-            {
-              proposal_threshold: proposeApproveTheshold,
-              finalize_threshold: 5,
-              approval_duration: 3, // set short for expiry of the
-              transfer_delay: 3,
-            },
-            dacId,
-            { from: shared.auth_account }
-          )
-        ).to.eventually.be.fulfilled;
-        await chai.expect(
-          shared.dacproposals_contract.createprop(
-            proposer1Account.name,
-            'startwork_title',
-            'startwork_summary',
-            arbitrator.name,
-            { quantity: '105.0000 EOS', contract: 'eosio.token' },
-            { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
-            'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
-            propId, // proposal id
-            category,
-            3, // approval duration. Specify short duration so that it expires for expired tests.
-            dacId,
-            { from: proposer1Account }
-          ),
-          ''
-        ).to.eventually.be.fulfilled;
+        await shared.dacproposals_contract.updateconfig(
+          {
+            proposal_threshold: proposeApproveTheshold,
+            finalize_threshold: 5,
+            approval_duration: 3, // set short for expiry of the
+            transfer_delay: 3,
+          },
+          dacId,
+          { from: shared.auth_account }
+        );
+        await shared.dacproposals_contract.createprop(
+          proposer1Account.name,
+          'startwork_title',
+          'startwork_summary',
+          arbitrator.name,
+          { quantity: '105.0000 EOS', contract: 'eosio.token' },
+          { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+          'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
+          propId, // proposal id
+          category,
+          3, // approval duration. Specify short duration so that it expires for expired tests.
+          dacId,
+          { from: proposer1Account }
+        ),
+          '';
       });
       it('should allow a vote before expiry', async () => {
-        await chai.expect(
-          shared.dacproposals_contract.voteprop(
-            propDacCustodians[0].name,
-            propId,
-            VoteType.vote_deny,
-            dacId,
-            {
-              auths: [
-                {
-                  actor: propDacCustodians[0].name,
-                  permission: 'active',
-                },
-                {
-                  actor: shared.auth_account.name,
-                  permission: 'active',
-                },
-              ],
-            }
-          )
-        ).to.eventually.be.fulfilled;
+        await shared.dacproposals_contract.voteprop(
+          propDacCustodians[0].name,
+          propId,
+          VoteType.vote_deny,
+          dacId,
+          {
+            auths: [
+              {
+                actor: propDacCustodians[0].name,
+                permission: 'active',
+              },
+              {
+                actor: shared.auth_account.name,
+                permission: 'active',
+              },
+            ],
+          }
+        );
       });
       context('startwork before expiry without enough votes', async () => {
         it('should fail with insufficient votes', async () => {
@@ -1107,11 +1078,9 @@ describe('Dacproposals', () => {
           );
         });
         it('should clear the expired proposals', async () => {
-          await chai.expect(
-            shared.dacproposals_contract.clearexpprop(propId, dacId, {
-              from: shared.auth_account,
-            })
-          ).to.eventually.fulfilled;
+          await shared.dacproposals_contract.clearexpprop(propId, dacId, {
+            from: shared.auth_account,
+          });
         });
         context('After clearing expired proposals', async () => {
           it('should remove the related proposal', async () => {
@@ -1239,11 +1208,9 @@ describe('Dacproposals', () => {
     });
     context('proposal in work_in_progress state', async () => {
       it('should allow completework', async () => {
-        await chai.expect(
-          shared.dacproposals_contract.completework(newpropid, dacId, {
-            from: proposer1Account,
-          })
-        ).to.eventually.be.fulfilled;
+        await shared.dacproposals_contract.completework(newpropid, dacId, {
+          from: proposer1Account,
+        });
       });
     });
   });
@@ -1267,23 +1234,21 @@ describe('Dacproposals', () => {
     context('proposal not in pending_finalize state', async () => {
       let wrongFinProp = 'wrongfinid';
       before(async () => {
-        await chai.expect(
-          shared.dacproposals_contract.createprop(
-            proposer1Account.name,
-            'startwork_title',
-            'startwork_summary',
-            arbitrator.name,
-            { quantity: '101.0000 EOS', contract: 'eosio.token' },
-            { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
-            'asdfasdfasdfasdfasdfasdfasdffdsa',
-            wrongFinProp, // proposal id
-            category,
-            150, // approval duration
-            dacId,
-            { from: proposer1Account }
-          ),
-          ''
-        ).to.eventually.be.fulfilled;
+        await shared.dacproposals_contract.createprop(
+          proposer1Account.name,
+          'startwork_title',
+          'startwork_summary',
+          arbitrator.name,
+          { quantity: '101.0000 EOS', contract: 'eosio.token' },
+          { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+          'asdfasdfasdfasdfasdfasdfasdffdsa',
+          wrongFinProp, // proposal id
+          category,
+          150, // approval duration
+          dacId,
+          { from: proposer1Account }
+        ),
+          '';
       });
       before(async () => {
         await shared.dacproposals_contract.updpropvotes(wrongFinProp, dacId, {
@@ -1376,11 +1341,9 @@ describe('Dacproposals', () => {
               }
             });
             it('finalize should succeed', async () => {
-              await chai.expect(
-                shared.dacproposals_contract.finalize(newpropid, dacId, {
-                  from: proposer1Account,
-                })
-              ).to.eventually.be.fulfilled;
+              await shared.dacproposals_contract.finalize(newpropid, dacId, {
+                from: proposer1Account,
+              });
             });
           });
           context('after finalize is run', async () => {
@@ -1469,23 +1432,21 @@ describe('Dacproposals', () => {
           dacId,
           { from: shared.auth_account }
         );
-        await chai.expect(
-          shared.dacproposals_contract.createprop(
-            proposer1Account.name,
-            'title',
-            'summary',
-            arbitrator.name,
-            { quantity: '100.0000 EOS', contract: 'eosio.token' },
-            { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
-            proposalHash,
-            arbApproveId,
-            category,
-            150,
-            dacId,
-            { from: proposer1Account }
-          ),
-          ''
-        ).to.eventually.be.fulfilled;
+        await shared.dacproposals_contract.createprop(
+          proposer1Account.name,
+          'title',
+          'summary',
+          arbitrator.name,
+          { quantity: '100.0000 EOS', contract: 'eosio.token' },
+          { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+          proposalHash,
+          arbApproveId,
+          category,
+          150,
+          dacId,
+          { from: proposer1Account }
+        ),
+          '';
 
         for (let index = 0; index < proposeApproveTheshold; index++) {
           const custodian = propDacCustodians[index];
@@ -1508,35 +1469,31 @@ describe('Dacproposals', () => {
             }
           );
         }
-        await chai.expect(
-          shared.dacproposals_contract.updpropvotes(arbApproveId, dacId, {
-            auths: [
-              {
-                actor: proposer1Account.name,
-                permission: 'active',
-              },
-              {
-                actor: shared.auth_account.name,
-                permission: 'active',
-              },
-            ],
-          })
-        ).to.eventually.be.fulfilled;
+        await shared.dacproposals_contract.updpropvotes(arbApproveId, dacId, {
+          auths: [
+            {
+              actor: proposer1Account.name,
+              permission: 'active',
+            },
+            {
+              actor: shared.auth_account.name,
+              permission: 'active',
+            },
+          ],
+        });
 
-        await chai.expect(
-          shared.dacproposals_contract.startwork(arbApproveId, dacId, {
-            auths: [
-              {
-                actor: proposer1Account.name,
-                permission: 'active',
-              },
-              {
-                actor: shared.auth_account.name,
-                permission: 'active',
-              },
-            ],
-          })
-        ).to.eventually.be.fulfilled;
+        await shared.dacproposals_contract.startwork(arbApproveId, dacId, {
+          auths: [
+            {
+              actor: proposer1Account.name,
+              permission: 'active',
+            },
+            {
+              actor: shared.auth_account.name,
+              permission: 'active',
+            },
+          ],
+        });
         await sleep(6000);
       });
       context('called by user other than arbitrator', async () => {
@@ -1568,11 +1525,9 @@ describe('Dacproposals', () => {
       context('Without escrow and proposal in dispute', async () => {
         before(async () => {
           //First complete work on WP
-          await chai.expect(
-            shared.dacproposals_contract.completework(arbApproveId, dacId, {
-              from: proposer1Account,
-            })
-          ).to.eventually.be.fulfilled;
+          await shared.dacproposals_contract.completework(arbApproveId, dacId, {
+            from: proposer1Account,
+          });
         });
         it('It should prevent arbapprove with wrong state error.', async () => {
           let escrowAction: EosioAction = {
@@ -1658,9 +1613,9 @@ describe('Dacproposals', () => {
               dac_id: dacId,
             },
           };
-          await chai.expect(
-            EOSManager.transact({ actions: [escrowAction, proposalAction] })
-          ).to.eventually.be.fulfilled;
+          await EOSManager.transact({
+            actions: [escrowAction, proposalAction],
+          });
         });
         it('It should succeed to allow arbapprove', async () => {
           let escrowAction: EosioAction = {
@@ -1682,9 +1637,9 @@ describe('Dacproposals', () => {
               dac_id: dacId,
             },
           };
-          await chai.expect(
-            EOSManager.transact({ actions: [escrowAction, proposalAction] })
-          ).to.eventually.be.fulfilled;
+          await EOSManager.transact({
+            actions: [escrowAction, proposalAction],
+          });
         });
       });
       context('after arb approve is run', async () => {
@@ -1743,23 +1698,21 @@ describe('Dacproposals', () => {
           dacId,
           { from: shared.auth_account }
         );
-        await chai.expect(
-          shared.dacproposals_contract.createprop(
-            proposer1Account.name,
-            'title',
-            'summary',
-            arbitrator.name,
-            { quantity: '100.0000 EOS', contract: 'eosio.token' },
-            { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
-            proposalHash,
-            arbDenyId,
-            category,
-            150,
-            dacId,
-            { from: proposer1Account }
-          ),
-          ''
-        ).to.eventually.be.fulfilled;
+        await shared.dacproposals_contract.createprop(
+          proposer1Account.name,
+          'title',
+          'summary',
+          arbitrator.name,
+          { quantity: '100.0000 EOS', contract: 'eosio.token' },
+          { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+          proposalHash,
+          arbDenyId,
+          category,
+          150,
+          dacId,
+          { from: proposer1Account }
+        ),
+          '';
 
         for (let index = 0; index < proposeApproveTheshold; index++) {
           const custodian = propDacCustodians[index];
@@ -1782,35 +1735,31 @@ describe('Dacproposals', () => {
             }
           );
         }
-        await chai.expect(
-          shared.dacproposals_contract.updpropvotes(arbDenyId, dacId, {
-            auths: [
-              {
-                actor: proposer1Account.name,
-                permission: 'active',
-              },
-              {
-                actor: shared.auth_account.name,
-                permission: 'active',
-              },
-            ],
-          })
-        ).to.eventually.be.fulfilled;
+        await shared.dacproposals_contract.updpropvotes(arbDenyId, dacId, {
+          auths: [
+            {
+              actor: proposer1Account.name,
+              permission: 'active',
+            },
+            {
+              actor: shared.auth_account.name,
+              permission: 'active',
+            },
+          ],
+        });
 
-        await chai.expect(
-          shared.dacproposals_contract.startwork(arbDenyId, dacId, {
-            auths: [
-              {
-                actor: proposer1Account.name,
-                permission: 'active',
-              },
-              {
-                actor: shared.auth_account.name,
-                permission: 'active',
-              },
-            ],
-          })
-        ).to.eventually.be.fulfilled;
+        await shared.dacproposals_contract.startwork(arbDenyId, dacId, {
+          auths: [
+            {
+              actor: proposer1Account.name,
+              permission: 'active',
+            },
+            {
+              actor: shared.auth_account.name,
+              permission: 'active',
+            },
+          ],
+        });
         await sleep(6000);
       });
       context('called by user other than arbitrator', async () => {
@@ -1842,11 +1791,9 @@ describe('Dacproposals', () => {
       context('Without escrow and proposal in dispute', async () => {
         before(async () => {
           //First complete work on WP
-          await chai.expect(
-            shared.dacproposals_contract.completework(arbDenyId, dacId, {
-              from: proposer1Account,
-            })
-          ).to.eventually.be.fulfilled;
+          await shared.dacproposals_contract.completework(arbDenyId, dacId, {
+            from: proposer1Account,
+          });
         });
         it('It should prevent arbdeny with wrong state error.', async () => {
           let escrowAction: EosioAction = {
@@ -1932,9 +1879,9 @@ describe('Dacproposals', () => {
               dac_id: dacId,
             },
           };
-          await chai.expect(
-            EOSManager.transact({ actions: [escrowAction, proposalAction] })
-          ).to.eventually.be.fulfilled;
+          await EOSManager.transact({
+            actions: [escrowAction, proposalAction],
+          });
         });
         it('It should succeed to allow arbdeny', async () => {
           let escrowAction: EosioAction = {
@@ -1956,9 +1903,9 @@ describe('Dacproposals', () => {
               dac_id: dacId,
             },
           };
-          await chai.expect(
-            EOSManager.transact({ actions: [escrowAction, proposalAction] })
-          ).to.eventually.be.fulfilled;
+          await EOSManager.transact({
+            actions: [escrowAction, proposalAction],
+          });
         });
         context('after arbdeny is run', async () => {
           it('proposer should have been paid', async () => {
@@ -2003,23 +1950,21 @@ describe('Dacproposals', () => {
         dacId,
         { from: shared.auth_account }
       );
-      await chai.expect(
-        shared.dacproposals_contract.createprop(
-          proposer1Account.name,
-          'startwork_title',
-          'startwork_summary',
-          arbitrator.name,
-          { quantity: '106.0000 EOS', contract: 'eosio.token' },
-          { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
-          'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
-          cancelpropid, // proposal id
-          category,
-          130, // job duration
-          dacId,
-          { from: proposer1Account }
-        ),
-        ''
-      ).to.eventually.be.fulfilled;
+      await shared.dacproposals_contract.createprop(
+        proposer1Account.name,
+        'startwork_title',
+        'startwork_summary',
+        arbitrator.name,
+        { quantity: '106.0000 EOS', contract: 'eosio.token' },
+        { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+        'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
+        cancelpropid, // proposal id
+        category,
+        130, // job duration
+        dacId,
+        { from: proposer1Account }
+      ),
+        '';
       for (let index = 0; index < proposeApproveTheshold; index++) {
         const custodian = propDacCustodians[index];
         await debugPromise(
@@ -2102,11 +2047,9 @@ describe('Dacproposals', () => {
             );
           });
           it('should succeed', async () => {
-            await chai.expect(
-              shared.dacproposals_contract.cancelwip(cancelpropid, dacId, {
-                from: proposer1Account,
-              })
-            ).to.eventually.be.fulfilled;
+            await shared.dacproposals_contract.cancelwip(cancelpropid, dacId, {
+              from: proposer1Account,
+            });
           });
           it('should not contain proposal', async () => {
             await assertRowCount(
@@ -2148,23 +2091,21 @@ describe('Dacproposals', () => {
         dacId,
         { from: shared.auth_account }
       );
-      await chai.expect(
-        shared.dacproposals_contract.createprop(
-          proposer1Account.name,
-          'startwork_title',
-          'startwork_summary',
-          arbitrator.name,
-          { quantity: '106.0000 EOS', contract: 'eosio.token' },
-          { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
-          'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
-          cancelpropid, // proposal id
-          category,
-          130, // job duration
-          dacId,
-          { from: proposer1Account }
-        ),
-        ''
-      ).to.eventually.be.fulfilled;
+      await shared.dacproposals_contract.createprop(
+        proposer1Account.name,
+        'startwork_title',
+        'startwork_summary',
+        arbitrator.name,
+        { quantity: '106.0000 EOS', contract: 'eosio.token' },
+        { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+        'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
+        cancelpropid, // proposal id
+        category,
+        130, // job duration
+        dacId,
+        { from: proposer1Account }
+      ),
+        '';
     });
     context('without valid auth', async () => {
       it('should fail with invalid auth error', async () => {
@@ -2207,11 +2148,9 @@ describe('Dacproposals', () => {
             );
           });
           it('should succeed', async () => {
-            await chai.expect(
-              shared.dacproposals_contract.cancelprop(cancelpropid, dacId, {
-                from: proposer1Account,
-              })
-            ).to.eventually.be.fulfilled;
+            await shared.dacproposals_contract.cancelprop(cancelpropid, dacId, {
+              from: proposer1Account,
+            });
           });
           it('should not contain proposal', async () => {
             await assertRowCount(
@@ -2256,23 +2195,20 @@ describe('Dacproposals', () => {
             dacId,
             { from: shared.auth_account }
           );
-          await chai.expect(
-            shared.dacproposals_contract.createprop(
-              proposer1Account.name,
-              'delegate categories_title',
-              'delegate categories_summary',
-              arbitrator.name,
-              { quantity: '106.0000 EOS', contract: 'eosio.token' },
-              { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
-              'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
-              propId, // proposal id
-              category, // category number
-              130, // job duration
-              dacId,
-              { from: proposer1Account }
-            ),
-            ''
-          ).to.eventually.be.fulfilled;
+          await shared.dacproposals_contract.createprop(
+            proposer1Account.name,
+            'delegate categories_title',
+            'delegate categories_summary',
+            arbitrator.name,
+            { quantity: '106.0000 EOS', contract: 'eosio.token' },
+            { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+            'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
+            propId, // proposal id
+            category, // category number
+            130, // job duration
+            dacId,
+            { from: proposer1Account }
+          );
           for (let index = 0; index < proposeApproveTheshold - 1; index++) {
             const custodian = propDacCustodians[index];
             await debugPromise(
@@ -2462,23 +2398,20 @@ describe('Dacproposals', () => {
       async () => {
         let propId = 'complexprop';
         before(async () => {
-          await chai.expect(
-            shared.dacproposals_contract.createprop(
-              proposer1Account.name,
-              'delegate complex title',
-              'delegate complex_summary',
-              arbitrator.name,
-              { quantity: '106.0000 EOS', contract: 'eosio.token' },
-              { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
-              'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
-              propId, // proposal id
-              category, // category number
-              130, // job duration
-              dacId,
-              { from: proposer1Account }
-            ),
-            ''
-          ).to.eventually.be.fulfilled;
+          await shared.dacproposals_contract.createprop(
+            proposer1Account.name,
+            'delegate complex title',
+            'delegate complex_summary',
+            arbitrator.name,
+            { quantity: '106.0000 EOS', contract: 'eosio.token' },
+            { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+            'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
+            propId, // proposal id
+            category, // category number
+            130, // job duration
+            dacId,
+            { from: proposer1Account }
+          );
           for (let index = 0; index < proposeApproveTheshold - 2; index++) {
             const custodian = propDacCustodians[index];
             await debugPromise(
@@ -2508,47 +2441,43 @@ describe('Dacproposals', () => {
           'delegated vote with matching proposal and category',
           async () => {
             before(async () => {
-              await chai.expect(
-                shared.dacproposals_contract.delegatecat(
-                  propDacCustodians[2].name,
-                  category, // matching category
-                  propDacCustodians[1].name,
-                  dacId,
-                  {
-                    auths: [
-                      {
-                        actor: propDacCustodians[2].name,
-                        permission: 'active',
-                      },
-                      {
-                        actor: shared.auth_account.name,
-                        permission: 'active',
-                      },
-                    ],
-                  }
-                )
-              ).to.eventually.be.fulfilled;
+              await shared.dacproposals_contract.delegatecat(
+                propDacCustodians[2].name,
+                category, // matching category
+                propDacCustodians[1].name,
+                dacId,
+                {
+                  auths: [
+                    {
+                      actor: propDacCustodians[2].name,
+                      permission: 'active',
+                    },
+                    {
+                      actor: shared.auth_account.name,
+                      permission: 'active',
+                    },
+                  ],
+                }
+              );
 
-              await chai.expect(
-                shared.dacproposals_contract.delegatevote(
-                  propDacCustodians[3].name,
-                  propId,
-                  propDacCustodians[1].name,
-                  dacId,
-                  {
-                    auths: [
-                      {
-                        actor: propDacCustodians[3].name,
-                        permission: 'active',
-                      },
-                      {
-                        actor: shared.auth_account.name,
-                        permission: 'active',
-                      },
-                    ],
-                  }
-                )
-              ).eventually.be.fulfilled;
+              await shared.dacproposals_contract.delegatevote(
+                propDacCustodians[3].name,
+                propId,
+                propDacCustodians[1].name,
+                dacId,
+                {
+                  auths: [
+                    {
+                      actor: propDacCustodians[3].name,
+                      permission: 'active',
+                    },
+                    {
+                      actor: shared.auth_account.name,
+                      permission: 'active',
+                    },
+                  ],
+                }
+              );
             });
             it('should succeed when attempting start work', async () => {
               await shared.dacproposals_contract.startwork(

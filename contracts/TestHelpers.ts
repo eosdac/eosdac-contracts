@@ -101,66 +101,45 @@ export class SharedTestObjects {
 
     // Configure Dac contracts
     this.dacdirectory_contract = await ContractDeployer.deployWithName(
-      'contracts/dacdirectory/dacdirectory',
+      'dacdirectory',
       'index.worlds'
     );
     this.daccustodian_contract = await debugPromise(
-      ContractDeployer.deployWithName(
-        'contracts/daccustodian/daccustodian',
-        'daccustodian'
-      ),
+      ContractDeployer.deployWithName('daccustodian', 'daccustodian'),
       'created daccustodian'
     );
     this.dac_token_contract = await debugPromise(
-      ContractDeployer.deployWithName(
-        'contracts/eosdactokens/eosdactokens',
-        'eosdactokens'
-      ),
+      ContractDeployer.deployWithName('eosdactokens', 'eosdactokens'),
       'created eosdactokens'
     );
     this.dacproposals_contract = await debugPromise(
-      ContractDeployer.deployWithName(
-        'contracts/dacproposals/dacproposals',
-        'dacproposals'
-      ),
+      ContractDeployer.deployWithName('dacproposals', 'dacproposals'),
       'created dacproposals'
     );
     this.dacescrow_contract = await debugPromise(
-      ContractDeployer.deployWithName(
-        'contracts/dacescrow/dacescrow',
-        'dacescrow'
-      ),
+      ContractDeployer.deployWithName('dacescrow', 'dacescrow'),
       'created dacescrow'
     );
     this.msigworlds_contract = await debugPromise(
-      ContractDeployer.deployWithName<Msigworlds>(
-        'contracts/msigworlds/msigworlds',
-        'msig.worlds'
-      ),
+      ContractDeployer.deployWithName<Msigworlds>('msigworlds', 'msig.worlds'),
       'created msigworlds_contract'
     );
 
     this.referendum_contract = await debugPromise(
-      ContractDeployer.deployWithName<Referendum>(
-        'contracts/referendum/referendum',
-        'referendum'
-      ),
+      ContractDeployer.deployWithName<Referendum>('referendum', 'referendum'),
       'created referendum_contract'
     );
 
     this.stakevote_contract = await debugPromise(
-      ContractDeployer.deployWithName<Stakevote>(
-        'contracts/stakevote/stakevote',
-        'stakevote'
-      ),
+      ContractDeployer.deployWithName<Stakevote>('stakevote', 'stakevote'),
       'created stakevote_contract'
     );
 
     this.atomicassets = await ContractDeployer.deployWithName<Atomicassets>(
-      'contracts/atomicassets/atomicassets',
+      'atomicassets',
       'atomicassets'
     );
-    this.atomicassets.account.addCodePermission();
+    await this.atomicassets.account.addCodePermission();
     await this.atomicassets.init({ from: this.atomicassets.account });
 
     // Other objects
@@ -664,7 +643,25 @@ export class SharedTestObjects {
         this.daccustodian_contract.account.name,
         'owner',
         '',
-        UpdateAuth.AuthorityToSet.forAccount(this.auth_account, 'active')
+        UpdateAuth.AuthorityToSet.explicitAuthorities(
+          1,
+          [
+            {
+              permission: {
+                actor: this.auth_account.name,
+                permission: 'active',
+              },
+              weight: 1,
+            },
+          ],
+          [
+            {
+              key: this.daccustodian_contract.account.publicKey,
+              weight: 1,
+            },
+          ],
+          []
+        )
       ),
       'changing owner of daccustodian'
     );
@@ -675,7 +672,25 @@ export class SharedTestObjects {
         this.daccustodian_contract.account.name,
         'active',
         'owner',
-        UpdateAuth.AuthorityToSet.forAccount(this.auth_account, 'active')
+        UpdateAuth.AuthorityToSet.explicitAuthorities(
+          1,
+          [
+            {
+              permission: {
+                actor: this.auth_account.name,
+                permission: 'active',
+              },
+              weight: 1,
+            },
+          ],
+          [
+            {
+              key: this.daccustodian_contract.account.publicKey,
+              weight: 1,
+            },
+          ],
+          []
+        )
       ),
       'change active of daccustodian'
     );
@@ -836,25 +851,32 @@ export class SharedTestObjects {
   async configTokenContract() {
     this.eosio_token_contract = await ContractDeployer.deployWithName<
       EosioToken
-    >('external_contracts/eosio.token/eosio.token', 'alien.worlds');
+    >('eosio.token', 'alien.worlds');
 
     this.tokenIssuer = await AccountManager.createAccount('tokenissuer');
 
-    await this.eosio_token_contract.create(
-      this.tokenIssuer.name,
-      '1000000000.0000 TLM',
-      {
-        from: this.eosio_token_contract.account,
+    try {
+      await this.eosio_token_contract.create(
+        this.tokenIssuer.name,
+        '1000000000.0000 TLM',
+        {
+          from: this.eosio_token_contract.account,
+        }
+      );
+      await this.eosio_token_contract.issue(
+        this.tokenIssuer.name,
+        '10000000.0000 TLM',
+        'initial deposit',
+        {
+          from: this.tokenIssuer,
+        }
+      );
+    } catch (e) {
+      console.log(JSON.stringify(e, null, 2));
+      if (!e.details[0].message.includes('token with symbol already exists')) {
+        throw e;
       }
-    );
-    await this.eosio_token_contract.issue(
-      this.tokenIssuer.name,
-      '10000000.0000 TLM',
-      'initial deposit',
-      {
-        from: this.tokenIssuer,
-      }
-    );
+    }
   }
 }
 
