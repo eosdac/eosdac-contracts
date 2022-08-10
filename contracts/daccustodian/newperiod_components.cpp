@@ -193,14 +193,15 @@ ACTION daccustodian::unsetbudget(const name &dac_id) {
 }
 
 ACTION daccustodian::claimbudget(const name &dac_id) {
+    const auto dac          = dacdir::dac_for_id(dac_id);
+    const auto auth_account = dac.owner;
+    require_auth(auth_account);
     auto globals = dacglobals::current(get_self(), dac_id);
     check(globals.get_lastclaimbudgettime() < globals.get_lastperiodtime(),
         "Claimbudget can only be called once per period");
-    const auto dac              = dacdir::dac_for_id(dac_id);
     const auto treasury_account = dac.account_for_type(dacdir::TREASURY);
 
     const auto spendings_account = dac.account_for_type_maybe(dacdir::SPENDINGS);
-    const auto auth_account      = dac.owner;
     if (!spendings_account && !auth_account) {
         return;
     }
