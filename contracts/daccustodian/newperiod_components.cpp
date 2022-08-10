@@ -205,16 +205,27 @@ ACTION daccustodian::claimbudget(const name &dac_id) {
     if (!spendings_account && !auth_account) {
         return;
     }
-    const auto recipient        = spendings_account ? *spendings_account : auth_account;
-    const auto auth_balance     = eosdac::get_balance_graceful(auth_account, TLM_TOKEN_CONTRACT, TLM_SYM);
-    const auto treasury_balance = balance_for_type(dac, dacdir::TREASURY);
-    const auto p                = get_budget_percentage(dac_id, globals);
+    const auto recipient         = spendings_account ? *spendings_account : auth_account;
+    const auto auth_balance      = eosdac::get_balance_graceful(auth_account, TLM_TOKEN_CONTRACT, TLM_SYM);
+    const auto treasury_balance  = balance_for_type(dac, dacdir::TREASURY);
+    const auto budget_percentage = get_budget_percentage(dac_id, globals);
 
     // percentage value is scaled by 100, so to calculate percent we need to divide by (100 * 100 == 10000)
-    const auto amount = std::min(treasury_balance, auth_balance - treasury_balance * p / 10000);
-    if (amount.amount > 0) {
+    const auto allocation_for_period = treasury_balance * budget_percentage / 10000;
+
+    // if the calculated allocation_for_period is very small round it up to 10 TLM or the full treasury balance to avoid
+    // dust transactions for low percentage/balances in treasury.
+    auto rounded_allocation_for_period = std::max(allocation_for_period, asset{100000, symbol{"TLM", 4}});
+
+    // only transfer enough to top up to the rounded_allocation_for_period
+    auto amount_to_transfer = rounded_allocation_for_period - auth_balance;
+
+    // Because this has been rounded up, ensure we don't attempt to transfer more than the treasury balance.
+    amount_to_transfer = std::min(treasury_balance, amount_to_transfer);
+
+    if (amount_to_transfer.amount > 0) {
         action(permission_level{treasury_account, "xfer"_n}, TLM_TOKEN_CONTRACT, "transfer"_n,
-            make_tuple(treasury_account, recipient, amount, "period budget"s))
+            make_tuple(treasury_account, recipient, amount_to_transfer, "period budget"s))
             .send();
     }
 
