@@ -19,7 +19,7 @@ import { Dacescrow } from './dacescrow/dacescrow';
 import { Referendum } from './referendum/referendum';
 import { Stakevote } from './stakevote/stakevote';
 import { EosioToken } from '../../external_contracts/eosio.token/eosio.token';
-import { Atomicassets } from '../../external_contracts/atomicassets/atomicassets';
+import { Atomicassets } from './atomicassets/atomicassets'; //'../external_contracts/atomicassets/atomicassets';
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -29,7 +29,6 @@ export var NUMBER_OF_CANDIDATES = 7;
 export class SharedTestObjects {
   // Shared Instances to use between tests.
   private static instance: SharedTestObjects;
-  private constructor() {}
 
   auth_account: Account;
   treasury_account: Account;
@@ -191,6 +190,7 @@ export class SharedTestObjects {
         },
         should_pay_via_service_provider: false,
         lockup_release_time_delay: 1233,
+        token_supply_theshold: 10000001,
       },
       dacId,
       { from: this.auth_account }
@@ -202,9 +202,9 @@ export class SharedTestObjects {
     initialDacAsset: string,
     count: number = this.NUMBER_OF_REG_MEMBERS
   ): Promise<Account[]> {
-    let newMembers = await AccountManager.createAccounts(count);
+    const newMembers = await AccountManager.createAccounts(count);
 
-    let termsPromises = newMembers
+    const termsPromises = newMembers
       .map((account) => {
         return debugPromise(
           this.dac_token_contract.memberreg(
@@ -240,18 +240,20 @@ export class SharedTestObjects {
     dacStakeAsset: string,
     count: number = NUMBER_OF_CANDIDATES
   ): Promise<Account[]> {
-    let newCandidates = await this.getRegMembers(dacId, dacStakeAsset, count);
-    for (let { candidate, index } of newCandidates.map((candidate, index) => ({
-      candidate,
-      index,
-    }))) {
+    const newCandidates = await this.getRegMembers(dacId, dacStakeAsset, count);
+    for (const { candidate, index } of newCandidates.map(
+      (candidate, index) => ({
+        candidate,
+        index,
+      })
+    )) {
       await debugPromise(
         this.dac_token_contract.stake(candidate.name, dacStakeAsset, {
           from: candidate,
         }),
         'staking for candidate'
       );
-      let indexOption = index % 3;
+      const indexOption = index % 3;
       let payAmount = '';
       if (indexOption == 0) {
         payAmount = '15.0000 EOS';
@@ -296,7 +298,7 @@ export class SharedTestObjects {
     tokenSymbol: string,
     config?: any
   ) {
-    let accounts = [
+    const accounts = [
       {
         key: Account_type.CUSTODIAN,
         value: this.daccustodian_contract.account.name,
@@ -849,9 +851,11 @@ export class SharedTestObjects {
   }
 
   async configTokenContract() {
-    this.eosio_token_contract = await ContractDeployer.deployWithName<
-      EosioToken
-    >('eosio.token', 'alien.worlds');
+    this.eosio_token_contract =
+      await ContractDeployer.deployWithName<EosioToken>(
+        'eosio.token',
+        'alien.worlds'
+      );
 
     this.tokenIssuer = await AccountManager.createAccount('tokenissuer');
 

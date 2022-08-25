@@ -145,7 +145,7 @@ void daccustodian::add_auth_to_account(const name &accountToChange, const uint8_
         .send();
 }
 
-void daccustodian::add_all_auths(const name            &accountToChange,
+void daccustodian::add_all_auths(const name &           accountToChange,
     const vector<eosiosystem::permission_level_weight> &weights, const name &dac_id, const bool msig) {
     const auto globals = dacglobals::current(get_self(), dac_id);
 
@@ -287,6 +287,10 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
         auto         tokenStakeConfig = stake_config::get_current_configs(found_dac.symbol.get_contract(), dac_id);
         const double percent_of_current_voter_engagement =
             S{globals.get_total_weight_of_votes()}.to<double>() / S{token_current_supply}.to<double>() * S{100.0};
+
+        check(token_current_supply > globals.get_token_supply_theshold(),
+            "ERR::NEWPERIOD_TOKEN_SUPPLY_TOO_LOW::Token Supply %s is insufficient to execute newperiod (%s required).",
+            token_current_supply, globals.get_token_supply_theshold());
 
         check(globals.get_met_initial_votes_threshold() == true ||
                   percent_of_current_voter_engagement > globals.get_initial_vote_quorum_percent(),

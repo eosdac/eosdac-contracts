@@ -194,14 +194,14 @@ describe('EOSDacTokens', () => {
         it('should increase the other balance', async () => {
           await shared.dac_token_contract.issue(
             issuer.name,
-            `1200.0000 ABC`,
+            `1200.0001 ABC`,
             'some memo',
             validAuths
           );
           await shared.dac_token_contract.transfer(
             issuer.name,
             otherAccount.name,
-            `1200.0000 ABC`,
+            `1200.0001 ABC`,
             'some memo',
             validAuths
           );
@@ -214,7 +214,7 @@ describe('EOSDacTokens', () => {
             shared.dac_token_contract.accountsTable({
               scope: otherAccount.name,
             }),
-            [{ balance: '1200.0000 ABC' }]
+            [{ balance: '1200.0001 ABC' }]
           );
         });
       });

@@ -1,15 +1,9 @@
 import {
   Account,
   AccountManager,
-  sleep,
-  EOSManager,
   debugPromise,
   assertEOSErrorIncludesMessage,
   assertRowCount,
-  assertMissingAuthority,
-  assertRowsEqual,
-  TableRowsResult,
-  assertBalanceEqual,
   UpdateAuth,
 } from 'lamington';
 
@@ -35,9 +29,9 @@ let shared: SharedTestObjects;
 
 /* Asset class to be moved to lamginton later */
 class Asset {
-  amount: Number;
+  amount: number;
   symbol: string;
-  precision: Number;
+  precision: number;
   constructor(amount, symbol, precision = 4) {
     this.amount = amount;
     this.symbol = symbol;
@@ -96,7 +90,7 @@ describe('Stakevote', () => {
       );
     });
     context('staking', async () => {
-      let staker;
+      let staker: Account;
       before(async () => {
         staker = await AccountManager.createAccount();
         const x = await get_from_dacglobals(
@@ -173,6 +167,7 @@ describe('Stakevote', () => {
                   auth_threshold_high: 4,
                   auth_threshold_mid: 3,
                   auth_threshold_low: 2,
+                  token_supply_theshold: 10000001,
                   lockupasset: {
                     contract: shared.dac_token_contract.account.name,
                     quantity: `12.0000 ${symbol}`,
@@ -234,14 +229,13 @@ describe('Stakevote', () => {
               );
             });
             it('Should have highest ranked votes in custodians', async () => {
-              let rowsResult = await shared.daccustodian_contract.custodiansTable(
-                {
+              let rowsResult =
+                await shared.daccustodian_contract.custodiansTable({
                   scope: dacId,
                   limit: 14,
                   indexPosition: 3,
                   keyType: 'i64',
-                }
-              );
+                });
               let rs = rowsResult.rows;
               rs.sort((a, b) => {
                 return a.total_votes < b.total_votes
@@ -283,8 +277,8 @@ describe('Stakevote', () => {
     });
     context('stakevoting voting', async () => {
       let voter: Account;
-      let total_weight_of_votes_beginning;
-      let total_votes_on_candidates_beginning;
+      let total_weight_of_votes_beginning: number;
+      let total_votes_on_candidates_beginning: number;
       before(async () => {
         voter = await AccountManager.createAccount();
         await shared.dac_token_contract.memberreg(
@@ -296,8 +290,8 @@ describe('Stakevote', () => {
         await stake(voter, stake_amount.toString());
       });
       context('for 1 candidate', async () => {
-        let total_weight_of_votes_before;
-        let total_votes_on_candidates_before;
+        let total_weight_of_votes_before: number;
+        let total_votes_on_candidates_before: number;
         it('stakeconfig should be set correctly', async () => {
           const res = await shared.dac_token_contract.stakeconfigTable({
             scope: dacId,
@@ -318,7 +312,8 @@ describe('Stakevote', () => {
             dacId,
             'total_votes_on_candidates'
           );
-          total_votes_on_candidates_beginning = total_votes_on_candidates_before;
+          total_votes_on_candidates_beginning =
+            total_votes_on_candidates_before;
         });
         it('should work', async () => {
           const cust1 = candidates[0];
@@ -353,8 +348,8 @@ describe('Stakevote', () => {
         });
       });
       context('for 2nd candidate', async () => {
-        let total_weight_of_votes_before;
-        let total_votes_on_candidates_before;
+        let total_weight_of_votes_before: number;
+        let total_votes_on_candidates_before: number;
         it('before voting: total_weight_of_votes', async () => {
           total_weight_of_votes_before = await get_from_dacglobals(
             dacId,
@@ -394,8 +389,8 @@ describe('Stakevote', () => {
         });
       });
       context('removing vote', async () => {
-        let total_weight_of_votes_before;
-        let total_votes_on_candidates_before;
+        let total_weight_of_votes_before: number;
+        let total_votes_on_candidates_before: number;
         it('before voting: total_weight_of_votes', async () => {
           total_weight_of_votes_before = await get_from_dacglobals(
             dacId,
@@ -449,7 +444,7 @@ describe('Stakevote', () => {
           );
         });
         it('should work', async () => {
-          const cust1 = candidates[0];
+          // const cust1 = candidates[0];
           await shared.daccustodian_contract.votecust(voter.name, [], dacId, {
             from: voter,
           });
@@ -472,7 +467,11 @@ describe('Stakevote', () => {
   });
 });
 
-async function add_custom_permission(account, name, parent = 'active') {
+async function add_custom_permission(
+  account: any,
+  name: string,
+  parent = 'active'
+) {
   if (account.account) {
     account = account.account;
   }
@@ -485,10 +484,10 @@ async function add_custom_permission(account, name, parent = 'active') {
   );
 }
 async function linkauth(
-  permission_owner,
-  permission_name,
-  action_owner,
-  action_names
+  permission_owner: any,
+  permission_name: string,
+  action_owner: any,
+  action_names: string | string[]
 ) {
   if (permission_owner.account) {
     permission_owner = permission_owner.account;
@@ -510,10 +509,10 @@ async function linkauth(
   }
 }
 async function add_custom_permission_and_link(
-  permission_owner,
-  permission_name,
-  action_owner,
-  action_names
+  permission_owner: string,
+  permission_name: string,
+  action_owner: string,
+  action_names: string
 ) {
   await add_custom_permission(permission_owner, permission_name);
   await linkauth(permission_owner, permission_name, action_owner, action_names);
@@ -535,7 +534,7 @@ async function setup_permissions() {
   );
 }
 
-async function stake(user, amount) {
+async function stake(user: Account, amount: string) {
   await shared.dac_token_contract.transfer(
     shared.dac_token_contract.account.name,
     user.name,
@@ -548,7 +547,7 @@ async function stake(user, amount) {
   });
 }
 
-async function get_from_dacglobals(dacId, key) {
+async function get_from_dacglobals(dacId: string, key: string) {
   const res = await shared.daccustodian_contract.dacglobalsTable({
     scope: dacId,
   });
@@ -560,7 +559,11 @@ async function get_from_dacglobals(dacId, key) {
   }
 }
 
-async function get_expected_vote_weight(stake_amount, unstake_delay, dac_id) {
+async function get_expected_vote_weight(
+  stake_amount: number,
+  unstake_delay: number,
+  dac_id: string
+) {
   const time_divisor = 100000000;
   const config = (
     await shared.stakevote_contract.configTable({ scope: dac_id })

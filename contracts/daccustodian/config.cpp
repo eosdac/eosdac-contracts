@@ -18,6 +18,9 @@ ACTION daccustodian::updateconfige(const contr_config &new_config, const name &d
     check(new_config.initial_vote_quorum_percent < 100,
         "ERR::UPDATECONFIG_INVALID_INITIAL_VOTE_QUORUM_PERCENT::The initial vote quorum percent must be less than 100 and most likely a lot less than 100 to be achievable for the DAC.");
 
+    check(new_config.token_supply_theshold > 1000 * 10000,
+        "ERR::UPDATECONFIG_INVALID_INITIAL_TOKEN_THRESHOLD::token_supply_theshold amount must be at least 1000 tokens (1000 * 10000).");
+
     check(new_config.vote_quorum_percent < 100,
         "ERR::UPDATECONFIG_INVALID_VOTE_QUORUM_PERCENT::The vote quorum percent must be less than 100 and most likely a lot less than 100 to be achievable for the DAC.");
 
@@ -51,6 +54,7 @@ ACTION daccustodian::updateconfige(const contr_config &new_config, const name &d
     globals.set_auth_threshold_low(new_config.auth_threshold_low);
     globals.set_lockup_release_time_delay(new_config.lockup_release_time_delay);
     globals.set_requested_pay_max(new_config.requested_pay_max);
+    globals.set_token_supply_theshold(new_config.token_supply_theshold);
 
     globals.save(get_self(), dac_id);
     print("Succesfully updated the daccustodian config for: ", dac_id);

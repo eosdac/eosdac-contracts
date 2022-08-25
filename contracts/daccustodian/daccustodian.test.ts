@@ -21,9 +21,7 @@ dayjs.extend(utc);
 import { DaccustodianCandidate } from './daccustodian';
 import * as deepEqualInAnyOrder from 'deep-equal-in-any-order';
 chai.use(deepEqualInAnyOrder);
-import * as moment from 'moment';
 let shared: SharedTestObjects;
-// const now = dayjs.utc();
 
 enum state_keys {
   total_weight_of_votes = 1,
@@ -37,28 +35,18 @@ enum state_keys {
 const NFT_COLLECTION = 'alien.worlds';
 const BUDGET_SCHEMA = 'budget';
 
-const withLocalOffset = (date: Date) => {
-  // const offset = moment().utcOffset();
-  const dateUTC = moment(date.toUTCString());
-  const offset = dateUTC.utcOffset();
-  return dateUTC.add(offset, 'minutes').toDate();
-};
-
 describe('Daccustodian', () => {
-  let second_nft_id: Number;
+  let second_nft_id: number;
   let somebody: Account;
   before(async () => {
+    await sleep(20000);
     shared = await SharedTestObjects.getInstance();
-    somebody = await await AccountManager.createAccount();
+    somebody = await AccountManager.createAccount();
   });
-
-  let fill_time;
 
   context('fillstate', async () => {
     let dacId = 'migratedac';
     before(async () => {
-      fill_time = new Date();
-
       await shared.daccustodian_contract.fillstate(dacId);
     });
     it('dacglobal data should have been migrated from config and state2', async () => {
@@ -161,7 +149,7 @@ describe('Daccustodian', () => {
   });
 
   context('updateconfige', async () => {
-    let dacId = 'custodiandac';
+    const dacId = 'custodiandac';
     before(async () => {
       await shared.initDac(dacId, '4,CUSDAC', '1000000.0000 CUSDAC');
     });
@@ -181,6 +169,7 @@ describe('Daccustodian', () => {
             lockupasset: { contract: 'sdfsdf', quantity: '12.0000 EOS' },
             should_pay_via_service_provider: false,
             lockup_release_time_delay: 1233,
+            token_supply_theshold: 10000001,
           },
           'unknowndac',
           { from: shared.auth_account }
@@ -211,6 +200,7 @@ describe('Daccustodian', () => {
             lockupasset: { contract: 'sdfsdf', quantity: '12.0000 EOS' },
             should_pay_via_service_provider: false,
             lockup_release_time_delay: 1233,
+            token_supply_theshold: 10000001,
           },
           dacId,
           { from: shared.auth_account }
@@ -241,6 +231,7 @@ describe('Daccustodian', () => {
             lockupasset: { contract: 'sdfsdf', quantity: '12.0000 EOS' },
             should_pay_via_service_provider: false,
             lockup_release_time_delay: 1233,
+            token_supply_theshold: 10000001,
           },
           dacId,
           { from: shared.auth_account }
@@ -271,6 +262,7 @@ describe('Daccustodian', () => {
             lockupasset: { contract: 'sdfsdf', quantity: '12.0000 EOS' },
             should_pay_via_service_provider: false,
             lockup_release_time_delay: 1233,
+            token_supply_theshold: 10000001,
           },
           dacId,
           { from: shared.auth_account }
@@ -307,6 +299,7 @@ describe('Daccustodian', () => {
             },
             should_pay_via_service_provider: false,
             lockup_release_time_delay: 1233,
+            token_supply_theshold: 10000001,
           },
           dacId,
           { from: shared.auth_account }
@@ -336,6 +329,7 @@ describe('Daccustodian', () => {
             },
             should_pay_via_service_provider: false,
             lockup_release_time_delay: 1233,
+            token_supply_theshold: 10000001,
           },
           dacId,
           { from: shared.auth_account }
@@ -365,6 +359,7 @@ describe('Daccustodian', () => {
             },
             should_pay_via_service_provider: false,
             lockup_release_time_delay: 1233,
+            token_supply_theshold: 10000001,
           },
           dacId,
           { from: shared.auth_account }
@@ -394,6 +389,7 @@ describe('Daccustodian', () => {
             },
             should_pay_via_service_provider: false,
             lockup_release_time_delay: 1233,
+            token_supply_theshold: 10000001,
           },
           dacId,
           { from: shared.auth_account }
@@ -423,11 +419,42 @@ describe('Daccustodian', () => {
             },
             should_pay_via_service_provider: false,
             lockup_release_time_delay: 1233,
+            token_supply_theshold: 10000001,
           },
           dacId,
           { from: shared.auth_account }
         ),
         'ERR::UPDATECONFIG_INVALID_VOTE_QUORUM_PERCENT'
+      );
+    });
+    it('Should fail for low token theshold', async () => {
+      await assertEOSErrorIncludesMessage(
+        shared.daccustodian_contract.updateconfige(
+          {
+            numelected: 12,
+            maxvotes: 5,
+            requested_pay_max: {
+              contract: 'eosio.token',
+              quantity: '30.0000 EOS',
+            },
+            periodlength: 7 * 24 * 60 * 60,
+            initial_vote_quorum_percent: 31,
+            vote_quorum_percent: 15,
+            auth_threshold_high: 4,
+            auth_threshold_mid: 3,
+            auth_threshold_low: 2,
+            lockupasset: {
+              contract: shared.dac_token_contract.account.name,
+              quantity: '12.0000 CUSDAC',
+            },
+            should_pay_via_service_provider: false,
+            lockup_release_time_delay: 1233,
+            token_supply_theshold: 1000000,
+          },
+          dacId,
+          { from: shared.auth_account }
+        ),
+        'ERR::UPDATECONFIG_INVALID_INITIAL_TOKEN_THRESHOLD'
       );
     });
     it('Should succeed with valid params', async () => {
@@ -451,6 +478,7 @@ describe('Daccustodian', () => {
           },
           should_pay_via_service_provider: false,
           lockup_release_time_delay: 1233,
+          token_supply_theshold: 10000001,
         },
         dacId,
         { from: shared.auth_account }
@@ -542,6 +570,10 @@ describe('Daccustodian', () => {
                 value: ['bool', 0],
               },
               {
+                key: 'token_supply_theshold',
+                value: ['uint64', 10000001],
+              },
+              {
                 key: 'total_votes_on_candidates',
                 value: ['int64', 0],
               },
@@ -562,7 +594,7 @@ describe('Daccustodian', () => {
 
   context('nominatecane', async () => {
     context('With a staking enabled DAC', async () => {
-      let dacId = 'nomstakedac';
+      const dacId = 'nomstakedac';
       let newUser1: Account;
 
       before(async () => {
@@ -636,6 +668,7 @@ describe('Daccustodian', () => {
                 },
                 should_pay_via_service_provider: false,
                 lockup_release_time_delay: 259201,
+                token_supply_theshold: 10000001,
               },
               dacId,
               { from: shared.auth_account }
@@ -689,6 +722,7 @@ describe('Daccustodian', () => {
                 },
                 should_pay_via_service_provider: false,
                 lockup_release_time_delay: 5,
+                token_supply_theshold: 10000001,
               },
               dacId,
               { from: shared.auth_account }
@@ -931,22 +965,20 @@ describe('Daccustodian', () => {
         expect_recent(rows[1].vote_time_stamp);
       });
       it('only candidates with votes have total_votes values', async () => {
-        let unvotedCandidateResult = await shared.daccustodian_contract.candidatesTable(
-          {
+        let unvotedCandidateResult =
+          await shared.daccustodian_contract.candidatesTable({
             scope: dacId,
             limit: 1,
             lowerBound: cands[1].name,
-          }
-        );
+          });
 
         chai.expect(unvotedCandidateResult.rows[0].total_votes).to.equal(0);
-        let votedCandidateResult = await shared.daccustodian_contract.candidatesTable(
-          {
+        let votedCandidateResult =
+          await shared.daccustodian_contract.candidatesTable({
             scope: dacId,
             limit: 1,
             lowerBound: cands[0].name,
-          }
-        );
+          });
 
         chai.expect(votedCandidateResult.rows[0]).to.include({
           total_votes: 20_000_000,
@@ -975,13 +1007,12 @@ describe('Daccustodian', () => {
     });
     context('vote values after transfers', async () => {
       it('assert preconditions for vote values for custodians', async () => {
-        let votedCandidateResult = await shared.daccustodian_contract.candidatesTable(
-          {
+        let votedCandidateResult =
+          await shared.daccustodian_contract.candidatesTable({
             scope: dacId,
             limit: 20,
             lowerBound: cands[0].name,
-          }
-        );
+          });
         let initialVoteValue = votedCandidateResult.rows[0].total_votes;
         chai.expect(initialVoteValue).to.equal(20_000_000);
       });
@@ -1007,13 +1038,12 @@ describe('Daccustodian', () => {
           '',
           { from: regMembers[1] }
         );
-        let votedCandidateResult = await shared.daccustodian_contract.candidatesTable(
-          {
+        let votedCandidateResult =
+          await shared.daccustodian_contract.candidatesTable({
             scope: dacId,
             limit: 20,
             lowerBound: cands[0].name,
-          }
-        );
+          });
         let updatedCandVoteValue = votedCandidateResult.rows[0].total_votes;
         chai.expect(updatedCandVoteValue).to.equal(17_000_000);
       });
@@ -1080,23 +1110,21 @@ describe('Daccustodian', () => {
         expect_recent(rows[1].vote_time_stamp);
       });
       it('only candidates with votes have total_votes values', async () => {
-        let unvotedCandidateResult = await shared.daccustodian_contract.candidatesTable(
-          {
+        let unvotedCandidateResult =
+          await shared.daccustodian_contract.candidatesTable({
             scope: dacId,
             limit: 1,
             lowerBound: cands[1].name,
-          }
-        );
+          });
         chai.expect(unvotedCandidateResult.rows[0]).to.include({
           total_votes: 0,
         });
-        let votedCandidateResult = await shared.daccustodian_contract.candidatesTable(
-          {
+        let votedCandidateResult =
+          await shared.daccustodian_contract.candidatesTable({
             scope: dacId,
             limit: 1,
             lowerBound: cands[0].name,
-          }
-        );
+          });
         chai.expect(votedCandidateResult.rows[0]).to.include({
           total_votes: 20_000_000,
         });
@@ -1165,36 +1193,33 @@ describe('Daccustodian', () => {
         }
       });
       it('votes table should have rows', async () => {
-        let votedCandidateResult = await shared.daccustodian_contract.votesTable(
-          {
+        let votedCandidateResult =
+          await shared.daccustodian_contract.votesTable({
             scope: dacId,
             lowerBound: regMembers[3].name,
             upperBound: regMembers[3].name,
-          }
-        );
+          });
         let proxyVote = votedCandidateResult.rows[0];
         chai.expect(proxyVote.voter).to.equal(regMembers[3].name);
         chai.expect(proxyVote.candidates).to.be.empty;
         chai.expect(proxyVote.proxy).to.equal(regMembers[0].name);
       });
       it('only candidates with votes have total_votes values', async () => {
-        let unvotedCandidateResult = await shared.daccustodian_contract.candidatesTable(
-          {
+        let unvotedCandidateResult =
+          await shared.daccustodian_contract.candidatesTable({
             scope: dacId,
             limit: 1,
             lowerBound: cands[1].name,
-          }
-        );
+          });
         chai.expect(unvotedCandidateResult.rows[0]).to.include({
           total_votes: 0,
         });
-        let votedCandidateResult = await shared.daccustodian_contract.candidatesTable(
-          {
+        let votedCandidateResult =
+          await shared.daccustodian_contract.candidatesTable({
             scope: dacId,
             limit: 1,
             lowerBound: cands[0].name,
-          }
-        );
+          });
         chai.expect(votedCandidateResult.rows[0]).to.include({
           total_votes: 30_000_000,
         });
@@ -1214,13 +1239,12 @@ describe('Daccustodian', () => {
       });
       context('vote values after transfers', async () => {
         it('assert preconditions for vote values for custodians', async () => {
-          let votedCandidateResult = await shared.daccustodian_contract.candidatesTable(
-            {
+          let votedCandidateResult =
+            await shared.daccustodian_contract.candidatesTable({
               scope: dacId,
               limit: 20,
               lowerBound: cands[0].name,
-            }
-          );
+            });
           let initialVoteValue = votedCandidateResult.rows[0].total_votes;
           chai.expect(initialVoteValue).to.equal(30_000_000);
         });
@@ -1239,13 +1263,12 @@ describe('Daccustodian', () => {
             '',
             { from: regMembers[3] }
           );
-          let votedCandidateResult = await shared.daccustodian_contract.candidatesTable(
-            {
+          let votedCandidateResult =
+            await shared.daccustodian_contract.candidatesTable({
               scope: dacId,
               limit: 20,
               lowerBound: cands[0].name,
-            }
-          );
+            });
           let updatedCandVoteValue = votedCandidateResult.rows[0].total_votes;
           chai.expect(updatedCandVoteValue).to.equal(27_000_000); // should be 27,000,000
         });
@@ -1293,13 +1316,12 @@ describe('Daccustodian', () => {
         'values of votes after unregproxy should be updated.',
         async () => {
           it('should reduce vote weight for existing votes', async () => {
-            let votedCandidateResult = await shared.daccustodian_contract.candidatesTable(
-              {
+            let votedCandidateResult =
+              await shared.daccustodian_contract.candidatesTable({
                 scope: dacId,
                 limit: 20,
                 lowerBound: cands[0].name,
-              }
-            );
+              });
             let updatedCandVoteValue = votedCandidateResult.rows[0].total_votes;
             chai.expect(updatedCandVoteValue).to.equal(20_000_000);
           });
@@ -1432,6 +1454,7 @@ describe('Daccustodian', () => {
                   },
                   should_pay_via_service_provider: false,
                   lockup_release_time_delay: 1233,
+                  token_supply_theshold: 10000001,
                 },
                 dacId,
                 { from: shared.auth_account }
@@ -1455,14 +1478,13 @@ describe('Daccustodian', () => {
               );
             });
             it('Should have highest ranked votes in custodians', async () => {
-              let rowsResult = await shared.daccustodian_contract.custodiansTable(
-                {
+              let rowsResult =
+                await shared.daccustodian_contract.custodiansTable({
                   scope: dacId,
                   limit: 14,
                   indexPosition: 3,
                   keyType: 'i64',
-                }
-              );
+                });
               let rs = rowsResult.rows;
               rs.sort((a, b) => {
                 return a.total_votes < b.total_votes
@@ -1496,12 +1518,11 @@ describe('Daccustodian', () => {
                   a.perm_name.localeCompare(b.perm_name)
               );
 
-              const custodians = await shared.daccustodian_contract.custodiansTable(
-                {
+              const custodians =
+                await shared.daccustodian_contract.custodiansTable({
                   scope: dacId,
                   limit: 20,
-                }
-              );
+                });
               const expected_accounts = custodians.rows.map((row) => {
                 return {
                   permission: {
@@ -1630,12 +1651,11 @@ describe('Daccustodian', () => {
           );
         });
         it('custodians should the mean pay from the valid requested pays. (Requested pay exceeding the max pay should be ignored from the mean.)', async () => {
-          let custodianRows = await shared.daccustodian_contract.custodiansTable(
-            {
+          let custodianRows =
+            await shared.daccustodian_contract.custodiansTable({
               scope: dacId,
               limit: 12,
-            }
-          );
+            });
           let pays = custodianRows.rows
             .map((cand) => {
               return Number(cand.requestedpay.split(' ')[0]);
@@ -1754,6 +1774,7 @@ describe('Daccustodian', () => {
           },
           should_pay_via_service_provider: false,
           lockup_release_time_delay: 1233,
+          token_supply_theshold: 10000001,
         },
         dacId,
         { from: shared.auth_account }
@@ -1880,14 +1901,13 @@ describe('Daccustodian', () => {
                     ],
                   }
                 );
-                let candidates = await shared.daccustodian_contract.candidatesTable(
-                  {
+                let candidates =
+                  await shared.daccustodian_contract.candidatesTable({
                     scope: dacId,
                     limit: 20,
                     lowerBound: electedCandidateToResign.name,
                     upperBound: electedCandidateToResign.name,
-                  }
-                );
+                  });
               });
             }
           );
@@ -2272,6 +2292,7 @@ describe('Daccustodian', () => {
 
       otherAccount = await AccountManager.createAccount();
       accountsToRegister = await AccountManager.createAccounts(5);
+      await sleep(600);
       await debugPromise(
         shared.daccustodian_contract.updateconfige(
           {
@@ -2293,6 +2314,7 @@ describe('Daccustodian', () => {
             },
             should_pay_via_service_provider: false,
             lockup_release_time_delay: 1233,
+            token_supply_theshold: 10000001,
           },
           dacId,
           { from: shared.auth_account }
@@ -2398,6 +2420,7 @@ describe('Daccustodian', () => {
           },
           should_pay_via_service_provider: false,
           lockup_release_time_delay: 1233,
+          token_supply_theshold: 10000001,
         },
         dacId,
         { from: shared.auth_account }
@@ -2895,7 +2918,7 @@ async function setup_nfts() {
       { key: 'name', value: ['string', 'xxx'] },
       { key: 'percentage', value: ['uint16', 400] }, // 4%
     ] as any,
-    '',
+    [],
     [],
     { from: shared.eosio_token_contract.account }
   );

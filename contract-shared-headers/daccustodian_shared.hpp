@@ -184,6 +184,9 @@ namespace eosdac {
         // Amount of token value in votes required to trigger the initial set of custodians
         uint32_t initial_vote_quorum_percent;
 
+        // Amount of token supply required to trigger the initial set of custodians
+        uint64_t token_supply_theshold = 1000 * 10000;
+
         // Amount of token value in votes required to trigger the allow a new set of custodians to be set after the
         // initial threshold has been achieved.
         uint32_t vote_quorum_percent;
@@ -223,13 +226,9 @@ namespace eosdac {
 
     struct [[eosio::table("state2"), eosio::contract("daccustodian")]] contr_state2 {
         eosio::time_point_sec                  lastperiodtime = time_point_sec(0);
-        std::map<uint8_t, state_value_variant> data           = {
-                      {state_keys::total_weight_of_votes, int64_t(0)},
-                      {state_keys::total_votes_on_candidates, int64_t(0)},
-                      {state_keys::number_active_candidates, uint32_t(0)},
-                      {state_keys::met_initial_votes_threshold, false},
-                      {state_keys::lastclaimbudgettime, time_point_sec(0)},
-        };
+        std::map<uint8_t, state_value_variant> data           = {{state_keys::total_weight_of_votes, int64_t(0)},
+            {state_keys::total_votes_on_candidates, int64_t(0)}, {state_keys::number_active_candidates, uint32_t(0)},
+            {state_keys::met_initial_votes_threshold, false}, {state_keys::lastclaimbudgettime, time_point_sec(0)}};
 
         static contr_state2 get_current_state(const eosio::name account, const eosio::name scope) {
             return statecontainer2(account, scope.value).get_or_default(contr_state2{});
@@ -404,6 +403,7 @@ namespace eosdac {
         PROPERTY2(uint8_t, auth_threshold_low);
         PROPERTY2(uint32_t, lockup_release_time_delay);
         PROPERTY2(eosio::extended_asset, requested_pay_max);
+        PROPERTY2(uint64_t, token_supply_theshold);
 
         static dacglobals get_migrated_state(const eosio::name account, const eosio::name dac_id) {
             auto new_state = dacglobals{};
