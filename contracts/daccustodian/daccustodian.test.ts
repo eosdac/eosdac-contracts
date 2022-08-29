@@ -1613,119 +1613,206 @@ describe('Daccustodian', () => {
     context(
       'Calling new period after the period time has expired',
       async () => {
-        before(async () => {
-          // Removing 1000 EOSDAC from each member to get under the initial voting threshold
-          // but still above the ongoing voting threshold to check the newperiod still succeeds.
-          let transfers = regMembers.map((member) => {
-            return shared.dac_token_contract.transfer(
-              member.name,
-              shared.dac_token_contract.account.name,
-              '1000.0000 PERDAC',
-              'removing PERDAC',
-              { from: member }
+        context('but not enough tokens', () => {
+          before(async () => {
+            await shared.daccustodian_contract.updateconfige(
+              {
+                numelected: 5,
+                maxvotes: 4,
+                requested_pay_max: {
+                  contract: 'eosio.token',
+                  quantity: '23.0000 EOS',
+                },
+                periodlength: 5,
+                initial_vote_quorum_percent: 31,
+                vote_quorum_percent: 15,
+                auth_threshold_high: 4,
+                auth_threshold_mid: 3,
+                auth_threshold_low: 2,
+                lockupasset: {
+                  contract: shared.dac_token_contract.account.name,
+                  quantity: '12.0000 PERDAC',
+                },
+                should_pay_via_service_provider: false,
+                lockup_release_time_delay: 1233,
+                token_supply_theshold: 100000000000,
+              },
+              dacId,
+              { from: shared.auth_account }
+            );
+            // Removing 1000 EOSDAC from each member to get under the initial voting threshold
+            // but still above the ongoing voting threshold to check the newperiod still succeeds.
+            let transfers = regMembers.map((member) => {
+              return shared.dac_token_contract.transfer(
+                member.name,
+                shared.dac_token_contract.account.name,
+                '1000.0000 PERDAC',
+                'removing PERDAC',
+                { from: member }
+              );
+            });
+
+            await debugPromise(
+              Promise.all(transfers),
+              'transferring 1000 PERDAC away for voting threshold'
+            );
+            await sleep(4_000);
+          });
+          it('should fail with NEWPERIOD_TOKEN_SUPPLY_TOO_LOW error', async () => {
+            await assertEOSErrorIncludesMessage(
+              shared.daccustodian_contract.newperiod(
+                'initial new period',
+                dacId,
+                {
+                  from: newUser1,
+                }
+              ),
+              'ERR::NEWPERIOD_TOKEN_SUPPLY_TOO_LOW'
             );
           });
-
-          await debugPromise(
-            Promise.all(transfers),
-            'transferring 1000 PERDAC away for voting threshold'
-          );
-          await sleep(4_000);
-        });
-        it('should succeed', async () => {
-          await shared.daccustodian_contract.newperiod(
-            'initial new period',
-            dacId,
-            {
-              from: newUser1,
-            }
-          );
-        });
-        it('custodians should have been paid', async () => {
-          await assertRowCount(
-            shared.daccustodian_contract.pendingpayTable({
-              scope: dacId,
-              limit: 12,
-            }),
-            5
-          );
-        });
-        it('custodians should the mean pay from the valid requested pays. (Requested pay exceeding the max pay should be ignored from the mean.)', async () => {
-          let custodianRows =
-            await shared.daccustodian_contract.custodiansTable({
-              scope: dacId,
-              limit: 12,
-            });
-          let pays = custodianRows.rows
-            .map((cand) => {
-              return Number(cand.requestedpay.split(' ')[0]);
-            })
-            .filter((val) => {
-              return val <= 23; // filter out pays that over 23 because they should be filtered by the requested pay calc.
-            });
-
-          let expectedAverage =
-            pays.reduce((a, b) => {
-              return a + b;
-            }) / custodianRows.rows.length;
-
-          let payRows = await shared.daccustodian_contract.pendingpayTable({
-            scope: dacId,
-            limit: 12,
-          });
-
-          let actualPaidAverage = Number(
-            payRows.rows[0].quantity.quantity.split(' ')[0]
-          );
-
-          chai.expect(actualPaidAverage).to.equal(expectedAverage);
-        });
-        it("claimpay should fail without receiver's authority", async () => {
-          let payRows = await shared.daccustodian_contract.pendingpayTable({
-            scope: dacId,
-            limit: 1,
-          });
-
-          const payId = payRows.rows[0].key;
-          await assertMissingAuthority(
-            shared.daccustodian_contract.claimpay(payId, dacId)
-          );
-        });
-        it('claimpay should transfer the money', async () => {
-          let payRows = await shared.daccustodian_contract.pendingpayTable({
-            scope: dacId,
-            limit: 12,
-          });
-          for (const payout of payRows.rows) {
-            const payId = payout.key;
-            const receiver = payout.receiver;
-            const amount = payout.quantity;
-
-            await shared.daccustodian_contract.claimpay(payId, dacId, {
-              auths: [
-                {
-                  actor: receiver,
-                  permission: 'active',
+          after(async () => {
+            await shared.daccustodian_contract.updateconfige(
+              {
+                numelected: 5,
+                maxvotes: 4,
+                requested_pay_max: {
+                  contract: 'eosio.token',
+                  quantity: '23.0000 EOS',
                 },
-              ],
+                periodlength: 5,
+                initial_vote_quorum_percent: 31,
+                vote_quorum_percent: 15,
+                auth_threshold_high: 4,
+                auth_threshold_mid: 3,
+                auth_threshold_low: 2,
+                lockupasset: {
+                  contract: shared.dac_token_contract.account.name,
+                  quantity: '12.0000 PERDAC',
+                },
+                should_pay_via_service_provider: false,
+                lockup_release_time_delay: 1233,
+                token_supply_theshold: 10000001,
+              },
+              dacId,
+              { from: shared.auth_account }
+            );
+          });
+        });
+        context('with sufficient tokens', () => {
+          before(async () => {
+            // Removing 1000 EOSDAC from each member to get under the initial voting threshold
+            // but still above the ongoing voting threshold to check the newperiod still succeeds.
+            let transfers = regMembers.map((member) => {
+              return shared.dac_token_contract.transfer(
+                member.name,
+                shared.dac_token_contract.account.name,
+                '1000.0000 PERDAC',
+                'removing PERDAC',
+                { from: member }
+              );
             });
 
-            // check if money did indeed arrive
-            const results = await EOSManager.rpc.get_table_rows({
-              code: amount.contract,
-              scope: receiver,
-              table: 'accounts',
-            });
-            chai.expect(results.rows[0].balance).to.equal(amount.quantity);
-          }
-          // After all payouts are made, the table should be empty
-          await assertRowCount(
-            shared.daccustodian_contract.pendingpayTable({
+            await debugPromise(
+              Promise.all(transfers),
+              'transferring 1000 PERDAC away for voting threshold'
+            );
+            await sleep(6_000);
+          });
+          it('should succeed', async () => {
+            await shared.daccustodian_contract.newperiod(
+              'initial new period',
+              dacId,
+              {
+                from: newUser1,
+              }
+            );
+          });
+          it('custodians should have been paid', async () => {
+            await assertRowCount(
+              shared.daccustodian_contract.pendingpayTable({
+                scope: dacId,
+                limit: 12,
+              }),
+              5
+            );
+          });
+          it('custodians should the mean pay from the valid requested pays. (Requested pay exceeding the max pay should be ignored from the mean.)', async () => {
+            let custodianRows =
+              await shared.daccustodian_contract.custodiansTable({
+                scope: dacId,
+                limit: 12,
+              });
+            let pays = custodianRows.rows
+              .map((cand) => {
+                return Number(cand.requestedpay.split(' ')[0]);
+              })
+              .filter((val) => {
+                return val <= 23; // filter out pays that over 23 because they should be filtered by the requested pay calc.
+              });
+
+            let expectedAverage =
+              pays.reduce((a, b) => {
+                return a + b;
+              }) / custodianRows.rows.length;
+
+            let payRows = await shared.daccustodian_contract.pendingpayTable({
               scope: dacId,
               limit: 12,
-            }),
-            0
-          );
+            });
+
+            let actualPaidAverage = Number(
+              payRows.rows[0].quantity.quantity.split(' ')[0]
+            );
+
+            chai.expect(actualPaidAverage).to.equal(expectedAverage);
+          });
+          it("claimpay should fail without receiver's authority", async () => {
+            let payRows = await shared.daccustodian_contract.pendingpayTable({
+              scope: dacId,
+              limit: 1,
+            });
+
+            const payId = payRows.rows[0].key;
+            await assertMissingAuthority(
+              shared.daccustodian_contract.claimpay(payId, dacId)
+            );
+          });
+          it('claimpay should transfer the money', async () => {
+            let payRows = await shared.daccustodian_contract.pendingpayTable({
+              scope: dacId,
+              limit: 12,
+            });
+            for (const payout of payRows.rows) {
+              const payId = payout.key;
+              const receiver = payout.receiver;
+              const amount = payout.quantity;
+
+              await shared.daccustodian_contract.claimpay(payId, dacId, {
+                auths: [
+                  {
+                    actor: receiver,
+                    permission: 'active',
+                  },
+                ],
+              });
+
+              // check if money did indeed arrive
+              const results = await EOSManager.rpc.get_table_rows({
+                code: amount.contract,
+                scope: receiver,
+                table: 'accounts',
+              });
+              chai.expect(results.rows[0].balance).to.equal(amount.quantity);
+            }
+            // After all payouts are made, the table should be empty
+            await assertRowCount(
+              shared.daccustodian_contract.pendingpayTable({
+                scope: dacId,
+                limit: 12,
+              }),
+              0
+            );
+          });
         });
       }
     );
