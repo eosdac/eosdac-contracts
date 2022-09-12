@@ -36,6 +36,9 @@ void stakevote::stakeobsv(const vector<account_stake_delta> &stake_deltas, const
                 v.weight += weight_delta;
                 v.weight_quorum += weight_delta_quorum;
             });
+            if (vw_itr->weight == 0) {
+                weights.erase(vw_itr);
+            }
         } else {
             weights.emplace(get_self(), [&](auto &v) {
                 v.voter         = asd.account;
