@@ -4,6 +4,7 @@ import {
   debugPromise,
   assertEOSErrorIncludesMessage,
   assertRowCount,
+  assertRowsEqual,
   UpdateAuth,
 } from 'lamington';
 
@@ -62,6 +63,8 @@ describe('Stakevote', () => {
     let time_multiplier = 10000;
     let regMembers: Account[];
     let candidates: Account[];
+    let staker: Account;
+
     before(async () => {
       await shared.initDac(dacId, `${precision},${symbol}`, supply, {
         vote_weight_account: shared.stakevote_contract,
@@ -84,15 +87,10 @@ describe('Stakevote', () => {
         dacId,
         { from: shared.auth_account }
       );
-      candidates = await shared.getStakeObservedCandidates(
-        dacId,
-        `12.0000 ${symbol}`
-      );
     });
     context('staking', async () => {
-      let staker: Account;
       before(async () => {
-        staker = await AccountManager.createAccount();
+        staker = await AccountManager.createAccount('staker1');
         const x = await get_from_dacglobals(
           dacId,
           state_keys.total_weight_of_votes
@@ -124,11 +122,70 @@ describe('Stakevote', () => {
         const x = await get_from_dacglobals(dacId, 'total_weight_of_votes');
         chai.expect(x).to.equal(0);
       });
+      it('should create weights table entries', async () => {
+        await assertRowsEqual(
+          shared.stakevote_contract.weightsTable({
+            scope: dacId,
+          }),
+          [
+            {
+              voter: 'staker1',
+              weight: 11000,
+              weight_quorum: 10000000,
+            },
+          ]
+        );
+      });
+    });
+    context('unstaking', async () => {
+      before(async () => {
+        await shared.dac_token_contract.stakeconfig(
+          {
+            enabled: true,
+            min_stake_time: 1,
+            max_stake_time: 1,
+          },
+          `${precision},${symbol}`,
+          { from: shared.auth_account }
+        );
+      });
+      it('should work', async () => {
+        await shared.dac_token_contract.unstake(
+          staker.name,
+          stake_amount.toString(),
+          {
+            from: staker,
+          }
+        );
+      });
+      it('should remove weights table entries', async () => {
+        await assertRowCount(
+          shared.stakevote_contract.weightsTable({
+            scope: dacId,
+          }),
+          0
+        );
+      });
+      after(async () => {
+        await shared.dac_token_contract.stakeconfig(
+          {
+            enabled: true,
+            min_stake_time: stake_delay,
+            max_stake_time: stake_delay,
+          },
+          `${precision},${symbol}`,
+          { from: shared.auth_account }
+        );
+      });
     });
     context('without an activation account', async () => {
       context('before a dac has commenced periods', async () => {
         context('with enough INITIAL candidate value voting', async () => {
           before(async () => {
+            candidates = await shared.getStakeObservedCandidates(
+              dacId,
+              `12.0000 ${symbol}`
+            );
             for (const member of regMembers) {
               await debugPromise(
                 shared.daccustodian_contract.votecust(
@@ -229,13 +286,14 @@ describe('Stakevote', () => {
               );
             });
             it('Should have highest ranked votes in custodians', async () => {
-              let rowsResult =
-                await shared.daccustodian_contract.custodiansTable({
+              let rowsResult = await shared.daccustodian_contract.custodiansTable(
+                {
                   scope: dacId,
                   limit: 14,
                   indexPosition: 3,
                   keyType: 'i64',
-                });
+                }
+              );
               let rs = rowsResult.rows;
               rs.sort((a, b) => {
                 return a.total_votes < b.total_votes
@@ -312,8 +370,7 @@ describe('Stakevote', () => {
             dacId,
             'total_votes_on_candidates'
           );
-          total_votes_on_candidates_beginning =
-            total_votes_on_candidates_before;
+          total_votes_on_candidates_beginning = total_votes_on_candidates_before;
         });
         it('should work', async () => {
           const cust1 = candidates[0];
