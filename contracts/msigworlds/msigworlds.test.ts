@@ -1,5 +1,4 @@
 import {
-  ContractDeployer,
   AccountManager,
   Account,
   UpdateAuth,
@@ -9,7 +8,7 @@ import {
   sleep,
   assertRowCount,
 } from 'lamington';
-import { SharedTestObjects } from '../TestHelpers';
+import { SharedTestObjects, regdac } from '../TestHelpers';
 
 const api = EOSManager.api;
 
@@ -27,6 +26,8 @@ let owner3: Account;
 let msigowned: Account;
 
 let modDate: Date;
+
+const dac_id = 'msigdac';
 
 export const currentHeadTimeWithAddedSeconds = async (seconds: number) => {
   const { head_block_time } = await EOSManager.api.rpc.get_info();
@@ -53,12 +54,15 @@ describe('msigworlds', () => {
       'starter blanace.',
       { from: tokenIssuer }
     );
+
+    await shared.initDac(dac_id, '4,MSIGDAC', '1000000.0000 MSIGDAC');
+    await shared.getRegMembers(dac_id, '1000.0000 MSIGDAC');
   });
   context('block actions', async () => {
     context('with wrong auth', async () => {
       it('should fail with auth error', async () => {
         await assertMissingAuthority(
-          msigworlds.blockaction(eosioToken.account.name, 'close', 'dac1', {
+          msigworlds.blockaction(eosioToken.account.name, 'close', dac_id, {
             from: owner1,
           })
         );
@@ -66,7 +70,7 @@ describe('msigworlds', () => {
     });
     context('with correct auth', async () => {
       it('should succeed', async () => {
-        await msigworlds.blockaction(eosioToken.account.name, 'close', 'dac1', {
+        await msigworlds.blockaction(eosioToken.account.name, 'close', dac_id, {
           from: msigworlds.account,
         });
       });
@@ -75,7 +79,7 @@ describe('msigworlds', () => {
       it('should fail', async () => {
         await sleep(1000); // to avoid duplicate tx id
         await assertEOSErrorIncludesMessage(
-          msigworlds.blockaction(eosioToken.account.name, 'close', 'dac1', {
+          msigworlds.blockaction(eosioToken.account.name, 'close', dac_id, {
             from: msigworlds.account,
           }),
           'action is already blocked for this dac.'
@@ -94,7 +98,7 @@ describe('msigworlds', () => {
               { actor: owner1.name, permission: 'active' },
               { actor: owner2.name, permission: 'active' },
             ],
-            'dac1',
+            dac_id,
             [],
             {
               actions: [],
@@ -114,7 +118,7 @@ describe('msigworlds', () => {
     });
 
     context('with correct auth', async () => {
-      context('with passed expiration', async () => {
+      context('from unregistered member', async () => {
         it('should fail with expired error', async () => {
           await assertEOSErrorIncludesMessage(
             msigworlds.propose(
@@ -124,7 +128,7 @@ describe('msigworlds', () => {
                 { actor: owner1.name, permission: 'active' },
                 { actor: owner2.name, permission: 'active' },
               ],
-              'dac1',
+              dac_id,
               [],
               {
                 actions: [],
@@ -139,212 +143,173 @@ describe('msigworlds', () => {
               },
               { from: owner1 }
             ),
-            'transaction expired'
+            'ERR::GENERAL_REG_MEMBER_NOT_FOUND'
           );
         });
       });
-      context('with context free actions included', async () => {
-        it('should fail with context free actions error', async () => {
-          await assertEOSErrorIncludesMessage(
-            msigworlds.propose(
-              owner1.name,
-              'prop1',
-              [
-                { actor: owner1.name, permission: 'active' },
-                { actor: owner2.name, permission: 'active' },
-              ],
-              'dac1',
-              [],
-              {
-                actions: await api.serializeActions([
-                  {
-                    account: shared.eosio_token_contract.name,
-                    authorization: [
-                      { actor: owner1.name, permission: 'active' },
-                      { actor: owner2.name, permission: 'active' },
-                    ],
-                    name: 'transfer',
-                    data: {
-                      from: owner1.name,
-                      to: owner2.name,
-                      quantity: '10.0000 TLM',
-                      memo: 'testing',
-                    },
-                  },
-                ]),
-                context_free_actions: await api.serializeActions([
-                  {
-                    account: shared.eosio_token_contract.name,
-                    authorization: [
-                      { actor: owner1.name, permission: 'active' },
-                      { actor: owner2.name, permission: 'active' },
-                    ],
-                    name: 'transfer',
-                    data: {
-                      from: owner1.name,
-                      to: owner2.name,
-                      quantity: '10.0000 TLM',
-                      memo: 'testing',
-                    },
-                  },
-                ]),
-                delay_sec: '0',
-                expiration: await currentHeadTimeWithAddedSeconds(3600),
-                max_cpu_usage_ms: 0,
-                max_net_usage_words: '0',
-                ref_block_num: 12345,
-                ref_block_prefix: 123,
-                transaction_extensions: [],
-              },
-              { from: owner1 }
-            ),
-            'not allowed to `propose` a transaction with context-free actions'
-          );
-        });
-      });
-      context('with blocked action', async () => {
-        it('should fail with blocked action error', async () => {
-          await assertEOSErrorIncludesMessage(
-            msigworlds.propose(
-              owner1.name,
-              'prop1',
-              [
-                { actor: owner1.name, permission: 'active' },
-                { actor: owner2.name, permission: 'active' },
-              ],
-              'dac1',
-              [],
-              {
-                actions: await api.serializeActions([
-                  {
-                    account: shared.eosio_token_contract.name,
-                    authorization: [
-                      { actor: owner1.name, permission: 'active' },
-                      { actor: owner2.name, permission: 'active' },
-                    ],
-                    name: 'transfer',
-                    data: {
-                      from: owner1.name,
-                      to: owner2.name,
-                      quantity: '10.0000 TLM',
-                      memo: 'testing',
-                    },
-                  },
-                  {
-                    account: shared.eosio_token_contract.name,
-                    authorization: [
-                      { actor: owner1.name, permission: 'active' },
-                      { actor: owner2.name, permission: 'active' },
-                    ],
-                    name: 'close',
-                    data: {
-                      owner: 'someowner',
-                      symbol: '4,EOS',
-                    },
-                  },
-                ]),
-                context_free_actions: [],
-                delay_sec: '0',
-                expiration: await currentHeadTimeWithAddedSeconds(3600),
-                max_cpu_usage_ms: 0,
-                max_net_usage_words: '0',
-                ref_block_num: 12345,
-                ref_block_prefix: 123,
-                transaction_extensions: [],
-              },
-              { from: owner1 }
-            ),
-            'blocked actions'
-          );
-        });
-      });
-      context('with all correct params', async () => {
-        it('should succeed', async () => {
-          const result = await msigworlds.propose(
+      context('with registered member in dac', async () => {
+        before(async () => {
+          await shared.dac_token_contract.memberreg(
             owner1.name,
-            'prop1',
-            [
-              { actor: owner1.name, permission: 'active' },
-              { actor: owner2.name, permission: 'active' },
-            ],
-            'dac1',
-            [],
-            {
-              actions: await api.serializeActions([
-                {
-                  account: shared.eosio_token_contract.name,
-                  authorization: [
-                    { actor: owner1.name, permission: 'active' },
-                    { actor: owner2.name, permission: 'active' },
-                  ],
-                  name: 'transfer',
-                  data: {
-                    from: owner1.name,
-                    to: owner2.name,
-                    quantity: '10.0000 TLM',
-                    memo: 'testing',
-                  },
-                },
-              ]),
-              context_free_actions: [],
-              delay_sec: '0',
-              expiration: await currentHeadTimeWithAddedSeconds(3600),
-              max_cpu_usage_ms: 0,
-              max_net_usage_words: '0',
-              ref_block_num: 12345,
-              ref_block_prefix: 123,
-              transaction_extensions: [],
-            },
+            shared.configured_dac_memberterms,
+            dac_id,
             { from: owner1 }
           );
-          // console.log(result);
-          // prop1Hash = result.transaction_id; // capture the proposal hash to use for the approve tests.
         });
-        it('should populate proposals table', async () => {
-          const {
-            rows: [prop],
-          } = await msigworlds.proposalsTable({ scope: 'dac1' });
-          expect(prop.proposer).to.equal(owner1.name);
-          expect(prop.state).to.equal(0);
-          expect(prop.proposal_name).to.equal('prop1');
-          expect(prop.id).to.equal(1);
-          modDate = prop.modified_date;
+        context('with passed expiration', async () => {
+          it('should fail with expired error', async () => {
+            await assertEOSErrorIncludesMessage(
+              msigworlds.propose(
+                owner1.name,
+                'propexp1',
+                [
+                  { actor: owner1.name, permission: 'active' },
+                  { actor: owner2.name, permission: 'active' },
+                ],
+                dac_id,
+                [],
+                {
+                  actions: [],
+                  context_free_actions: [],
+                  delay_sec: '0',
+                  expiration: await currentHeadTimeWithAddedSeconds(-25 * 3600),
+                  max_cpu_usage_ms: 0,
+                  max_net_usage_words: '0',
+                  ref_block_num: 12345,
+                  ref_block_prefix: 123,
+                  transaction_extensions: [],
+                },
+                { from: owner1 }
+              ),
+              'transaction expired'
+            );
+          });
         });
-        it('should populate approvals table', async () => {
-          const {
-            rows: [prop],
-          } = await msigworlds.approvalsTable({ scope: 'dac1' });
-          expect(prop.requested_approvals).to.deep.equal([
-            {
-              level: {
-                actor: 'owner1',
-                permission: 'active',
-              },
-              time: '1970-01-01T00:00:00.000',
-            },
-            {
-              level: {
-                actor: 'owner2',
-                permission: 'active',
-              },
-              time: '1970-01-01T00:00:00.000',
-            },
-          ]);
-          expect(prop.provided_approvals).to.be.empty;
-          expect(prop.proposal_name).to.equal('prop1');
+        context('with context free actions included', async () => {
+          it('should fail with context free actions error', async () => {
+            await assertEOSErrorIncludesMessage(
+              msigworlds.propose(
+                owner1.name,
+                'prop1',
+                [
+                  { actor: owner1.name, permission: 'active' },
+                  { actor: owner2.name, permission: 'active' },
+                ],
+                dac_id,
+                [],
+                {
+                  actions: await api.serializeActions([
+                    {
+                      account: shared.eosio_token_contract.name,
+                      authorization: [
+                        { actor: owner1.name, permission: 'active' },
+                        { actor: owner2.name, permission: 'active' },
+                      ],
+                      name: 'transfer',
+                      data: {
+                        from: owner1.name,
+                        to: owner2.name,
+                        quantity: '10.0000 TLM',
+                        memo: 'testing',
+                      },
+                    },
+                  ]),
+                  context_free_actions: await api.serializeActions([
+                    {
+                      account: shared.eosio_token_contract.name,
+                      authorization: [
+                        { actor: owner1.name, permission: 'active' },
+                        { actor: owner2.name, permission: 'active' },
+                      ],
+                      name: 'transfer',
+                      data: {
+                        from: owner1.name,
+                        to: owner2.name,
+                        quantity: '10.0000 TLM',
+                        memo: 'testing',
+                      },
+                    },
+                  ]),
+                  delay_sec: '0',
+                  expiration: await currentHeadTimeWithAddedSeconds(3600),
+                  max_cpu_usage_ms: 0,
+                  max_net_usage_words: '0',
+                  ref_block_num: 12345,
+                  ref_block_prefix: 123,
+                  transaction_extensions: [],
+                },
+                { from: owner1 }
+              ),
+              'not allowed to `propose` a transaction with context-free actions'
+            );
+          });
         });
-      });
-      context('with existing msig with same name', async () => {
-        it('should fail with duplicate name', async () => {
-          await assertEOSErrorIncludesMessage(
-            msigworlds.propose(
+        context('with blocked action', async () => {
+          it('should fail with blocked action error', async () => {
+            await assertEOSErrorIncludesMessage(
+              msigworlds.propose(
+                owner1.name,
+                'prop1',
+                [
+                  { actor: owner1.name, permission: 'active' },
+                  { actor: owner2.name, permission: 'active' },
+                ],
+                dac_id,
+                [],
+                {
+                  actions: await api.serializeActions([
+                    {
+                      account: shared.eosio_token_contract.name,
+                      authorization: [
+                        { actor: owner1.name, permission: 'active' },
+                        { actor: owner2.name, permission: 'active' },
+                      ],
+                      name: 'transfer',
+                      data: {
+                        from: owner1.name,
+                        to: owner2.name,
+                        quantity: '10.0000 TLM',
+                        memo: 'testing',
+                      },
+                    },
+                    {
+                      account: shared.eosio_token_contract.name,
+                      authorization: [
+                        { actor: owner1.name, permission: 'active' },
+                        { actor: owner2.name, permission: 'active' },
+                      ],
+                      name: 'close',
+                      data: {
+                        owner: 'someowner',
+                        symbol: '4,EOS',
+                      },
+                    },
+                  ]),
+                  context_free_actions: [],
+                  delay_sec: '0',
+                  expiration: await currentHeadTimeWithAddedSeconds(3600),
+                  max_cpu_usage_ms: 0,
+                  max_net_usage_words: '0',
+                  ref_block_num: 12345,
+                  ref_block_prefix: 123,
+                  transaction_extensions: [],
+                },
+                { from: owner1 }
+              ),
+              'blocked actions'
+            );
+          });
+        });
+        context('with all correct params', async () => {
+          it('should succeed', async () => {
+            const result = await msigworlds.propose(
               owner1.name,
               'prop1',
               [
                 { actor: owner1.name, permission: 'active' },
                 { actor: owner2.name, permission: 'active' },
               ],
-              'dac1',
+              dac_id,
               [],
               {
                 actions: await api.serializeActions([
@@ -358,7 +323,7 @@ describe('msigworlds', () => {
                     data: {
                       from: owner1.name,
                       to: owner2.name,
-                      quantity: '11.0000 TLM',
+                      quantity: '10.0000 TLM',
                       memo: 'testing',
                     },
                   },
@@ -373,9 +338,87 @@ describe('msigworlds', () => {
                 transaction_extensions: [],
               },
               { from: owner1 }
-            ),
-            'proposal with the same name exists'
-          );
+            );
+            // console.log(result);
+            // prop1Hash = result.transaction_id; // capture the proposal hash to use for the approve tests.
+          });
+          it('should populate proposals table', async () => {
+            const {
+              rows: [prop],
+            } = await msigworlds.proposalsTable({ scope: dac_id });
+            expect(prop.proposer).to.equal(owner1.name);
+            expect(prop.state).to.equal(0);
+            expect(prop.proposal_name).to.equal('prop1');
+            expect(prop.id).to.equal(1);
+            modDate = prop.modified_date;
+          });
+          it('should populate approvals table', async () => {
+            const {
+              rows: [prop],
+            } = await msigworlds.approvalsTable({ scope: dac_id });
+            expect(prop.requested_approvals).to.deep.equal([
+              {
+                level: {
+                  actor: 'owner1',
+                  permission: 'active',
+                },
+                time: '1970-01-01T00:00:00.000',
+              },
+              {
+                level: {
+                  actor: 'owner2',
+                  permission: 'active',
+                },
+                time: '1970-01-01T00:00:00.000',
+              },
+            ]);
+            expect(prop.provided_approvals).to.be.empty;
+            expect(prop.proposal_name).to.equal('prop1');
+          });
+        });
+        context('with existing msig with same name', async () => {
+          it('should fail with duplicate name', async () => {
+            await assertEOSErrorIncludesMessage(
+              msigworlds.propose(
+                owner1.name,
+                'prop1',
+                [
+                  { actor: owner1.name, permission: 'active' },
+                  { actor: owner2.name, permission: 'active' },
+                ],
+                dac_id,
+                [],
+                {
+                  actions: await api.serializeActions([
+                    {
+                      account: shared.eosio_token_contract.name,
+                      authorization: [
+                        { actor: owner1.name, permission: 'active' },
+                        { actor: owner2.name, permission: 'active' },
+                      ],
+                      name: 'transfer',
+                      data: {
+                        from: owner1.name,
+                        to: owner2.name,
+                        quantity: '11.0000 TLM',
+                        memo: 'testing',
+                      },
+                    },
+                  ]),
+                  context_free_actions: [],
+                  delay_sec: '0',
+                  expiration: await currentHeadTimeWithAddedSeconds(3600),
+                  max_cpu_usage_ms: 0,
+                  max_net_usage_words: '0',
+                  ref_block_num: 12345,
+                  ref_block_prefix: 123,
+                  transaction_extensions: [],
+                },
+                { from: owner1 }
+              ),
+              'proposal with the same name exists'
+            );
+          });
         });
       });
     });
@@ -388,7 +431,7 @@ describe('msigworlds', () => {
             {
               proposal_name: 'prop1',
               level: { actor: owner1.name, permission: 'active' },
-              dac_id: 'dac1',
+              dac_id: dac_id,
               proposal_hash: null,
             },
             { from: owner3 }
@@ -403,7 +446,7 @@ describe('msigworlds', () => {
             msigworlds.approve(
               'prop11',
               { actor: owner1.name, permission: 'active' },
-              'dac1',
+              dac_id,
               null,
               { from: owner1 }
             ),
@@ -418,7 +461,7 @@ describe('msigworlds', () => {
           await msigworlds.approve(
             'prop1',
             { actor: owner3.name, permission: 'active' },
-            'dac1',
+            dac_id,
             null,
             { from: owner3 }
           );
@@ -429,14 +472,14 @@ describe('msigworlds', () => {
           await msigworlds.approve(
             'prop1',
             { actor: owner2.name, permission: 'active' },
-            'dac1',
+            dac_id,
             null,
             { from: owner2 }
           );
         });
         it('should update approvals table', async () => {
           const approvals = await msigworlds.approvalsTable({
-            scope: 'dac1',
+            scope: dac_id,
           });
           const matching = approvals.rows[0];
 
@@ -455,12 +498,12 @@ describe('msigworlds', () => {
           );
         });
         it('should update proposal modification date', async () => {
-          const props = await msigworlds.proposalsTable({ scope: 'dac1' });
+          const props = await msigworlds.proposalsTable({ scope: dac_id });
           expect(props.rows[0].modified_date).to.afterTime(modDate);
           modDate = new Date(props.rows[0].modified_date);
         });
         it('should update proposal earliest exec date', async () => {
-          const props = await msigworlds.proposalsTable({ scope: 'dac1' });
+          const props = await msigworlds.proposalsTable({ scope: dac_id });
         });
       });
     });
@@ -473,7 +516,7 @@ describe('msigworlds', () => {
             {
               proposal_name: 'prop1',
               level: { actor: owner1.name, permission: 'active' },
-              dac_id: 'dac1',
+              dac_id: dac_id,
             },
             { from: owner3 }
           )
@@ -487,7 +530,7 @@ describe('msigworlds', () => {
             msigworlds.unapprove(
               'prop11',
               { actor: owner1.name, permission: 'active' },
-              'dac1',
+              dac_id,
               { from: owner1 }
             ),
             'ERR::NO_APPROVALS_FOUND'
@@ -503,7 +546,7 @@ describe('msigworlds', () => {
               msigworlds.unapprove(
                 'prop1',
                 { actor: owner1.name, permission: 'active' },
-                'dac1',
+                dac_id,
                 { from: owner1 }
               ),
               'no approval previously granted'
@@ -515,13 +558,13 @@ describe('msigworlds', () => {
             await msigworlds.unapprove(
               'prop1',
               { actor: owner2.name, permission: 'active' },
-              'dac1',
+              dac_id,
               { from: owner2 }
             );
           });
           it('should update approvals table', async () => {
             const approvals = await msigworlds.approvalsTable({
-              scope: 'dac1',
+              scope: dac_id,
             });
             const matching = approvals.rows[0];
 
@@ -542,7 +585,7 @@ describe('msigworlds', () => {
             );
           });
           it('should update proposal modification date', async () => {
-            const props = await msigworlds.proposalsTable({ scope: 'dac1' });
+            const props = await msigworlds.proposalsTable({ scope: dac_id });
             expect(props.rows[0].modified_date).to.afterTime(modDate);
             expect(props.rows[0].earliest_exec_time).to.be.null;
             expect(props.rows[0].state).to.equal(0);
@@ -559,7 +602,7 @@ describe('msigworlds', () => {
             {
               proposal_name: 'prop1',
               level: { actor: owner1.name, permission: 'active' },
-              dac_id: 'dac1',
+              dac_id: dac_id,
             },
             { from: owner3 }
           )
@@ -573,7 +616,7 @@ describe('msigworlds', () => {
             msigworlds.deny(
               'prop11',
               { actor: owner1.name, permission: 'active' },
-              'dac1',
+              dac_id,
               { from: owner1 }
             ),
             'ERR::NO_APPROVALS_FOUND'
@@ -588,7 +631,7 @@ describe('msigworlds', () => {
             await msigworlds.deny(
               'prop1',
               { actor: owner3.name, permission: 'active' },
-              'dac1',
+              dac_id,
               { from: owner3 }
             );
           });
@@ -598,13 +641,13 @@ describe('msigworlds', () => {
             await msigworlds.deny(
               'prop1',
               { actor: owner2.name, permission: 'active' },
-              'dac1',
+              dac_id,
               { from: owner2 }
             );
           });
           it('should update approvals table', async () => {
             const approvals = await msigworlds.approvalsTable({
-              scope: 'dac1',
+              scope: dac_id,
             });
             const matching = approvals.rows[0];
 
@@ -625,7 +668,7 @@ describe('msigworlds', () => {
             );
           });
           it('should update proposal modification date', async () => {
-            const props = await msigworlds.proposalsTable({ scope: 'dac1' });
+            const props = await msigworlds.proposalsTable({ scope: dac_id });
             expect(props.rows[0].modified_date).to.afterTime(modDate);
             expect(props.rows[0].earliest_exec_time).to.be.null;
             expect(props.rows[0].state).to.equal(0);
@@ -641,7 +684,7 @@ describe('msigworlds', () => {
           msigworlds.cancel(
             'prop1',
             owner1.name,
-            'dac1',
+            dac_id,
 
             { from: owner3 }
           )
@@ -652,7 +695,7 @@ describe('msigworlds', () => {
       context('with non-existing proposal', async () => {
         it('should fail with prop not found error', async () => {
           await assertEOSErrorIncludesMessage(
-            msigworlds.cancel('prop11', owner1.name, 'dac1', {
+            msigworlds.cancel('prop11', owner1.name, dac_id, {
               from: owner1,
             }),
             'proposal not found'
@@ -665,7 +708,7 @@ describe('msigworlds', () => {
         context('for proposal from different creator auth', async () => {
           it('should fail with approval not on list found error', async () => {
             await assertEOSErrorIncludesMessage(
-              msigworlds.cancel('prop1', owner3.name, 'dac1', {
+              msigworlds.cancel('prop1', owner3.name, dac_id, {
                 from: owner3,
               }),
               'cannot cancel until expiration'
@@ -674,13 +717,13 @@ describe('msigworlds', () => {
         });
         context('when cancelor is the proposer', async () => {
           it('should succeed', async () => {
-            await msigworlds.cancel('prop1', owner1.name, 'dac1', {
+            await msigworlds.cancel('prop1', owner1.name, dac_id, {
               from: owner1,
             });
           });
           it('should update approvals table', async () => {
             const approvals = await msigworlds.approvalsTable({
-              scope: 'dac1',
+              scope: dac_id,
             });
             const matching = approvals.rows[0];
 
@@ -701,7 +744,7 @@ describe('msigworlds', () => {
             );
           });
           it('should update proposal modification date', async () => {
-            const props = await msigworlds.proposalsTable({ scope: 'dac1' });
+            const props = await msigworlds.proposalsTable({ scope: dac_id });
             expect(props.rows[0].modified_date).to.afterTime(modDate);
             expect(props.rows[0].earliest_exec_time).to.be.null;
             expect(props.rows[0].state).to.equal(2);
@@ -710,7 +753,7 @@ describe('msigworlds', () => {
         context('after proposal has already been cancelled', async () => {
           it('should fail with state error', async () => {
             await assertEOSErrorIncludesMessage(
-              msigworlds.cancel('prop1', owner1.name, 'dac1', {
+              msigworlds.cancel('prop1', owner1.name, dac_id, {
                 from: owner1,
               }),
               'ERR::PROP_NOT_PENDING'
@@ -729,7 +772,7 @@ describe('msigworlds', () => {
           { actor: owner1.name, permission: 'active' },
           { actor: owner2.name, permission: 'active' },
         ],
-        'dac1',
+        dac_id,
         [],
         {
           actions: await api.serializeActions([
@@ -762,7 +805,7 @@ describe('msigworlds', () => {
     });
     it('prop2 should have the correct id', async () => {
       const res = await msigworlds.proposalsTable({
-        scope: 'dac1',
+        scope: dac_id,
         lowerBound: 'prop2',
         upperBound: 'prop2',
       });
@@ -776,7 +819,7 @@ describe('msigworlds', () => {
           msigworlds.exec(
             'prop2',
             owner1.name,
-            'dac1',
+            dac_id,
 
             { from: owner3 }
           )
@@ -787,7 +830,7 @@ describe('msigworlds', () => {
       context('with non-existing proposal', async () => {
         it('should fail with prop not found error', async () => {
           await assertEOSErrorIncludesMessage(
-            msigworlds.exec('prop11', owner1.name, 'dac1', {
+            msigworlds.exec('prop11', owner1.name, dac_id, {
               from: owner1,
             }),
             'proposal not found'
@@ -798,7 +841,7 @@ describe('msigworlds', () => {
       context('for proposal from that is already cancelled', async () => {
         it('should fail with proposal not in pending state.', async () => {
           await assertEOSErrorIncludesMessage(
-            msigworlds.exec('prop1', owner3.name, 'dac1', {
+            msigworlds.exec('prop1', owner3.name, dac_id, {
               from: owner3,
             }),
             'ERR::PROP_EXEC_NOT_PENDING'
@@ -810,7 +853,7 @@ describe('msigworlds', () => {
     context('without sufficient auth to approve', async () => {
       it('should fail with transaction auth error', async () => {
         await assertEOSErrorIncludesMessage(
-          msigworlds.exec('prop2', owner1.name, 'dac1', {
+          msigworlds.exec('prop2', owner1.name, dac_id, {
             from: owner1,
           }),
           'transaction authorization failed'
@@ -827,7 +870,7 @@ describe('msigworlds', () => {
             { actor: owner1.name, permission: 'active' },
             { actor: owner2.name, permission: 'active' },
           ],
-          'dac1',
+          dac_id,
           [],
           {
             actions: await api.serializeActions([
@@ -861,7 +904,7 @@ describe('msigworlds', () => {
       });
       it('propexp should have the correct id', async () => {
         const res = await msigworlds.proposalsTable({
-          scope: 'dac1',
+          scope: dac_id,
           lowerBound: 'propexp',
           upperBound: 'propexp',
         });
@@ -871,7 +914,7 @@ describe('msigworlds', () => {
       });
       it('should fail with expired error', async () => {
         await assertEOSErrorIncludesMessage(
-          msigworlds.exec('propexp', owner1.name, 'dac1', {
+          msigworlds.exec('propexp', owner1.name, dac_id, {
             from: owner1,
           }),
           'transaction expired'
@@ -888,7 +931,7 @@ describe('msigworlds', () => {
             { actor: owner1.name, permission: 'active' },
             { actor: owner2.name, permission: 'active' },
           ],
-          'dac1',
+          dac_id,
           [],
           {
             actions: await api.serializeActions([
@@ -921,7 +964,7 @@ describe('msigworlds', () => {
         await msigworlds.approve(
           'propgood',
           { actor: owner1.name, permission: 'active' },
-          'dac1',
+          dac_id,
           null,
           { from: owner1 }
         );
@@ -929,19 +972,19 @@ describe('msigworlds', () => {
         await msigworlds.approve(
           'propgood',
           { actor: owner2.name, permission: 'active' },
-          'dac1',
+          dac_id,
           null,
           { from: owner2 }
         );
       });
       it('should succeed', async () => {
-        await msigworlds.exec('propgood', owner1.name, 'dac1', {
+        await msigworlds.exec('propgood', owner1.name, dac_id, {
           from: owner1,
         });
       });
       it('propgood should have the correct id', async () => {
         const res = await msigworlds.proposalsTable({
-          scope: 'dac1',
+          scope: dac_id,
           lowerBound: 'propgood',
           upperBound: 'propgood',
         });
@@ -952,7 +995,7 @@ describe('msigworlds', () => {
 
       it('should update approvals table', async () => {
         const approvals = await msigworlds.approvalsTable({
-          scope: 'dac1',
+          scope: dac_id,
         });
         const matching = approvals.rows[0];
 
@@ -969,7 +1012,7 @@ describe('msigworlds', () => {
         );
       });
       it('should update proposal modification date', async () => {
-        const props = await msigworlds.proposalsTable({ scope: 'dac1' });
+        const props = await msigworlds.proposalsTable({ scope: dac_id });
         expect(props.rows[0].modified_date).to.afterTime(modDate);
         expect(props.rows[0].earliest_exec_time).to.be.null;
         expect(props.rows[0].state).to.equal(2);
@@ -978,7 +1021,7 @@ describe('msigworlds', () => {
     context('after proposal has already been executed', async () => {
       it('should fail with state error', async () => {
         await assertEOSErrorIncludesMessage(
-          msigworlds.exec('propgood', owner1.name, 'dac1', {
+          msigworlds.exec('propgood', owner1.name, dac_id, {
             from: owner1,
           }),
           'ERR::PROP_EXEC_NOT_PENDING'
@@ -990,7 +1033,7 @@ describe('msigworlds', () => {
     context('with non exisitant proposal', async () => {
       it('should fail with not found error', async () => {
         await assertEOSErrorIncludesMessage(
-          msigworlds.cleanup('fakeprop', 'dac1'),
+          msigworlds.cleanup('fakeprop', dac_id),
           'PROPOSAL_NOT_FOUND'
         );
       });
@@ -1004,7 +1047,7 @@ describe('msigworlds', () => {
             { actor: owner1.name, permission: 'active' },
             { actor: owner2.name, permission: 'active' },
           ],
-          'dac1',
+          dac_id,
           [],
           {
             actions: await api.serializeActions([
@@ -1037,7 +1080,7 @@ describe('msigworlds', () => {
         await msigworlds.approve(
           'propclean',
           { actor: owner1.name, permission: 'active' },
-          'dac1',
+          dac_id,
           null,
           { from: owner1 }
         );
@@ -1045,14 +1088,14 @@ describe('msigworlds', () => {
         await msigworlds.approve(
           'propclean',
           { actor: owner2.name, permission: 'active' },
-          'dac1',
+          dac_id,
           null,
           { from: owner2 }
         );
       });
       it('propclean should have the correct id', async () => {
         const res = await msigworlds.proposalsTable({
-          scope: 'dac1',
+          scope: dac_id,
           lowerBound: 'propclean',
           upperBound: 'propclean',
         });
@@ -1062,22 +1105,22 @@ describe('msigworlds', () => {
       });
       it('shoul fail with wrong state error', async () => {
         await assertEOSErrorIncludesMessage(
-          msigworlds.cleanup('propclean', 'dac1'),
+          msigworlds.cleanup('propclean', dac_id),
           'ERR::PROPOSAL_CLEANUP_STILL_PENDING'
         );
       });
     });
     context('with completed proposal', async () => {
       it('should succeed', async () => {
-        await msigworlds.cleanup('propgood', 'dac1');
+        await msigworlds.cleanup('propgood', dac_id);
       });
       it('should erase the proposals and approvals record', async () => {
         await assertRowCount(
-          msigworlds.proposalsTable({ scope: 'dac1', lowerBound: 'propgood' }),
+          msigworlds.proposalsTable({ scope: dac_id, lowerBound: 'propgood' }),
           0
         );
         await assertRowCount(
-          msigworlds.approvalsTable({ scope: 'dac1', lowerBound: 'propgood' }),
+          msigworlds.approvalsTable({ scope: dac_id, lowerBound: 'propgood' }),
           0
         );
       });
