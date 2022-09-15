@@ -54,7 +54,6 @@ describe('Daccustodian', () => {
         scope: dacId,
       });
       const s = res.rows[0];
-      console.log('s:', JSON.stringify(s, null, 2));
       chai.expect(s.data).to.deep.equal([
         {
           key: 'auth_threshold_high',
@@ -488,7 +487,6 @@ describe('Daccustodian', () => {
         scope: dacId,
         limit: 1,
       });
-      console.log(JSON.stringify(resx, null, 2));
       await assertRowsEqual(
         shared.daccustodian_contract.dacglobalsTable({
           scope: dacId,
@@ -921,7 +919,6 @@ describe('Daccustodian', () => {
         let dacState = await shared.daccustodian_contract.dacglobalsTable({
           scope: dacId,
         });
-        console.log('dacState: ', JSON.stringify(dacState, null, 2));
         chai.expect(dacState.rows[0].data).to.deep.include({
           key: 'total_weight_of_votes',
           value: ['int64', 0],
@@ -2625,9 +2622,6 @@ describe('Daccustodian', () => {
           });
         });
         it('should only transfer treasury balance', async () => {
-          console.log('treasury_balance_before: ', treasury_balance_before);
-          console.log('auth_balance_before: ', auth_balance_before);
-          console.log('expected_transfer_amount: ', expected_transfer_amount);
           const expected_treasury_balance_after =
             treasury_balance_before - expected_transfer_amount;
           const expected_auth_balance_after =
@@ -2929,8 +2923,6 @@ async function getTemplateId(schema_name: string, name: string) {
   const atomic = get_atomic();
   const templates = await atomic.getCollectionTemplates(NFT_COLLECTION);
   const objects = await Promise.all(templates.map((x) => x.toObject()));
-  console.log(`getTemplateId schema_name: ${schema_name} name: ${name}`);
-  console.log(JSON.stringify(objects, null, 2));
   return parseInt(
     objects.find((x) => {
       return (
