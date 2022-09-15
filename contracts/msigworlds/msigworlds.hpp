@@ -6,6 +6,9 @@
 #include <eosio/singleton.hpp>
 #include <eosio/transaction.hpp>
 
+#include "../../contract-shared-headers/dacdirectory_shared.hpp"
+#include "../../contract-shared-headers/eosdactokens_shared.hpp"
+
 using namespace eosio;
 
 enum PropState { PENDING = 0, EXECUTED = 1, CANCELLED = 2 };
@@ -235,4 +238,17 @@ class [[eosio::contract("msigworlds")]] multisig : public eosio::contract {
   private:
     uint64_t next_id(name dac_id);
     void     _unapprove(name proposal_name, permission_level level, name dac_id, bool throw_if_not_previously_approved);
+
+    void assertValidMember(const name proposer, const name dac_id) {
+        const auto dac                 = eosdac::dacdir::dac_for_id(dac_id);
+        const auto referendum_contract = dac.account_for_type_maybe(eosdac::dacdir::REFERENDUM);
+
+        if (referendum_contract) {
+            if (proposer != *referendum_contract) {
+                eosdac::assertValidMember(proposer, dac_id);
+            }
+        } else {
+            eosdac::assertValidMember(proposer, dac_id);
+        }
+    }
 };
