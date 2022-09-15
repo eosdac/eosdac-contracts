@@ -41,6 +41,7 @@ ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, c
                 v.candidates      = newvotes;
                 v.proxy           = name();
                 v.vote_time_stamp = now();
+                v.vote_count++;
             });
         }
     } else {
@@ -51,6 +52,7 @@ ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, c
             v.voter           = voter;
             v.candidates      = newvotes;
             v.vote_time_stamp = now();
+            v.vote_count      = 0;
         });
     }
 }
