@@ -2112,6 +2112,16 @@ describe('Daccustodian', () => {
             .expect(numberActiveCandidatesAfter)
             .to.be.equal(numberActiveCandidatesBefore - 1);
         });
+        it('withdrawing the same candidate twice should fail', async () => {
+          await assertEOSErrorIncludesMessage(
+            shared.daccustodian_contract.withdrawcane(
+              unelectedCandidateToResign.name,
+              dacId,
+              { from: unelectedCandidateToResign }
+            ),
+            'ERR::REMOVECANDIDATE_CANDIDATE_NOT_ACTIVE'
+          );
+        });
         it('should allow unstaking without a timelock error', async () => {
           await shared.dac_token_contract.unstake(
             unelectedCandidateToResign.name,
