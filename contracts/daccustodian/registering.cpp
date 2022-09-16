@@ -16,7 +16,7 @@ ACTION daccustodian::nominatecane(const name &cand, const asset &requestedpay, c
     validateMinStake(cand, dac_id);
 
     const auto number_active_candidates = globals.get_number_active_candidates();
-    globals.set_number_active_candidates(number_active_candidates + 1);
+    globals.set_number_active_candidates(S{number_active_candidates} + S<uint32_t>{1});
     globals.save(get_self(), dac_id);
 
     candidates_table registered_candidates(get_self(), dac_id.value);
@@ -171,27 +171,26 @@ void daccustodian::removeCustodian(name cust, name dac_id) {
 }
 
 void daccustodian::removeCandidate(name cand, bool lockupStake, name dac_id) {
-    auto globals = dacglobals::current(get_self(), dac_id);
+    auto        registered_candidates = candidates_table{_self, dac_id.value};
+    const auto &reg_candidate         = registered_candidates.get(
+                cand.value, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
+    check(reg_candidate.is_active, "ERR::REMOVECANDIDATE_CANDIDATE_NOT_ACTIVE::Candidate is no longer active.");
 
+    auto       globals                  = dacglobals::current(get_self(), dac_id);
     const auto number_active_candidates = globals.get_number_active_candidates();
-    globals.set_number_active_candidates(number_active_candidates - 1);
+    globals.set_number_active_candidates(S{number_active_candidates} - S<uint32_t>{1});
     globals.save(_self, dac_id);
 
-    candidates_table registered_candidates(_self, dac_id.value);
-    candperms_table  cand_perms(_self, dac_id.value);
-
-    const auto &reg_candidate = registered_candidates.get(
-        cand.value, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
-
     // remove entry for candperms
-    auto perm = cand_perms.find(cand.value);
+    auto cand_perms = candperms_table{_self, dac_id.value};
+    auto perm       = cand_perms.find(cand.value);
     if (perm != cand_perms.end()) {
         cand_perms.erase(perm);
     }
 
     eosio::print("Remove from nominated candidate by setting them to inactive.");
     // Set the is_active flag to false instead of deleting in order to retain votes if they return to he dac.
-    registered_candidates.modify(reg_candidate, same_payer, [&](candidate &c) {
+    registered_candidates.modify(reg_candidate, same_payer, [&](auto &c) {
         c.is_active = 0;
     });
 }
