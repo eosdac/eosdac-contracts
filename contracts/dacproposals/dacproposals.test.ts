@@ -2591,7 +2591,6 @@ describe('Dacproposals', () => {
 
 async function setup_test_user(testuser: Account, tokenSymbol: string) {
   // const testuser = await AccountManager.createAccount('clienttest');
-  console.log(`testuser: ${JSON.stringify(testuser, null, 2)}`);
   await shared.dac_token_contract.transfer(
     shared.dac_token_contract.account.name,
     testuser.name,

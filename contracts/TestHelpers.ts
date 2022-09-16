@@ -311,6 +311,10 @@ export class SharedTestObjects {
         key: Account_type.TREASURY,
         value: this.treasury_account.name,
       },
+      {
+        key: Account_type.REFERENDUM,
+        value: this.referendum_contract.account.name,
+      },
     ];
     if (config && config.planet) {
       accounts.push({
@@ -557,6 +561,14 @@ export class SharedTestObjects {
       this.dac_token_contract.account.active,
       this.dac_token_contract.account.name,
       this.daccustodian_contract.account.name,
+      'stakeobsv',
+      'notify'
+    );
+
+    await UpdateAuth.execLinkAuth(
+      this.dac_token_contract.account.active,
+      this.dac_token_contract.account.name,
+      this.referendum_contract.account.name,
       'stakeobsv',
       'notify'
     );
@@ -917,6 +929,7 @@ export enum Account_type {
   PROPOSALS = 6,
   ESCROW = 7,
   VOTING = 8,
+  REFERENDUM = 10,
   EXTERNAL = 254,
   OTHER = 255,
 }

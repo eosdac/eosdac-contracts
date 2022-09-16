@@ -119,7 +119,7 @@ describe('msigworlds', () => {
 
     context('with correct auth', async () => {
       context('from unregistered member', async () => {
-        it('should fail with expired error', async () => {
+        it('should fail with member not found error', async () => {
           await assertEOSErrorIncludesMessage(
             msigworlds.propose(
               owner1.name,

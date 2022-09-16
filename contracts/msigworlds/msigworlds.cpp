@@ -4,8 +4,6 @@
 
 #include "msigworlds.hpp"
 
-#include "../../contract-shared-headers/eosdactokens_shared.hpp"
-
 using namespace eosio;
 
 transaction_header get_trx_header(const char *ptr, size_t sz);
@@ -36,7 +34,7 @@ std::vector<permission_level> get_approvals_and_adjust_table(
 void multisig::propose(name proposer, name proposal_name, std::vector<permission_level> requested, name dac_id,
     std::map<std::string, std::string> metadata, ignore<transaction> trx) {
     require_auth(proposer);
-    eosdac::assertValidMember(proposer, dac_id);
+    assertValidMember(proposer, dac_id);
     auto &ds = get_datastream();
 
     const char *trx_pos = ds.pos();
