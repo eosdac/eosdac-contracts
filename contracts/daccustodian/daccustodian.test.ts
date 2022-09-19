@@ -13,7 +13,11 @@ import {
   assertBalanceEqual,
 } from 'lamington';
 
-import { SharedTestObjects, NUMBER_OF_CANDIDATES } from '../TestHelpers';
+import {
+  SharedTestObjects,
+  NUMBER_OF_CANDIDATES,
+  Account_type,
+} from '../TestHelpers';
 import * as chai from 'chai';
 const dayjs = require('dayjs');
 const utc = require('dayjs/plugin/utc');
@@ -1679,6 +1683,39 @@ describe('Daccustodian', () => {
         });
       });
     });
+
+    context('with an activation account', async () => {
+      before(async () => {
+        await shared.dacdirectory_contract.regaccount(
+          dacId,
+          shared.activation_account.name,
+          Account_type.ACTIVATION,
+          {
+            from: shared.auth_account,
+          }
+        );
+      });
+      context('without activation account auth', async () => {
+        it('should fail with not authorized error', async () => {
+          await assertMissingAuthority(
+            shared.daccustodian_contract.newperiod('new period', dacId, {
+              from: shared.auth_account,
+            })
+          );
+        });
+      });
+
+      after(async () => {
+        await shared.dacdirectory_contract.unregaccount(
+          dacId,
+          Account_type.ACTIVATION,
+          {
+            from: shared.auth_account,
+          }
+        );
+      });
+    });
+
     context('Calling newperiod before the next period is due', async () => {
       it('should fail with too calling newperiod too early error', async () => {
         await assertEOSErrorIncludesMessage(
