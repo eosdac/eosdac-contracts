@@ -10,18 +10,65 @@ namespace eosdac {
     namespace dacdir {
 
         enum account_type : uint8_t {
-            TREASURY    = 1,
-            CUSTODIAN   = 2,
-            MSIGOWNED   = 3,
-            SERVICE     = 5,
-            PROPOSALS   = 6,
-            ESCROW      = 7,
+            /**
+             * @brief Account that holds DAO's main collection of valuable tokens.
+             * This account is then used for a source of payment for DACProposals, token source for custodian pay and
+             * new period DAO budgets,
+             *
+             */
+            TREASURY = 1,
+            /**
+             * @brief Common smart contract to manange the election process for each DAC
+             *
+             */
+            CUSTODIAN = 2,
+            /**
+             * @brief Dac specific account to be managed by the DAC CUSODIAN election process - includes high, med, low
+             * and one permissions.
+             *
+             */
+            MSIGOWNED = 3,
+            /**
+             * @brief For legal compliance payments may need to be made via a legal service entity rather than direct
+             * blockchain. This is currently only used for Custodian Period Pay.
+             *
+             */
+            SERVICE = 5,
+            /**
+             * @brief Common contract used for worker proposals (This is a complex, multistage system to replace the
+             * native multisigs for the DACs)
+             *
+             */
+            PROPOSALS = 6,
+            /**
+             * @brief Common contract used to act as the escrow account for dacproposals. This is designed to work in
+             * close partnership with PROPOSALS and the reason for having a separate contract is that ESCROW should have
+             * it's keys null'd out for security while PROPOSALS is complicated and is more likely to be updatedin the
+             * future.
+             *
+             */
+            ESCROW = 7,
+            /**
+             * @brief Common contract used for used for stake * time weighted voting rather than liquid token weighted.
+             *
+             */
             VOTE_WEIGHT = 8,
-            ACTIVATION  = 9,
-            REFERENDUM  = 10,
-            SPENDINGS   = 11,
-            EXTERNAL    = 254,
-            OTHER       = 255
+            /**
+             * @brief If set provides a mechanism for an authorised account to activate a DAC rather than wait for the
+             * preconfigured thresholds to activate a DAC.
+             *
+             */
+            ACTIVATION = 9,
+            /**
+             * @brief Common smart contract used for referrendums. The referrendum types can be binding,
+             * semi-binding or opinion, ranging from preparing and executing an msig or just a signal for the
+             * custodians.
+             *
+             */
+            REFERENDUM = 10,
+            SPENDINGS  = 11, // Account to hold all the spending allowance for the current period.
+            EXTERNAL   = 254,
+            OTHER      = 255
         };
 
         enum ref_type : uint8_t {
