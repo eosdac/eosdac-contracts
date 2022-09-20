@@ -123,6 +123,12 @@ describe('Stakevote', () => {
         chai.expect(x).to.equal(0);
       });
       it('should create weights table entries', async () => {
+        const expected_weight = await get_expected_vote_weight(
+          stake_amount.amount_raw(),
+          stake_delay,
+          dacId
+        );
+
         await assertRowsEqual(
           shared.stakevote_contract.weightsTable({
             scope: dacId,
@@ -130,7 +136,7 @@ describe('Stakevote', () => {
           [
             {
               voter: 'staker1',
-              weight: 11000,
+              weight: expected_weight,
               weight_quorum: 10000000,
             },
           ]
@@ -286,14 +292,13 @@ describe('Stakevote', () => {
               );
             });
             it('Should have highest ranked votes in custodians', async () => {
-              let rowsResult = await shared.daccustodian_contract.custodiansTable(
-                {
+              let rowsResult =
+                await shared.daccustodian_contract.custodiansTable({
                   scope: dacId,
                   limit: 14,
                   indexPosition: 3,
                   keyType: 'i64',
-                }
-              );
+                });
               let rs = rowsResult.rows;
               rs.sort((a, b) => {
                 return a.total_votes < b.total_votes
@@ -370,7 +375,8 @@ describe('Stakevote', () => {
             dacId,
             'total_votes_on_candidates'
           );
-          total_votes_on_candidates_beginning = total_votes_on_candidates_before;
+          total_votes_on_candidates_beginning =
+            total_votes_on_candidates_before;
         });
         it('should work', async () => {
           const cust1 = candidates[0];
@@ -617,7 +623,7 @@ async function get_from_dacglobals(dacId: string, key: string) {
 }
 
 async function get_expected_vote_weight(
-  stake_amount: number,
+  stake_delta: number,
   unstake_delay: number,
   dac_id: string
 ) {
@@ -630,10 +636,14 @@ async function get_expected_vote_weight(
     scope: dac_id,
   });
   const max_stake_time = res.rows[0].max_stake_time;
-  return (
-    (stake_amount *
-      (1 + (STAKE_DURATION_FACTOR * unstake_delay) / max_stake_time) *
-      time_multiplier) /
-    time_divisor
+
+  return Math.floor(
+    stake_delta *
+      (1 +
+        Math.floor(
+          (STAKE_DURATION_FACTOR * unstake_delay * time_multiplier) /
+            time_divisor /
+            max_stake_time
+        ))
   );
 }
