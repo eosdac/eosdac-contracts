@@ -47,13 +47,19 @@ ACTION daccustodian::nominatecane(const name &cand, const asset &requestedpay, c
 
 ACTION daccustodian::withdrawcane(const name &cand, const name &dac_id) {
     require_auth(cand);
-    removeCandidate(cand, false, dac_id);
+    disableCandidate(cand, dac_id);
+}
+
+ACTION daccustodian::removecand(const name &cand, const name &dac_id) {
+    require_auth(cand);
+    removeCandidate(cand, dac_id);
 }
 
 ACTION daccustodian::firecand(const name &cand, const bool lockupStake, const name &dac_id) {
     auto dac = dacdir::dac_for_id(dac_id);
     require_auth(dac.owner);
-    removeCandidate(cand, lockupStake, dac_id);
+    disableCandidate(cand, dac_id);
+    removeCandidate(cand, dac_id);
 }
 
 ACTION daccustodian::resigncust(const name &cust, const name &dac_id) {
@@ -161,7 +167,7 @@ void daccustodian::removeCustodian(name cust, name dac_id) {
     custodians.erase(elected);
 
     // Remove the candidate from being eligible for the next election period.
-    removeCandidate(cust, true, dac_id);
+    disableCandidate(cust, dac_id);
 
     // Allocate the next set of candidates to only fill the gap for the missing slot.
     allocateCustodians(true, dac_id);
@@ -170,7 +176,7 @@ void daccustodian::removeCustodian(name cust, name dac_id) {
     setMsigAuths(dac_id);
 }
 
-void daccustodian::removeCandidate(name cand, bool lockupStake, name dac_id) {
+void daccustodian::disableCandidate(name cand, name dac_id) {
     auto        registered_candidates = candidates_table{_self, dac_id.value};
     const auto &reg_candidate         = registered_candidates.get(
                 cand.value, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
@@ -181,18 +187,25 @@ void daccustodian::removeCandidate(name cand, bool lockupStake, name dac_id) {
     globals.set_number_active_candidates(S{number_active_candidates} - S<uint32_t>{1});
     globals.save(_self, dac_id);
 
+    eosio::print("Remove from nominated candidate by setting them to inactive.");
+    // Set the is_active flag to false instead of deleting in order to retain votes if they return to he dac.
+    registered_candidates.modify(reg_candidate, same_payer, [&](auto &c) {
+        c.is_active = 0;
+    });
+}
+
+void daccustodian::removeCandidate(name cand, name dac_id) {
+    auto        registered_candidates = candidates_table{_self, dac_id.value};
+    const auto &reg_candidate         = registered_candidates.get(
+                cand.value, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
+    check(!reg_candidate.is_active, "ERR::REMOVECANDIDATE_CANDIDATE_IS_ACTIVE::Candidate is still active.");
+
     // remove entry for candperms
     auto cand_perms = candperms_table{_self, dac_id.value};
     auto perm       = cand_perms.find(cand.value);
     if (perm != cand_perms.end()) {
         cand_perms.erase(perm);
     }
-
-    eosio::print("Remove from nominated candidate by setting them to inactive.");
-    // Set the is_active flag to false instead of deleting in order to retain votes if they return to he dac.
-    registered_candidates.modify(reg_candidate, same_payer, [&](auto &c) {
-        c.is_active = 0;
-    });
 }
 
 ACTION daccustodian::regproxy(const name &proxy_member, const name &dac_id) {
