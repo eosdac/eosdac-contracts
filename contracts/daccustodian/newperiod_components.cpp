@@ -145,7 +145,7 @@ void daccustodian::add_auth_to_account(const name &accountToChange, const uint8_
         .send();
 }
 
-void daccustodian::add_all_auths(const name &           accountToChange,
+void daccustodian::add_all_auths(const name            &accountToChange,
     const vector<eosiosystem::permission_level_weight> &weights, const name &dac_id, const bool msig) {
     const auto globals = dacglobals::current(get_self(), dac_id);
 
@@ -255,9 +255,17 @@ ACTION daccustodian::migratestate(const name &dac_id) {
 
 ACTION daccustodian::newperiod(const string &message, const name &dac_id) {
     /* This is a housekeeping method, it can be called by anyone by design */
-    const auto sender = dacdir::dac_for_id(dac_id).owner;
-    eosio::action(eosio::permission_level{sender, "owner"_n}, get_self(), "runnewperiod"_n, make_tuple(message, dac_id))
-        .send();
+    const auto dac                = dacdir::dac_for_id(dac_id);
+    const auto activation_account = dac.account_for_type_maybe(dacdir::ACTIVATION);
+
+    auto auths = std::vector<permission_level>{{dac.owner, "owner"_n}};
+
+    if (activation_account) {
+        require_auth(*activation_account);
+        auths.emplace_back(*activation_account, "owner"_n);
+    }
+
+    eosio::action(auths, get_self(), "runnewperiod"_n, make_tuple(message, dac_id)).send();
 }
 
 ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
@@ -269,6 +277,8 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
     const auto  activation_account = found_dac.account_for_type_maybe(dacdir::ACTIVATION);
 
     if (activation_account) {
+        require_auth(*activation_account);
+
         print("\n\nSending notification to ", *activation_account, "::assertunlock");
 
         action(permission_level{*activation_account, "notify"_n}, *activation_account, "assertunlock"_n,

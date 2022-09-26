@@ -32,6 +32,8 @@ export class SharedTestObjects {
 
   auth_account: Account;
   treasury_account: Account;
+  activation_account: Account;
+
   // === Dac Contracts
   dacdirectory_contract: Dacdirectory;
   daccustodian_contract: Daccustodian;
@@ -141,6 +143,7 @@ export class SharedTestObjects {
     await this.atomicassets.account.addCodePermission();
     await this.atomicassets.init({ from: this.atomicassets.account });
 
+    this.activation_account = await AccountManager.createAccount('activation');
     // Other objects
     this.configured_dac_memberterms = 'be2c9d0494417cf7522cd8d6f774477c';
     await this.configTokenContract();
@@ -378,6 +381,19 @@ export class SharedTestObjects {
 
     await debugPromise(
       UpdateAuth.execUpdateAuth(
+        this.activation_account.active,
+        this.activation_account.name,
+        'notify',
+        'active',
+        UpdateAuth.AuthorityToSet.forContractCode(
+          this.daccustodian_contract.account
+        )
+      ),
+      'add notify auth to daccustodian_contract'
+    );
+
+    await debugPromise(
+      UpdateAuth.execUpdateAuth(
         this.dac_token_contract.account.active,
         this.dac_token_contract.account.name,
         'xfer',
@@ -611,6 +627,14 @@ export class SharedTestObjects {
       this.dac_token_contract.account.name,
       'transfer',
       'xfer'
+    );
+
+    await UpdateAuth.execLinkAuth(
+      this.activation_account.active,
+      this.activation_account.name,
+      this.activation_account.name,
+      'assertunlock',
+      'notify'
     );
 
     await UpdateAuth.execLinkAuth(
@@ -929,6 +953,7 @@ export enum Account_type {
   PROPOSALS = 6,
   ESCROW = 7,
   VOTING = 8,
+  ACTIVATION = 9,
   REFERENDUM = 10,
   EXTERNAL = 254,
   OTHER = 255,
