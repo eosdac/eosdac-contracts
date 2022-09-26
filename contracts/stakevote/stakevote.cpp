@@ -25,12 +25,17 @@ void stakevote::stakeobsv(const vector<account_stake_delta> &stake_deltas, const
 
     for (const auto &asd : stake_deltas) {
         const auto weight_delta_quorum = asd.stake_delta.amount;
+
+        const auto stake_delta     = S{asd.stake_delta.amount}.to<int128_t>();
+        const auto unstake_delay   = S{asd.unstake_delay}.to<int128_t>();
+        const auto time_multiplier = S{config.time_multiplier}.to<int128_t>();
+
         const auto weight_delta_s =
-            S{asd.stake_delta.amount}.to<int128_t>() *
-            (S{int128_t{1}} + stake_duration_factor * S{asd.unstake_delay}.to<int128_t>() / max_stake_time) *
-            S{config.time_multiplier}.to<int128_t>() / time_divisor;
-        const int64_t weight_delta = weight_delta_s.to<int64_t>();
-        const auto    vw_itr       = weights.find(asd.account.value);
+            stake_delta *
+            (S<int128_t>{1} + stake_duration_factor * unstake_delay * time_multiplier / time_divisor / max_stake_time);
+
+        const auto weight_delta = weight_delta_s.to<int64_t>();
+        const auto vw_itr       = weights.find(asd.account.value);
         if (vw_itr != weights.end()) {
             weights.modify(vw_itr, same_payer, [&](auto &v) {
                 v.weight += weight_delta;
@@ -111,12 +116,16 @@ void stakevote::collectwts(uint16_t batch_size, uint32_t unstake_time, name dac_
         const auto vw_itr = weights.find((stake->account).value);
         if (vw_itr == weights.end()) {
             const auto weight_delta_quorum = (stake->stake).amount;
-            const auto weight_delta_s =
-                S{(stake->stake).amount}.to<int128_t>() *
-                (S{int128_t{1}} + stake_duration_factor * S{unstake_time}.to<int128_t>() / max_stake_time) *
-                S{config.time_multiplier}.to<int128_t>() / time_divisor;
 
-            const int64_t weight_delta = weight_delta_s.to<int64_t>();
+            const auto stake_delta     = S{(stake->stake).amount}.to<int128_t>();
+            const auto unstake_delay   = S{unstake_time}.to<int128_t>();
+            const auto time_multiplier = S{config.time_multiplier}.to<int128_t>();
+
+            const auto weight_delta_s =
+                stake_delta * (S<int128_t>{1} + stake_duration_factor * unstake_delay * time_multiplier / time_divisor /
+                                                    max_stake_time);
+
+            const auto weight_delta = weight_delta_s.to<int64_t>();
             weights.emplace(get_self(), [&](auto &v) {
                 v.voter         = stake->account;
                 v.weight        = weight_delta;
