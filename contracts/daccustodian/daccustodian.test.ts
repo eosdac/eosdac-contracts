@@ -11,6 +11,7 @@ import {
   assertRowsEqual,
   TableRowsResult,
   assertBalanceEqual,
+  Asset,
 } from 'lamington';
 
 import {
@@ -3219,10 +3220,9 @@ async function get_balance(
     scope: account.name,
   });
   for (const row of res.rows) {
-    const bal = row.balance;
-    const [amount, symbol] = bal.split(' ');
-    if (symbol == search_symbol) {
-      return parseFloat(amount);
+    const bal = new Asset(row.balance);
+    if (bal.symbol == search_symbol) {
+      return bal.amount;
     }
   }
   return 0.0;
