@@ -2236,6 +2236,154 @@ describe('Daccustodian', () => {
       });
     });
   });
+  context('removecand', () => {
+    let dacId = 'removecdac';
+    let unelectedCandidateToResign: Account;
+    let electedCandidateToResign: Account;
+    let unregisteredCandidate: Account;
+
+    before(async () => {
+      await shared.initDac(dacId, '4,REMDAC', '1000000.0000 REMDAC');
+      await shared.updateconfig(dacId, '12.0000 REMDAC');
+      await shared.dac_token_contract.stakeconfig(
+        { enabled: true, min_stake_time: 5, max_stake_time: 20 },
+        '4,REMDAC',
+        { from: shared.auth_account }
+      );
+
+      let regMembers = await shared.getRegMembers(dacId, '20000.0000 REMDAC');
+      unregisteredCandidate = regMembers[0];
+      let candidates = await shared.getStakeObservedCandidates(
+        dacId,
+        '12.0000 REMDAC',
+        NUMBER_OF_CANDIDATES + 1
+      );
+      await shared.voteForCustodians(regMembers, candidates, dacId);
+      await shared.daccustodian_contract.newperiod(
+        'initial new period',
+        dacId,
+        {
+          from: regMembers[0], // Could be run by anyone.
+        }
+      );
+      electedCandidateToResign = candidates[3];
+      unelectedCandidateToResign = candidates[NUMBER_OF_CANDIDATES];
+    });
+    it('should fail for unregistered candidate with not current candidate error', async () => {
+      await assertEOSErrorIncludesMessage(
+        shared.daccustodian_contract.removecand(
+          unregisteredCandidate.name,
+          dacId,
+          { from: unregisteredCandidate }
+        ),
+        'REMOVECANDIDATE_NOT_CURRENT_CANDIDATE'
+      );
+    });
+    it('should fail with incorrect auth returning auth error', async () => {
+      await assertMissingAuthority(
+        shared.daccustodian_contract.removecand(
+          unregisteredCandidate.name,
+          dacId,
+          { from: unelectedCandidateToResign }
+        )
+      );
+    });
+    context('with correct auth', async () => {
+      context('for a currently elected custodian', async () => {
+        it('before, candidate should be active', async () => {
+          let candidates = await shared.daccustodian_contract.candidatesTable({
+            scope: dacId,
+            limit: 20,
+            lowerBound: electedCandidateToResign.name,
+            upperBound: electedCandidateToResign.name,
+          });
+          const cand = candidates.rows[0];
+          chai
+            .expect(cand.candidate_name)
+            .to.equal(electedCandidateToResign.name);
+          chai.expect(cand.is_active).to.equal(1);
+        });
+        it('should fail with REMOVECANDIDATE_CANDIDATE_IS_ACTIVE error', async () => {
+          await assertEOSErrorIncludesMessage(
+            shared.daccustodian_contract.removecand(
+              electedCandidateToResign.name,
+              dacId,
+              { from: electedCandidateToResign }
+            ),
+            'REMOVECANDIDATE_CANDIDATE_IS_ACTIVE'
+          );
+        });
+        it('after withdrawing, should work', async () => {
+          await shared.daccustodian_contract.withdrawcane(
+            electedCandidateToResign.name,
+            dacId,
+            { from: electedCandidateToResign }
+          );
+          await shared.daccustodian_contract.removecand(
+            electedCandidateToResign.name,
+            dacId,
+            { from: electedCandidateToResign }
+          );
+        });
+        it('should remove candidate table entry', async () => {
+          let candidates = await shared.daccustodian_contract.candidatesTable({
+            scope: dacId,
+            limit: 20,
+            lowerBound: electedCandidateToResign.name,
+            upperBound: electedCandidateToResign.name,
+          });
+          chai.expect(candidates.rows).to.be.empty;
+        });
+      });
+      context('for an unelected candidate', async () => {
+        before(async () => {
+          await shared.daccustodian_contract.withdrawcane(
+            unelectedCandidateToResign.name,
+            dacId,
+            { from: unelectedCandidateToResign }
+          );
+        });
+        it('should succeed and not change the number of active candidates', async () => {
+          let numberActiveCandidatesBefore = await get_from_dacglobals(
+            dacId,
+            'number_active_candidates'
+          );
+
+          await shared.daccustodian_contract.removecand(
+            unelectedCandidateToResign.name,
+            dacId,
+            { from: unelectedCandidateToResign }
+          );
+          let candidates = await shared.daccustodian_contract.candidatesTable({
+            scope: dacId,
+            limit: 20,
+            lowerBound: unelectedCandidateToResign.name,
+            upperBound: unelectedCandidateToResign.name,
+          });
+
+          chai.expect(candidates.rows).to.be.empty;
+
+          var numberActiveCandidatesAfter = await get_from_dacglobals(
+            dacId,
+            'number_active_candidates'
+          );
+          chai
+            .expect(numberActiveCandidatesAfter)
+            .to.be.equal(numberActiveCandidatesBefore);
+        });
+        it('removing the same candidate twice should fail', async () => {
+          await assertEOSErrorIncludesMessage(
+            shared.daccustodian_contract.removecand(
+              unelectedCandidateToResign.name,
+              dacId,
+              { from: unelectedCandidateToResign }
+            ),
+            'ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE'
+          );
+        });
+      });
+    });
+  });
   context('fire candidate', () => {
     let dacId = 'firedac';
     let unelectedCandidateToFire: Account;
