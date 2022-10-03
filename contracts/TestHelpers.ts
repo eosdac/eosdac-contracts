@@ -66,6 +66,8 @@ export class SharedTestObjects {
   private async initAndGetSharedObjects() {
     console.log('Init eos blockchain');
     await sleep(1000);
+    await this.configTokenContract();
+
     // EOSManager.initWithDefaults();
 
     this.auth_account = await debugPromise(
@@ -143,7 +145,6 @@ export class SharedTestObjects {
 
     // Other objects
     this.configured_dac_memberterms = 'be2c9d0494417cf7522cd8d6f774477c';
-    await this.configTokenContract();
     await this.add_auth_account_permissions();
     await this.add_token_contract_permissions();
   }
