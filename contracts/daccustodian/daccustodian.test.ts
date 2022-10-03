@@ -2035,7 +2035,9 @@ describe('Daccustodian', () => {
           context(
             'with enough elected candidates to replace a removed candidate',
             async () => {
+              let electedCandidateToResign: Account;
               before(async () => {
+                electedCandidateToResign = existing_candidates[3];
                 await debugPromise(
                   shared.daccustodian_contract.votecust(
                     regMembers[14].name,
@@ -2051,9 +2053,7 @@ describe('Daccustodian', () => {
                   'voting for an extra candidate'
                 );
               });
-              it('should succeed with lockup of stake', async () => {
-                let electedCandidateToResign = existing_candidates[3];
-
+              it('should succeed', async () => {
                 await shared.daccustodian_contract.resigncust(
                   electedCandidateToResign.name,
                   dacId,
@@ -2067,13 +2067,18 @@ describe('Daccustodian', () => {
                     ],
                   }
                 );
-                let candidates =
-                  await shared.daccustodian_contract.candidatesTable({
-                    scope: dacId,
-                    limit: 20,
-                    lowerBound: electedCandidateToResign.name,
-                    upperBound: electedCandidateToResign.name,
-                  });
+              });
+              it('should disable candidate', async () => {
+                const res = await shared.daccustodian_contract.candidatesTable({
+                  scope: dacId,
+                  limit: 20,
+                  lowerBound: electedCandidateToResign.name,
+                  upperBound: electedCandidateToResign.name,
+                });
+                chai
+                  .expect(res.rows[0].candidate_name)
+                  .to.equal(electedCandidateToResign.name);
+                chai.expect(res.rows[0].is_active).to.equal(0);
               });
             }
           );
@@ -2148,18 +2153,38 @@ describe('Daccustodian', () => {
     });
     context('with correct auth', async () => {
       context('for a currently elected custodian', async () => {
-        it('should succeed with lockup of stake active from previous election', async () => {
-          await shared.daccustodian_contract.withdrawcane(
-            electedCandidateToResign.name,
-            dacId,
-            { from: electedCandidateToResign }
-          );
+        it('before, candidate should be active', async () => {
           let candidates = await shared.daccustodian_contract.candidatesTable({
             scope: dacId,
             limit: 20,
             lowerBound: electedCandidateToResign.name,
             upperBound: electedCandidateToResign.name,
           });
+          const cand = candidates.rows[0];
+          chai
+            .expect(cand.candidate_name)
+            .to.equal(electedCandidateToResign.name);
+          chai.expect(cand.is_active).to.equal(1);
+        });
+        it('should succeed', async () => {
+          await shared.daccustodian_contract.withdrawcane(
+            electedCandidateToResign.name,
+            dacId,
+            { from: electedCandidateToResign }
+          );
+        });
+        it('should disable candidate', async () => {
+          let candidates = await shared.daccustodian_contract.candidatesTable({
+            scope: dacId,
+            limit: 20,
+            lowerBound: electedCandidateToResign.name,
+            upperBound: electedCandidateToResign.name,
+          });
+          const cand = candidates.rows[0];
+          chai
+            .expect(cand.candidate_name)
+            .to.equal(electedCandidateToResign.name);
+          chai.expect(cand.is_active).to.equal(0);
         });
       });
       context('for an unelected candidate', async () => {
@@ -2274,12 +2299,16 @@ describe('Daccustodian', () => {
             dacId,
             { from: shared.auth_account }
           );
+        });
+
+        it('should delete candidate table entries', async () => {
           let candidates = await shared.daccustodian_contract.candidatesTable({
             scope: dacId,
             limit: 20,
             lowerBound: electedCandidateToFire.name,
             upperBound: electedCandidateToFire.name,
           });
+          chai.expect(candidates.rows).to.be.empty;
         });
       });
       context('for an unelected candidate', async () => {
@@ -2302,7 +2331,7 @@ describe('Daccustodian', () => {
             upperBound: unelectedCandidateToFire.name,
           });
 
-          chai.expect(candidates.rows[0].is_active).to.be.equal(0);
+          chai.expect(candidates.rows).to.be.empty;
 
           var numberActiveCandidatesAfter = await get_from_dacglobals(
             dacId,
@@ -2379,7 +2408,7 @@ describe('Daccustodian', () => {
             'voting for an extra candidate'
           );
         });
-        it('should succeed with lockup of stake', async () => {
+        it('should succeed', async () => {
           await shared.daccustodian_contract.firecust(
             electedCandidateToFire.name,
             dacId,
@@ -2391,6 +2420,24 @@ describe('Daccustodian', () => {
             lowerBound: electedCandidateToFire.name,
             upperBound: electedCandidateToFire.name,
           });
+        });
+        it('should delete custodian table entry', async () => {
+          const res = await shared.daccustodian_contract.custodiansTable({
+            scope: dacId,
+            limit: 20,
+            lowerBound: electedCandidateToFire.name,
+            upperBound: electedCandidateToFire.name,
+          });
+          chai.expect(res.rows).to.be.empty;
+        });
+        it('should delete candidate table entry', async () => {
+          let candidates = await shared.daccustodian_contract.candidatesTable({
+            scope: dacId,
+            limit: 20,
+            lowerBound: electedCandidateToFire.name,
+            upperBound: electedCandidateToFire.name,
+          });
+          chai.expect(candidates.rows).to.be.empty;
         });
       });
       context('for an unelected candidate', async () => {
