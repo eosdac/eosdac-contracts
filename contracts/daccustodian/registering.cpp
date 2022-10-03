@@ -71,14 +71,12 @@ ACTION daccustodian::firecand(const name &cand, const bool lockupStake, const na
 ACTION daccustodian::resigncust(const name &cust, const name &dac_id) {
     require_auth(cust);
     removeCustodian(cust, dac_id);
-    disableCandidate(cust, dac_id);
 }
 
 ACTION daccustodian::firecust(const name &cust, const name &dac_id) {
     auto dac = dacdir::dac_for_id(dac_id);
     require_auth(dac.owner);
     removeCustodian(cust, dac_id);
-    disableCandidate(cust, dac_id);
     removeCandidate(cust, dac_id);
 }
 
