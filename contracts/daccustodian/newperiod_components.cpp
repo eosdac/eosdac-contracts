@@ -213,19 +213,9 @@ ACTION daccustodian::claimbudget(const name &dac_id) {
     // percentage value is scaled by 100, so to calculate percent we need to divide by (100 * 100 == 10000)
     const auto allocation_for_period = treasury_balance * budget_percentage / 10000;
 
-    // if the calculated allocation_for_period is very small round it up to 10 TLM or the full treasury balance to avoid
-    // dust transactions for low percentage/balances in treasury.
-    auto rounded_allocation_for_period = std::max(allocation_for_period, asset{100000, symbol{"TLM", 4}});
-
-    // only transfer enough to top up to the rounded_allocation_for_period
-    auto amount_to_transfer = rounded_allocation_for_period - auth_balance;
-
-    // Because this has been rounded up, ensure we don't attempt to transfer more than the treasury balance.
-    amount_to_transfer = std::min(treasury_balance, amount_to_transfer);
-
-    if (amount_to_transfer.amount > 0) {
+    if (allocation_for_period.amount > 0) {
         action(permission_level{treasury_account, "xfer"_n}, TLM_TOKEN_CONTRACT, "transfer"_n,
-            make_tuple(treasury_account, recipient, amount_to_transfer, "period budget"s))
+            make_tuple(treasury_account, recipient, allocation_for_period, "period budget"s))
             .send();
     }
 
