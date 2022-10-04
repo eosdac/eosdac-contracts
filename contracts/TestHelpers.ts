@@ -68,6 +68,8 @@ export class SharedTestObjects {
   private async initAndGetSharedObjects() {
     console.log('Init eos blockchain');
     await sleep(1000);
+    await this.configTokenContract();
+
     // EOSManager.initWithDefaults();
 
     this.auth_account = await debugPromise(
@@ -78,27 +80,6 @@ export class SharedTestObjects {
       AccountManager.createAccount('treasury'),
       'create treasury account'
     );
-
-    await EOSManager.transact({
-      actions: [
-        {
-          account: 'eosio.token',
-          name: 'transfer',
-          authorization: [
-            {
-              actor: 'eosio',
-              permission: 'active',
-            },
-          ],
-          data: {
-            from: 'eosio',
-            to: 'treasury',
-            quantity: '1000.0000 EOS',
-            memo: 'Some money for the treasury',
-          },
-        },
-      ],
-    });
 
     // Configure Dac contracts
     this.dacdirectory_contract = await ContractDeployer.deployWithName(
@@ -146,9 +127,29 @@ export class SharedTestObjects {
     this.activation_account = await AccountManager.createAccount('activation');
     // Other objects
     this.configured_dac_memberterms = 'be2c9d0494417cf7522cd8d6f774477c';
-    await this.configTokenContract();
     await this.add_auth_account_permissions();
     await this.add_token_contract_permissions();
+
+    await EOSManager.transact({
+      actions: [
+        {
+          account: 'eosio.token',
+          name: 'transfer',
+          authorization: [
+            {
+              actor: 'eosio',
+              permission: 'active',
+            },
+          ],
+          data: {
+            from: 'eosio',
+            to: 'treasury',
+            quantity: '1000.0000 EOS',
+            memo: 'Some money for the treasury',
+          },
+        },
+      ],
+    });
   }
 
   async setup_new_auth_account() {

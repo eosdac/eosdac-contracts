@@ -454,6 +454,7 @@ namespace eosdac {
 
         ACTION nominatecane(const name &cand, const eosio::asset &requestedpay, const name &dac_id);
         ACTION withdrawcane(const name &cand, const name &dac_id);
+        ACTION removecand(const name &cand, const name &dac_id);
         ACTION firecand(const name &cand, const bool lockupStake, const name &dac_id);
         ACTION resigncust(const name &cust, const name &dac_id);
         ACTION firecust(const name &cust, const name &dac_id);
@@ -531,7 +532,8 @@ namespace eosdac {
         void setMsigAuths(name dac_id);
         void transferCustodianBudget(const dacdir::dac &dac);
         void removeCustodian(name cust, name internal_dac_id);
-        void removeCandidate(name cust, bool lockupStake, name internal_dac_id);
+        void disableCandidate(name cust, name internal_dac_id);
+        void removeCandidate(name cust, name internal_dac_id);
         void allocateCustodians(bool early_election, name internal_dac_id);
         bool permissionExists(name account, name permission);
         bool _check_transaction_authorization(const char *trx_data, uint32_t trx_size, const char *pubkeys_data,
