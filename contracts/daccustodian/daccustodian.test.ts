@@ -3400,10 +3400,12 @@ async function expected_budget_transfer_amount(
     const nft_with_highest_value = budget_nfts[0];
     percentage = nft_with_highest_value.value;
   }
-  const allocation_for_period = (treasury_balance * percentage) / 10000;
-  const rounded_allocation_for_period = Math.max(allocation_for_period, 10);
-  const amount_to_transfer = rounded_allocation_for_period - auth_balance;
-  return Math.max(0, Math.min(treasury_balance, amount_to_transfer));
+  const allocation = (treasury_balance * percentage) / 10000;
+  return round_to_decimals(allocation, 4);
+}
+
+function round_to_decimals(number, decimals) {
+  return Math.round(number * Math.pow(10, decimals)) / Math.pow(10, decimals);
 }
 
 async function get_balance(
