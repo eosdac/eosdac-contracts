@@ -7,6 +7,7 @@ import {
   generateTypes,
   debugPromise,
   UpdateAuth,
+  Asset,
 } from 'lamington';
 
 // Dac contracts
@@ -20,6 +21,7 @@ import { Referendum } from './referendum/referendum';
 import { Stakevote } from './stakevote/stakevote';
 import { EosioToken } from '../../external_contracts/eosio.token/eosio.token';
 import { Atomicassets } from './atomicassets/atomicassets'; //'../external_contracts/atomicassets/atomicassets';
+import * as chai from 'chai';
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -203,7 +205,7 @@ export class SharedTestObjects {
 
   async getRegMembers(
     dacId: string,
-    initialDacAsset: string,
+    initialDacAsset: string | Asset,
     count: number = this.NUMBER_OF_REG_MEMBERS
   ): Promise<Account[]> {
     const newMembers = await AccountManager.createAccounts(count);
@@ -888,18 +890,16 @@ export class SharedTestObjects {
   }
 
   async configTokenContract() {
-    this.eosio_token_contract =
-      await ContractDeployer.deployWithName<EosioToken>(
-        'eosio.token',
-        'alien.worlds'
-      );
+    this.eosio_token_contract = await ContractDeployer.deployWithName<
+      EosioToken
+    >('eosio.token', 'alien.worlds');
 
-    this.tokenIssuer = await AccountManager.createAccount('tokenissuer');
+    this.tokenIssuer = await AccountManager.createAccount('federation');
 
     try {
       await this.eosio_token_contract.create(
         this.tokenIssuer.name,
-        '1000000000.0000 TLM',
+        '10000000000.0000 TLM',
         {
           from: this.eosio_token_contract.account,
         }

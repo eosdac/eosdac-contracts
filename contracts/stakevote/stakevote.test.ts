@@ -6,7 +6,10 @@ import {
   assertRowCount,
   assertRowsEqual,
   UpdateAuth,
+  Asset,
 } from 'lamington';
+import { SharedTestObjects, NUMBER_OF_CANDIDATES } from '../TestHelpers';
+import * as chai from 'chai';
 
 enum state_keys {
   total_weight_of_votes = 1,
@@ -24,27 +27,7 @@ const years = 12 * months;
 
 const STAKE_DURATION_FACTOR = 10;
 
-import { SharedTestObjects, NUMBER_OF_CANDIDATES } from '../TestHelpers';
-import * as chai from 'chai';
 let shared: SharedTestObjects;
-
-/* Asset class to be moved to lamginton later */
-class Asset {
-  amount: number;
-  symbol: string;
-  precision: number;
-  constructor(amount, symbol, precision = 4) {
-    this.amount = amount;
-    this.symbol = symbol;
-    this.precision = precision;
-  }
-  toString() {
-    return `${this.amount.toFixed(this.precision)} ${this.symbol}`;
-  }
-  amount_raw() {
-    return this.amount * 10 ** this.precision;
-  }
-}
 
 describe('Stakevote', () => {
   before(async () => {
@@ -79,8 +62,7 @@ describe('Stakevote', () => {
         `${precision},${symbol}`,
         { from: shared.auth_account }
       );
-
-      regMembers = await shared.getRegMembers(dacId, stake_amount.toString());
+      regMembers = await shared.getRegMembers(dacId, stake_amount);
 
       await shared.stakevote_contract.updateconfig(
         { time_multiplier: 10 ** 8 },
@@ -105,18 +87,14 @@ describe('Stakevote', () => {
         await shared.dac_token_contract.transfer(
           shared.dac_token_contract.account.name,
           staker.name,
-          stake_amount.toString(),
+          stake_amount,
           '',
           { from: shared.dac_token_contract.account }
         );
 
-        await shared.dac_token_contract.stake(
-          staker.name,
-          stake_amount.toString(),
-          {
-            from: staker,
-          }
-        );
+        await shared.dac_token_contract.stake(staker.name, stake_amount, {
+          from: staker,
+        });
       });
       it('before voting, total_weight_of_votes should be zero', async () => {
         const x = await get_from_dacglobals(dacId, 'total_weight_of_votes');
@@ -156,13 +134,9 @@ describe('Stakevote', () => {
         );
       });
       it('should work', async () => {
-        await shared.dac_token_contract.unstake(
-          staker.name,
-          stake_amount.toString(),
-          {
-            from: staker,
-          }
-        );
+        await shared.dac_token_contract.unstake(staker.name, stake_amount, {
+          from: staker,
+        });
       });
       it('should remove weights table entries', async () => {
         await assertRowCount(
@@ -258,7 +232,7 @@ describe('Stakevote', () => {
               for (const member of regMembers) {
                 await shared.dac_token_contract.stake(
                   member.name,
-                  stake_amount.toString(),
+                  stake_amount,
                   {
                     from: member,
                   }
@@ -292,13 +266,14 @@ describe('Stakevote', () => {
               );
             });
             it('Should have highest ranked votes in custodians', async () => {
-              let rowsResult =
-                await shared.daccustodian_contract.custodiansTable({
+              let rowsResult = await shared.daccustodian_contract.custodiansTable(
+                {
                   scope: dacId,
                   limit: 14,
                   indexPosition: 3,
                   keyType: 'i64',
-                });
+                }
+              );
               let rs = rowsResult.rows;
               rs.sort((a, b) => {
                 return a.total_votes < b.total_votes
@@ -350,7 +325,7 @@ describe('Stakevote', () => {
           dacId,
           { from: voter }
         );
-        await stake(voter, stake_amount.toString());
+        await stake(voter, stake_amount);
       });
       context('for 1 candidate', async () => {
         let total_weight_of_votes_before: number;
@@ -375,8 +350,7 @@ describe('Stakevote', () => {
             dacId,
             'total_votes_on_candidates'
           );
-          total_votes_on_candidates_beginning =
-            total_votes_on_candidates_before;
+          total_votes_on_candidates_beginning = total_votes_on_candidates_before;
         });
         it('should work', async () => {
           const cust1 = candidates[0];
