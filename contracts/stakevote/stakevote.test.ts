@@ -85,11 +85,11 @@ describe('Stakevote', () => {
       });
       it('should work', async () => {
         await shared.dac_token_contract.transfer(
-          shared.dac_token_contract.account.name,
+          shared.tokenIssuer.name,
           staker.name,
           stake_amount,
           '',
-          { from: shared.dac_token_contract.account }
+          { from: shared.tokenIssuer }
         );
 
         await shared.dac_token_contract.stake(staker.name, stake_amount, {
@@ -266,14 +266,13 @@ describe('Stakevote', () => {
               );
             });
             it('Should have highest ranked votes in custodians', async () => {
-              let rowsResult = await shared.daccustodian_contract.custodiansTable(
-                {
+              let rowsResult =
+                await shared.daccustodian_contract.custodiansTable({
                   scope: dacId,
                   limit: 14,
                   indexPosition: 3,
                   keyType: 'i64',
-                }
-              );
+                });
               let rs = rowsResult.rows;
               rs.sort((a, b) => {
                 return a.total_votes < b.total_votes
@@ -350,7 +349,8 @@ describe('Stakevote', () => {
             dacId,
             'total_votes_on_candidates'
           );
-          total_votes_on_candidates_beginning = total_votes_on_candidates_before;
+          total_votes_on_candidates_beginning =
+            total_votes_on_candidates_before;
         });
         it('should work', async () => {
           const cust1 = candidates[0];
@@ -573,11 +573,11 @@ async function setup_permissions() {
 
 async function stake(user: Account, amount: string) {
   await shared.dac_token_contract.transfer(
-    shared.dac_token_contract.account.name,
+    shared.tokenIssuer.name,
     user.name,
     amount,
     '',
-    { from: shared.dac_token_contract.account }
+    { from: shared.tokenIssuer }
   );
   await shared.dac_token_contract.stake(user.name, amount, {
     from: user,

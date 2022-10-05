@@ -387,18 +387,18 @@ describe('referendum', () => {
 
 async function setup_token() {
   await shared.dac_token_contract.transfer(
-    shared.dac_token_contract.account.name,
+    shared.tokenIssuer.name,
     user1.name,
     '1100.0000 REF',
     'starter blanace.',
-    { from: shared.dac_token_contract.account }
+    { from: shared.tokenIssuer }
   );
   await shared.dac_token_contract.transfer(
-    shared.dac_token_contract.account.name,
+    shared.tokenIssuer.name,
     planet.name,
     '1100.0000 REF',
     'starter blanace.',
-    { from: shared.dac_token_contract.account }
+    { from: shared.tokenIssuer }
   );
   await shared.dac_token_contract.stakeconfig(
     { enabled: true, min_stake_time: 5, max_stake_time: 20 },
