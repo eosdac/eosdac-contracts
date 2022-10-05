@@ -11,7 +11,7 @@
 #include "daccustodian_shared.hpp"
 #include "eosdactokens_shared.hpp"
 #include "external_types.hpp"
-#include "safemath.hpp"
+#include "safemath/safemath.hpp"
 
 using namespace std;
 
