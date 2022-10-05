@@ -182,4 +182,19 @@ describe('Safemath', () => {
   it('const1 should work', async () => {
     await contract.const1();
   });
+  it('floatc should error', async () => {
+    await assertEOSErrorIncludesMessage(
+      contract.floatc(),
+      'Invalid narrow cast while converting from float to int'
+    );
+  });
+  it('floatc1 should error', async () => {
+    await assertEOSErrorIncludesMessage(
+      contract.floatc1(),
+      'Invalid narrow cast while converting from float to int'
+    );
+  });
+  it('floatca should work', async () => {
+    await contract.floatca();
+  });
 });
