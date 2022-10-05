@@ -678,13 +678,13 @@ describe('Daccustodian', () => {
             );
             await debugPromise(
               shared.dac_token_contract.transfer(
-                shared.dac_token_contract.account.name,
+                shared.tokenIssuer.name,
                 newUser1.name,
                 '1000.00 NOMDAC',
                 '',
-                { from: shared.dac_token_contract.account }
+                { from: shared.tokenIssuer }
               ),
-              'failed to preload the user with enough tokens for staking'
+              'failed to preload the user with enough tokens for staking y'
             );
             await debugPromise(
               shared.dac_token_contract.stake(newUser1.name, '1000.00 NOMDAC', {
@@ -736,13 +736,13 @@ describe('Daccustodian', () => {
           before(async () => {
             await debugPromise(
               shared.dac_token_contract.transfer(
-                shared.dac_token_contract.account.name,
+                shared.tokenIssuer,
                 newUser1.name,
                 '12.00 NOMDAC',
                 '',
-                { from: shared.dac_token_contract.account }
+                { from: shared.tokenIssuer }
               ),
-              'failed to preload the user with enough tokens for staking'
+              'failed to preload the user with enough tokens for staking x'
             );
             await debugPromise(
               shared.dac_token_contract.stake(newUser1.name, '12.00 NOMDAC', {
