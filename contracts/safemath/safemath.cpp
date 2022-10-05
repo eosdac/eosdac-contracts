@@ -1,4 +1,4 @@
-#include "../../contract-shared-headers/safemath.hpp"
+#include "../../contract-shared-headers/safemath/safemath.hpp"
 #include "../../contract-shared-headers/common_utilities.hpp"
 #include <eosio/eosio.hpp>
 #include <experimental/type_traits>
