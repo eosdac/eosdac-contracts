@@ -3165,10 +3165,14 @@ describe('Daccustodian', () => {
         });
       });
       it('should transfer amount according to formula', async () => {
-        const expected_treasury_balance_after =
-          treasury_balance_before - expected_transfer_amount;
-        const expected_auth_balance_after =
-          auth_balance_before + expected_transfer_amount;
+        const expected_treasury_balance_after = round_to_decimals(
+          treasury_balance_before - expected_transfer_amount,
+          4
+        );
+        const expected_auth_balance_after = round_to_decimals(
+          auth_balance_before + expected_transfer_amount,
+          4
+        );
 
         const actual_treasury_balance = await get_balance(
           shared.eosio_token_contract,
@@ -3373,11 +3377,6 @@ async function expected_budget_transfer_amount(
   dacId: string,
   assert_manual: bool
 ) {
-  const auth_balance = await get_balance(
-    shared.eosio_token_contract,
-    shared.auth_account,
-    'TLM'
-  );
   const treasury_balance = await get_balance(
     shared.eosio_token_contract,
     shared.treasury_account,
@@ -3400,8 +3399,13 @@ async function expected_budget_transfer_amount(
     const nft_with_highest_value = budget_nfts[0];
     percentage = nft_with_highest_value.value;
   }
-  const allocation = (treasury_balance * percentage) / 10000;
-  return round_to_decimals(allocation, 4);
+  const allocation_for_period = (treasury_balance * percentage) / 10000;
+  const rounded_allocation = Math.max(allocation_for_period, 10);
+  const transfer_amount = Math.max(
+    0,
+    Math.min(treasury_balance, rounded_allocation)
+  );
+  return round_to_decimals(transfer_amount, 4);
 }
 
 function round_to_decimals(number, decimals) {
