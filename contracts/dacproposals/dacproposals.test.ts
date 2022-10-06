@@ -860,12 +860,12 @@ describe('Dacproposals', () => {
           name: 'transfer',
           authorization: [
             {
-              actor: shared.dac_token_contract.account.name,
+              actor: shared.tokenIssuer.name,
               permission: 'active',
             },
           ],
           data: {
-            from: shared.dac_token_contract.account.name,
+            from: shared.tokenIssuer.name,
             to: shared.treasury_account.name,
             quantity: '100000.0000 PROPDAC',
             memo: 'initial funds for proposal payments',
@@ -2592,19 +2592,19 @@ describe('Dacproposals', () => {
 async function setup_test_user(testuser: Account, tokenSymbol: string) {
   // const testuser = await AccountManager.createAccount('clienttest');
   await shared.dac_token_contract.transfer(
-    shared.dac_token_contract.account.name,
+    shared.tokenIssuer.name,
     testuser.name,
     `1200.0000 ${tokenSymbol}`,
     '',
-    { from: shared.dac_token_contract.account }
+    { from: shared.tokenIssuer }
   );
 
   await shared.dac_token_contract.transfer(
-    shared.dac_token_contract.account.name,
+    shared.tokenIssuer.name,
     planet.name,
     `1200.0000 PROPDAC`,
     '',
-    { from: shared.dac_token_contract.account }
+    { from: shared.tokenIssuer }
   );
 }
 

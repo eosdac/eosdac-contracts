@@ -70,6 +70,7 @@ export class SharedTestObjects {
   private async initAndGetSharedObjects() {
     console.log('Init eos blockchain');
     await sleep(1000);
+    this.tokenIssuer = await AccountManager.createAccount('federation');
     await this.configTokenContract();
 
     // EOSManager.initWithDefaults();
@@ -225,11 +226,11 @@ export class SharedTestObjects {
       .concat(
         newMembers.map((account) => {
           return this.dac_token_contract.transfer(
-            this.dac_token_contract.account.name,
+            this.tokenIssuer,
             account.name,
             initialDacAsset,
             '',
-            { from: this.dac_token_contract.account }
+            { from: this.tokenIssuer }
           );
         })
       );
@@ -285,16 +286,16 @@ export class SharedTestObjects {
 
   private async setup_tokens(initialAsset: string) {
     await this.dac_token_contract.create(
-      this.dac_token_contract.account.name,
+      this.tokenIssuer.name,
       initialAsset,
       false,
       { from: this.dac_token_contract.account }
     );
     await this.dac_token_contract.issue(
-      this.dac_token_contract.account.name,
+      this.tokenIssuer.name,
       initialAsset,
       'Initial Token holder',
-      { from: this.dac_token_contract.account }
+      { from: this.tokenIssuer }
     );
   }
 
@@ -890,11 +891,11 @@ export class SharedTestObjects {
   }
 
   async configTokenContract() {
-    this.eosio_token_contract = await ContractDeployer.deployWithName<
-      EosioToken
-    >('eosio.token', 'alien.worlds');
-
-    this.tokenIssuer = await AccountManager.createAccount('federation');
+    this.eosio_token_contract =
+      await ContractDeployer.deployWithName<EosioToken>(
+        'eosio.token',
+        'alien.worlds'
+      );
 
     try {
       await this.eosio_token_contract.create(
