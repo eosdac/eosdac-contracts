@@ -10,7 +10,7 @@ void stakevote::stakeobsv(const vector<account_stake_delta> &stake_deltas, const
 
     const auto config         = config_item::get_current_configs(get_self(), dac_id);
     const auto token_config   = stake_config::get_current_configs(token_contract, dac_id);
-    const auto max_stake_time = S{token_config.max_stake_time}.to<int128_t>();
+    const auto max_stake_time = S{token_config.max_stake_time}.to<double>();
 
     // Forward all the stake notifications to allow custodian contract to forbid unstaking for a custodian
     if (custodian_contract) {
@@ -26,13 +26,12 @@ void stakevote::stakeobsv(const vector<account_stake_delta> &stake_deltas, const
     for (const auto &asd : stake_deltas) {
         const auto weight_delta_quorum = asd.stake_delta.amount;
 
-        const auto stake_delta     = S{asd.stake_delta.amount}.to<int128_t>();
-        const auto unstake_delay   = S{asd.unstake_delay}.to<int128_t>();
-        const auto time_multiplier = S{config.time_multiplier}.to<int128_t>();
+        const auto stake_delta     = S{asd.stake_delta.amount}.to<double>();
+        const auto unstake_delay   = S{asd.unstake_delay}.to<double>();
+        const auto time_multiplier = S{config.time_multiplier}.to<double>();
 
-        const auto weight_delta_s =
-            stake_delta *
-            (S<int128_t>{1} + stake_duration_factor * unstake_delay * time_multiplier / time_divisor / max_stake_time);
+        const auto weight_delta_s = stake_delta * (S{1.0} + stake_duration_factor * unstake_delay * time_multiplier /
+                                                                time_divisor / max_stake_time);
 
         const auto weight_delta = weight_delta_s.to<int64_t>();
         const auto vw_itr       = weights.find(asd.account.value);
@@ -102,7 +101,7 @@ void stakevote::collectwts(uint16_t batch_size, uint32_t unstake_time, name dac_
     const auto dac            = dacdir::dac_for_id(dac_id);
     const auto token_contract = dac.symbol.get_contract();
     const auto token_config   = stake_config::get_current_configs(token_contract, dac_id);
-    const auto max_stake_time = S{token_config.max_stake_time}.to<int128_t>();
+    const auto max_stake_time = S{token_config.max_stake_time}.to<double>();
 
     auto lastWeight = weights.end();
     if (lastWeight != weights.begin()) {
@@ -117,13 +116,13 @@ void stakevote::collectwts(uint16_t batch_size, uint32_t unstake_time, name dac_
         if (vw_itr == weights.end()) {
             const auto weight_delta_quorum = (stake->stake).amount;
 
-            const auto stake_delta     = S{(stake->stake).amount}.to<int128_t>();
-            const auto unstake_delay   = S{unstake_time}.to<int128_t>();
-            const auto time_multiplier = S{config.time_multiplier}.to<int128_t>();
+            const auto stake_delta     = S{(stake->stake).amount}.to<double>();
+            const auto unstake_delay   = S{unstake_time}.to<double>();
+            const auto time_multiplier = S{config.time_multiplier}.to<double>();
 
             const auto weight_delta_s =
-                stake_delta * (S<int128_t>{1} + stake_duration_factor * unstake_delay * time_multiplier / time_divisor /
-                                                    max_stake_time);
+                stake_delta * (S<double>{1} + stake_duration_factor * unstake_delay * time_multiplier / time_divisor /
+                                                  max_stake_time);
 
             const auto weight_delta = weight_delta_s.to<int64_t>();
             weights.emplace(get_self(), [&](auto &v) {

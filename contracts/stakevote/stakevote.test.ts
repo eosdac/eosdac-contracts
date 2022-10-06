@@ -614,10 +614,8 @@ async function get_expected_vote_weight(
   return Math.floor(
     stake_delta *
       (1 +
-        Math.floor(
-          (STAKE_DURATION_FACTOR * unstake_delay * time_multiplier) /
-            time_divisor /
-            max_stake_time
-        ))
+        (STAKE_DURATION_FACTOR * unstake_delay * time_multiplier) /
+          time_divisor /
+          max_stake_time)
   );
 }

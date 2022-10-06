@@ -1,4 +1,4 @@
-#include "../../contract-shared-headers/safemath.hpp"
+#include "../../contract-shared-headers/safemath/safemath.hpp"
 #include "../../contract-shared-headers/common_utilities.hpp"
 #include <eosio/eosio.hpp>
 #include <experimental/type_traits>
@@ -237,5 +237,21 @@ CONTRACT safemath : public contract {
     }
     ACTION const1() {
         check(constexpr_c == S{int64_t{-1}}, "wrong result");
+    }
+
+    ACTION floatc() {
+        S{256.5}.to<uint8_t>();
+    }
+    ACTION floatc1() {
+        S{256.5}.to<int8_t>();
+    }
+    ACTION floatca() {
+        check(S{255.5}.to<uint8_t>() == uint8_t{255}, "wrong result");
+        check(S{255.1}.to<uint8_t>() == uint8_t{255}, "wrong result");
+        check(S{255.9}.to<uint8_t>() == uint8_t{255}, "wrong result");
+        check(S{255.0}.to<uint8_t>() == uint8_t{255}, "wrong result");
+        check(S{254.9}.to<uint8_t>() == uint8_t{254}, "wrong result");
+
+        check(S{-254.9}.to<int64_t>() == int64_t{-254}, "wrong result");
     }
 };
