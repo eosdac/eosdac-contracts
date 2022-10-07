@@ -30,8 +30,7 @@ void stakevote::stakeobsv(const vector<account_stake_delta> &stake_deltas, const
         const auto unstake_delay   = S{asd.unstake_delay}.to<double>();
         const auto time_multiplier = S{config.time_multiplier}.to<double>();
 
-        const auto weight_delta_s = stake_delta * (S{1.0} + stake_duration_factor * unstake_delay * time_multiplier /
-                                                                time_divisor / max_stake_time);
+        const auto weight_delta_s = stake_delta * (S{1.0} + unstake_delay * time_multiplier / max_stake_time);
 
         const auto weight_delta = weight_delta_s.to<int64_t>();
         const auto vw_itr       = weights.find(asd.account.value);
@@ -120,9 +119,7 @@ void stakevote::collectwts(uint16_t batch_size, uint32_t unstake_time, name dac_
             const auto unstake_delay   = S{unstake_time}.to<double>();
             const auto time_multiplier = S{config.time_multiplier}.to<double>();
 
-            const auto weight_delta_s =
-                stake_delta * (S<double>{1} + stake_duration_factor * unstake_delay * time_multiplier / time_divisor /
-                                                  max_stake_time);
+            const auto weight_delta_s = stake_delta * (S{1.0} + unstake_delay * time_multiplier / max_stake_time);
 
             const auto weight_delta = weight_delta_s.to<int64_t>();
             weights.emplace(get_self(), [&](auto &v) {
