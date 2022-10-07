@@ -25,8 +25,6 @@ const days = 24 * hours;
 const months = 30 * days;
 const years = 12 * months;
 
-const STAKE_DURATION_FACTOR = 10;
-
 let shared: SharedTestObjects;
 
 describe('Stakevote', () => {
@@ -114,7 +112,7 @@ describe('Stakevote', () => {
           [
             {
               voter: 'staker1',
-              weight: expected_weight,
+              weight: String(expected_weight),
               weight_quorum: 10000000,
             },
           ]
@@ -275,9 +273,9 @@ describe('Stakevote', () => {
                 });
               let rs = rowsResult.rows;
               rs.sort((a, b) => {
-                return a.total_votes < b.total_votes
+                return parseInt(a.total_votes, 10) < parseInt(b.total_votes, 10)
                   ? -1
-                  : a.total_votes == b.total_votes
+                  : parseInt(a.total_votes, 10) == parseInt(b.total_votes, 10)
                   ? 0
                   : 1;
               }).reverse();
@@ -287,23 +285,25 @@ describe('Stakevote', () => {
                 stake_delay,
                 dacId
               );
+              console.log('single_voter_weight: ', single_voter_weight);
+              console.log('rs: ', JSON.stringify(rs, null, 2));
 
               chai
-                .expect(rs[0].total_votes)
+                .expect(parseInt(rs[0].total_votes, 10), '1')
                 .to.equal(shared.NUMBER_OF_REG_MEMBERS * single_voter_weight);
               chai
-                .expect(rs[1].total_votes)
+                .expect(parseInt(rs[1].total_votes, 10), '2')
                 .to.equal(shared.NUMBER_OF_REG_MEMBERS * single_voter_weight);
               chai
-                .expect(rs[2].total_votes)
+                .expect(parseInt(rs[2].total_votes, 10), '3')
                 .to.equal(shared.NUMBER_OF_REG_MEMBERS * single_voter_weight);
               chai
-                .expect(rs[3].total_votes)
+                .expect(parseInt(rs[3].total_votes, 10), '4')
                 .to.equal(
                   (shared.NUMBER_OF_REG_MEMBERS * single_voter_weight) / 2
                 );
               chai
-                .expect(rs[4].total_votes)
+                .expect(parseInt(rs[4].total_votes, 10), '5')
                 .to.equal(
                   (shared.NUMBER_OF_REG_MEMBERS * single_voter_weight) / 2
                 );
@@ -371,7 +371,7 @@ describe('Stakevote', () => {
         });
         it('should update total_votes_on_candidates', async () => {
           const expected =
-            total_votes_on_candidates_before +
+            parseInt(total_votes_on_candidates_before, 10) +
             (await get_expected_vote_weight(
               stake_amount.amount_raw(),
               stake_delay,
@@ -601,7 +601,6 @@ async function get_expected_vote_weight(
   unstake_delay: number,
   dac_id: string
 ) {
-  const time_divisor = 100000000;
   const config = (
     await shared.stakevote_contract.configTable({ scope: dac_id })
   ).rows[0];
@@ -612,10 +611,6 @@ async function get_expected_vote_weight(
   const max_stake_time = res.rows[0].max_stake_time;
 
   return Math.floor(
-    stake_delta *
-      (1 +
-        (STAKE_DURATION_FACTOR * unstake_delay * time_multiplier) /
-          time_divisor /
-          max_stake_time)
+    stake_delta * (1 + (unstake_delay * time_multiplier) / max_stake_time)
   );
 }
