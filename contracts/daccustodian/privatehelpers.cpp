@@ -16,13 +16,14 @@ void daccustodian::updateVoteWeight(
         return; // trying to avoid throwing errors from here since it's unrelated to a transfer action.?!?!?!?!
     }
     registered_candidates.modify(candItr, same_payer, [&](auto &c) {
-        c.total_votes = S<uint64_t>{c.total_votes}.to<int64_t>() + S{weight};
+        c.total_vote_power = S<uint64_t>{c.total_vote_power}.to<int64_t>() + S{weight};
         if (from_voting) {
-            if (c.total_votes == 0) {
+            c.number_voters += weight > 0 ? 1 : -1;
+            if (c.total_vote_power == 0) {
                 c.avg_vote_time_stamp = time_point_sec(0);
             } else {
                 c.avg_vote_time_stamp =
-                    calculate_avg_vote_time_stamp(c.avg_vote_time_stamp, vote_time_stamp, weight, c.total_votes);
+                    calculate_avg_vote_time_stamp(c.avg_vote_time_stamp, vote_time_stamp, weight, c.total_vote_power);
                 check(c.avg_vote_time_stamp <= now(), "avg_vote_time_stamp pushed into the future: %s",
                     c.avg_vote_time_stamp);
             }

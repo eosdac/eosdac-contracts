@@ -94,14 +94,14 @@ namespace eosdac {
     struct [[eosio::table("custodians"), eosio::contract("daccustodian")]] custodian {
         eosio::name  cust_name;
         eosio::asset requestedpay;
-        uint64_t     total_votes;
+        uint64_t     total_vote_power;
 
         uint64_t primary_key() const {
             return cust_name.value;
         }
 
         uint64_t by_votes_rank() const {
-            return UINT64_MAX - total_votes;
+            return UINT64_MAX - total_vote_power;
         }
 
         uint64_t by_requested_pay() const {
@@ -117,14 +117,14 @@ namespace eosdac {
         eosio::name           candidate_name;
         eosio::asset          requestedpay;
         eosio::asset          locked_tokens;
-        uint64_t              total_votes;
+        uint64_t              total_vote_power;
         uint8_t               is_active;
-        eosio::time_point_sec custodian_end_time_stamp; // currently unused
+        uint32_t              number_voters;
         eosio::time_point_sec avg_vote_time_stamp;
 
         uint64_t by_decayed_votes() const {
             // log(0) is -infinity, so we always add 1. This does not change the order of the index.
-            const auto log_arg = S{total_votes} + S{1ull};
+            const auto log_arg = S{total_vote_power} + S{1ull};
             const auto log     = log2(log_arg.to<double>());
             const auto x =
                 S{log} + S{avg_vote_time_stamp.sec_since_epoch()}.to<double>() / S{SECONDS_TO_DOUBLE}.to<double>();
@@ -136,10 +136,10 @@ namespace eosdac {
             return candidate_name.value;
         }
         uint64_t by_number_votes() const {
-            return total_votes;
+            return total_vote_power;
         }
         uint64_t by_votes_rank() const {
-            return S{UINT64_MAX} - S{total_votes};
+            return S{UINT64_MAX} - S{total_vote_power};
         }
         uint64_t by_requested_pay() const {
             return S{requestedpay.amount}.to<uint64_t>();

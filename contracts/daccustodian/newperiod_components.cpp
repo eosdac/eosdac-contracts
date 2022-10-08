@@ -96,7 +96,7 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
     }
 
     while (currentCustodianCount < electcount) {
-        check(cand_itr != byvotes.end() && cand_itr->total_votes > 0,
+        check(cand_itr != byvotes.end() && cand_itr->total_vote_power > 0,
             "ERR::NEWPERIOD_NOT_ENOUGH_CANDIDATES::There are not enough eligible candidates to run new period without causing potential lock out permission structures for this DAC.");
 
         //  If the candidate is inactive or is already a custodian skip to the next one.
@@ -104,9 +104,9 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
             cand_itr++;
         } else {
             custodians.emplace(auth_account, [&](custodian &c) {
-                c.cust_name    = cand_itr->candidate_name;
-                c.requestedpay = cand_itr->requestedpay;
-                c.total_votes  = cand_itr->total_votes;
+                c.cust_name        = cand_itr->candidate_name;
+                c.requestedpay     = cand_itr->requestedpay;
+                c.total_vote_power = cand_itr->total_vote_power;
             });
 
             currentCustodianCount++;
@@ -145,7 +145,7 @@ void daccustodian::add_auth_to_account(const name &accountToChange, const uint8_
         .send();
 }
 
-void daccustodian::add_all_auths(const name            &accountToChange,
+void daccustodian::add_all_auths(const name &           accountToChange,
     const vector<eosiosystem::permission_level_weight> &weights, const name &dac_id, const bool msig) {
     const auto globals = dacglobals::current(get_self(), dac_id);
 
