@@ -20,7 +20,7 @@ void daccustodian::updateVoteWeight(
         if (from_voting) {
             if (weight > 0) {
                 c.number_voters = S{c.number_voters} + S{uint32_t{1}};
-            } else {
+            } else if (weight < 0) {
                 c.number_voters = S{c.number_voters} - S{uint32_t{1}};
             }
             if (c.total_vote_power == 0) {
