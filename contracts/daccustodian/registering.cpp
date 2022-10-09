@@ -36,11 +36,11 @@ ACTION daccustodian::nominatecane(const name &cand, const asset &requestedpay, c
         auto zero_tokens   = required_stake.quantity;
         zero_tokens.amount = 0;
         registered_candidates.emplace(cand, [&](candidate &c) {
-            c.candidate_name = cand;
-            c.requestedpay   = requestedpay;
-            c.locked_tokens  = zero_tokens;
-            c.total_votes    = 0;
-            c.is_active      = 1;
+            c.candidate_name   = cand;
+            c.requestedpay     = requestedpay;
+            c.locked_tokens    = zero_tokens;
+            c.total_vote_power = 0;
+            c.is_active        = 1;
         });
     }
 }
@@ -49,7 +49,7 @@ ACTION daccustodian::withdrawcane(const name &cand, const name &dac_id) {
     require_auth(cand);
     auto        registered_candidates = candidates_table{_self, dac_id.value};
     const auto &reg_candidate         = registered_candidates.get(
-                cand.value, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
+        cand.value, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
     check(reg_candidate.is_active, "ERR::REMOVECANDIDATE_CANDIDATE_NOT_ACTIVE::Candidate is not active.");
     disableCandidate(cand, dac_id);
 }
@@ -127,18 +127,18 @@ ACTION daccustodian::appointcust(const vector<name> &custs, const name &dac_id) 
         auto cand = candidates.find(cust.value);
         if (cand == candidates.end()) {
             candidates.emplace(auth_account, [&](candidate &c) {
-                c.candidate_name = cust;
-                c.requestedpay   = req_pay.quantity;
-                c.locked_tokens  = lockup.quantity;
-                c.total_votes    = 0;
-                c.is_active      = 1;
+                c.candidate_name   = cust;
+                c.requestedpay     = req_pay.quantity;
+                c.locked_tokens    = lockup.quantity;
+                c.total_vote_power = 0;
+                c.is_active        = 1;
             });
         }
 
         custodians.emplace(auth_account, [&](custodian &c) {
-            c.cust_name    = cust;
-            c.requestedpay = req_pay.quantity;
-            c.total_votes  = 0;
+            c.cust_name        = cust;
+            c.requestedpay     = req_pay.quantity;
+            c.total_vote_power = 0;
         });
     }
 }
@@ -187,7 +187,7 @@ void daccustodian::removeCustodian(name cust, name dac_id) {
 void daccustodian::disableCandidate(name cand, name dac_id) {
     auto        registered_candidates = candidates_table{_self, dac_id.value};
     const auto &reg_candidate         = registered_candidates.get(
-                cand.value, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
+        cand.value, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
 
     if (!reg_candidate.is_active) {
         return;
@@ -209,7 +209,7 @@ void daccustodian::disableCandidate(name cand, name dac_id) {
 void daccustodian::removeCandidate(name cand, name dac_id) {
     auto        registered_candidates = candidates_table{_self, dac_id.value};
     const auto &reg_candidate         = registered_candidates.get(
-                cand.value, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
+        cand.value, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
     check(!reg_candidate.is_active, "ERR::REMOVECANDIDATE_CANDIDATE_IS_ACTIVE::Candidate is still active.");
 
     // remove entry for candperms
