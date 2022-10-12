@@ -32,6 +32,7 @@ void daccustodian::updateVoteWeight(
                     c.avg_vote_time_stamp);
             }
         }
+        c.update_index();
     });
 }
 
