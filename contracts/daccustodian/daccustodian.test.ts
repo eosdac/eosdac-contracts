@@ -3407,6 +3407,34 @@ describe('Daccustodian', () => {
         await shared.dacdirectory_contract.indextest();
       });
     });
+    context('migraterank', async () => {
+      const dacId = 'nperidac';
+      let table_before;
+      before(async () => {
+        let res = await shared.daccustodian_contract.candidatesTable({
+          scope: dacId,
+        });
+        table_before = res.rows;
+        await shared.daccustodian_contract.clearrank(dacId);
+        res = await shared.daccustodian_contract.candidatesTable({
+          scope: dacId,
+        });
+        for (const row of res.rows) {
+          chai.expect(row.rank).to.equal(314159);
+        }
+      });
+      it('migraterank should work', async () => {
+        await shared.daccustodian_contract.migraterank(dacId);
+      });
+      it('should update rank index', async () => {
+        await assertRowsEqual(
+          shared.daccustodian_contract.candidatesTable({
+            scope: dacId,
+          }),
+          table_before
+        );
+      });
+    });
   });
 });
 

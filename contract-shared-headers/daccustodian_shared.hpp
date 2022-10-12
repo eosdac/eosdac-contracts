@@ -490,6 +490,7 @@ namespace eosdac {
         ACTION paycpu(const name &dac_id);
         ACTION claimbudget(const name &dac_id);
         ACTION migratestate(const name &dac_id);
+        ACTION migraterank(const name &dac_id);
         ACTION setbudget(const name &dac_id, const uint16_t percentage);
         ACTION unsetbudget(const name &dac_id);
 #ifdef DEBUG
@@ -500,6 +501,7 @@ namespace eosdac {
 #endif
 
 #ifdef IS_DEV
+        ACTION clearrank(const name &dac_id);
         ACTION fillstate(const name &dac_id);
 #endif
         /**
