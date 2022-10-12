@@ -116,13 +116,13 @@ namespace eosdac {
     struct [[eosio::table("candidates"), eosio::contract("daccustodian")]] candidate {
         eosio::name           candidate_name;
         eosio::asset          requestedpay;
-        eosio::asset          locked_tokens;
+        uint64_t              rank;
         uint64_t              total_vote_power;
         uint8_t               is_active;
         uint32_t              number_voters;
         eosio::time_point_sec avg_vote_time_stamp;
 
-        uint64_t by_decayed_votes() const {
+        uint64_t calc_decayed_votes_index() const {
             // log(0) is -infinity, so we always add 1. This does not change the order of the index.
             const auto log_arg = S{total_vote_power} + S{1ull};
             const auto log     = log2(log_arg.to<double>());
@@ -132,6 +132,15 @@ namespace eosdac {
             const auto x_rounded_down = narrow_cast<uint64_t>(x);
             return S{UINT64_MAX} - S{x_rounded_down};
         }
+
+        uint64_t by_decayed_votes() const {
+            return rank;
+        }
+
+        void update_index() {
+            rank = calc_decayed_votes_index();
+        }
+
         uint64_t primary_key() const {
             return candidate_name.value;
         }
@@ -227,8 +236,8 @@ namespace eosdac {
     struct [[eosio::table("state2"), eosio::contract("daccustodian")]] contr_state2 {
         eosio::time_point_sec                  lastperiodtime = time_point_sec(0);
         std::map<uint8_t, state_value_variant> data           = {{state_keys::total_weight_of_votes, int64_t(0)},
-            {state_keys::total_votes_on_candidates, int64_t(0)}, {state_keys::number_active_candidates, uint32_t(0)},
-            {state_keys::met_initial_votes_threshold, false}, {state_keys::lastclaimbudgettime, time_point_sec(0)}};
+                      {state_keys::total_votes_on_candidates, int64_t(0)}, {state_keys::number_active_candidates, uint32_t(0)},
+                      {state_keys::met_initial_votes_threshold, false}, {state_keys::lastclaimbudgettime, time_point_sec(0)}};
 
         static contr_state2 get_current_state(const eosio::name account, const eosio::name scope) {
             return statecontainer2(account, scope.value).get_or_default(contr_state2{});
@@ -481,6 +490,7 @@ namespace eosdac {
         ACTION paycpu(const name &dac_id);
         ACTION claimbudget(const name &dac_id);
         ACTION migratestate(const name &dac_id);
+        ACTION migraterank(const name &dac_id);
         ACTION setbudget(const name &dac_id, const uint16_t percentage);
         ACTION unsetbudget(const name &dac_id);
 #ifdef DEBUG
@@ -491,6 +501,7 @@ namespace eosdac {
 #endif
 
 #ifdef IS_DEV
+        ACTION clearrank(const name &dac_id);
         ACTION fillstate(const name &dac_id);
 #endif
         /**

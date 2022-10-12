@@ -32,6 +32,7 @@ void daccustodian::resetcands(const name &dac_id) {
             c.total_vote_power    = 0;
             c.number_voters       = 0;
             c.avg_vote_time_stamp = eosio::time_point_sec();
+            c.update_index();
         });
 
         cand++;

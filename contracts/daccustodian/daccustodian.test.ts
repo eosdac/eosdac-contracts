@@ -855,7 +855,6 @@ describe('Daccustodian', () => {
         for (const cand of currentCandidates.rows) {
           chai.expect(cand).to.include({
             is_active: 1,
-            locked_tokens: '0.0000 AVGDAC',
             total_vote_power: 0,
             number_voters: 0,
           });
@@ -909,7 +908,6 @@ describe('Daccustodian', () => {
         for (const cand of currentCandidates.rows) {
           chai.expect(cand).to.include({
             is_active: 1,
-            locked_tokens: '0.0000 CANDAC',
             total_vote_power: 0,
             number_voters: 0,
           });
@@ -935,177 +933,177 @@ describe('Daccustodian', () => {
     context('After voting', async () => {
       const num_voters = 2;
       context('with first vote', async () => {
-      before(async () => {
-        // Place votes for even number candidates and leave odd number without votes.
-        // Only vote with the first 2 members
+        before(async () => {
+          // Place votes for even number candidates and leave odd number without votes.
+          // Only vote with the first 2 members
           for (const member of regMembers.slice(0, num_voters)) {
-          await debugPromise(
-            shared.daccustodian_contract.votecust(
-              member.name,
-              [cands[0].name, cands[2].name],
-              dacId,
-              { from: member }
-            ),
-            'voting custodian'
-          );
-        }
-      });
-      it('votes table should have rows', async () => {
-        const res = await shared.daccustodian_contract.votesTable({
-          scope: dacId,
+            await debugPromise(
+              shared.daccustodian_contract.votecust(
+                member.name,
+                [cands[0].name, cands[2].name],
+                dacId,
+                { from: member }
+              ),
+              'voting custodian'
+            );
+          }
         });
-        const rows = res.rows;
-        chai
-          .expect(rows.map((x) => x.voter))
+        it('votes table should have rows', async () => {
+          const res = await shared.daccustodian_contract.votesTable({
+            scope: dacId,
+          });
+          const rows = res.rows;
+          chai
+            .expect(rows.map((x) => x.voter))
             .to.deep.equalInAnyOrder(
               regMembers.slice(0, num_voters).map((x) => x.name)
             );
 
-        chai
-          .expect(rows[0].candidates)
-          .deep.equal([cands[0].name, cands[2].name]);
-        chai.expect(rows[0].proxy).to.equal('');
-        chai.expect(rows[0].vote_count).to.equal(0);
-        expect_recent(rows[0].vote_time_stamp);
-        chai
-          .expect(rows[1].candidates)
-          .deep.equal([cands[0].name, cands[2].name]);
-        chai.expect(rows[1].proxy).to.equal('');
-        expect_recent(rows[1].vote_time_stamp);
-        chai.expect(rows[1].vote_count).to.equal(0);
-      });
-      it('only candidates with votes have total_vote_power values', async () => {
-        let unvotedCandidateResult =
-          await shared.daccustodian_contract.candidatesTable({
-            scope: dacId,
-            limit: 1,
-            lowerBound: cands[1].name,
-          });
-
-        chai
-          .expect(unvotedCandidateResult.rows[0].total_vote_power)
-          .to.equal(0);
-          chai.expect(unvotedCandidateResult.rows[0].number_voters).to.equal(0);
-        let votedCandidateResult =
-          await shared.daccustodian_contract.candidatesTable({
-            scope: dacId,
-            limit: 1,
-            lowerBound: cands[0].name,
-          });
-
-        chai.expect(votedCandidateResult.rows[0]).to.include({
-          total_vote_power: 20_000_000,
+          chai
+            .expect(rows[0].candidates)
+            .deep.equal([cands[0].name, cands[2].name]);
+          chai.expect(rows[0].proxy).to.equal('');
+          chai.expect(rows[0].vote_count).to.equal(0);
+          expect_recent(rows[0].vote_time_stamp);
+          chai
+            .expect(rows[1].candidates)
+            .deep.equal([cands[0].name, cands[2].name]);
+          chai.expect(rows[1].proxy).to.equal('');
+          expect_recent(rows[1].vote_time_stamp);
+          chai.expect(rows[1].vote_count).to.equal(0);
         });
+        it('only candidates with votes have total_vote_power values', async () => {
+          let unvotedCandidateResult =
+            await shared.daccustodian_contract.candidatesTable({
+              scope: dacId,
+              limit: 1,
+              lowerBound: cands[1].name,
+            });
+
+          chai
+            .expect(unvotedCandidateResult.rows[0].total_vote_power)
+            .to.equal(0);
+          chai.expect(unvotedCandidateResult.rows[0].number_voters).to.equal(0);
+          let votedCandidateResult =
+            await shared.daccustodian_contract.candidatesTable({
+              scope: dacId,
+              limit: 1,
+              lowerBound: cands[0].name,
+            });
+
+          chai.expect(votedCandidateResult.rows[0]).to.include({
+            total_vote_power: 20_000_000,
+          });
           chai
             .expect(votedCandidateResult.rows[0].number_voters)
             .to.equal(num_voters);
-        await assertRowCount(
-          shared.daccustodian_contract.votesTable({
-            scope: dacId,
-          }),
+          await assertRowCount(
+            shared.daccustodian_contract.votesTable({
+              scope: dacId,
+            }),
             num_voters
-        );
-      });
-      it('state should have increased the total_weight_of_votes', async () => {
-        const actual = await get_from_dacglobals(
-          dacId,
-          'total_weight_of_votes'
-        );
-        chai.expect(actual).to.equal(20_000_000);
-      });
-      it('state should have increased the total_votes_on_candidates', async () => {
-        const actual = await get_from_dacglobals(
-          dacId,
-          'total_votes_on_candidates'
-        );
-        chai.expect(actual).to.equal(20_000_000);
-      });
-    });
-    context('After same users voting again', async () => {
-      before(async () => {
-        // Place votes for even number candidates and leave odd number without votes.
-        // Only vote with the first 2 members
-          for (const member of regMembers.slice(0, num_voters)) {
-          await debugPromise(
-            shared.daccustodian_contract.votecust(
-              member.name,
-              [cands[0].name, cands[2].name],
-              dacId,
-              { from: member }
-            ),
-            'voting custodian'
           );
-        }
-      });
-      it('votes table should have rows', async () => {
-        const res = await shared.daccustodian_contract.votesTable({
-          scope: dacId,
         });
-        const rows = res.rows;
-        chai
-          .expect(rows.map((x) => x.voter))
+        it('state should have increased the total_weight_of_votes', async () => {
+          const actual = await get_from_dacglobals(
+            dacId,
+            'total_weight_of_votes'
+          );
+          chai.expect(actual).to.equal(20_000_000);
+        });
+        it('state should have increased the total_votes_on_candidates', async () => {
+          const actual = await get_from_dacglobals(
+            dacId,
+            'total_votes_on_candidates'
+          );
+          chai.expect(actual).to.equal(20_000_000);
+        });
+      });
+      context('After same users voting again', async () => {
+        before(async () => {
+          // Place votes for even number candidates and leave odd number without votes.
+          // Only vote with the first 2 members
+          for (const member of regMembers.slice(0, num_voters)) {
+            await debugPromise(
+              shared.daccustodian_contract.votecust(
+                member.name,
+                [cands[0].name, cands[2].name],
+                dacId,
+                { from: member }
+              ),
+              'voting custodian'
+            );
+          }
+        });
+        it('votes table should have rows', async () => {
+          const res = await shared.daccustodian_contract.votesTable({
+            scope: dacId,
+          });
+          const rows = res.rows;
+          chai
+            .expect(rows.map((x) => x.voter))
             .to.deep.equalInAnyOrder(
               regMembers.slice(0, num_voters).map((x) => x.name)
             );
 
-        chai
-          .expect(rows[0].candidates)
-          .deep.equal([cands[0].name, cands[2].name]);
-        chai.expect(rows[0].proxy).to.equal('');
-        chai.expect(rows[0].vote_count).to.equal(1);
-        expect_recent(rows[0].vote_time_stamp);
-        chai
-          .expect(rows[1].candidates)
-          .deep.equal([cands[0].name, cands[2].name]);
-        chai.expect(rows[1].proxy).to.equal('');
-        expect_recent(rows[1].vote_time_stamp);
+          chai
+            .expect(rows[0].candidates)
+            .deep.equal([cands[0].name, cands[2].name]);
+          chai.expect(rows[0].proxy).to.equal('');
+          chai.expect(rows[0].vote_count).to.equal(1);
+          expect_recent(rows[0].vote_time_stamp);
+          chai
+            .expect(rows[1].candidates)
+            .deep.equal([cands[0].name, cands[2].name]);
+          chai.expect(rows[1].proxy).to.equal('');
+          expect_recent(rows[1].vote_time_stamp);
 
-        chai.expect(rows[1].vote_count).to.equal(1);
-      });
-      it('only candidates with votes have total_vote_power values', async () => {
-        let unvotedCandidateResult =
-          await shared.daccustodian_contract.candidatesTable({
-            scope: dacId,
-            limit: 1,
-            lowerBound: cands[1].name,
-          });
-
-        chai
-          .expect(unvotedCandidateResult.rows[0].total_vote_power)
-          .to.equal(0);
-        let votedCandidateResult =
-          await shared.daccustodian_contract.candidatesTable({
-            scope: dacId,
-            limit: 1,
-            lowerBound: cands[0].name,
-          });
-
-        chai.expect(votedCandidateResult.rows[0]).to.include({
-          total_vote_power: 20_000_000,
-            number_voters: num_voters,
+          chai.expect(rows[1].vote_count).to.equal(1);
         });
-        await assertRowCount(
-          shared.daccustodian_contract.votesTable({
-            scope: dacId,
-          }),
+        it('only candidates with votes have total_vote_power values', async () => {
+          let unvotedCandidateResult =
+            await shared.daccustodian_contract.candidatesTable({
+              scope: dacId,
+              limit: 1,
+              lowerBound: cands[1].name,
+            });
+
+          chai
+            .expect(unvotedCandidateResult.rows[0].total_vote_power)
+            .to.equal(0);
+          let votedCandidateResult =
+            await shared.daccustodian_contract.candidatesTable({
+              scope: dacId,
+              limit: 1,
+              lowerBound: cands[0].name,
+            });
+
+          chai.expect(votedCandidateResult.rows[0]).to.include({
+            total_vote_power: 20_000_000,
+            number_voters: num_voters,
+          });
+          await assertRowCount(
+            shared.daccustodian_contract.votesTable({
+              scope: dacId,
+            }),
             num_voters
-        );
+          );
+        });
+        it('state should not have increased the total_weight_of_votes', async () => {
+          const actual = await get_from_dacglobals(
+            dacId,
+            'total_weight_of_votes'
+          );
+          chai.expect(actual).to.equal(20_000_000);
+        });
+        it('state should not have increased the total_votes_on_candidates', async () => {
+          const actual = await get_from_dacglobals(
+            dacId,
+            'total_votes_on_candidates'
+          );
+          chai.expect(actual).to.equal(20_000_000);
+        });
       });
-      it('state should not have increased the total_weight_of_votes', async () => {
-        const actual = await get_from_dacglobals(
-          dacId,
-          'total_weight_of_votes'
-        );
-        chai.expect(actual).to.equal(20_000_000);
-      });
-      it('state should not have increased the total_votes_on_candidates', async () => {
-        const actual = await get_from_dacglobals(
-          dacId,
-          'total_votes_on_candidates'
-        );
-        chai.expect(actual).to.equal(20_000_000);
-      });
-    });
     });
     context('After additional voting, then removing votes', async () => {
       let newVoter: Account;
@@ -2932,7 +2930,6 @@ describe('Daccustodian', () => {
       chai.expect(candidates.rows.length).equals(5);
 
       chai.expect(candidates.rows[0].requestedpay).to.equal('0.0000 EOS');
-      chai.expect(candidates.rows[0].locked_tokens).to.equal('0.0000 APPDAC');
       chai.expect(candidates.rows[0].total_vote_power).to.equal(0);
       chai.expect(candidates.rows[0].number_voters).to.equal(0);
       chai.expect(candidates.rows[0].is_active).to.equal(1);
@@ -3408,6 +3405,34 @@ describe('Daccustodian', () => {
     context('index', async () => {
       it('should sort correctly', async () => {
         await shared.dacdirectory_contract.indextest();
+      });
+    });
+    context('migraterank', async () => {
+      const dacId = 'nperidac';
+      let table_before;
+      before(async () => {
+        let res = await shared.daccustodian_contract.candidatesTable({
+          scope: dacId,
+        });
+        table_before = res.rows;
+        await shared.daccustodian_contract.clearrank(dacId);
+        res = await shared.daccustodian_contract.candidatesTable({
+          scope: dacId,
+        });
+        for (const row of res.rows) {
+          chai.expect(row.rank).to.equal(314159);
+        }
+      });
+      it('migraterank should work', async () => {
+        await shared.daccustodian_contract.migraterank(dacId);
+      });
+      it('should update rank index', async () => {
+        await assertRowsEqual(
+          shared.daccustodian_contract.candidatesTable({
+            scope: dacId,
+          }),
+          table_before
+        );
       });
     });
   });

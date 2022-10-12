@@ -155,3 +155,26 @@ ACTION daccustodian::voteproxy(const name &voter, const name &proxyName, const n
 
     modifyProxiesWeight(vote_weight, oldProxy, newProxy, dac_id, true);
 }
+
+#ifdef IS_DEV
+// Used for testing migraterank
+void daccustodian::clearrank(const name &dac_id) {
+
+    auto candidates = candidates_table{get_self(), dac_id.value};
+    for (auto &candidate : candidates) {
+        candidates.modify(candidate, same_payer, [&](auto &c) {
+            c.rank = 314159;
+        });
+    }
+}
+#endif
+
+// Needs to be called for every dac after deployment to fill the index (rank field)
+void daccustodian::migraterank(const name &dac_id) {
+    auto candidates = candidates_table{get_self(), dac_id.value};
+    for (auto &candidate : candidates) {
+        candidates.modify(candidate, same_payer, [&](auto &c) {
+            c.update_index();
+        });
+    }
+}
