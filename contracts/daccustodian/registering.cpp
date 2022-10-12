@@ -30,8 +30,6 @@ ACTION daccustodian::nominatecane(const name &cand, const asset &requestedpay, c
             c.requestedpay = requestedpay;
         });
     } else {
-        extended_asset required_stake = globals.get_lockupasset();
-
         registered_candidates.emplace(cand, [&](candidate &c) {
             c.candidate_name   = cand;
             c.requestedpay     = requestedpay;
