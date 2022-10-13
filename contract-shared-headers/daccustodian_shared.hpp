@@ -560,5 +560,6 @@ namespace eosdac {
         uint16_t       get_budget_percentage(const name &dac_id, const dacglobals &globals);
         time_point_sec calculate_avg_vote_time_stamp(const time_point_sec vote_time_before,
             const time_point_sec vote_time_stamp, const int64_t weight, const uint64_t total_votes);
+        void update_number_of_votes(const vector<name> &oldvotes, const vector<name> &newvotes, const name &dac_id);
     };
 }; // namespace eosdac

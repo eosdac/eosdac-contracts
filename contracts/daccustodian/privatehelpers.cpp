@@ -18,11 +18,6 @@ void daccustodian::updateVoteWeight(
     registered_candidates.modify(candItr, same_payer, [&](auto &c) {
         c.total_vote_power = S<uint64_t>{c.total_vote_power}.to<int64_t>() + S{weight};
         if (from_voting) {
-            if (weight > 0) {
-                c.number_voters = S{c.number_voters} + S{uint32_t{1}};
-            } else if (weight < 0) {
-                c.number_voters = S{c.number_voters} - S{uint32_t{1}};
-            }
             if (c.total_vote_power == 0) {
                 c.avg_vote_time_stamp = time_point_sec(0);
             } else {

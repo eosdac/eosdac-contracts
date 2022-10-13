@@ -863,7 +863,7 @@ describe('Daccustodian', () => {
       });
     });
     context('After voting', async () => {
-      it('only candidates with votes have total_vote_power values', async () => {
+      it('only candidates with votes have total_vote_power values 1', async () => {
         await vote_and_check(dacId, regMembers[0], cands[0]);
         await sleep(1000);
 
@@ -972,7 +972,7 @@ describe('Daccustodian', () => {
           expect_recent(rows[1].vote_time_stamp);
           chai.expect(rows[1].vote_count).to.equal(0);
         });
-        it('only candidates with votes have total_vote_power values', async () => {
+        it('only candidates with votes have total_vote_power values 2', async () => {
           let unvotedCandidateResult =
             await shared.daccustodian_contract.candidatesTable({
               scope: dacId,
@@ -1060,7 +1060,7 @@ describe('Daccustodian', () => {
 
           chai.expect(rows[1].vote_count).to.equal(1);
         });
-        it('only candidates with votes have total_vote_power values', async () => {
+        it('only candidates with votes have total_vote_power values 3', async () => {
           let unvotedCandidateResult =
             await shared.daccustodian_contract.candidatesTable({
               scope: dacId,
@@ -1132,7 +1132,7 @@ describe('Daccustodian', () => {
             .to.deep.equalInAnyOrder(regMembers.slice(0, 3).map((x) => x.name));
         });
 
-        it('only candidates with votes have total_vote_power values', async () => {
+        it('only candidates with votes have total_vote_power values 4', async () => {
           let unvotedCandidateResult =
             await shared.daccustodian_contract.candidatesTable({
               scope: dacId,
@@ -1196,7 +1196,7 @@ describe('Daccustodian', () => {
             .to.deep.equalInAnyOrder(regMembers.slice(0, 2).map((x) => x.name));
         });
 
-        it('only candidates with votes have total_vote_power values', async () => {
+        it('only candidates with votes have total_vote_power values 5', async () => {
           let unvotedCandidateResult =
             await shared.daccustodian_contract.candidatesTable({
               scope: dacId,
@@ -1353,7 +1353,7 @@ describe('Daccustodian', () => {
         chai.expect(rows[1].proxy).to.equal('');
         expect_recent(rows[1].vote_time_stamp);
       });
-      it('only candidates with votes have total_vote_power values', async () => {
+      it('only candidates with votes have total_vote_power values 6', async () => {
         let unvotedCandidateResult =
           await shared.daccustodian_contract.candidatesTable({
             scope: dacId,
@@ -1450,7 +1450,7 @@ describe('Daccustodian', () => {
         chai.expect(proxyVote.candidates).to.be.empty;
         chai.expect(proxyVote.proxy).to.equal(regMembers[0].name);
       });
-      it('only candidates with votes have total_vote_power values', async () => {
+      it('only candidates with votes have total_vote_power values 7', async () => {
         let unvotedCandidateResult =
           await shared.daccustodian_contract.candidatesTable({
             scope: dacId,
