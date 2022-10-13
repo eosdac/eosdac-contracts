@@ -38,3 +38,14 @@ void daccustodian::resetcands(const name &dac_id) {
         cand++;
     }
 }
+
+void daccustodian::clearcands(const name &dac_id) {
+    require_auth(get_self());
+
+    candidates_table candidates(_self, dac_id.value);
+    auto             cand = candidates.begin();
+
+    while (cand != candidates.end()) {
+        cand = candidates.erase(cand);
+    }
+}
