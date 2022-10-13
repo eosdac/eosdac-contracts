@@ -114,10 +114,10 @@ namespace eosdac {
         eosio::indexed_by<"byreqpay"_n, eosio::const_mem_fun<custodian, uint64_t, &custodian::by_requested_pay>>>;
 
     struct [[eosio::table("candidates"), eosio::contract("daccustodian")]] candidate {
-        eosio::name  candidate_name;
-        eosio::asset requestedpay;
-        uint64_t     rank;
-        // uint64_t              gap_filler; // I forgot an asset is actually 128 bits not 64
+        eosio::name           candidate_name;
+        eosio::asset          requestedpay;
+        uint64_t              rank;
+        uint64_t              gap_filler; // I forgot an asset is actually 128 bits not 64
         uint64_t              total_vote_power;
         uint8_t               is_active;
         uint32_t              number_voters;
