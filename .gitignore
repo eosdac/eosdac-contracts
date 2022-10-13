@@ -41,3 +41,4 @@ node_modules
 /contracts/atomicassets/atomicassets.ts
 /artifacts/compiled_contracts/contracts/safemath
 /contracts/safemath/safemath.ts
+artifacts/compiled_contracts

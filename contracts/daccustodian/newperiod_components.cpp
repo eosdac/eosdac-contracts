@@ -259,7 +259,7 @@ ACTION daccustodian::newperiod(const string &message, const name &dac_id) {
 
     if (activation_account) {
         require_auth(*activation_account);
-        auths.emplace_back(*activation_account, "owner"_n);
+        auths.emplace_back(*activation_account, "active"_n);
     }
 
     eosio::action(auths, get_self(), "runnewperiod"_n, make_tuple(message, dac_id)).send();
