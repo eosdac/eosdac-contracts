@@ -273,9 +273,11 @@ describe('Stakevote', () => {
                 });
               let rs = rowsResult.rows;
               rs.sort((a, b) => {
-                return parseInt(a.total_votes, 10) < parseInt(b.total_votes, 10)
+                return parseInt(a.total_vote_power, 10) <
+                  parseInt(b.total_vote_power, 10)
                   ? -1
-                  : parseInt(a.total_votes, 10) == parseInt(b.total_votes, 10)
+                  : parseInt(a.total_vote_power, 10) ==
+                    parseInt(b.total_vote_power, 10)
                   ? 0
                   : 1;
               }).reverse();
@@ -289,21 +291,21 @@ describe('Stakevote', () => {
               console.log('rs: ', JSON.stringify(rs, null, 2));
 
               chai
-                .expect(parseInt(rs[0].total_votes, 10), '1')
+                .expect(parseInt(rs[0].total_vote_power, 10), '1')
                 .to.equal(shared.NUMBER_OF_REG_MEMBERS * single_voter_weight);
               chai
-                .expect(parseInt(rs[1].total_votes, 10), '2')
+                .expect(parseInt(rs[1].total_vote_power, 10), '2')
                 .to.equal(shared.NUMBER_OF_REG_MEMBERS * single_voter_weight);
               chai
-                .expect(parseInt(rs[2].total_votes, 10), '3')
+                .expect(parseInt(rs[2].total_vote_power, 10), '3')
                 .to.equal(shared.NUMBER_OF_REG_MEMBERS * single_voter_weight);
               chai
-                .expect(parseInt(rs[3].total_votes, 10), '4')
+                .expect(parseInt(rs[3].total_vote_power, 10), '4')
                 .to.equal(
                   (shared.NUMBER_OF_REG_MEMBERS * single_voter_weight) / 2
                 );
               chai
-                .expect(parseInt(rs[4].total_votes, 10), '5')
+                .expect(parseInt(rs[4].total_vote_power, 10), '5')
                 .to.equal(
                   (shared.NUMBER_OF_REG_MEMBERS * single_voter_weight) / 2
                 );
