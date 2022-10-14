@@ -28,6 +28,7 @@ ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, c
 
     const auto [vote_weight, vote_weight_quorum] = get_vote_weight(voter, dac_id);
     if (existingVote != votes_cast_by_members.end()) {
+        update_number_of_votes(existingVote->candidates, newvotes, dac_id);
 
         modifyVoteWeights({voter, vote_weight, vote_weight_quorum}, existingVote->candidates,
             existingVote->vote_time_stamp, newvotes, dac_id, true);
@@ -44,7 +45,9 @@ ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, c
                 v.vote_count++;
             });
         }
+
     } else {
+        update_number_of_votes({}, newvotes, dac_id);
 
         modifyVoteWeights({voter, vote_weight, vote_weight_quorum}, {}, {}, newvotes, dac_id, true);
 
@@ -53,6 +56,24 @@ ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, c
             v.candidates      = newvotes;
             v.vote_time_stamp = now();
             v.vote_count      = 0;
+        });
+    }
+}
+
+void daccustodian::update_number_of_votes(
+    const vector<name> &oldvotes, const vector<name> &newvotes, const name &dac_id) {
+    auto registered_candidates = candidates_table{get_self(), dac_id.value};
+
+    for (auto candidate : oldvotes) {
+        auto candItr = registered_candidates.find(candidate.value);
+        registered_candidates.modify(candItr, same_payer, [&](auto &c) {
+            c.number_voters = S{c.number_voters} - S{uint32_t{1}};
+        });
+    }
+    for (auto candidate : newvotes) {
+        auto candItr = registered_candidates.find(candidate.value);
+        registered_candidates.modify(candItr, same_payer, [&](auto &c) {
+            c.number_voters = S{c.number_voters} + S{uint32_t{1}};
         });
     }
 }
@@ -89,6 +110,10 @@ void daccustodian::modifyProxiesWeight(
         if (existingProxyVote != votes_cast_by_members.end() && existingProxyVote->voter == newProxy) {
             newProxyVotes = existingProxyVote->candidates;
         }
+    }
+
+    if (from_voting) {
+        update_number_of_votes(oldProxyVotes, newProxyVotes, dac_id);
     }
     modifyVoteWeights(
         {name{}, vote_weight, vote_weight}, oldProxyVotes, oldVoteTimestamp, newProxyVotes, dac_id, from_voting);
