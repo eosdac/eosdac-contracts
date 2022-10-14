@@ -170,8 +170,15 @@ namespace eosdac {
 
     void eosdactokens::newmemterms(string terms, string hash, name dac_id) {
 
-        dacdir::dac dac          = dacdir::dac_for_id(dac_id);
-        eosio::name auth_account = dac.owner;
+        dacdir::dac dac = dacdir::dac_for_id(dac_id);
+
+#ifdef IS_DEV
+        // This will be enabled later in prod instead of get_self() to allow DAO's to control this config.
+        auto auth_account = dac.owner;
+        require_auth(dac.owner);
+#else
+        auto auth_account = get_self();
+#endif
         require_auth(auth_account);
 
         // sample IPFS: QmXjkFQjnD8i8ntmwehoAHBfJEApETx8ebScyVzAHqgjpD
@@ -227,25 +234,26 @@ namespace eosdac {
         }
     }
 
-    void eosdactokens::updateterms(uint64_t termsid, string terms, name dac_id) {
+    // void eosdactokens::updateterms(uint64_t termsid, string terms, name dac_id) {
 
-        dacdir::dac dac          = dacdir::dac_for_id(dac_id);
-        eosio::name auth_account = dac.owner;
-        require_auth(auth_account);
+    //     dacdir::dac dac          = dacdir::dac_for_id(dac_id);
+    //     eosio::name auth_account = dac.owner;
+    //     require_auth(auth_account);
 
-        check(terms.length() <= 256,
-            "ERR::UPDATEMEMTERMS_TERMS_TOO_LONG::Member terms document url should be less than 256 characters long.");
+    //     check(terms.length() <= 256,
+    //         "ERR::UPDATEMEMTERMS_TERMS_TOO_LONG::Member terms document url should be less than 256 characters
+    //         long.");
 
-        memterms memberterms(_self, dac_id.value);
+    //     memterms memberterms(_self, dac_id.value);
 
-        auto existingterms = memberterms.find(termsid);
-        check(existingterms != memberterms.end(),
-            "ERR::UPDATETERMS_NO_EXISTING_TERMS::Existing terms not found for the given ID");
+    //     auto existingterms = memberterms.find(termsid);
+    //     check(existingterms != memberterms.end(),
+    //         "ERR::UPDATETERMS_NO_EXISTING_TERMS::Existing terms not found for the given ID");
 
-        memberterms.modify(existingterms, same_payer, [&](termsinfo &t) {
-            t.terms = terms;
-        });
-    }
+    //     memberterms.modify(existingterms, same_payer, [&](termsinfo &t) {
+    //         t.terms = terms;
+    //     });
+    // }
 
     void eosdactokens::memberunreg(name sender, name dac_id) {
         require_auth(sender);
@@ -281,31 +289,32 @@ namespace eosdac {
     }
 
     // Staking functions
+    /*
+        void eosdactokens::xferstake(name from, name to, asset quantity, string memo) {
+            require_auth(from);
+            dacdir::dac dac                = dacdir::dac_for_symbol(extended_symbol{quantity.symbol, get_self()});
+            eosio::name custodian_contract = dac.account_for_type(dacdir::CUSTODIAN);
 
-    void eosdactokens::xferstake(name from, name to, asset quantity, string memo) {
-        require_auth(from);
-        dacdir::dac dac                = dacdir::dac_for_symbol(extended_symbol{quantity.symbol, get_self()});
-        eosio::name custodian_contract = dac.account_for_type(dacdir::CUSTODIAN);
+            stake_config config = stake_config::get_current_configs(get_self(), dac.dac_id);
+            check(config.enabled, "ERR::STAKING_NOT_ENABLED::Staking is not enabled for this token");
 
-        stake_config config = stake_config::get_current_configs(get_self(), dac.dac_id);
-        check(config.enabled, "ERR::STAKING_NOT_ENABLED::Staking is not enabled for this token");
+            check(quantity.is_valid(), "ERR::STAKE_INVALID_QTY::Invalid quantity supplied");
+            check(quantity.amount > 0, "ERR::STAKE_NON_POSITIVE_QTY::Stake amount must be greater than 0");
 
-        check(quantity.is_valid(), "ERR::STAKE_INVALID_QTY::Invalid quantity supplied");
-        check(quantity.amount > 0, "ERR::STAKE_NON_POSITIVE_QTY::Stake amount must be greater than 0");
+            asset liquid = eosdac::get_liquid(from, get_self(), quantity.symbol);
 
-        asset liquid = eosdac::get_liquid(from, get_self(), quantity.symbol);
+            print("Liquid balance ", liquid, "\n");
 
-        print("Liquid balance ", liquid, "\n");
+            check(liquid >= quantity, "ERR::STAKE_MORE_LIQUID::Attempting to stake more than your liquid balance");
 
-        check(liquid >= quantity, "ERR::STAKE_MORE_LIQUID::Attempting to stake more than your liquid balance");
+            sub_balance(from, quantity);
+            add_balance(to, quantity, from);
+            add_stake(to, quantity, dac.dac_id, from);
 
-        sub_balance(from, quantity);
-        add_balance(to, quantity, from);
-        add_stake(to, quantity, dac.dac_id, from);
-
-        // notify of stake delta
-        send_stake_notification(to, quantity, dac);
-    }
+            // notify of stake delta
+            send_stake_notification(to, quantity, dac);
+        }
+        */
 
     void eosdactokens::stake(name account, asset quantity) {
         require_auth(account);
@@ -416,10 +425,14 @@ namespace eosdac {
     }
 
     void eosdactokens::stakeconfig(stake_config config, symbol token_symbol) {
-        dacdir::dac dac          = dacdir::dac_for_symbol(extended_symbol{token_symbol, get_self()});
-        eosio::name auth_account = dac.owner;
-        require_auth(auth_account);
+        dacdir::dac dac = dacdir::dac_for_symbol(extended_symbol{token_symbol, get_self()});
 
+#ifdef IS_DEV
+        // This will be enabled later in prod instead of get_self() to allow DAO's to control this config.
+        require_auth(dac.owner);
+#else
+        require_auth(get_self());
+#endif
         config.save(get_self(), dac.dac_id, get_self());
     }
 

@@ -12,7 +12,7 @@ ACTION daccustodian::updatebio(const name &cand, const string &bio, const name &
 
 ACTION daccustodian::flagcandprof(
     const name &cand, const std::string &reason, const name &reporter, const bool block, const name &dac_id) {
-    static auto flag_reporters = vector<eosio::name>{"ameet.worlds"_n, "anya.worlds"_n};
+    static auto flag_reporters = vector<eosio::name>{"ameet.worlds"_n, "aliensupport"_n};
     require_auth(reporter);
     check(std::find(flag_reporters.begin(), flag_reporters.end(), reporter) != flag_reporters.end(),
         "Not Authorised to flag or unflag candates");

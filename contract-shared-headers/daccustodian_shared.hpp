@@ -501,7 +501,6 @@ namespace eosdac {
         ACTION resetcands(const name &dac_id);
         ACTION resetstate(const name &dac_id);
         ACTION clearcands(const name &dac_id);
-        ACTION erasecand(const name &cand, const name &dac_id);
 #endif
 
 #ifdef IS_DEV

@@ -49,14 +49,3 @@ void daccustodian::clearcands(const name &dac_id) {
         cand = candidates.erase(cand);
     }
 }
-
-void daccustodian::erasecand(const name &cand, const name &dac_id) {
-    require_auth(get_self());
-
-    candidates_table candidates(_self, dac_id.value);
-    auto             existingCand = candidates.find(cand.value);
-
-    check(existingCand != candidates.end(), "No candidate");
-
-    candidates.erase(existingCand);
-}

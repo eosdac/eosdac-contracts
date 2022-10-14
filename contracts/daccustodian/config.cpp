@@ -4,8 +4,13 @@ using namespace eosdac;
 ACTION daccustodian::updateconfige(const contr_config &new_config, const name &dac_id) {
 
     dacdir::dac dacForScope = dacdir::dac_for_id(dac_id);
-    auto        owner       = dacForScope.owner;
-    require_auth(owner);
+#ifdef IS_DEV
+    // This will be enabled later in prod instead of get_self() to allow DAO's to control this config.
+    require_auth(dacForScope.owner);
+#else
+    require_auth(get_self());
+#endif
+
     check(new_config.numelected <= 67,
         "ERR::UPDATECONFIG_INVALID_NUM_ELECTED::The number of elected custodians must be <= 67");
     check(new_config.maxvotes <= new_config.numelected,

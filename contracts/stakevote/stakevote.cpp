@@ -70,16 +70,20 @@ void stakevote::balanceobsv(const vector<account_balance_delta> &balance_deltas,
 }
 
 void stakevote::updateconfig(config_item &new_config, const name dac_id) {
-    const auto dac          = dacdir::dac_for_id(dac_id);
-    const auto auth_account = dac.owner;
-    require_auth(auth_account);
+    const auto dac = dacdir::dac_for_id(dac_id);
+#ifdef IS_DEV
+    // This will be enabled later in prod instead of get_self() to allow DAO's to control this config.
+    require_auth(dac.owner);
+#else
+    require_auth(get_self());
+#endif
     check(new_config.time_multiplier > 0, "time_multiplier must be greater than zero");
 
     new_config.save(get_self(), dac_id, get_self());
 }
 
-// Only needed temporarily for dev/testing and migration of the current planets to stake weighted voting
-// Start - - - - -v
+#ifdef DEBUG
+
 void stakevote::clearweights(uint16_t batch_size, name dac_id) {
     require_auth(get_self());
     weight_table weights(get_self(), dac_id.value);
@@ -133,4 +137,4 @@ void stakevote::collectwts(uint16_t batch_size, uint32_t unstake_time, name dac_
         counter++;
     }
 }
-// End - - - - -^
+#endif

@@ -32,11 +32,13 @@ namespace eosdac {
         ACTION newmemterms(string terms, string hash, name dac_id);
         ACTION memberreg(name sender, string agreedterms, name dac_id);
         ACTION memberunreg(name sender, name dac_id);
-        ACTION updateterms(uint64_t termsid, string terms, name dac_id);
+        // When using IPFS this action doesn't make sense any more. Commenting out for now.
+        // ACTION updateterms(uint64_t termsid, string terms, name dac_id);
         ACTION close(name owner, const symbol &symbol);
 
         // staking
-        ACTION xferstake(name from, name to, asset quantity, string memo);
+        // Disabling xfer of stake at least for the initial release. Not sure why it was ever added.
+        // ACTION xferstake(name from, name to, asset quantity, string memo);
         ACTION stake(name account, asset quantity);
         ACTION unstake(name account, asset quantity);
         ACTION staketime(name account, uint32_t unstake_time, symbol token_symbol);
