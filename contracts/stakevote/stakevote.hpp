@@ -15,11 +15,14 @@ CONTRACT stakevote : public contract {
     using contract::contract;
 
     struct [[eosio::table("config"), eosio::contract("stakevote")]] config_item {
-        // time multiplier is measured in 10^-8 1 == 0.00000001
         int64_t            time_multiplier;
         static config_item get_current_configs(eosio::name account, eosio::name scope) {
             check(config_container(account, scope.value).exists(), "Stake config not set.");
             return config_container(account, scope.value).get();
+        }
+
+        static config_item get_current_or_default_configs(eosio::name account, eosio::name scope) {
+            return config_container(account, scope.value).get_or_default();
         }
 
         void save(eosio::name account, eosio::name scope, eosio::name payer = same_payer) {

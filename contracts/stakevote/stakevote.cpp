@@ -78,7 +78,7 @@ void stakevote::updateconfig(config_item &new_config, const name dac_id) {
     require_auth(get_self());
 #endif
     check(new_config.time_multiplier > 0, "ERR::STAKE_MULTI_NOT_GT_ZERO::time_multiplier must be greater than zero");
-    const auto existing_config = config_item::get_current_configs(get_self(), dac_id);
+    const auto existing_config = config_item::get_current_or_default_configs(get_self(), dac_id);
 
     check(new_config.time_multiplier > existing_config.time_multiplier,
         "ERR::STAKE_MULTI_NOT_INCREASED::new time_multiplier must be greater than the existing configuration.");
