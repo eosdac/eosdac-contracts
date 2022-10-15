@@ -45,7 +45,7 @@ CONTRACT stakevote : public contract {
 
 #ifdef DEBUG
     ACTION clearweights(uint16_t batch_size, name dac_id);
-    ACTION collectwts(uint16_t batch_size, uint32_t unstake_time, name dac_id);
+    ACTION collectwts(uint16_t batch_size, name dac_id);
 #endif
 
     struct [[eosio::table("stakes"), eosio::contract("eosdactokens")]] stake_info {

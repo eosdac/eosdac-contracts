@@ -100,15 +100,17 @@ void stakevote::clearweights(uint16_t batch_size, name dac_id) {
     }
 }
 
-void stakevote::collectwts(uint16_t batch_size, uint32_t unstake_time, name dac_id) {
+void stakevote::collectwts(uint16_t batch_size, name dac_id) {
     require_auth(get_self());
-    auto       weights        = weight_table{get_self(), dac_id.value};
-    const auto stakes         = stakes_table{"token.worlds"_n, dac_id.value};
-    const auto config         = config_item::get_current_configs(get_self(), dac_id);
-    const auto dac            = dacdir::dac_for_id(dac_id);
-    const auto token_contract = dac.symbol.get_contract();
-    const auto token_config   = stake_config::get_current_configs(token_contract, dac_id);
-    const auto max_stake_time = S{token_config.max_stake_time}.to<double>();
+    auto       weights         = weight_table{get_self(), dac_id.value};
+    const auto stakes          = stakes_table{"token.worlds"_n, dac_id.value};
+    const auto config          = config_item::get_current_configs(get_self(), dac_id);
+    const auto dac             = dacdir::dac_for_id(dac_id);
+    const auto token_contract  = dac.symbol.get_contract();
+    const auto token_config    = stake_config::get_current_configs(token_contract, dac_id);
+    const auto max_stake_time  = S{token_config.max_stake_time}.to<double>();
+    const auto min_stake_time  = S{token_config.min_stake_time}.to<double>();
+    const auto time_multiplier = S{config.time_multiplier}.to<double>();
 
     auto lastWeight = weights.end();
     if (lastWeight != weights.begin()) {
@@ -119,19 +121,21 @@ void stakevote::collectwts(uint16_t batch_size, uint32_t unstake_time, name dac_
     auto stake   = lastWeight != weights.end() ? stakes.find((lastWeight->voter).value) : stakes.begin();
     auto counter = 0;
     while (stake != stakes.end() && counter < batch_size) {
-        const auto vw_itr = weights.find((stake->account).value);
+        const auto vw_itr              = weights.find((stake->account).value);
+        const auto weight_delta_quorum = (stake->stake).amount;
+
+        const auto stake_delta    = S{(stake->stake).amount}.to<double>();
+        const auto weight_delta_s = stake_delta * (S{1.0} + min_stake_time * time_multiplier / max_stake_time);
+        const auto weight_delta   = weight_delta_s.to<int64_t>();
+
         if (vw_itr == weights.end()) {
-            const auto weight_delta_quorum = (stake->stake).amount;
-
-            const auto stake_delta     = S{(stake->stake).amount}.to<double>();
-            const auto unstake_delay   = S{unstake_time}.to<double>();
-            const auto time_multiplier = S{config.time_multiplier}.to<double>();
-
-            const auto weight_delta_s = stake_delta * (S{1.0} + unstake_delay * time_multiplier / max_stake_time);
-
-            const auto weight_delta = weight_delta_s.to<int64_t>();
             weights.emplace(get_self(), [&](auto &v) {
                 v.voter         = stake->account;
+                v.weight        = weight_delta;
+                v.weight_quorum = weight_delta_quorum;
+            });
+        } else {
+            weights.modify(vw_itr, same_payer, [&](auto &v) {
                 v.weight        = weight_delta;
                 v.weight_quorum = weight_delta_quorum;
             });
