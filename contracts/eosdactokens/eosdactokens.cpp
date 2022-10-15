@@ -209,7 +209,6 @@ namespace eosdac {
     }
 
     void eosdactokens::memberreg(name sender, string agreedterms, name dac_id) {
-        // agreedterms is expected to be the member terms document hash
         require_auth(sender);
 
         memterms memberterms(_self, dac_id.value);
@@ -233,27 +232,6 @@ namespace eosdac {
             });
         }
     }
-
-    // void eosdactokens::updateterms(uint64_t termsid, string terms, name dac_id) {
-
-    //     dacdir::dac dac          = dacdir::dac_for_id(dac_id);
-    //     eosio::name auth_account = dac.owner;
-    //     require_auth(auth_account);
-
-    //     check(terms.length() <= 256,
-    //         "ERR::UPDATEMEMTERMS_TERMS_TOO_LONG::Member terms document url should be less than 256 characters
-    //         long.");
-
-    //     memterms memberterms(_self, dac_id.value);
-
-    //     auto existingterms = memberterms.find(termsid);
-    //     check(existingterms != memberterms.end(),
-    //         "ERR::UPDATETERMS_NO_EXISTING_TERMS::Existing terms not found for the given ID");
-
-    //     memberterms.modify(existingterms, same_payer, [&](termsinfo &t) {
-    //         t.terms = terms;
-    //     });
-    // }
 
     void eosdactokens::memberunreg(name sender, name dac_id) {
         require_auth(sender);
@@ -433,6 +411,13 @@ namespace eosdac {
 #else
         require_auth(get_self());
 #endif
+
+        auto existing_config = stake_config::get_current_configs(get_self(), dac.dac_id);
+        check(config.max_stake_time >= existing_config.max_stake_time,
+            "ERR::CONFIG_MAX_TIME_LT_EXISTING_MAX::Max Unstake time cannot bre reduced.");
+        check(config.min_stake_time < config.max_stake_time,
+            "ERR::CONFIG_MIN_TIME_NOT_LT_MAX::Min unstake time must be less than the max unstake time.");
+
         config.save(get_self(), dac.dac_id, get_self());
     }
 
