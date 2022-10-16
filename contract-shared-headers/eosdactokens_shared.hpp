@@ -12,8 +12,8 @@ namespace eosdac {
     using stakeconfig_container = eosio::singleton<"stakeconfig"_n, stake_config>;
     struct [[eosio::table("stakeconfig"), eosio::contract("eosdactokens")]] stake_config {
         bool     enabled        = false;
-        uint32_t min_stake_time = 3 * DAYS;
-        uint32_t max_stake_time = 9 * MONTHS;
+        uint32_t min_stake_time = 2;
+        uint32_t max_stake_time = 2 * DAYS;
 
         static stake_config get_current_configs(eosio::name account, eosio::name scope) {
             return stakeconfig_container(account, scope.value).get_or_default(stake_config());
