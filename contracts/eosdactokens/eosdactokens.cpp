@@ -413,10 +413,15 @@ namespace eosdac {
 #endif
 
         auto existing_config = stake_config::get_current_configs(get_self(), dac.dac_id);
+
+#ifndef IS_DEV
         check(config.max_stake_time >= existing_config.max_stake_time,
             "ERR::CONFIG_MAX_TIME_LT_EXISTING_MAX::Max Unstake time cannot bre reduced.");
+
         check(config.min_stake_time < config.max_stake_time,
-            "ERR::CONFIG_MIN_TIME_NOT_LT_MAX::Min unstake time must be less than the max unstake time.");
+            "ERR::CONFIG_MIN_TIME_NOT_LT_MAX::Min unstake time %s must be less than the max unstake time %s.",
+            config.min_stake_time, config.max_stake_time);
+#endif
 
         config.save(get_self(), dac.dac_id, get_self());
     }
