@@ -1,5 +1,7 @@
 #pragma once
 
+#include <limits>
+
 #include <eosio/eosio.hpp>
 #include <eosio/multi_index.hpp>
 #include <eosio/permission.hpp>
@@ -135,7 +137,7 @@ namespace eosdac {
         }
 
         uint64_t by_decayed_votes() const {
-            return S{UINT64_MAX} - rank;
+            return std::numeric_limits<uint64_t>::max() - rank;
         }
 
         void update_index() {
