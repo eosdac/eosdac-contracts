@@ -192,7 +192,6 @@ void daccustodian::clearrank(const name &dac_id) {
         });
     }
 }
-#endif
 
 // Needs to be called for every dac after deployment to fill the index (rank field)
 void daccustodian::migraterank(const name &dac_id) {
@@ -204,3 +203,4 @@ void daccustodian::migraterank(const name &dac_id) {
         });
     }
 }
+#endif
