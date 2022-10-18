@@ -11,7 +11,16 @@ namespace eosdac {
 
         void dacdirectory::regdac(eosio::name owner, eosio::name dac_id, extended_symbol dac_symbol, string title,
             map<uint8_t, string> refs, map<uint8_t, eosio::name> accounts) {
+
+#ifdef IS_DEV
+            // This will be enabled later in prod instead of get_self() to allow DAO's to control this.
             require_auth(owner);
+            name ram_payer = owner;
+#else
+            require_auth(get_self());
+            name ram_payer = get_self();
+
+#endif
 
             check(std::find(forbidden.begin(), forbidden.end(), dac_id) == forbidden.end(),
                 "ERR::DAC_FORBIDDEN_NAME::DAC ID is forbidden");
@@ -55,7 +64,7 @@ namespace eosdac {
                 check(!owner_already_owns_a_dac, "Owner %s already owns a dac %s", owner,
                     owner_already_owns_a_dac->dac_id);
 
-                _dacs.emplace(owner, [&](dac &d) {
+                _dacs.emplace(ram_payer, [&](dac &d) {
                     d.owner    = owner;
                     d.dac_id   = dac_id;
                     d.symbol   = dac_symbol;
@@ -78,7 +87,12 @@ namespace eosdac {
             auto dac = _dacs.find(dac_id.value);
             check(dac != _dacs.end(), "ERR::DAC_NOT_FOUND::DAC not found in directory");
 
+#ifdef IS_DEV
+            // This will be enabled later in prod instead of get_self() to allow DAO's to control this.
             require_auth(dac->owner);
+#else
+            require_auth(get_self());
+#endif
 
             _dacs.erase(dac);
         }
@@ -90,13 +104,21 @@ namespace eosdac {
             auto dac_inst = _dacs.find(dac_id.value);
             check(dac_inst != _dacs.end(), "ERR::DAC_NOT_FOUND::DAC not found in directory");
 
+#ifdef IS_DEV
+            // This will be enabled later in prod instead of get_self() to allow DAO's to control this.
             require_auth(dac_inst->owner);
+            name ram_payer = dac_inst->owner;
+#else
+            require_auth(get_self());
+            name ram_payer = get_self();
+
+#endif
 
             if (type == TREASURY) {
                 require_auth(account);
             }
 
-            _dacs.modify(dac_inst, same_payer, [&](dac &d) {
+            _dacs.modify(dac_inst, ram_payer, [&](dac &d) {
                 d.accounts[type] = account;
             });
         }
@@ -106,8 +128,14 @@ namespace eosdac {
             auto dac_inst = _dacs.find(dac_id.value);
             check(dac_inst != _dacs.end(), "ERR::DAC_NOT_FOUND::DAC not found in directory");
 
+#ifdef IS_DEV
+            // This will be enabled later in prod instead of get_self() to allow DAO's to control this.
             require_auth(dac_inst->owner);
+#else
+            require_auth(get_self());
+#endif
 
+            // No need to change the RAM payer since this can only reduce the RAM usage.
             _dacs.modify(dac_inst, same_payer, [&](dac &a) {
                 a.accounts.erase(type);
             });
@@ -118,9 +146,17 @@ namespace eosdac {
             auto dac_inst = _dacs.find(dac_id.value);
             check(dac_inst != _dacs.end(), "ERR::DAC_NOT_FOUND::DAC not found in directory");
 
+#ifdef IS_DEV
+            // This will be enabled later in prod instead of get_self() to allow DAO's to control this.
             require_auth(dac_inst->owner);
+            name ram_payer = dac_inst->owner;
+#else
+            require_auth(get_self());
+            name ram_payer = get_self();
 
-            _dacs.modify(dac_inst, same_payer, [&](dac &d) {
+#endif
+
+            _dacs.modify(dac_inst, ram_payer, [&](dac &d) {
                 d.refs[type] = value;
             });
         }
@@ -130,7 +166,12 @@ namespace eosdac {
             auto dac_inst = _dacs.find(dac_id.value);
             check(dac_inst != _dacs.end(), "ERR::DAC_NOT_FOUND::DAC not found in directory");
 
+#ifdef IS_DEV
+            // This will be enabled later in prod instead of get_self() to allow DAO's to control this.
             require_auth(dac_inst->owner);
+#else
+            require_auth(get_self());
+#endif
 
             _dacs.modify(dac_inst, same_payer, [&](dac &d) {
                 d.refs.erase(type);
@@ -141,11 +182,19 @@ namespace eosdac {
 
             auto existing_dac = _dacs.find(dac_id.value);
             check(existing_dac != _dacs.end(), "ERR::DAC_NOT_FOUND::DAC not found in directory");
-
+#ifdef IS_DEV
+            // This will be enabled later in prod instead of get_self() to allow DAO's to control this.
             require_auth(existing_dac->owner);
             require_auth(new_owner);
+            name ram_payer = new_owner;
 
-            _dacs.modify(existing_dac, new_owner, [&](dac &d) {
+#else
+            require_auth(get_self());
+            name ram_payer = get_self();
+
+#endif
+
+            _dacs.modify(existing_dac, ram_payer, [&](dac &d) {
                 d.owner = new_owner;
             });
         }
@@ -154,9 +203,17 @@ namespace eosdac {
             auto existing_dac = _dacs.find(dac_id.value);
             check(existing_dac != _dacs.end(), "ERR::DAC_NOT_FOUND::DAC not found in directory");
 
+#ifdef IS_DEV
+            // This will be enabled later in prod instead of get_self() to allow DAO's to control this.
             require_auth(existing_dac->owner);
+            name ram_payer = existing_dac->owner;
+#else
+            require_auth(get_self());
+            name ram_payer = get_self();
 
-            _dacs.modify(existing_dac, same_payer, [&](dac &d) {
+#endif
+
+            _dacs.modify(existing_dac, ram_payer, [&](dac &d) {
                 d.title = title;
             });
         }

@@ -32,8 +32,6 @@ namespace eosdac {
         ACTION newmemterms(string terms, string hash, name dac_id);
         ACTION memberreg(name sender, string agreedterms, name dac_id);
         ACTION memberunreg(name sender, name dac_id);
-        // When using IPFS this action doesn't make sense any more. Commenting out for now.
-        // ACTION updateterms(uint64_t termsid, string terms, name dac_id);
         ACTION close(name owner, const symbol &symbol);
 
         // staking

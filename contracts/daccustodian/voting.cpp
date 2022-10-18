@@ -2,7 +2,7 @@ using namespace eosdac;
 
 ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, const name &dac_id) {
 #ifndef IS_DEV
-    check(dac_id == "testa"_n, "Voting is not yet enabled in the Planet DAOs.");
+    check(dac_id == "testa"_n || dac_id == "testb"_n, "Voting is not yet enabled in the Planet DAOs.");
 #endif
     candidates_table registered_candidates(_self, dac_id.value);
     const auto       globals = dacglobals::current(get_self(), dac_id);
@@ -192,7 +192,6 @@ void daccustodian::clearrank(const name &dac_id) {
         });
     }
 }
-#endif
 
 // Needs to be called for every dac after deployment to fill the index (rank field)
 void daccustodian::migraterank(const name &dac_id) {
@@ -204,3 +203,4 @@ void daccustodian::migraterank(const name &dac_id) {
         });
     }
 }
+#endif

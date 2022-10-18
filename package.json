@@ -6,6 +6,7 @@
   "scripts": {
     "build": "lamington build",
     "build-debug": "lamington build -DDEBUG",
+    "build-dev": "lamington build -DIS_DEV",
     "test": "lamington test -DIS_DEV",
     "start": "lamington start eos",
     "stop": "lamington stop eos",

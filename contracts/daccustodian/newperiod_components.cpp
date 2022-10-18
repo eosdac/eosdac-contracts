@@ -244,11 +244,14 @@ ACTION daccustodian::fillstate(const name &dac_id) {
 }
 #endif
 
+#ifdef DEBUG
+
 ACTION daccustodian::migratestate(const name &dac_id) {
     check(!dacglobals_singleton(get_self(), dac_id.value).exists(), "Already migrated dac %s", dac_id);
     auto new_state = dacglobals::current(get_self(), dac_id);
     new_state.save(get_self(), dac_id);
 }
+#endif
 
 ACTION daccustodian::newperiod(const string &message, const name &dac_id) {
     /* This is a housekeeping method, it can be called by anyone by design */
