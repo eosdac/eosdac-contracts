@@ -306,7 +306,8 @@ namespace eosdac {
 
         asset liquid = eosdac::get_liquid(account, get_self(), quantity.symbol);
 
-        check(liquid >= quantity, "ERR::STAKE_MORE_LIQUID::Attempting to stake more than your liquid balance");
+        check(liquid >= quantity, "ERR::STAKE_MORE_LIQUID::Attempting to stake %s but your liquid balance is only %s",
+            quantity, liquid);
 
         add_stake(account, quantity, dac.dac_id, account);
 
