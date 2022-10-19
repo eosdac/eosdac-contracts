@@ -181,7 +181,7 @@ namespace eosdac {
             liquid -= existing_stake->stake;
         }
         auto unstakes_itr = unstakes_idx.find(owner.value);
-        while (unstakes_itr != unstakes_idx.end()) {
+        while (unstakes_itr != unstakes_idx.end() && unstakes_itr->account == owner) {
             if (unstakes_itr->released()) {
                 print("this is already released, erasing");
                 // if this unstake is already released, it can be safely deleted
@@ -196,48 +196,6 @@ namespace eosdac {
         }
 
         return liquid;
-    }
-
-    std::pair<asset, string> get_liquid_debug(name owner, name code, symbol sym) {
-
-        std::string debug_output = "";
-
-        // Hardcoding a precision of 4, it doesnt matter because the index ignores precision
-        dacdir::dac dac = dacdir::dac_for_symbol(extended_symbol{sym, code});
-
-        stakes_table   stakes(code, dac.dac_id.value);
-        unstakes_table unstakes(code, dac.dac_id.value);
-        auto           unstakes_idx = unstakes.get_index<"byaccount"_n>();
-
-        asset liquid = get_balance(owner, code, sym.code());
-        debug_output += fmt("get_balance(%s, %s, %s) = %s | ", owner, code, sym.code(), liquid);
-        auto existing_stake = stakes.find(owner.value);
-        if (existing_stake != stakes.end()) {
-            debug_output += fmt("reducing by existing_stake->stake: %s | ", existing_stake->stake);
-            liquid -= existing_stake->stake;
-        }
-        debug_output += fmt("liquid is now: %s | ", liquid);
-
-        auto unstakes_itr = unstakes_idx.find(owner.value);
-        while (unstakes_itr != unstakes_idx.end()) {
-            if (unstakes_itr->released()) {
-                print("this is already released, erasing");
-                // if this unstake is already released, it can be safely deleted
-                debug_output += fmt("deleting stake %s | ", unstakes_itr->stake);
-                unstakes_itr = unstakes_idx.erase(unstakes_itr);
-            } else {
-                print("NOT yet released");
-
-                // otherwise it still negatively impacts the liquid balance
-                debug_output += fmt("reducing by unstakes_itr->stake: %s | ", unstakes_itr->stake);
-                liquid -= unstakes_itr->stake;
-                debug_output += fmt("liquid is now: %s | ", liquid);
-                unstakes_itr++;
-            }
-        }
-        debug_output += fmt("while loop ended liquid is now: %s", liquid);
-
-        return {liquid, debug_output};
     }
 
     asset get_staked(name owner, name code, symbol sym) {
