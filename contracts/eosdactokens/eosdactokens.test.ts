@@ -221,19 +221,28 @@ describe('EOSDacTokens', () => {
     });
   });
   context('Staking', async () => {
-    let staker: l.Account;
+    let staker1: l.Account;
+    let staker2: l.Account;
     before(async () => {
-      staker = await l.AccountManager.createAccount();
+      staker1 = await l.AccountManager.createAccount();
+      staker2 = await l.AccountManager.createAccount();
       await shared.dac_token_contract.issue(
         issuer.name,
-        '1000.0000 ABC',
+        '30000.0000 ABC',
         'initial issued tokens',
         validAuths
       );
       await shared.dac_token_contract.transfer(
         issuer.name,
-        staker.name,
-        '1000.0000 ABC',
+        staker1.name,
+        '15000.0000 ABC',
+        'please take these tokens for staking',
+        validAuths
+      );
+      await shared.dac_token_contract.transfer(
+        issuer.name,
+        staker2.name,
+        '15000.0000 ABC',
         'please take these tokens for staking',
         validAuths
       );
@@ -286,8 +295,8 @@ describe('EOSDacTokens', () => {
       context('stake without staking enabled', async () => {
         it('should fail with staking not enabled error', async () => {
           await l.assertEOSErrorIncludesMessage(
-            shared.dac_token_contract.stake(staker.name, '100.0000 ABC', {
-              from: staker,
+            shared.dac_token_contract.stake(staker1.name, '100.0000 ABC', {
+              from: staker1,
             }),
             'ERR::STAKING_NOT_ENABLED'
           );
@@ -304,10 +313,10 @@ describe('EOSDacTokens', () => {
         it('with invalid quantity should fail with dac not found for symbol error', async () => {
           await l.assertEOSErrorIncludesMessage(
             shared.dac_token_contract.stake(
-              staker.name,
+              staker1.name,
               `${10 + 2 ** 62}` + ' ABC',
               {
-                from: staker,
+                from: staker1,
               }
             ),
             'ERR::STAKE_INVALID_QTY'
@@ -315,42 +324,49 @@ describe('EOSDacTokens', () => {
         });
         it('with negative quantity should fail with non-posistive error', async () => {
           await l.assertEOSErrorIncludesMessage(
-            shared.dac_token_contract.stake(staker.name, `-1000.0000 ABC`, {
-              from: staker,
+            shared.dac_token_contract.stake(staker1.name, `-1000.0000 ABC`, {
+              from: staker1,
             }),
             'STAKE_NON_POSITIVE_QTY'
           );
         });
         it('with more than available balance should fail with more than liquid error', async () => {
           await l.assertEOSErrorIncludesMessage(
-            shared.dac_token_contract.stake(staker.name, `1001.0000 ABC`, {
-              from: staker,
+            shared.dac_token_contract.stake(staker1.name, `15001.0000 ABC`, {
+              from: staker1,
             }),
             'ERR::STAKE_MORE_LIQUID'
           );
         });
         it('with correct amount should succeed', async () => {
-          await shared.dac_token_contract.stake(staker.name, '100.0000 ABC', {
-            from: staker,
+          await shared.dac_token_contract.stake(staker1.name, '4000.0000 ABC', {
+            from: staker1,
           });
+
+          await shared.dac_token_contract.stake(staker2.name, '6000.0000 ABC', {
+            from: staker2,
+          });
+
           await l.assertRowsEqual(
             shared.dac_token_contract.stakesTable({ scope: 'abcdac' }),
-            [{ account: staker.name, stake: '100.0000 ABC' }]
+            [{ account: staker1.name, stake: '4000.0000 ABC' },
+            { account: staker2.name, stake: '6000.0000 ABC' }]
           );
         });
         it('staking again should add more', async () => {
-          await shared.dac_token_contract.stake(staker.name, '50.0000 ABC', {
-            from: staker,
+          await shared.dac_token_contract.stake(staker1.name, '1000.0000 ABC', {
+            from: staker1,
           });
           await l.assertRowsEqual(
             shared.dac_token_contract.stakesTable({ scope: 'abcdac' }),
-            [{ account: staker.name, stake: '150.0000 ABC' }]
+            [{ account: staker1.name, stake: '5000.0000 ABC' },
+            { account: staker2.name, stake: '6000.0000 ABC' }]
           );
         });
         it('again with more than liquid balance should fail with more than liquid error', async () => {
           await l.assertEOSErrorIncludesMessage(
-            shared.dac_token_contract.stake(staker.name, `851.0000 ABC`, {
-              from: staker,
+            shared.dac_token_contract.stake(staker1.name, `10001.0000 ABC`, {
+              from: staker1,
             }),
             'ERR::STAKE_MORE_LIQUID:'
           );
@@ -370,8 +386,8 @@ describe('EOSDacTokens', () => {
           });
           it('should fail', async () => {
             await l.assertEOSErrorIncludesMessage(
-              shared.dac_token_contract.unstake(staker.name, '75.0000 ABC', {
-                from: staker,
+              shared.dac_token_contract.unstake(staker1.name, '75.0000 ABC', {
+                from: staker1,
               }),
               'STAKING_NOT_ENABLED'
             );
@@ -388,16 +404,16 @@ describe('EOSDacTokens', () => {
         });
         it('should fail for negative quantity with non positive error', async () => {
           await l.assertEOSErrorIncludesMessage(
-            shared.dac_token_contract.unstake(staker.name, '-75.0000 ABC', {
-              from: staker,
+            shared.dac_token_contract.unstake(staker1.name, '-75.0000 ABC', {
+              from: staker1,
             }),
             'UNSTAKE_NON_POSITIVE_QTY'
           );
         });
         it('should fail for amount in excess of stake with unstake over staked amount error', async () => {
           await l.assertEOSErrorIncludesMessage(
-            shared.dac_token_contract.unstake(staker.name, '151.0000 ABC', {
-              from: staker,
+            shared.dac_token_contract.unstake(staker1.name, '5001.0000 ABC', {
+              from: staker1,
             }),
             'UNSTAKE_OVER'
           );
@@ -413,41 +429,53 @@ describe('EOSDacTokens', () => {
           );
         });
         it('should succeed', async () => {
-          await shared.dac_token_contract.unstake(staker.name, '74.0000 ABC', {
-            from: staker,
+          await shared.dac_token_contract.unstake(staker1.name, '4500.0000 ABC', {
+            from: staker1,
           });
-          await shared.dac_token_contract.unstake(staker.name, '30.0000 ABC', {
-            from: staker,
+          await shared.dac_token_contract.unstake(staker1.name, '500.0000 ABC', {
+            from: staker1,
+          });
+          await shared.dac_token_contract.unstake(staker2.name, '6000.0000 ABC', {
+            from: staker2,
           });
           await l.assertRowsEqual(
             shared.dac_token_contract.stakesTable({ scope: 'abcdac' }),
-            [{ account: staker.name, stake: '46.0000 ABC' }]
+            []
           );
           let unstakeRow = await shared.dac_token_contract.unstakesTable({
             scope: 'abcdac',
           });
+          console.log('unstakeRow: ', JSON.stringify(unstakeRow,null, 2));
           let releaseDate = unstakeRow.rows[0].release_time;
 
           chai
             .expect(unstakeRow.rows[0])
-            .to.include({ account: staker.name, stake: '74.0000 ABC', key: 0 });
+            .to.include({ account: staker1.name, stake: '4500.0000 ABC', key: 0 });
           let nowDate = new Date();
           let futureDate = new Date();
           nowDate.setTime(nowDate.getTime() - 20000);
           futureDate.setTime(futureDate.getTime() + 20000);
           chai.expect(releaseDate).afterTime(nowDate);
           chai.expect(releaseDate).beforeTime(futureDate);
-          chai.expect(unstakeRow.rows.length).to.equal(2);
+          chai.expect(unstakeRow.rows.length).to.equal(3);
         });
+        it('staking while unstaking should work', async () => {
+          await shared.dac_token_contract.stake(staker1.name, '10000.0000 ABC', {
+            from: staker1,
+          });
+          await shared.dac_token_contract.stake(staker2.name, '9000.0000 ABC', {
+            from: staker2,
+          });
+        })
         it('transfer should fail if not yet released', async () => {
           const receiver = await l.AccountManager.createAccount();
           await l.assertEOSErrorIncludesMessage(
             shared.dac_token_contract.transfer(
-              staker.name,
+              staker1.name,
               receiver.name,
-              '954.0000 ABC',
+              '5000.0000 ABC',
               'memo',
-              { from: staker }
+              { from: staker1 }
             ),
             'ERR::BALANCE_STAKED'
           );
@@ -456,11 +484,11 @@ describe('EOSDacTokens', () => {
           await l.sleep(6000);
           const receiver = await l.AccountManager.createAccount();
           await shared.dac_token_contract.transfer(
-            staker.name,
+            staker1.name,
             receiver.name,
-            '954.0000 ABC',
+            '5000.0000 ABC',
             'memo 2',
-            { from: staker }
+            { from: staker1 }
           );
         });
       });
