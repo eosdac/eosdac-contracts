@@ -24,20 +24,18 @@ void stakevote::stakeobsv(const vector<account_stake_delta> &stake_deltas, const
     auto                         weights = weight_table{get_self(), dac_id.value};
 
     for (const auto &asd : stake_deltas) {
-        const auto weight_delta_quorum = asd.stake_delta.amount;
+        const auto weight_delta_quorum = S{asd.stake_delta.amount};
 
         const auto stake_delta     = S{asd.stake_delta.amount}.to<double>();
         const auto unstake_delay   = S{asd.unstake_delay}.to<double>();
         const auto time_multiplier = S{config.time_multiplier}.to<double>();
+        const auto weight_delta    = stake_delta * (S{1.0} + unstake_delay * time_multiplier / max_stake_time);
 
-        const auto weight_delta_s = stake_delta * (S{1.0} + unstake_delay * time_multiplier / max_stake_time);
-
-        const auto weight_delta = weight_delta_s.to<int64_t>();
-        const auto vw_itr       = weights.find(asd.account.value);
+        const auto vw_itr = weights.find(asd.account.value);
         if (vw_itr != weights.end()) {
             weights.modify(vw_itr, same_payer, [&](auto &v) {
-                v.weight += weight_delta;
-                v.weight_quorum += weight_delta_quorum;
+                v.weight        = S<uint64_t>{v.weight}.add_signed_to_unsigned(weight_delta);
+                v.weight_quorum = S<uint64_t>{v.weight_quorum}.add_signed_to_unsigned(weight_delta_quorum);
             });
             if (vw_itr->weight == 0) {
                 weights.erase(vw_itr);
@@ -45,12 +43,12 @@ void stakevote::stakeobsv(const vector<account_stake_delta> &stake_deltas, const
         } else {
             weights.emplace(get_self(), [&](auto &v) {
                 v.voter         = asd.account;
-                v.weight        = weight_delta;
-                v.weight_quorum = weight_delta_quorum;
+                v.weight        = weight_delta.to<uint64_t>();
+                v.weight_quorum = weight_delta_quorum.to<uint64_t>();
             });
         }
 
-        weight_deltas.push_back({asd.account, weight_delta, weight_delta_quorum});
+        weight_deltas.push_back({asd.account, weight_delta.to<int64_t>(), weight_delta_quorum});
     }
 
     if (custodian_contract) {
@@ -125,11 +123,11 @@ void stakevote::collectwts(uint16_t batch_size, name dac_id) {
     auto counter = 0;
     while (stake != stakes.end() && counter < batch_size) {
         const auto vw_itr              = weights.find((stake->account).value);
-        const auto weight_delta_quorum = (stake->stake).amount;
+        const auto weight_delta_quorum = S{(stake->stake).amount}.to<uint64_t>();
 
-        const auto stake_delta    = S{(stake->stake).amount}.to<double>();
-        const auto weight_delta_s = stake_delta * (S{1.0} + min_stake_time * time_multiplier / max_stake_time);
-        const auto weight_delta   = weight_delta_s.to<int64_t>();
+        const auto stake_delta  = S{(stake->stake).amount}.to<double>();
+        const auto weight_delta = stake_delta * (S{1.0} + min_stake_time * time_multiplier / max_stake_time);
+        const auto weight_delta = weight_delta_s.to<uint64_t>();
 
         if (vw_itr == weights.end()) {
             weights.emplace(get_self(), [&](auto &v) {
