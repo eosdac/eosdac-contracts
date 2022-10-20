@@ -29,25 +29,13 @@ void stakevote::stakeobsv(const vector<account_stake_delta> &stake_deltas, const
         const auto stake_delta     = S{asd.stake_delta.amount}.to<double>();
         const auto unstake_delay   = S{asd.unstake_delay}.to<double>();
         const auto time_multiplier = S{config.time_multiplier}.to<double>();
+        const auto weight_delta    = stake_delta * (S{1.0} + unstake_delay * time_multiplier / max_stake_time);
 
-        const auto weight_delta = stake_delta * (S{1.0} + unstake_delay * time_multiplier / max_stake_time);
-
-        // const auto weight_delta = weight_delta_s.to<int64_t>();
         const auto vw_itr = weights.find(asd.account.value);
         if (vw_itr != weights.end()) {
             weights.modify(vw_itr, same_payer, [&](auto &v) {
-                if (weight_delta > 0.0) {
-                    v.weight = S{v.weight} + weight_delta.to<uint64_t>();
-
-                } else {
-                    v.weight = S{v.weight} - weight_delta.abs().to<uint64_t>();
-                }
-                if (weight_delta_quorum > 0ll) {
-                    v.weight_quorum = S{v.weight_quorum} + weight_delta_quorum.to<uint64_t>();
-
-                } else {
-                    v.weight_quorum = S{v.weight_quorum} - weight_delta_quorum.abs().to<uint64_t>();
-                }
+                v.weight        = S<uint64_t>{v.weight}.add_signed_to_unsigned(weight_delta);
+                v.weight_quorum = S<uint64_t>{v.weight_quorum}.add_signed_to_unsigned(weight_delta_quorum);
             });
             if (vw_itr->weight == 0) {
                 weights.erase(vw_itr);
