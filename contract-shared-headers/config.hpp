@@ -2,6 +2,10 @@
 
 static constexpr eosio::symbol TLM_SYM{"TLM", 4};
 #define TLM_TOKEN_CONTRACT_STR "alien.worlds"
+#define ZERO_TRILIUM                                                                                                   \
+    asset {                                                                                                            \
+        0, TLM_SYM                                                                                                     \
+    }
 static constexpr eosio::name TLM_TOKEN_CONTRACT{TLM_TOKEN_CONTRACT_STR};
 static constexpr eosio::name MSIG_CONTRACT{"msig.worlds"};
 

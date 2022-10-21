@@ -2,7 +2,7 @@ using namespace eosdac;
 
 ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, const name &dac_id) {
 #ifndef IS_DEV
-    check(dac_id == "testa"_n || dac_id == "testb"_n, "Voting is not yet enabled in the Planet DAOs.");
+    // check(dac_id == "testa"_n || dac_id == "testb"_n, "Voting is not yet enabled in the Planet DAOs.");
 #endif
     candidates_table registered_candidates(_self, dac_id.value);
     const auto       globals = dacglobals::current(get_self(), dac_id);
@@ -58,6 +58,10 @@ ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, c
             v.vote_count      = 0;
         });
     }
+}
+
+ACTION daccustodian::removecstvte(const name &voter, const name &dac_id) {
+    votecust(voter, {}, dac_id);
 }
 
 void daccustodian::update_number_of_votes(
@@ -120,6 +124,7 @@ void daccustodian::modifyProxiesWeight(
 }
 
 ACTION daccustodian::voteproxy(const name &voter, const name &proxyName, const name &dac_id) {
+    check(false, "proxy voting not yet enabled.");
 
     require_auth(voter);
     assertValidMember(voter, dac_id);

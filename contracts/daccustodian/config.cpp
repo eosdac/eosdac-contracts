@@ -64,3 +64,19 @@ ACTION daccustodian::updateconfige(const contr_config &new_config, const name &d
     globals.save(get_self(), dac_id);
     print("Succesfully updated the daccustodian config for: ", dac_id);
 }
+
+ACTION daccustodian::setbudget(const name &dac_id, const uint16_t percentage) {
+    require_auth(get_self());
+
+    auto globals = dacglobals::current(get_self(), dac_id);
+    globals.set_budget_percentage(percentage);
+    globals.save(get_self(), dac_id);
+}
+
+ACTION daccustodian::unsetbudget(const name &dac_id) {
+    require_auth(get_self());
+
+    auto globals = dacglobals::current(get_self(), dac_id);
+    globals.unset_budget_percentage();
+    globals.save(get_self(), dac_id);
+}

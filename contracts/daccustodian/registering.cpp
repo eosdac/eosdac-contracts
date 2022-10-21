@@ -40,11 +40,15 @@ ACTION daccustodian::nominatecane(const name &cand, const asset &requestedpay, c
     }
 }
 
+ACTION daccustodian::nominate(const name &cand, const name &dac_id) {
+    nominatecane(cand, ZERO_TRILIUM, dac_id);
+}
+
 ACTION daccustodian::withdrawcane(const name &cand, const name &dac_id) {
     require_auth(cand);
     auto        registered_candidates = candidates_table{_self, dac_id.value};
     const auto &reg_candidate         = registered_candidates.get(
-                cand.value, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
+        cand.value, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
     check(reg_candidate.is_active, "ERR::REMOVECANDIDATE_CANDIDATE_NOT_ACTIVE::Candidate is not active.");
     disableCandidate(cand, dac_id);
 }
@@ -104,6 +108,8 @@ ACTION daccustodian::setperm(const name &cand, const name &permission, const nam
 }
 
 ACTION daccustodian::appointcust(const vector<name> &custs, const name &dac_id) {
+    check(false, "Custodians can only be appointed via elections.");
+
     dacdir::dac dac          = dacdir::dac_for_id(dac_id);
     name        auth_account = dac.owner;
     require_auth(auth_account);
@@ -182,7 +188,7 @@ void daccustodian::removeCustodian(name cust, name dac_id) {
 void daccustodian::disableCandidate(name cand, name dac_id) {
     auto        registered_candidates = candidates_table{_self, dac_id.value};
     const auto &reg_candidate         = registered_candidates.get(
-                cand.value, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
+        cand.value, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
 
     if (!reg_candidate.is_active) {
         return;
@@ -204,7 +210,7 @@ void daccustodian::disableCandidate(name cand, name dac_id) {
 void daccustodian::removeCandidate(name cand, name dac_id) {
     auto        registered_candidates = candidates_table{_self, dac_id.value};
     const auto &reg_candidate         = registered_candidates.get(
-                cand.value, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
+        cand.value, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
     check(!reg_candidate.is_active, "ERR::REMOVECANDIDATE_CANDIDATE_IS_ACTIVE::Candidate is still active.");
 
     // remove entry for candperms
@@ -218,6 +224,7 @@ void daccustodian::removeCandidate(name cand, name dac_id) {
 }
 
 ACTION daccustodian::regproxy(const name &proxy_member, const name &dac_id) {
+    check(false, "proxy voting not yet enabled.");
     require_auth(proxy_member);
     assertValidMember(proxy_member, dac_id);
 

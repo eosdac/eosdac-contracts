@@ -465,6 +465,7 @@ namespace eosdac {
         ACTION weightobsv(const vector<account_weight_delta> &account_weight_deltas, const name &dac_id);
 
         ACTION nominatecane(const name &cand, const eosio::asset &requestedpay, const name &dac_id);
+        ACTION nominate(const name &cand, const name &dac_id);
         ACTION withdrawcane(const name &cand, const name &dac_id);
         ACTION removecand(const name &cand, const name &dac_id);
         ACTION firecand(const name &cand, const bool lockupStake, const name &dac_id);
@@ -477,13 +478,12 @@ namespace eosdac {
 
         [[eosio::action]] inline void stprofile(const name &cand, const std::string &profile, const name &dac_id) {
             require_auth(cand);
+            check(profile.size() < 16256, "profile exceeds max size.");
         };
 
-        [[eosio::action]] inline void stprofileuns(const name &cand, const std::string &profile) {
-            require_auth(cand);
-        };
         ACTION updatereqpay(const name &cand, const eosio::asset &requestedpay, const name &dac_id);
         ACTION votecust(const name &voter, const std::vector<name> &newvotes, const name &dac_id);
+        ACTION removecstvte(const name &voter, const name &dac_id);
         ACTION voteproxy(const name &voter, const name &proxy, const name &dac_id);
         ACTION regproxy(const name &proxy, const name &dac_id);
         ACTION unregproxy(const name &proxy, const name &dac_id);
