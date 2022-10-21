@@ -258,3 +258,9 @@ ACTION daccustodian::unregproxy(const name &proxy_member, const name &dac_id) {
 
     proxies.erase(found_proxy);
 }
+
+ACTION daccustodian::stprofile(const name &cand, const std::string &profile, const name &dac_id) {
+    require_auth(cand);
+    assertValidMember(cand, dac_id);
+    check(profile.size() < 16256, "profile exceeds max size.");
+};

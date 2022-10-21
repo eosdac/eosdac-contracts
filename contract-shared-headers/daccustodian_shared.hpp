@@ -476,10 +476,7 @@ namespace eosdac {
         ACTION flagcandprof(
             const name &cand, const std::string &reason, const name &reporter, const bool block, const name &dac_id);
 
-        [[eosio::action]] inline void stprofile(const name &cand, const std::string &profile, const name &dac_id) {
-            require_auth(cand);
-            check(profile.size() < 16256, "profile exceeds max size.");
-        };
+        ACTION stprofile(const name &cand, const std::string &profile, const name &dac_id);
 
         ACTION updatereqpay(const name &cand, const eosio::asset &requestedpay, const name &dac_id);
         ACTION votecust(const name &voter, const std::vector<name> &newvotes, const name &dac_id);
