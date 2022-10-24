@@ -365,8 +365,11 @@ namespace eosdac {
         unstakes_table   unstakes(get_self(), dac.dac_id.value);
         auto             unstakes_idx = unstakes.get_index<"byaccount"_n>();
 
-        check(unstake_time <= config.max_stake_time, "ERR::TIME_GREATER_MAX::Unstake time is greater than the maximum");
-        check(unstake_time >= config.min_stake_time, "ERR::TIME_LESS_MIN::Unstake time is less than the minimum");
+        check(unstake_time <= config.max_stake_time,
+            "ERR::TIME_GREATER_MAX::Unstake time %s is greater than the maximum %s", unstake_time,
+            config.max_stake_time);
+        check(unstake_time >= config.min_stake_time, "ERR::TIME_LESS_MIN::Unstake time %s is less than the minimum %s",
+            unstake_time, config.min_stake_time);
 
         auto existing_stake   = stakes.find(account.value);
         auto existing_unstake = unstakes_idx.find(account.value);
@@ -374,17 +377,18 @@ namespace eosdac {
         if ((existing_stake != stakes.end() || existing_unstake != unstakes_idx.end()) &&
             existing_time != staketimes.end()) {
             check(existing_time->delay <= unstake_time,
-                "ERR::CANNOT_REDUCE_STAKE_TIME::You cannot reduce the stake time if you have tokens staked or in the process of unstaking");
+                "ERR::CANNOT_REDUCE_STAKE_TIME::You cannot reduce the stake time (from %s to %s) if you have tokens staked or in the process of unstaking",
+                existing_time->delay, unstake_time);
         }
 
-        uint32_t current_unstake_time = config.min_stake_time;
+        const auto unstake_time_before = staketime_info::get_delay(get_self(), dac.dac_id, account);
+
         if (existing_time == staketimes.end()) {
             staketimes.emplace(account, [&](staketime_info &s) {
                 s.account = account;
                 s.delay   = unstake_time;
             });
         } else {
-            current_unstake_time = existing_time->delay;
             staketimes.modify(*existing_time, account, [&](staketime_info &s) {
                 s.delay = unstake_time;
             });
@@ -396,7 +400,7 @@ namespace eosdac {
         name  notify_contract    = (vote_contract) ? vote_contract : custodian_contract;
         asset current_stake      = eosdac::get_staked(account, get_self(), token_symbol);
 
-        account_stake_delta         stake_deltas_sub = {account, -current_stake, current_unstake_time};
+        account_stake_delta         stake_deltas_sub = {account, -current_stake, unstake_time_before};
         account_stake_delta         stake_deltas_add = {account, current_stake, unstake_time};
         vector<account_stake_delta> deltas           = {stake_deltas_sub, stake_deltas_add};
         action(permission_level{get_self(), "notify"_n}, notify_contract, "stakeobsv"_n, make_tuple(deltas, dac.dac_id))
@@ -475,18 +479,12 @@ namespace eosdac {
     }
 
     void eosdactokens::send_stake_notification(name account, asset stake, dacdir::dac dac_inst) {
-        const auto       custodian_contract  = dac_inst.account_for_type_maybe(dacdir::CUSTODIAN);
-        const auto       vote_contract       = dac_inst.account_for_type_maybe(dacdir::VOTE_WEIGHT);
-        const auto       referendum_contract = dac_inst.account_for_type_maybe(dacdir::REFERENDUM);
-        name             notify_contract     = (vote_contract) ? *vote_contract : *custodian_contract;
-        stake_config     config              = stake_config::get_current_configs(get_self(), dac_inst.dac_id);
-        uint32_t         unstake_delay       = config.min_stake_time;
-        staketimes_table staketimes(get_self(), dac_inst.dac_id.value);
-        auto             existing_staketime = staketimes.find(account.value);
+        const auto custodian_contract  = dac_inst.account_for_type_maybe(dacdir::CUSTODIAN);
+        const auto vote_contract       = dac_inst.account_for_type_maybe(dacdir::VOTE_WEIGHT);
+        const auto referendum_contract = dac_inst.account_for_type_maybe(dacdir::REFERENDUM);
+        const auto notify_contract     = (vote_contract) ? *vote_contract : *custodian_contract;
 
-        if (existing_staketime != staketimes.end()) {
-            unstake_delay = existing_staketime->delay;
-        }
+        const auto unstake_delay = staketime_info::get_delay(get_self(), dac.dac_id, account);
 
         vector<account_stake_delta> stake_deltas = {{account, stake, unstake_delay}};
         action(permission_level{get_self(), "notify"_n}, notify_contract, "stakeobsv"_n,
