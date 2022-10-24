@@ -41,6 +41,7 @@ describe('Stakevote', () => {
     // let stake_amount = `1000.0000 ${symbol}`;
     let stake_amount = new Asset(1000, symbol);
     let stake_delay = 2 * years;
+    let default_staketime = 2 * days;
     let time_multiplier = 10000;
     let regMembers: Account[];
     let candidates: Account[];
@@ -54,7 +55,7 @@ describe('Stakevote', () => {
       await shared.dac_token_contract.stakeconfig(
         {
           enabled: true,
-          min_stake_time: stake_delay,
+          min_stake_time: 2 * days,
           max_stake_time: stake_delay,
         },
         `${precision},${symbol}`,
@@ -71,6 +72,13 @@ describe('Stakevote', () => {
     context('staking', async () => {
       before(async () => {
         staker = await AccountManager.createAccount('staker1');
+        await shared.dac_token_contract.staketime(
+          staker,
+          default_staketime,
+          '4,' + stake_amount.symbol,
+          { from: staker }
+        );
+
         const x = await get_from_dacglobals(
           dacId,
           state_keys.total_weight_of_votes
@@ -100,8 +108,8 @@ describe('Stakevote', () => {
       });
       it('should create weights table entries', async () => {
         const expected_weight = await get_expected_vote_weight(
+          staker,
           stake_amount.amount_raw(),
-          stake_delay,
           dacId
         );
 
@@ -112,7 +120,7 @@ describe('Stakevote', () => {
           [
             {
               voter: 'staker1',
-              weight: String(expected_weight),
+              weight: expected_weight,
               weight_quorum: 10000000,
             },
           ]
@@ -130,6 +138,7 @@ describe('Stakevote', () => {
           `${precision},${symbol}`,
           { from: shared.auth_account }
         );
+        await shared.stakevote_contract.collectwts(100, dacId, false);
       });
       it('should work', async () => {
         await shared.dac_token_contract.unstake(staker.name, stake_amount, {
@@ -148,7 +157,7 @@ describe('Stakevote', () => {
         await shared.dac_token_contract.stakeconfig(
           {
             enabled: true,
-            min_stake_time: stake_delay,
+            min_stake_time: 2 * days,
             max_stake_time: stake_delay,
           },
           `${precision},${symbol}`,
@@ -283,8 +292,8 @@ describe('Stakevote', () => {
               }).reverse();
 
               const single_voter_weight = await get_expected_vote_weight(
+                regMembers[0],
                 stake_amount.amount_raw(),
-                stake_delay,
                 dacId
               );
               console.log('single_voter_weight: ', single_voter_weight);
@@ -375,8 +384,8 @@ describe('Stakevote', () => {
           const expected =
             parseInt(total_votes_on_candidates_before, 10) +
             (await get_expected_vote_weight(
+              voter,
               stake_amount.amount_raw(),
-              stake_delay,
               dacId
             ));
           const x = await get_from_dacglobals(
@@ -598,9 +607,31 @@ async function get_from_dacglobals(dacId: string, key: string) {
   }
 }
 
+async function get_staketime(account: Account, dac_id: string) {
+  const res = await shared.dac_token_contract.stakeconfigTable({
+    scope: dac_id,
+  });
+  console.log('stakeconfigTable: ', JSON.stringify(res, null, 2));
+
+  const min_stake_time = res.rows[0].min_stake_time;
+  console.log('min_stake_time: ', min_stake_time);
+  res = await shared.dac_token_contract.staketimeTable({
+    scope: dac_id,
+    lowerBound: account.name,
+  });
+  console.log('staketimeTable: ', JSON.stringify(res, null, 2));
+  const existing_staketime = res.rows.find((x) => x.account == account);
+  console.log(
+    `existing_staketime (account ${account.name}): ${existing_staketime}`
+  );
+  const x = existing_staketime ? existing_staketime.delay : min_stake_time;
+  console.log('x: ', x);
+  return x;
+}
+
 async function get_expected_vote_weight(
+  account: Account,
   stake_delta: number,
-  unstake_delay: number,
   dac_id: string
 ) {
   const config = (
@@ -611,6 +642,8 @@ async function get_expected_vote_weight(
     scope: dac_id,
   });
   const max_stake_time = res.rows[0].max_stake_time;
+
+  const unstake_delay = await get_staketime(account, dac_id);
 
   return Math.floor(
     stake_delta * (1 + (unstake_delay * time_multiplier) / max_stake_time)
