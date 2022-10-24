@@ -94,7 +94,7 @@ export class SharedTestObjects {
       'created daccustodian'
     );
     this.dac_token_contract = await debugPromise(
-      ContractDeployer.deployWithName('eosdactokens', 'eosdactokens'),
+      ContractDeployer.deployWithName('eosdactokens', 'token.worlds'),
       'created eosdactokens'
     );
     this.dacproposals_contract = await debugPromise(
@@ -564,7 +564,7 @@ export class SharedTestObjects {
     await UpdateAuth.execLinkAuth(
       this.treasury_account.active,
       this.treasury_account.name,
-      'eosdactokens',
+      this.dac_token_contract.account.name,
       'transfer',
       'xfer'
     );
