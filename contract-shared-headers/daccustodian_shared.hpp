@@ -119,7 +119,7 @@ namespace eosdac {
         eosio::name           candidate_name;
         eosio::asset          requestedpay;
         uint64_t              rank;
-        uint64_t              gap_filler; // I forgot an asset is actually 128 bits not 64
+        uint64_t              gap_filler; // Currently unused, can be recycled in the future
         uint64_t              total_vote_power;
         uint8_t               is_active;
         uint32_t              number_voters;
