@@ -57,6 +57,8 @@ template <typename T>
 inline std::string toString(const T &x) {
     if constexpr (std::is_same<T, std::string>::value) {
         return x;
+    } else if constexpr (std::is_same<T, std::string_view>::value) {
+        return std::string(x);
     } else if constexpr (std::is_same<T, eosio::symbol>::value) {
         return std::to_string(x.precision()) + "," + x.code().to_string();
     } else if constexpr (has_to_string<T>::value) {
