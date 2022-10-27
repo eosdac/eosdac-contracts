@@ -534,7 +534,7 @@ describe('Daccustodian', () => {
                   'extended_asset',
                   {
                     quantity: '12.0000 CUSDAC',
-                    contract: 'eosdactokens',
+                    contract: shared.dac_token_contract.name,
                   },
                 ],
               },

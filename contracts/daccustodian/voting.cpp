@@ -124,8 +124,9 @@ void daccustodian::modifyProxiesWeight(
 }
 
 ACTION daccustodian::voteproxy(const name &voter, const name &proxyName, const name &dac_id) {
+#ifndef IS_DEV
     check(false, "proxy voting not yet enabled.");
-
+#endif
     require_auth(voter);
     assertValidMember(voter, dac_id);
 
