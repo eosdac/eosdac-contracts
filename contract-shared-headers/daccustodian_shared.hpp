@@ -131,9 +131,7 @@ namespace eosdac {
             const auto log     = log2(log_arg.to<double>());
             const auto x =
                 S{log} + S{avg_vote_time_stamp.sec_since_epoch()}.to<double>() / S{SECONDS_TO_DOUBLE}.to<double>();
-            check(x >= double{}, "by_decayed_votes x must be >= 0 before uint64_t conversion");
-            const auto x_rounded_down = narrow_cast<uint64_t>(x);
-            return S{x_rounded_down};
+            return x.to<uint64_t>();
         }
 
         uint64_t by_decayed_votes() const {
