@@ -88,7 +88,7 @@ void daccustodian::modifyVoteWeights(const account_weight_delta &awd, const vect
 
     // New voter -> Add the tokens to the total weight.
     auto total_weight_of_votes            = S{globals.get_total_weight_of_votes()};
-    auto total_stake_time_weight_of_votes = globals.get_total_votes_on_candidates();
+    auto total_stake_time_weight_of_votes = S{globals.get_total_votes_on_candidates()};
 
     if (oldVotes.size() == 0) {
         total_weight_of_votes += S{awd.weight_delta_quorum};
