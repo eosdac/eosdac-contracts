@@ -80,11 +80,17 @@ inline char *fmt(const std::string_view format, Args const &...args) {
 /* eosio::check overload that allows passing a format string for more
  * helpful error messages.
  */
+constexpr void check(const bool pred, const std::string_view format) {
+    if (!pred) {
+        eosio::check(false, format.data(), format.length());
+    }
+}
+
 template <typename... Args>
 constexpr void check(const bool pred, const std::string_view format, Args const &...args) {
     if (!pred) {
         const auto msg = fmt(format, args...);
-        check(pred, msg);
+        eosio::check(false, msg);
     }
 }
 
