@@ -97,7 +97,7 @@ void stakevote::updateconfig(config_item &new_config, const name dac_id) {
     new_config.save(get_self(), dac_id, get_self());
 }
 
-#ifdef DEBUG
+#if defined(DEBUG) || defined(IS_DEV)
 
 void stakevote::clearweights(uint16_t batch_size, name dac_id) {
     require_auth(get_self());

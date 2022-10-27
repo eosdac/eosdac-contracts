@@ -138,6 +138,7 @@ describe('Stakevote', () => {
           `${precision},${symbol}`,
           { from: shared.auth_account }
         );
+        await shared.stakevote_contract.clearweights(100, dacId);
         await shared.stakevote_contract.collectwts(100, dacId, false);
       });
       it('should work', async () => {
@@ -416,6 +417,47 @@ describe('Stakevote', () => {
           await shared.daccustodian_contract.votecust(
             voter.name,
             [cust1.name, cust2.name],
+            dacId,
+            {
+              from: voter,
+            }
+          );
+        });
+        it('should not increase total_weight_of_votes', async () => {
+          const expected = total_weight_of_votes_before;
+          const x = await get_from_dacglobals(dacId, 'total_weight_of_votes');
+          chai.expect(x).to.equal(expected);
+        });
+        it('should not increase total_votes_on_candidates', async () => {
+          const expected = total_votes_on_candidates_before;
+          const x = await get_from_dacglobals(
+            dacId,
+            'total_votes_on_candidates'
+          );
+          chai.expect(x).to.equal(expected);
+        });
+      });
+      context('changing 2nd candidate', async () => {
+        let total_weight_of_votes_before: number;
+        let total_votes_on_candidates_before: number;
+        it('before voting: total_weight_of_votes', async () => {
+          total_weight_of_votes_before = await get_from_dacglobals(
+            dacId,
+            'total_weight_of_votes'
+          );
+        });
+        it('before voting: total_votes_on_candidates', async () => {
+          total_votes_on_candidates_before = await get_from_dacglobals(
+            dacId,
+            'total_votes_on_candidates'
+          );
+        });
+        it('should work', async () => {
+          const cust1 = candidates[0];
+          const cust3 = candidates[2];
+          await shared.daccustodian_contract.votecust(
+            voter.name,
+            [cust1.name, cust3.name],
             dacId,
             {
               from: voter,
