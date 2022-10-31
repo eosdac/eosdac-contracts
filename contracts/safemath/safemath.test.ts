@@ -37,7 +37,7 @@ describe('Safemath', () => {
   it('smoverflow should throw multiplication overflow error', async () => {
     await assertEOSErrorIncludesMessage(
       contract.smoverflow(),
-      'signed multiplication overflow'
+      'signed multiplication overflow Smoverflow 1 2 testname'
     );
   });
   it('umoverflow should throw multiplication overflow error', async () => {
@@ -182,17 +182,29 @@ describe('Safemath', () => {
   it('const1 should work', async () => {
     await contract.const1();
   });
-  it('floatc should error', async () => {
+  it('Floatc should error', async () => {
     await assertEOSErrorIncludesMessage(
       contract.floatc(),
-      'Invalid narrow cast while converting from float to int'
+      'Float 256.500000 is too big for uint8_t ABC: 1, mouse'
     );
   });
   it('floatc1 should error', async () => {
     await assertEOSErrorIncludesMessage(
       contract.floatc1(),
-      'Invalid narrow cast while converting from float to int'
+      'Float 128.500000 is too big for int8_t DEF: 2, cat'
     );
+  });
+  it('floatc2 should error', async () => {
+    await assertEOSErrorIncludesMessage(
+      contract.floatc2(),
+      'Float -128.500000 is too big for int8_t'
+    );
+  });
+  it('floatc3 should work', async () => {
+    await contract.floatc3();
+  });
+  it('floatmax should work', async () => {
+    await contract.floatmax();
   });
   it('floatca should work', async () => {
     await contract.floatca();

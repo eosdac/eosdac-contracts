@@ -7,10 +7,10 @@
 
 using namespace eosio;
 
-static constexpr auto constexpr_a = S<uint8_t>{1};
-static constexpr auto constexpr_b = S<uint8_t>{2};
+const auto constexpr_a = S<uint8_t>{1};
+const auto constexpr_b = S<uint8_t>{2};
 
-static constexpr auto constexpr_c = S<int64_t>{1} - S<int64_t>{2};
+const auto constexpr_c = S<int64_t>{1} - S<int64_t>{2};
 
 template <typename R1, typename R2>
 using can_plus = decltype(std::declval<R1>() + std::declval<R2>());
@@ -94,6 +94,7 @@ CONTRACT safemath : public contract {
     }
 
     ACTION smoverflow() {
+        SErr::set("Smoverflow %s %s %s", 1, 2, "testname"_n);
         S{std::numeric_limits<int64_t>::max()} * S<int64_t>{2};
     }
 
@@ -234,22 +235,44 @@ CONTRACT safemath : public contract {
         constexpr bool can_compile4 = std::experimental::is_detected_v<can_equal, decltype(S{1u}), decltype(2u)>;
         static_assert(can_compile4, "operator==() should compile with same number types");
 
-        constexpr auto a = S{1}.to<uint128_t>();
+        const auto a = S{1}.to<uint128_t>();
     }
     ACTION const1() {
         check(constexpr_c == S{int64_t{-1}}, "wrong result");
     }
 
     ACTION floatc() {
-        S{256.5}.to<uint8_t>();
+        const auto a = 1;
+        const auto b = "mouse"_n;
+        SErr::set("ABC: %s, %s", a, b);
+        auto x = S{256.5}.to<uint8_t>();
     }
     ACTION floatc1() {
-        S{256.5}.to<int8_t>();
+        const auto a = 2;
+        const auto b = "cat"_n;
+        SErr::set("DEF: %s, %s", a, b);
+        S{128.5}.to<int8_t>();
     }
+    ACTION floatc2() {
+        S{-128.5}.to<int8_t>();
+    }
+    ACTION floatc3() {
+        check(S{-127.0}.to<int8_t>() == int8_t{-127}, "wrong result 1");
+        check(S{127.0}.to<int8_t>() == int8_t{127}, "wrong result 2");
+
+        check(S{255.0}.to<uint8_t>() == uint8_t{255}, "wrong result 3");
+        check(S{0.9}.to<uint8_t>() == uint8_t{0}, "wrong result 4");
+    }
+
+    ACTION floatmax() {
+        const auto maxuint = std::numeric_limits<uint32_t>::max();
+
+        const auto maxuint_float = S{maxuint}.to<double>();
+        S{maxuint_float}.to<uint32_t>();
+    }
+
     ACTION floatca() {
-        check(S{255.5}.to<uint8_t>() == uint8_t{255}, "wrong result");
-        check(S{255.1}.to<uint8_t>() == uint8_t{255}, "wrong result");
-        check(S{255.9}.to<uint8_t>() == uint8_t{255}, "wrong result");
+
         check(S{255.0}.to<uint8_t>() == uint8_t{255}, "wrong result");
         check(S{254.9}.to<uint8_t>() == uint8_t{254}, "wrong result");
 
