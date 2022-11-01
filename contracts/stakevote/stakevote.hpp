@@ -46,7 +46,7 @@ CONTRACT stakevote : public contract {
     ACTION balanceobsv(const vector<account_balance_delta> &balance_deltas, const name dac_id);
     ACTION updateconfig(config_item & new_config, const name dac_id);
 
-#ifdef DEBUG
+#if defined(DEBUG) || defined(IS_DEV)
     ACTION clearweights(uint16_t batch_size, name dac_id);
     ACTION collectwts(uint16_t batch_size, name dac_id, bool assert);
 #endif
