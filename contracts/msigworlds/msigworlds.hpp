@@ -6,6 +6,7 @@
 #include <eosio/singleton.hpp>
 #include <eosio/transaction.hpp>
 
+#include "../../contract-shared-headers/daccustodian_shared.hpp"
 #include "../../contract-shared-headers/dacdirectory_shared.hpp"
 #include "../../contract-shared-headers/eosdactokens_shared.hpp"
 
@@ -132,7 +133,7 @@ class [[eosio::contract("msigworlds")]] multisig : public eosio::contract {
      * @param trx - Proposed transaction
      */
     ACTION propose(name proposer, name proposal_name, std::vector<permission_level> requested, name dac_id,
-        std::map<std::string, std::string> metadata, ignore<transaction> trx);
+        std::map<std::string, std::string> metadata, eosio::ignore<transaction> trx);
     /**
      * Approve action approves an existing proposal. Allows an account, the owner of `level` permission, to approve
      * a proposal `proposal_name` proposed by `proposer`. If the proposal's requested approval list contains the
@@ -254,6 +255,18 @@ class [[eosio::contract("msigworlds")]] multisig : public eosio::contract {
             }
         } else {
             eosdac::assertValidMember(proposer, dac_id);
+        }
+    }
+
+    void assertValidCustodian(const name proposer, const name dac_id) {
+        const auto dac                = eosdac::dacdir::dac_for_id(dac_id);
+        const auto custodian_contract = dac.account_for_type_maybe(eosdac::dacdir::CUSTODIAN);
+        if (custodian_contract) {
+            const auto custodians   = eosdac::custodians_table{*custodian_contract, dac_id.value};
+            const auto is_custodian = custodians.find(proposer.value) != custodians.end();
+            check(is_custodian,
+                "ERR::PROPOSER_NOT_CUSTODIAN::Cannot propose proposal, proposer %s must be active custodian.",
+                proposer);
         }
     }
 };

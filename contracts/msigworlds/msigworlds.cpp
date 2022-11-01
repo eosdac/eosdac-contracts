@@ -32,7 +32,7 @@ std::vector<permission_level> get_approvals_and_adjust_table(
 }
 
 void multisig::propose(name proposer, name proposal_name, std::vector<permission_level> requested, name dac_id,
-    std::map<std::string, std::string> metadata, ignore<transaction> trx) {
+    std::map<std::string, std::string> metadata, eosio::ignore<transaction> trx) {
     require_auth(proposer);
     assertValidMember(proposer, dac_id);
     auto &ds = get_datastream();
@@ -66,6 +66,8 @@ void multisig::propose(name proposer, name proposal_name, std::vector<permission
                      trx_pos, size, (const char *)0, 0, packed_requested.data(), packed_requested.size());
 
     check(res > 0, "msigworlds::propose preflight transaction authorization check failed");
+
+    assertValidCustodian(proposer, dac_id);
 
     const auto pkd_trans = std::vector<char>(trx_pos, trx_pos + size);
 
