@@ -7,6 +7,7 @@ import {
   EOSManager,
   sleep,
   assertRowCount,
+  assertEOSException,
 } from 'lamington';
 import { SharedTestObjects, regdac } from '../TestHelpers';
 
@@ -300,7 +301,60 @@ describe('Msigworlds', () => {
             );
           });
         });
+        context(
+          'with all correct params but not being a custodian',
+          async () => {
+            it('should fail', async () => {
+              const result = await assertEOSErrorIncludesMessage(
+                msigworlds.propose(
+                  owner1.name,
+                  'prop1',
+                  [
+                    { actor: owner1.name, permission: 'active' },
+                    { actor: owner2.name, permission: 'active' },
+                  ],
+                  dac_id,
+                  [],
+                  {
+                    actions: await api.serializeActions([
+                      {
+                        account: shared.eosio_token_contract.name,
+                        authorization: [
+                          { actor: owner1.name, permission: 'active' },
+                          { actor: owner2.name, permission: 'active' },
+                        ],
+                        name: 'transfer',
+                        data: {
+                          from: owner1.name,
+                          to: owner2.name,
+                          quantity: '10.0000 TLM',
+                          memo: 'testing',
+                        },
+                      },
+                    ]),
+                    context_free_actions: [],
+                    delay_sec: '0',
+                    expiration: await currentHeadTimeWithAddedSeconds(3600),
+                    max_cpu_usage_ms: 0,
+                    max_net_usage_words: '0',
+                    ref_block_num: 12345,
+                    ref_block_prefix: 123,
+                    transaction_extensions: [],
+                  },
+                  { from: owner1 }
+                ),
+                'ERR::PROPOSER_NOT_CUSTODIAN'
+              );
+              // console.log(result);
+              // prop1Hash = result.transaction_id; // capture the proposal hash to use for the approve tests.
+            });
+          }
+        );
         context('with all correct params', async () => {
+          before(async () => {
+            // add user to the custodians table
+            await shared.daccustodian_contract.tstaddcust(owner1, dac_id);
+          });
           it('should succeed', async () => {
             const result = await msigworlds.propose(
               owner1.name,
