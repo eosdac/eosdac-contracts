@@ -35,7 +35,7 @@ export const currentHeadTimeWithAddedSeconds = async (seconds: number) => {
   return date;
 };
 
-describe('msigworlds', () => {
+describe('Msigworlds', () => {
   let shared: SharedTestObjects;
 
   before(async () => {
@@ -504,6 +504,20 @@ describe('msigworlds', () => {
         });
         it('should update proposal earliest exec date', async () => {
           const props = await msigworlds.proposalsTable({ scope: dac_id });
+        });
+      });
+      context('duplicate', async () => {
+        it('should fail', async () => {
+          await assertEOSErrorIncludesMessage(
+            msigworlds.approve(
+              'prop1',
+              { actor: owner2.name, permission: 'active' },
+              dac_id,
+              null,
+              { from: owner2 }
+            ),
+            'ERR::DUPLICATE_APPROVAL::'
+          );
         });
       });
     });

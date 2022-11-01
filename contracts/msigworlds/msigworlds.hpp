@@ -41,12 +41,17 @@ typedef eosio::multi_index<"proposals"_n, proposal,
 struct approval {
     permission_level level;
     time_point       time;
+
+    friend bool operator==(const approval &a, const approval &b) {
+        // approvals are considered equal if their levels match, regardless of time
+        return a.level == b.level;
+    }
 };
 
 struct [[eosio::table("approvals"), eosio::contract("msigworlds")]] approvals_info {
     name proposal_name;
-    // requested approval doesn't need to cointain time, but we want requested approval
-    // to be of exact the same size ad provided approval, in this case approve/unapprove
+    // requested approval doesn't need to contain time, but we want requested approval
+    // to be of exact the same size as provided approval, in this case approve/unapprove
     // doesn't change serialized data size. So, we use the same type.
     std::vector<approval> requested_approvals;
     std::vector<approval> provided_approvals;

@@ -63,7 +63,7 @@ void multisig::propose(name proposer, name proposal_name, std::vector<permission
 
     auto packed_requested = pack(requested);
     auto res              = check_transaction_authorization(
-        trx_pos, size, (const char *)0, 0, packed_requested.data(), packed_requested.size());
+                     trx_pos, size, (const char *)0, 0, packed_requested.data(), packed_requested.size());
 
     check(res > 0, "msigworlds::propose preflight transaction authorization check failed");
 
@@ -99,7 +99,7 @@ void multisig::approve(
     }
 
     proposals proptable(get_self(), dac_id.value);
-    auto &    prop = proptable.get(proposal_name.value, "proposal not found");
+    auto     &prop = proptable.get(proposal_name.value, "proposal not found");
     check(prop.state == PropState::PENDING,
         "ERR::PROP_NOT_PENDING::proposal can only be approved while in pending state");
 
@@ -107,18 +107,22 @@ void multisig::approve(
         assert_sha256(prop.packed_transaction.data(), prop.packed_transaction.size(), proposal_hash.value());
     }
 
+    const auto this_approval = approval{level, current_time_point()};
+
     approvals apptable(get_self(), dac_id.value);
     auto      apps_it = apptable.require_find(proposal_name.value, "ERR::NO_APPROVALS_FOUND::No approvals were found.");
-    auto      itr =
-        std::find_if(apps_it->requested_approvals.begin(), apps_it->requested_approvals.end(), [&](const approval &a) {
-            return a.level == level;
-        });
+    auto      itr = std::find(apps_it->requested_approvals.begin(), apps_it->requested_approvals.end(), this_approval);
 
     auto        is_requested_approval = itr != apps_it->requested_approvals.end();
     eosio::name ram_payer             = is_requested_approval ? same_payer : level.actor;
 
     apptable.modify(apps_it, ram_payer, [&](auto &a) {
-        a.provided_approvals.push_back(approval{level, current_time_point()});
+        const bool is_duplicate = std::find(a.provided_approvals.begin(), a.provided_approvals.end(), this_approval) !=
+                                  a.provided_approvals.end();
+        check(
+            !is_duplicate, "ERR::DUPLICATE_APPROVAL::Approval by %s@%s already exists.", level.actor, level.permission);
+
+        a.provided_approvals.push_back(this_approval);
         if (is_requested_approval) {
             a.requested_approvals.erase(itr);
         }
@@ -179,7 +183,7 @@ void multisig::_unapprove(
     }
 
     proposals proptable(get_self(), dac_id.value);
-    auto &    prop = proptable.get(proposal_name.value, "proposal not found");
+    auto     &prop = proptable.get(proposal_name.value, "proposal not found");
     check(prop.state == PropState::PENDING,
         "ERR::PROP_NOT_PENDING::proposal can only be changed while in pending state.");
 
@@ -201,7 +205,7 @@ void multisig::_unapprove(
 
 void multisig::checkauth(name proposal_name, name dac_id) {
     proposals proptable(get_self(), dac_id.value);
-    auto &    prop     = proptable.get(proposal_name.value, "proposal not found");
+    auto     &prop     = proptable.get(proposal_name.value, "proposal not found");
     auto      table_op = [](auto &&, auto &&) {};
     if (trx_is_authorized(
             get_approvals_and_adjust_table(get_self(), proposal_name, table_op, dac_id), prop.packed_transaction)) {
@@ -215,7 +219,7 @@ void multisig::cancel(name proposal_name, name canceler, name dac_id) {
     require_auth(canceler);
 
     proposals proptable(get_self(), dac_id.value);
-    auto &    prop = proptable.get(proposal_name.value, "proposal not found");
+    auto     &prop = proptable.get(proposal_name.value, "proposal not found");
 
     if (canceler != prop.proposer) {
         check(unpack<transaction_header>(prop.packed_transaction).expiration <
@@ -236,7 +240,7 @@ void multisig::exec(name proposal_name, name executer, name dac_id) {
     require_auth(executer);
 
     proposals proptable(get_self(), dac_id.value);
-    auto &    prop = proptable.get(proposal_name.value, "proposal not found");
+    auto     &prop = proptable.get(proposal_name.value, "proposal not found");
     check(prop.state == PropState::PENDING,
         "ERR::PROP_EXEC_NOT_PENDING::The same proposal cannot be executed mulitple times.");
 
@@ -275,7 +279,7 @@ void multisig::exec(name proposal_name, name executer, name dac_id) {
 
 void multisig::cleanup(name proposal_name, name dac_id) {
     proposals proptable(get_self(), dac_id.value);
-    auto &    prop = proptable.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::proposal not found");
+    auto     &prop = proptable.get(proposal_name.value, "ERR::PROPOSAL_NOT_FOUND::proposal not found");
     check(prop.state != PropState::PENDING,
         "ERR::PROPOSAL_CLEANUP_STILL_PENDING::proposal cannot be cleared before being executed or cancelled.");
 
