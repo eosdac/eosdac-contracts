@@ -140,7 +140,10 @@ describe('Dacproposals', () => {
             'summary',
             arbitrator.name,
             { quantity: '100.0000 EOS', contract: 'eosio.token' },
-            { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+            {
+              quantity: '10.0000 PROPDAC',
+              contract: shared.dac_token_contract.name,
+            },
             proposalHash,
             newpropid,
             category,
@@ -161,7 +164,10 @@ describe('Dacproposals', () => {
               'summary',
               arbitrator.name,
               { quantity: '100.0000 EOS', contract: 'eosio.token' },
-              { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+              {
+                quantity: '10.0000 PROPDAC',
+                contract: shared.dac_token_contract.name,
+              },
               proposalHash,
               newpropid,
               category,
@@ -182,7 +188,10 @@ describe('Dacproposals', () => {
               'su',
               arbitrator.name,
               { quantity: '100.0000 EOS', contract: 'eosio.token' },
-              { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+              {
+                quantity: '10.0000 PROPDAC',
+                contract: shared.dac_token_contract.name,
+              },
               proposalHash,
               newpropid,
               category,
@@ -204,7 +213,10 @@ describe('Dacproposals', () => {
               'summary',
               arbitrator.name,
               { quantity: '-100.0000 EOS', contract: 'eosio.token' },
-              { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+              {
+                quantity: '10.0000 PROPDAC',
+                contract: shared.dac_token_contract.name,
+              },
               proposalHash,
               newpropid,
               category,
@@ -225,7 +237,10 @@ describe('Dacproposals', () => {
               'summary',
               'randomname',
               { quantity: '100.0000 EOS', contract: 'eosio.token' },
-              { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+              {
+                quantity: '10.0000 PROPDAC',
+                contract: shared.dac_token_contract.name,
+              },
               proposalHash,
               newpropid,
               category,
@@ -245,7 +260,10 @@ describe('Dacproposals', () => {
             'summary',
             arbitrator.name,
             { quantity: '100.0000 EOS', contract: 'eosio.token' },
-            { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+            {
+              quantity: '10.0000 PROPDAC',
+              contract: shared.dac_token_contract.name,
+            },
             proposalHash,
             newpropid,
             category,
@@ -268,7 +286,10 @@ describe('Dacproposals', () => {
                 quantity: '100.0000 EOS',
                 contract: 'eosio.token',
               },
-              { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+              {
+                quantity: '10.0000 PROPDAC',
+                contract: shared.dac_token_contract.name,
+              },
 
               proposalHash,
               newpropid,
@@ -289,7 +310,10 @@ describe('Dacproposals', () => {
             'summary',
             arbitrator.name,
             { quantity: '100.0000 EOS', contract: 'eosio.token' },
-            { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+            {
+              quantity: '10.0000 PROPDAC',
+              contract: shared.dac_token_contract.name,
+            },
             proposalHash,
             otherfoundpropid,
             category,
@@ -473,7 +497,10 @@ describe('Dacproposals', () => {
           'startwork_summary',
           arbitrator.name,
           { quantity: '101.0000 EOS', contract: 'eosio.token' },
-          { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+          {
+            quantity: '10.0000 PROPDAC',
+            contract: shared.dac_token_contract.name,
+          },
           'asdfasdfasdfasdfasdfasdfasdffdsa',
           delgatepropid, // proposal id
           category,
@@ -592,7 +619,10 @@ describe('Dacproposals', () => {
         'summary',
         arbitrator.name,
         { quantity: '100.0000 EOS', contract: 'eosio.token' },
-        { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+        {
+          quantity: '10.0000 PROPDAC',
+          contract: shared.dac_token_contract.name,
+        },
         proposalHash,
         commentPropId,
         category,
@@ -967,7 +997,10 @@ describe('Dacproposals', () => {
           'startwork_summary',
           arbitrator.name,
           { quantity: '105.0000 EOS', contract: 'eosio.token' },
-          { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+          {
+            quantity: '10.0000 PROPDAC',
+            contract: shared.dac_token_contract.name,
+          },
           'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
           propId, // proposal id
           category,
@@ -1188,7 +1221,10 @@ describe('Dacproposals', () => {
           'startwork_summary',
           arbitrator.name,
           { quantity: '101.0000 EOS', contract: 'eosio.token' },
-          { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+          {
+            quantity: '10.0000 PROPDAC',
+            contract: shared.dac_token_contract.name,
+          },
           'asdfasdfasdfasdfasdfasdfasdffdsa',
           wrongStateProp, // proposal id
           category,
@@ -1240,7 +1276,10 @@ describe('Dacproposals', () => {
           'startwork_summary',
           arbitrator.name,
           { quantity: '101.0000 EOS', contract: 'eosio.token' },
-          { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+          {
+            quantity: '10.0000 PROPDAC',
+            contract: shared.dac_token_contract.name,
+          },
           'asdfasdfasdfasdfasdfasdfasdffdsa',
           wrongFinProp, // proposal id
           category,
@@ -1438,7 +1477,10 @@ describe('Dacproposals', () => {
           'summary',
           arbitrator.name,
           { quantity: '100.0000 EOS', contract: 'eosio.token' },
-          { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+          {
+            quantity: '10.0000 PROPDAC',
+            contract: shared.dac_token_contract.name,
+          },
           proposalHash,
           arbApproveId,
           category,
@@ -1704,7 +1746,10 @@ describe('Dacproposals', () => {
           'summary',
           arbitrator.name,
           { quantity: '100.0000 EOS', contract: 'eosio.token' },
-          { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+          {
+            quantity: '10.0000 PROPDAC',
+            contract: shared.dac_token_contract.name,
+          },
           proposalHash,
           arbDenyId,
           category,
@@ -1956,7 +2001,10 @@ describe('Dacproposals', () => {
         'startwork_summary',
         arbitrator.name,
         { quantity: '106.0000 EOS', contract: 'eosio.token' },
-        { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+        {
+          quantity: '10.0000 PROPDAC',
+          contract: shared.dac_token_contract.name,
+        },
         'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
         cancelpropid, // proposal id
         category,
@@ -2097,7 +2145,10 @@ describe('Dacproposals', () => {
         'startwork_summary',
         arbitrator.name,
         { quantity: '106.0000 EOS', contract: 'eosio.token' },
-        { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+        {
+          quantity: '10.0000 PROPDAC',
+          contract: shared.dac_token_contract.name,
+        },
         'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
         cancelpropid, // proposal id
         category,
@@ -2201,7 +2252,10 @@ describe('Dacproposals', () => {
             'delegate categories_summary',
             arbitrator.name,
             { quantity: '106.0000 EOS', contract: 'eosio.token' },
-            { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+            {
+              quantity: '10.0000 PROPDAC',
+              contract: shared.dac_token_contract.name,
+            },
             'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
             propId, // proposal id
             category, // category number
@@ -2404,7 +2458,10 @@ describe('Dacproposals', () => {
             'delegate complex_summary',
             arbitrator.name,
             { quantity: '106.0000 EOS', contract: 'eosio.token' },
-            { quantity: '10.0000 PROPDAC', contract: 'eosdactokens' },
+            {
+              quantity: '10.0000 PROPDAC',
+              contract: shared.dac_token_contract.name,
+            },
             'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
             propId, // proposal id
             category, // category number
