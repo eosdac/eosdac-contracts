@@ -253,7 +253,7 @@ CONTRACT safemath : public contract {
         S{128.5}.to<int8_t>();
     }
     ACTION floatc2() {
-        S{-128.5}.to<int8_t>();
+        S{-128.5}.to<int8_t>("floatc2 error given as to argument");
     }
     ACTION floatc3() {
         check(S{-127.0}.to<int8_t>() == int8_t{-127}, "wrong result 1");

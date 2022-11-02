@@ -197,7 +197,7 @@ describe('Safemath', () => {
   it('floatc2 should error', async () => {
     await assertEOSErrorIncludesMessage(
       contract.floatc2(),
-      'Float -128.500000 is too big for int8_t'
+      'Float -128.500000 is too big for int8_t floatc2 error given as to argument'
     );
   });
   it('floatc3 should work', async () => {
