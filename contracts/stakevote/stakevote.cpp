@@ -34,7 +34,7 @@ void stakevote::stakeobsv(const vector<account_stake_delta> &stake_deltas, const
         const auto vw_itr = weights.find(asd.account.value);
         if (vw_itr != weights.end()) {
             weights.modify(vw_itr, same_payer, [&](auto &v) {
-                if (weight_delta < 0.0 && close_enough_to_be_a_rounding_error(weight_delta, v.weight)) {
+                if (weight_delta < 0.0 && would_turn_negative(v.voter, weight_delta, v.weight)) {
                     // due to rounding differences that accumulate every time a user stakes and unstakes,
                     // the calculated vote_weight could become negative, set it to 0 in this case.
                     v.weight = 0;
