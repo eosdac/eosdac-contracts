@@ -511,17 +511,41 @@ describe('Msigworlds', () => {
     });
     context('with existing proposal', async () => {
       context('for unrequested auth', async () => {
-        it('should succeed', async () => {
-          await msigworlds.approve(
-            'prop1',
-            { actor: owner3.name, permission: 'active' },
-            dac_id,
-            null,
-            { from: owner3 }
-          );
+        context('but without being a custodian', async () => {
+          it('should fail with PROPOSER_NOT_CUSTODIAN error', async () => {
+            await assertEOSErrorIncludesMessage(
+              msigworlds.approve(
+                'prop1',
+                { actor: owner3.name, permission: 'active' },
+                dac_id,
+                null,
+                { from: owner3 }
+              ),
+              'ERR::PROPOSER_NOT_CUSTODIAN::'
+            );
+          });
+        });
+        context('while being an active custodian', async () => {
+          before(async () => {
+            // add user to the custodians table
+            await shared.daccustodian_contract.tstaddcust(owner3, dac_id);
+          });
+          it('should succeed', async () => {
+            await msigworlds.approve(
+              'prop1',
+              { actor: owner3.name, permission: 'active' },
+              dac_id,
+              null,
+              { from: owner3 }
+            );
+          });
         });
       });
       context('for requested auth', async () => {
+        before(async () => {
+          // add user to the custodians table
+          await shared.daccustodian_contract.tstaddcust(owner2, dac_id);
+        });
         it('should succeed', async () => {
           await msigworlds.approve(
             'prop1',

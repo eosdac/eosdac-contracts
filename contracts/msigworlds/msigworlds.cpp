@@ -98,6 +98,7 @@ void multisig::approve(
         check(get_sender() == level.actor, "wrong contract sent `approve` action for eosio.code permmission");
     } else {
         require_auth(level);
+        assertValidCustodian(level.actor, dac_id);
     }
 
     proposals proptable(get_self(), dac_id.value);
