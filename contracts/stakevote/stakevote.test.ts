@@ -42,7 +42,7 @@ describe('Stakevote', () => {
     let stake_amount = new Asset(1000, symbol);
     let stake_delay = 2 * years;
     let default_staketime = 2 * days;
-    let time_multiplier = 10000;
+    let time_multiplier = 4;
     let regMembers: Account[];
     let candidates: Account[];
     let staker: Account;
@@ -164,6 +164,64 @@ describe('Stakevote', () => {
           `${precision},${symbol}`,
           { from: shared.auth_account }
         );
+      });
+    });
+    context('staking and unstaking repeatedly', async () => {
+      it('should work', async () => {
+        await shared.dac_token_contract.transfer(
+          shared.tokenIssuer.name,
+          staker.name,
+          '1000.0000 STADAC',
+          '',
+          { from: shared.tokenIssuer }
+        );
+
+        await shared.dac_token_contract.stake(staker.name, '1.0000 STADAC', {
+          from: staker,
+        });
+
+        await shared.dac_token_contract.unstake(staker.name, '0.0005 STADAC', {
+          from: staker,
+        });
+
+        await shared.dac_token_contract.staketime(
+          staker.name,
+          4 * days,
+          '4,STADAC',
+          {
+            from: staker,
+          }
+        );
+
+        await shared.dac_token_contract.unstake(staker.name, '0.0001 STADAC', {
+          from: staker,
+        });
+        await shared.dac_token_contract.unstake(staker.name, '0.0002 STADAC', {
+          from: staker,
+        });
+        await shared.dac_token_contract.unstake(staker.name, '0.0003 STADAC', {
+          from: staker,
+        });
+        await shared.dac_token_contract.unstake(staker.name, '0.0004 STADAC', {
+          from: staker,
+        });
+        await shared.dac_token_contract.stake(staker.name, '0.0005 STADAC', {
+          from: staker,
+        });
+        await shared.dac_token_contract.staketime(
+          staker.name,
+          20 * days,
+          '4,STADAC',
+          {
+            from: staker,
+          }
+        );
+        await shared.dac_token_contract.unstake(staker.name, '0.9989 STADAC', {
+          from: staker,
+        });
+        await shared.dac_token_contract.unstake(staker.name, '0.0001 STADAC', {
+          from: staker,
+        });
       });
     });
     context('without an activation account', async () => {
@@ -394,6 +452,77 @@ describe('Stakevote', () => {
             'total_votes_on_candidates'
           );
           chai.expect(parseInt(x, 10)).to.equal(expected);
+        });
+      });
+      context('staking and unstaking repeatedly', async () => {
+        it('should work', async () => {
+          await shared.dac_token_contract.transfer(
+            shared.tokenIssuer.name,
+            voter.name,
+            '2000.0000 STADAC',
+            '',
+            { from: shared.tokenIssuer }
+          );
+
+          await shared.dac_token_contract.stake(
+            voter.name,
+            '1000.0000 STADAC',
+            {
+              from: voter,
+            }
+          );
+
+          await shared.dac_token_contract.unstake(voter.name, '0.0005 STADAC', {
+            from: voter,
+          });
+
+          await shared.dac_token_contract.staketime(
+            voter.name,
+            4 * days,
+            '4,STADAC',
+            {
+              from: voter,
+            }
+          );
+
+          await shared.dac_token_contract.unstake(voter.name, '0.0001 STADAC', {
+            from: voter,
+          });
+          await shared.dac_token_contract.unstake(voter.name, '0.0002 STADAC', {
+            from: voter,
+          });
+          await shared.dac_token_contract.unstake(voter.name, '0.0003 STADAC', {
+            from: voter,
+          });
+          await shared.dac_token_contract.unstake(voter.name, '0.0004 STADAC', {
+            from: voter,
+          });
+          await shared.dac_token_contract.stake(voter.name, '0.0005 STADAC', {
+            from: voter,
+          });
+          await shared.dac_token_contract.staketime(
+            voter.name,
+            20 * days,
+            '4,STADAC',
+            {
+              from: voter,
+            }
+          );
+          await shared.dac_token_contract.unstake(voter.name, '0.9989 STADAC', {
+            from: voter,
+          });
+          await shared.dac_token_contract.unstake(
+            voter.name,
+            '1998.9994 STADAC',
+            {
+              from: voter,
+            }
+          );
+          await shared.dac_token_contract.unstake(voter.name, '0.0007 STADAC', {
+            from: voter,
+          });
+
+          await stake(voter, stake_amount);
         });
       });
       context('for 2nd candidate', async () => {
