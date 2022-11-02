@@ -8,12 +8,12 @@
 #include <eosio/singleton.hpp>
 #include <eosio/time.hpp>
 
-#include "common_utilities.hpp"
 #include "config.hpp"
 #include "daccustodian_shared.hpp"
 #include "eosdactokens_shared.hpp"
 #include "external_types.hpp"
 #include "safemath/safemath.hpp"
+#include "safemath/util.hpp"
 
 using namespace std;
 
