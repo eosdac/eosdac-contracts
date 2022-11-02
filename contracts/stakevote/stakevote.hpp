@@ -51,6 +51,11 @@ CONTRACT stakevote : public contract {
     ACTION collectwts(uint16_t batch_size, name dac_id, bool assert);
 #endif
 
+    bool close_enough_to_be_a_rounding_error(S<double> weight_delta, uint64_t weight) {
+        const auto difference = weight_delta.abs().to<int64_t>() - S<uint64_t>{weight}.to<int64_t>();
+        return difference < int64_t{5};
+    }
+
     struct [[eosio::table("stakes"), eosio::contract("eosdactokens")]] stake_info {
         name  account;
         asset stake;
