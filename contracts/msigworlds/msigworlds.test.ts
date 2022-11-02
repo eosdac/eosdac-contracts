@@ -343,7 +343,7 @@ describe('Msigworlds', () => {
                   },
                   { from: owner1 }
                 ),
-                'ERR::PROPOSER_NOT_CUSTODIAN'
+                'ERR::MUST_BE_CUSTODIAN::'
               );
               // console.log(result);
               // prop1Hash = result.transaction_id; // capture the proposal hash to use for the approve tests.
@@ -521,7 +521,7 @@ describe('Msigworlds', () => {
                 null,
                 { from: owner3 }
               ),
-              'ERR::PROPOSER_NOT_CUSTODIAN::'
+              'ERR::MUST_BE_CUSTODIAN::'
             );
           });
         });
