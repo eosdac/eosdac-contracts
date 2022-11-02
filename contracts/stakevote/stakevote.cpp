@@ -34,12 +34,13 @@ void stakevote::stakeobsv(const vector<account_stake_delta> &stake_deltas, const
         const auto vw_itr = weights.find(asd.account.value);
         if (vw_itr != weights.end()) {
             weights.modify(vw_itr, same_payer, [&](auto &v) {
-                if (weight_delta < 0.0) {
-                    check(weight_delta.abs().to<int64_t>() <= S<uint64_t>{v.weight}.to<int64_t>(),
-                        "ERR:INVALID_WEIGHT_DELTA_UPDATE: %s Trying to subtract weight_delta of %s from v.weight of %s stake_delta: %s unstake_delay: %s time_multiplier: %s max_stake_time: %s",
-                        v.voter, weight_delta.abs().to<int64_t>(), v.weight);
+                if (weight_delta < 0.0 && would_turn_negative(v.voter, weight_delta, v.weight)) {
+                    // due to rounding differences that accumulate every time a user stakes and unstakes,
+                    // the calculated vote_weight could become negative, set it to 0 in this case.
+                    v.weight = 0;
+                } else {
+                    v.weight = S<uint64_t>{v.weight}.add_signed_to_unsigned(weight_delta);
                 }
-                v.weight = S<uint64_t>{v.weight}.add_signed_to_unsigned(weight_delta);
                 if (weight_delta_quorum < int64_t{0}) {
                     check(weight_delta_quorum.abs().to<int64_t>() <= S<uint64_t>{v.weight_quorum}.to<int64_t>(),
                         "ERR:INVALID_WEIGHT_DELTA_QUORUM_UPDATE: %s Trying to subtract weight_delta_quorum %s from %s",

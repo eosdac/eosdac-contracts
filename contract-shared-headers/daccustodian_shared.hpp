@@ -503,6 +503,17 @@ namespace eosdac {
         ACTION migraterank(const name &dac_id);
         ACTION clearrank(const name &dac_id);
         ACTION fillstate(const name &dac_id);
+
+        // helper function for testing to add custodian to custodians table without the need for elections
+        ACTION tstaddcust(const name cust, const name dac_id) {
+            auto custodians = custodians_table{get_self(), dac_id.value};
+            custodians.emplace(get_self(), [&](auto &c) {
+                c.cust_name        = cust;
+                c.requestedpay     = ZERO_TRILIUM;
+                c.total_vote_power = 0;
+            });
+        };
+
 #endif
         /**
          * This action is used to register a custom permission that will be used in the multisig instead of active.

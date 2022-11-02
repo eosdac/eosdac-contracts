@@ -7,6 +7,7 @@ import {
   EOSManager,
   sleep,
   assertRowCount,
+  assertEOSException,
 } from 'lamington';
 import { SharedTestObjects, regdac } from '../TestHelpers';
 
@@ -35,7 +36,7 @@ export const currentHeadTimeWithAddedSeconds = async (seconds: number) => {
   return date;
 };
 
-describe('msigworlds', () => {
+describe('Msigworlds', () => {
   let shared: SharedTestObjects;
 
   before(async () => {
@@ -300,7 +301,60 @@ describe('msigworlds', () => {
             );
           });
         });
+        context(
+          'with all correct params but not being a custodian',
+          async () => {
+            it('should fail', async () => {
+              const result = await assertEOSErrorIncludesMessage(
+                msigworlds.propose(
+                  owner1.name,
+                  'prop1',
+                  [
+                    { actor: owner1.name, permission: 'active' },
+                    { actor: owner2.name, permission: 'active' },
+                  ],
+                  dac_id,
+                  [],
+                  {
+                    actions: await api.serializeActions([
+                      {
+                        account: shared.eosio_token_contract.name,
+                        authorization: [
+                          { actor: owner1.name, permission: 'active' },
+                          { actor: owner2.name, permission: 'active' },
+                        ],
+                        name: 'transfer',
+                        data: {
+                          from: owner1.name,
+                          to: owner2.name,
+                          quantity: '10.0000 TLM',
+                          memo: 'testing',
+                        },
+                      },
+                    ]),
+                    context_free_actions: [],
+                    delay_sec: '0',
+                    expiration: await currentHeadTimeWithAddedSeconds(3600),
+                    max_cpu_usage_ms: 0,
+                    max_net_usage_words: '0',
+                    ref_block_num: 12345,
+                    ref_block_prefix: 123,
+                    transaction_extensions: [],
+                  },
+                  { from: owner1 }
+                ),
+                'ERR::MUST_BE_CUSTODIAN::'
+              );
+              // console.log(result);
+              // prop1Hash = result.transaction_id; // capture the proposal hash to use for the approve tests.
+            });
+          }
+        );
         context('with all correct params', async () => {
+          before(async () => {
+            // add user to the custodians table
+            await shared.daccustodian_contract.tstaddcust(owner1, dac_id);
+          });
           it('should succeed', async () => {
             const result = await msigworlds.propose(
               owner1.name,
@@ -457,17 +511,41 @@ describe('msigworlds', () => {
     });
     context('with existing proposal', async () => {
       context('for unrequested auth', async () => {
-        it('should succeed', async () => {
-          await msigworlds.approve(
-            'prop1',
-            { actor: owner3.name, permission: 'active' },
-            dac_id,
-            null,
-            { from: owner3 }
-          );
+        context('but without being a custodian', async () => {
+          it('should fail with PROPOSER_NOT_CUSTODIAN error', async () => {
+            await assertEOSErrorIncludesMessage(
+              msigworlds.approve(
+                'prop1',
+                { actor: owner3.name, permission: 'active' },
+                dac_id,
+                null,
+                { from: owner3 }
+              ),
+              'ERR::MUST_BE_CUSTODIAN::'
+            );
+          });
+        });
+        context('while being an active custodian', async () => {
+          before(async () => {
+            // add user to the custodians table
+            await shared.daccustodian_contract.tstaddcust(owner3, dac_id);
+          });
+          it('should succeed', async () => {
+            await msigworlds.approve(
+              'prop1',
+              { actor: owner3.name, permission: 'active' },
+              dac_id,
+              null,
+              { from: owner3 }
+            );
+          });
         });
       });
       context('for requested auth', async () => {
+        before(async () => {
+          // add user to the custodians table
+          await shared.daccustodian_contract.tstaddcust(owner2, dac_id);
+        });
         it('should succeed', async () => {
           await msigworlds.approve(
             'prop1',
@@ -504,6 +582,20 @@ describe('msigworlds', () => {
         });
         it('should update proposal earliest exec date', async () => {
           const props = await msigworlds.proposalsTable({ scope: dac_id });
+        });
+      });
+      context('duplicate', async () => {
+        it('should fail', async () => {
+          await assertEOSErrorIncludesMessage(
+            msigworlds.approve(
+              'prop1',
+              { actor: owner2.name, permission: 'active' },
+              dac_id,
+              null,
+              { from: owner2 }
+            ),
+            'ERR::DUPLICATE_APPROVAL::'
+          );
         });
       });
     });
