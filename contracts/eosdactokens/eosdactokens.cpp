@@ -484,7 +484,7 @@ namespace eosdac {
         const auto referendum_contract = dac_inst.account_for_type_maybe(dacdir::REFERENDUM);
         const auto notify_contract     = (vote_contract) ? *vote_contract : *custodian_contract;
 
-        const auto unstake_delay = staketime_info::get_delay(get_self(), dac.dac_id, account);
+        const auto unstake_delay = staketime_info::get_delay(get_self(), dac_inst.dac_id, account);
 
         vector<account_stake_delta> stake_deltas = {{account, stake, unstake_delay}};
         action(permission_level{get_self(), "notify"_n}, notify_contract, "stakeobsv"_n,
