@@ -264,9 +264,7 @@ class [[eosio::contract("msigworlds")]] multisig : public eosio::contract {
         if (custodian_contract) {
             const auto custodians   = eosdac::custodians_table{*custodian_contract, dac_id.value};
             const auto is_custodian = custodians.find(proposer.value) != custodians.end();
-            check(is_custodian,
-                "ERR::PROPOSER_NOT_CUSTODIAN::Cannot propose proposal, proposer %s must be active custodian.",
-                proposer);
+            check(is_custodian, "ERR::PROPOSER_NOT_CUSTODIAN:: %s must be active custodian.", proposer);
         }
     }
 };
