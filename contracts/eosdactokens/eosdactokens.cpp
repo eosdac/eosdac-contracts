@@ -329,7 +329,8 @@ namespace eosdac {
 
         auto existing_stake = stakes.find(account.value);
         check(existing_stake != stakes.end(), "ERR:NO_STAKE_FOUND::No stake found");
-        check(existing_stake->stake >= quantity, "ERR::UNSTAKE_OVER::Quantity to unstake is more than staked amount");
+        check(existing_stake->stake >= quantity,
+            "ERR::UNSTAKE_OVER::Quantity to unstake %s is more than staked amount %s", quantity, existing_stake->stake);
 
         uint32_t         unstake_delay = config.min_stake_time;
         staketimes_table staketimes(get_self(), dac.dac_id.value);

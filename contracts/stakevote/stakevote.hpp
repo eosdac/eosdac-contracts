@@ -52,10 +52,12 @@ CONTRACT stakevote : public contract {
 #endif
 
     bool would_turn_negative(const name voter, S<double> weight_delta, uint64_t weight) {
+        SErr::set("would_turn_negative: voter: %s weight: %s - weight_delta: %s", voter, weight, weight_delta);
         const auto new_weight = S<uint64_t>{weight}.to<int64_t>() - weight_delta.abs().to<int64_t>();
-        check(new_weight > int64_t{-5},
-            "ERR:INVALID_WEIGHT_DELTA_UPDATE: %s Trying to subtract weight_delta %s from %s", voter, weight_delta,
-            weight);
+        SErr::set("");
+        check(new_weight >= int64_t{0},
+            "ERR:INVALID_WEIGHT_DELTA_UPDATE: %s Trying to subtract weight_delta %s from %s new_weight: %s", voter,
+            weight_delta.to<int64_t>(), weight, new_weight);
         return new_weight < int64_t{0};
     }
 
