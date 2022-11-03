@@ -8,12 +8,12 @@
 #include <eosio/singleton.hpp>
 #include <eosio/time.hpp>
 
-#include "common_utilities.hpp"
 #include "config.hpp"
 #include "daccustodian_shared.hpp"
 #include "eosdactokens_shared.hpp"
 #include "external_types.hpp"
 #include "safemath/safemath.hpp"
+#include "safemath/util.hpp"
 
 using namespace std;
 
@@ -119,7 +119,7 @@ namespace eosdac {
         eosio::name           candidate_name;
         eosio::asset          requestedpay;
         uint64_t              rank;
-        uint64_t              gap_filler; // I forgot an asset is actually 128 bits not 64
+        uint64_t              gap_filler; // Currently unused, can be recycled in the future
         uint64_t              total_vote_power;
         uint8_t               is_active;
         uint32_t              number_voters;
@@ -131,9 +131,7 @@ namespace eosdac {
             const auto log     = log2(log_arg.to<double>());
             const auto x =
                 S{log} + S{avg_vote_time_stamp.sec_since_epoch()}.to<double>() / S{SECONDS_TO_DOUBLE}.to<double>();
-            check(x >= double{}, "by_decayed_votes x must be >= 0 before uint64_t conversion");
-            const auto x_rounded_down = narrow_cast<uint64_t>(x);
-            return S{x_rounded_down};
+            return x.to<uint64_t>();
         }
 
         uint64_t by_decayed_votes() const {

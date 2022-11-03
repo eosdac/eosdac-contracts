@@ -1,7 +1,7 @@
 #pragma once
 
-#include "common_utilities.hpp"
 #include "config.hpp"
+#include "safemath/util.hpp"
 #include <eosio/eosio.hpp>
 #include <eosio/multi_index.hpp>
 #include <eosio/symbol.hpp>
@@ -113,10 +113,16 @@ namespace eosdac {
                     return {};
                 }
             }
-            
-            uint64_t  primary_key() const { return dac_id.value; }
-            uint64_t  by_owner() const { return owner.value; }
-            uint128_t by_symbol() const { return eosdac::raw_from_extended_symbol(symbol); }
+
+            uint64_t primary_key() const {
+                return dac_id.value;
+            }
+            uint64_t by_owner() const {
+                return owner.value;
+            }
+            uint128_t by_symbol() const {
+                return eosdac::raw_from_extended_symbol(symbol);
+            }
         };
 
         using dac_table = eosio::multi_index<"dacs"_n, dac,
@@ -136,33 +142,36 @@ namespace eosdac {
                 "ERR::DAC_NOT_FOUND_SYMBOL::DAC not found in directory for the given symbol");
             return *dac_idx;
         }
-        
+
         const std::optional<dac> dac_for_owner(eosio::name owner) {
-          const auto dactable = dac_table{DACDIRECTORY_CONTRACT, DACDIRECTORY_CONTRACT.value};
-          const auto      index    = dactable.get_index<"byowner"_n>();
-          const auto itr = index.find(owner.value);
-          if(itr != index.end()) {
-            return *itr;
-          } else {
-            return {};
-          }
+            const auto dactable = dac_table{DACDIRECTORY_CONTRACT, DACDIRECTORY_CONTRACT.value};
+            const auto index    = dactable.get_index<"byowner"_n>();
+            const auto itr      = index.find(owner.value);
+            if (itr != index.end()) {
+                return *itr;
+            } else {
+                return {};
+            }
         }
-        
+
         struct [[eosio::table("nftcache"), eosio::contract("dacdirectory")]] nftcache {
             uint64_t nft_id;
-            name  schema_name;
+            name     schema_name;
             uint64_t value;
 
-            uint64_t primary_key() const { return nft_id; }
+            uint64_t primary_key() const {
+                return nft_id;
+            }
 
             static uint128_t template_and_value_key_descending(name schema_name, uint64_t value) {
-                return (uint128_t(schema_name.value) << uint128_t(64)) | uint128_t(std::numeric_limits<uint64_t>::max() - value);
+                return (uint128_t(schema_name.value) << uint128_t(64)) |
+                       uint128_t(std::numeric_limits<uint64_t>::max() - value);
             }
 
             static uint128_t template_and_value_key_ascending(name schema_name, uint64_t value) {
-              return (uint128_t(schema_name.value) << uint128_t(64)) | uint128_t(value);
+                return (uint128_t(schema_name.value) << uint128_t(64)) | uint128_t(value);
             }
-            
+
             uint128_t by_template_and_value_descending() const {
                 return template_and_value_key_descending(schema_name, value);
             }
@@ -175,6 +184,6 @@ namespace eosdac {
         using nftcache_table = multi_index<"nftcache"_n, nftcache,
             indexed_by<"valasc"_n, const_mem_fun<nftcache, uint128_t, &nftcache::by_template_and_value_ascending>>,
             indexed_by<"valdesc"_n, const_mem_fun<nftcache, uint128_t, &nftcache::by_template_and_value_descending>>>;
-        
+
     } // namespace dacdir
 } // namespace eosdac

@@ -16,7 +16,7 @@ void daccustodian::updateVoteWeight(
         return; // trying to avoid throwing errors from here since it's unrelated to a transfer action.?!?!?!?!
     }
     registered_candidates.modify(candItr, same_payer, [&](auto &c) {
-        c.total_vote_power = S<uint64_t>{c.total_vote_power}.to<int64_t>() + S{weight};
+        c.total_vote_power = S<uint64_t>{c.total_vote_power}.add_signed_to_unsigned(weight);
         if (from_voting) {
             if (c.total_vote_power == 0) {
                 c.avg_vote_time_stamp = time_point_sec(0);
@@ -88,7 +88,7 @@ void daccustodian::modifyVoteWeights(const account_weight_delta &awd, const vect
 
     // New voter -> Add the tokens to the total weight.
     auto total_weight_of_votes            = S{globals.get_total_weight_of_votes()};
-    auto total_stake_time_weight_of_votes = globals.get_total_votes_on_candidates();
+    auto total_stake_time_weight_of_votes = S{globals.get_total_votes_on_candidates()};
 
     if (oldVotes.size() == 0) {
         total_weight_of_votes += S{awd.weight_delta_quorum};

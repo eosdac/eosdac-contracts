@@ -1,4 +1,6 @@
 #pragma once
+#include <eosio/name.hpp>
+#include <eosio/symbol.hpp>
 
 static constexpr eosio::symbol TLM_SYM{"TLM", 4};
 #define TLM_TOKEN_CONTRACT_STR "alien.worlds"

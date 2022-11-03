@@ -76,6 +76,13 @@ namespace eosdac {
             uint64_t primary_key() const {
                 return account.value;
             }
+
+            static uint32_t get_delay(const name account, const name dac_id, const name user) {
+                const auto config     = stake_config::get_current_configs(account, dac_id);
+                const auto staketimes = staketimes_table{account, dac_id.value};
+                const auto existing   = staketimes.find(user.value);
+                return existing != staketimes.end() ? existing->delay : config.min_stake_time;
+            }
         };
         using staketimes_table = multi_index<"staketime"_n, staketime_info>;
 

@@ -10,7 +10,7 @@ void stakevote::stakeobsv(const vector<account_stake_delta> &stake_deltas, const
 
     const auto config         = config_item::get_current_configs(get_self(), dac_id);
     const auto token_config   = stake_config::get_current_configs(token_contract, dac_id);
-    const auto max_stake_time = S{token_config.max_stake_time}.to<double>();
+    const auto max_stake_time = S{token_config.max_stake_time}.to<double>("stakeobsv max_stake_time");
 
     // Forward all the stake notifications to allow custodian contract to forbid unstaking for a custodian
     if (custodian_contract) {
@@ -26,9 +26,9 @@ void stakevote::stakeobsv(const vector<account_stake_delta> &stake_deltas, const
     for (const auto &asd : stake_deltas) {
         const auto weight_delta_quorum = S{asd.stake_delta.amount};
 
-        const auto stake_delta     = S{asd.stake_delta.amount}.to<double>();
-        const auto unstake_delay   = S{asd.unstake_delay}.to<double>();
-        const auto time_multiplier = S{config.time_multiplier}.to<double>();
+        const auto stake_delta     = S{asd.stake_delta.amount}.to<double>("stakeobsv stake_delta");
+        const auto unstake_delay   = S{asd.unstake_delay}.to<double>("stakeobsv unstake_delay");
+        const auto time_multiplier = S{config.time_multiplier}.to<double>("stakeobsv time_multiplier");
         const auto weight_delta    = stake_delta * (S{1.0} + unstake_delay * time_multiplier / max_stake_time);
 
         const auto vw_itr = weights.find(asd.account.value);
@@ -39,14 +39,17 @@ void stakevote::stakeobsv(const vector<account_stake_delta> &stake_deltas, const
                     // the calculated vote_weight could become negative, set it to 0 in this case.
                     v.weight = 0;
                 } else {
-                    v.weight = S<uint64_t>{v.weight}.add_signed_to_unsigned(weight_delta);
+                    v.weight = S<uint64_t>{v.weight}.add_signed_to_unsigned(
+                        weight_delta, "add_signed_to_unsigned weight_delta");
                 }
                 if (weight_delta_quorum < int64_t{0}) {
-                    check(weight_delta_quorum.abs().to<int64_t>() <= S<uint64_t>{v.weight_quorum}.to<int64_t>(),
+                    check(weight_delta_quorum.abs().to<int64_t>("stakeobsv weight_delta_quorum") <=
+                              S<uint64_t>{v.weight_quorum}.to<int64_t>("stakeobsv v.weight_quorum"),
                         "ERR:INVALID_WEIGHT_DELTA_QUORUM_UPDATE: %s Trying to subtract weight_delta_quorum %s from %s",
                         v.voter, weight_delta_quorum, v.weight_quorum);
                 }
-                v.weight_quorum = S<uint64_t>{v.weight_quorum}.add_signed_to_unsigned(weight_delta_quorum);
+                v.weight_quorum = S<uint64_t>{v.weight_quorum}.add_signed_to_unsigned(
+                    weight_delta_quorum, "add_signed_to_unsigned weight_delta_quorum");
             });
             if (vw_itr->weight == 0) {
                 weights.erase(vw_itr);
@@ -54,12 +57,12 @@ void stakevote::stakeobsv(const vector<account_stake_delta> &stake_deltas, const
         } else {
             weights.emplace(get_self(), [&](auto &v) {
                 v.voter         = asd.account;
-                v.weight        = weight_delta.to<uint64_t>();
-                v.weight_quorum = weight_delta_quorum.to<uint64_t>();
+                v.weight        = weight_delta.to<uint64_t>("stakeobsv weight_delta");
+                v.weight_quorum = weight_delta_quorum.to<uint64_t>("stakeobsv weight_delta_quorum");
             });
         }
 
-        weight_deltas.push_back({asd.account, weight_delta.to<int64_t>(), weight_delta_quorum});
+        weight_deltas.push_back({asd.account, weight_delta.to<int64_t>("stakeobsv weight_delta"), weight_delta_quorum});
     }
 
     if (custodian_contract) {

@@ -329,7 +329,8 @@ namespace eosdac {
 
         auto existing_stake = stakes.find(account.value);
         check(existing_stake != stakes.end(), "ERR:NO_STAKE_FOUND::No stake found");
-        check(existing_stake->stake >= quantity, "ERR::UNSTAKE_OVER::Quantity to unstake is more than staked amount");
+        check(existing_stake->stake >= quantity,
+            "ERR::UNSTAKE_OVER::Quantity to unstake %s is more than staked amount %s", quantity, existing_stake->stake);
 
         uint32_t         unstake_delay = config.min_stake_time;
         staketimes_table staketimes(get_self(), dac.dac_id.value);
@@ -484,7 +485,7 @@ namespace eosdac {
         const auto referendum_contract = dac_inst.account_for_type_maybe(dacdir::REFERENDUM);
         const auto notify_contract     = (vote_contract) ? *vote_contract : *custodian_contract;
 
-        const auto unstake_delay = staketime_info::get_delay(get_self(), dac.dac_id, account);
+        const auto unstake_delay = staketime_info::get_delay(get_self(), dac_inst.dac_id, account);
 
         vector<account_stake_delta> stake_deltas = {{account, stake, unstake_delay}};
         action(permission_level{get_self(), "notify"_n}, notify_contract, "stakeobsv"_n,
