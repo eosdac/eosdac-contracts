@@ -7,6 +7,7 @@ import {
   assertRowsEqual,
   UpdateAuth,
   Asset,
+  sleep,
 } from 'lamington';
 import { SharedTestObjects, NUMBER_OF_CANDIDATES } from '../TestHelpers';
 import * as chai from 'chai';
@@ -42,6 +43,7 @@ describe('Stakevote', () => {
     let stake_amount = new Asset(1000, symbol);
     let stake_delay = 2 * years;
     let default_staketime = 2 * days;
+    let max_stake_time = 7776000;
     let time_multiplier = 4;
     let regMembers: Account[];
     let candidates: Account[];
@@ -56,7 +58,7 @@ describe('Stakevote', () => {
         {
           enabled: true,
           min_stake_time: 2 * days,
-          max_stake_time: stake_delay,
+          max_stake_time,
         },
         `${precision},${symbol}`,
         { from: shared.auth_account }
@@ -159,7 +161,7 @@ describe('Stakevote', () => {
           {
             enabled: true,
             min_stake_time: 2 * days,
-            max_stake_time: stake_delay,
+            max_stake_time,
           },
           `${precision},${symbol}`,
           { from: shared.auth_account }
@@ -405,7 +407,7 @@ describe('Stakevote', () => {
           });
 
           const max_stake_time = res.rows[0].max_stake_time;
-          chai.expect(max_stake_time).to.equal(stake_delay);
+          chai.expect(max_stake_time).to.equal(max_stake_time);
         });
         it('before voting: total_weight_of_votes', async () => {
           total_weight_of_votes_before = await get_from_dacglobals(
@@ -456,6 +458,7 @@ describe('Stakevote', () => {
       });
       context('staking and unstaking repeatedly', async () => {
         it('should work', async () => {
+          await sleep(1000);
           await shared.dac_token_contract.transfer(
             shared.tokenIssuer.name,
             voter.name,
