@@ -16,7 +16,16 @@ void daccustodian::updateVoteWeight(
         return; // trying to avoid throwing errors from here since it's unrelated to a transfer action.?!?!?!?!
     }
     registered_candidates.modify(candItr, same_payer, [&](auto &c) {
-        c.total_vote_power = S<uint64_t>{c.total_vote_power}.add_signed_to_unsigned(weight);
+        auto err = Err("daccustodian::updateVoteWeight c.total_vote_power: %s weight: %s", c.total_vote_power, weight);
+
+        const auto new_vote_power = S<uint64_t>{c.total_vote_power}.to<int64_t>() + S{weight};
+        if (new_vote_power < int64_t{}) {
+            ::check(new_vote_power > int64_t{-5}, "ERR:INVALID_VOTE_POWER::new_vote_power is %s", new_vote_power);
+            c.total_vote_power = 0;
+        } else {
+            c.total_vote_power = new_vote_power.to<uint64_t>();
+        }
+
         if (from_voting) {
             if (c.total_vote_power == 0) {
                 c.avg_vote_time_stamp = time_point_sec(0);
