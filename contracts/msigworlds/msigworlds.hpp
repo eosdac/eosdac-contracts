@@ -261,10 +261,19 @@ class [[eosio::contract("msigworlds")]] multisig : public eosio::contract {
     void assertValidCustodian(const name proposer, const name dac_id) {
         const auto dac                = eosdac::dacdir::dac_for_id(dac_id);
         const auto custodian_contract = dac.account_for_type_maybe(eosdac::dacdir::CUSTODIAN);
+
         if (custodian_contract) {
-            const auto custodians   = eosdac::custodians_table{*custodian_contract, dac_id.value};
-            const auto is_custodian = custodians.find(proposer.value) != custodians.end();
-            check(is_custodian, "ERR::MUST_BE_CUSTODIAN:: %s must be active custodian.", proposer);
+            const auto custodians          = eosdac::custodians_table{*custodian_contract, dac_id.value};
+            const auto is_custodian        = custodians.find(proposer.value) != custodians.end();
+            const auto referendum_contract = dac.account_for_type_maybe(eosdac::dacdir::REFERENDUM);
+
+            if (referendum_contract) {
+                if (proposer != *referendum_contract) {
+                    check(is_custodian, "ERR::MUST_BE_CUSTODIAN:: %s must be active custodian.", proposer);
+                }
+            } else {
+                check(is_custodian, "ERR::MUST_BE_CUSTODIAN:: %s must be active custodian.", proposer);
+            }
         }
     }
 };
