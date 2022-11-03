@@ -2,6 +2,7 @@
 #include <cmath>
 
 void stakevote::stakeobsv(const vector<account_stake_delta> &stake_deltas, const name dac_id) {
+    auto       err                = Err{"stakevote::stakeobsv"};
     const auto dac                = dacdir::dac_for_id(dac_id);
     const auto token_contract     = dac.symbol.get_contract();
     const auto custodian_contract = dac.account_for_type_maybe(dacdir::CUSTODIAN);
@@ -62,7 +63,8 @@ void stakevote::stakeobsv(const vector<account_stake_delta> &stake_deltas, const
             });
         }
 
-        weight_deltas.push_back({asd.account, weight_delta.to<int64_t>("stakeobsv weight_delta"), weight_delta_quorum});
+        weight_deltas.push_back(
+            {asd.account, weight_delta.to<int64_t>("stakeobsv weight_delta 2"), weight_delta_quorum});
     }
 
     if (custodian_contract) {

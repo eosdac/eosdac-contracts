@@ -3,7 +3,7 @@ using namespace eosdac;
 
 void daccustodian::updateVoteWeight(
     name custodian, const time_point_sec vote_time_stamp, int64_t weight, name dac_id, bool from_voting) {
-
+    auto err = Err{"daccustodian::updateVoteWeight"};
     if (weight == 0) {
         print("Vote has no weight - No need to continue. ");
         return;
@@ -42,6 +42,7 @@ void daccustodian::updateVoteWeight(
 
 time_point_sec daccustodian::calculate_avg_vote_time_stamp(const time_point_sec vote_time_before,
     const time_point_sec vote_time_stamp, const int64_t weight, const uint64_t total_votes) {
+    auto err = Err{"daccustodian::calculate_avg_vote_time_stamp"};
 
     const auto initial     = S{vote_time_before.sec_since_epoch()}.to<int128_t>();
     const auto current     = S{vote_time_stamp.sec_since_epoch()}.to<int128_t>();
@@ -87,6 +88,7 @@ std::pair<int64_t, int64_t> daccustodian::get_vote_weight(name voter, name dac_i
 void daccustodian::modifyVoteWeights(const account_weight_delta &awd, const vector<name> &oldVotes,
     const std::optional<time_point_sec> &oldVoteTimestamp, const vector<name> &newVotes, const name dac_id,
     const bool from_voting) {
+    auto err = Err{"daccustodian::modifyVoteWeights"};
     // This could be optimised with set diffing to avoid remove then add for unchanged votes. - later
 
     if (awd.weight_delta == 0) {
