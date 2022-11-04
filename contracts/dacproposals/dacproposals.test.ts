@@ -766,7 +766,7 @@ describe('Dacproposals', () => {
     context('with more denied than approved votes', async () => {
       context('with insufficient votes', async () => {
         before(async () => {
-          for (const custodian of propDacCustodians) {
+          for (const custodian of propDacCustodians.slice(1)) {
             await shared.dacproposals_contract.voteprop(
               custodian.name,
               newpropid,

@@ -218,10 +218,10 @@ describe('Stakevote', () => {
             from: staker,
           }
         );
-        await shared.dac_token_contract.unstake(staker.name, '0.9989 STADAC', {
+        await shared.dac_token_contract.unstake(staker.name, '0.9983 STADAC', {
           from: staker,
         });
-        await shared.dac_token_contract.unstake(staker.name, '0.0001 STADAC', {
+        await shared.dac_token_contract.unstake(staker.name, '0.0007 STADAC', {
           from: staker,
         });
       });
