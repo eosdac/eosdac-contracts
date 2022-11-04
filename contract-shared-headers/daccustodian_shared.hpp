@@ -13,6 +13,7 @@
 #include "eosdactokens_shared.hpp"
 #include "external_types.hpp"
 #include "safemath/safemath.hpp"
+#include "safemath/serr.hpp"
 #include "safemath/util.hpp"
 
 using namespace std;
@@ -126,6 +127,7 @@ namespace eosdac {
         eosio::time_point_sec avg_vote_time_stamp;
 
         uint64_t calc_decayed_votes_index() const {
+            auto err = Err{"calc_decayed_votes_index"};
             // log(0) is -infinity, so we always add 1. This does not change the order of the index.
             const auto log_arg = S{total_vote_power} + S{1ull};
             const auto log     = log2(log_arg.to<double>());
