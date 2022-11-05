@@ -68,17 +68,21 @@ void daccustodian::update_number_of_votes(
     const vector<name> &oldvotes, const vector<name> &newvotes, const name &dac_id) {
     auto registered_candidates = candidates_table{get_self(), dac_id.value};
 
-    for (auto candidate : oldvotes) {
+    for (const auto candidate : oldvotes) {
         auto candItr = registered_candidates.find(candidate.value);
-        registered_candidates.modify(candItr, same_payer, [&](auto &c) {
-            c.number_voters = S{c.number_voters} - S{uint32_t{1}};
-        });
+        if (candItr != registered_candidates.end()) {
+            registered_candidates.modify(candItr, same_payer, [&](auto &c) {
+                c.number_voters = S{c.number_voters} - S{uint32_t{1}};
+            });
+        }
     }
-    for (auto candidate : newvotes) {
+    for (const auto candidate : newvotes) {
         auto candItr = registered_candidates.find(candidate.value);
-        registered_candidates.modify(candItr, same_payer, [&](auto &c) {
-            c.number_voters = S{c.number_voters} + S{uint32_t{1}};
-        });
+        if (candItr != registered_candidates.end()) {
+            registered_candidates.modify(candItr, same_payer, [&](auto &c) {
+                c.number_voters = S{c.number_voters} + S{uint32_t{1}};
+            });
+        }
     }
 }
 
