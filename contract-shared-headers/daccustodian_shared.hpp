@@ -504,9 +504,12 @@ namespace eosdac {
         ACTION clearcands(const name &dac_id);
 #endif
 
-#ifdef IS_DEV
+#if defined(IS_DEV) || defined(DEBUG)
         ACTION migraterank(const name &dac_id);
         ACTION clearrank(const name &dac_id);
+#endif
+
+#ifdef IS_DEV
         ACTION fillstate(const name &dac_id);
 
         // helper function for testing to add custodian to custodians table without the need for elections
