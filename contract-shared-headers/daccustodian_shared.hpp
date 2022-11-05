@@ -127,12 +127,15 @@ namespace eosdac {
         eosio::time_point_sec avg_vote_time_stamp;
 
         uint64_t calc_decayed_votes_index() const {
-            auto err = Err{"calc_decayed_votes_index"};
+            auto       err            = Err{"calc_decayed_votes_index"};
+            const auto scaling_factor = S{10000.0}; // to improve accuracy of index when converting double to uint64_t
+
             // log(0) is -infinity, so we always add 1. This does not change the order of the index.
             const auto log_arg = S{total_vote_power} + S{1ull};
             const auto log     = log2(log_arg.to<double>());
             const auto x =
-                S{log} + S{avg_vote_time_stamp.sec_since_epoch()}.to<double>() / S{SECONDS_TO_DOUBLE}.to<double>();
+                (S{log} + S{avg_vote_time_stamp.sec_since_epoch()}.to<double>() / S{SECONDS_TO_DOUBLE}.to<double>()) *
+                scaling_factor;
             return x.to<uint64_t>();
         }
 
