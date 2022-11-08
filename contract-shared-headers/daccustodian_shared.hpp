@@ -97,14 +97,14 @@ namespace eosdac {
     struct [[eosio::table("custodians"), eosio::contract("daccustodian")]] custodian {
         eosio::name  cust_name;
         eosio::asset requestedpay;
-        uint64_t     total_vote_power;
+        uint64_t     rank;
 
         uint64_t primary_key() const {
             return cust_name.value;
         }
 
-        uint64_t by_votes_rank() const {
-            return UINT64_MAX - total_vote_power;
+        uint64_t by_decayed_votes() const {
+            return std::numeric_limits<uint64_t>::max() - rank;
         }
 
         uint64_t by_requested_pay() const {
@@ -113,7 +113,7 @@ namespace eosdac {
     };
 
     using custodians_table = eosio::multi_index<"custodians"_n, custodian,
-        eosio::indexed_by<"byvotesrank"_n, eosio::const_mem_fun<custodian, uint64_t, &custodian::by_votes_rank>>,
+        eosio::indexed_by<"bydecayed"_n, eosio::const_mem_fun<custodian, uint64_t, &custodian::by_decayed_votes>>,
         eosio::indexed_by<"byreqpay"_n, eosio::const_mem_fun<custodian, uint64_t, &custodian::by_requested_pay>>>;
 
     struct [[eosio::table("candidates"), eosio::contract("daccustodian")]] candidate {
@@ -242,8 +242,8 @@ namespace eosdac {
     struct [[eosio::table("state2"), eosio::contract("daccustodian")]] contr_state2 {
         eosio::time_point_sec                  lastperiodtime = time_point_sec(0);
         std::map<uint8_t, state_value_variant> data           = {{state_keys::total_weight_of_votes, int64_t(0)},
-            {state_keys::total_votes_on_candidates, int64_t(0)}, {state_keys::number_active_candidates, uint32_t(0)},
-            {state_keys::met_initial_votes_threshold, false}, {state_keys::lastclaimbudgettime, time_point_sec(0)}};
+                      {state_keys::total_votes_on_candidates, int64_t(0)}, {state_keys::number_active_candidates, uint32_t(0)},
+                      {state_keys::met_initial_votes_threshold, false}, {state_keys::lastclaimbudgettime, time_point_sec(0)}};
 
         static contr_state2 get_current_state(const eosio::name account, const eosio::name scope) {
             return statecontainer2(account, scope.value).get_or_default(contr_state2{});
@@ -514,11 +514,12 @@ namespace eosdac {
 
         // helper function for testing to add custodian to custodians table without the need for elections
         ACTION tstaddcust(const name cust, const name dac_id) {
+            require_auth(get_self());
             auto custodians = custodians_table{get_self(), dac_id.value};
             custodians.emplace(get_self(), [&](auto &c) {
-                c.cust_name        = cust;
-                c.requestedpay     = ZERO_TRILIUM;
-                c.total_vote_power = 0;
+                c.cust_name    = cust;
+                c.requestedpay = ZERO_TRILIUM;
+                c.rank         = 0;
             });
         };
 
