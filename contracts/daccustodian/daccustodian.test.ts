@@ -13,7 +13,7 @@ import {
   assertBalanceEqual,
   Asset,
 } from 'lamington';
-
+const _ = require('lodash');
 import {
   SharedTestObjects,
   NUMBER_OF_CANDIDATES,
@@ -1733,27 +1733,47 @@ describe('Daccustodian', () => {
                 number_of_custodians
               );
             });
+            it('Candidates bydecayed index should sort by rank descending', async () => {
+              const res = await shared.daccustodian_contract.candidatesTable({
+                scope: dacId,
+                limit: 100,
+                indexPosition: 6, // bydecayed index
+                keyType: 'i64',
+              });
+              const unsorted = res.rows;
+              const sorted = _.sortBy(res.rows, (x) => -x.rank);
+              chai.expect(unsorted).to.deep.equal(sorted);
+            });
             it('Should have highest ranked votes in custodians', async () => {
-              let rowsResult =
-                await shared.daccustodian_contract.custodiansTable({
-                  scope: dacId,
-                  limit: 14,
-                  indexPosition: 3,
-                  keyType: 'i64',
-                });
-              let rs = rowsResult.rows;
-              rs.sort((a, b) => {
-                return a.total_vote_power < b.total_vote_power
-                  ? -1
-                  : a.total_vote_power == b.total_vote_power
-                  ? 0
-                  : 1;
-              }).reverse();
-              chai.expect(rs[0].total_vote_power).to.equal(3200000000);
-              chai.expect(rs[1].total_vote_power).to.equal(3200000000);
-              chai.expect(rs[2].total_vote_power).to.equal(3200000000);
-              chai.expect(rs[3].total_vote_power).to.equal(1600000000);
-              chai.expect(rs[4].total_vote_power).to.equal(1600000000);
+              let res1 = await shared.daccustodian_contract.candidatesTable({
+                scope: dacId,
+                limit: 100,
+                indexPosition: 6, // bydecayed index
+                keyType: 'i64',
+              });
+
+              let res2 = await shared.daccustodian_contract.custodiansTable({
+                scope: dacId,
+                limit: 100,
+                indexPosition: 2, // bydecayed index
+                keyType: 'i64',
+              });
+
+              const candidates = res1.rows.map((x) => {
+                return {
+                  cust_name: x.candidate_name,
+                  requestedpay: x.requestedpay,
+                  rank: x.rank,
+                };
+              });
+
+              console.log(
+                'candidates.slice(0, 5): ',
+                JSON.stringify(candidates.slice(0, 5), null, 2)
+              );
+              console.log('res2.rows: ', JSON.stringify(res2.rows, null, 2));
+              chai.expect(res2.rows.length).to.equal(5);
+              chai.expect(candidates.slice(0, 5)).to.deep.equal(res2.rows);
             });
             it('Custodians should not yet be paid', async () => {
               await assertRowCount(
@@ -2930,7 +2950,7 @@ describe('Daccustodian', () => {
       chai.expect(candidates.rows.length).equals(5);
 
       chai.expect(candidates.rows[0].requestedpay).to.equal('0.0000 EOS');
-      chai.expect(candidates.rows[0].total_vote_power).to.equal(0);
+      chai.expect(candidates.rows[0].rank).to.equal(0);
       chai.expect(candidates.rows[0].number_voters).to.equal(0);
       chai.expect(candidates.rows[0].is_active).to.equal(1);
 
@@ -2941,7 +2961,7 @@ describe('Daccustodian', () => {
       chai.expect(custodians.rows.length).equals(5);
 
       chai.expect(custodians.rows[0].requestedpay).to.equal('0.0000 EOS');
-      chai.expect(custodians.rows[0].total_vote_power).to.equal(0);
+      chai.expect(custodians.rows[0].rank).to.equal(0);
     });
     it('should fail with existing custodians appointed', async () => {
       await assertEOSErrorIncludesMessage(
