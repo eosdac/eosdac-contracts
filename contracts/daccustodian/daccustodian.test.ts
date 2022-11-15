@@ -49,6 +49,98 @@ describe('Daccustodian', () => {
     somebody = await AccountManager.createAccount();
   });
 
+  context('Migration', async () => {
+    let dacId = 'migratecust';
+    const date = new Date(0);
+    let table_contents = [
+      {
+        cust_name: 'testcust1',
+        requestedpay: '0.0000 TLM',
+        rank: 0,
+        total_vote_power: 0,
+        number_voters: 0,
+        avg_vote_time_stamp: date,
+      },
+      {
+        cust_name: 'testcust2',
+        requestedpay: '0.0000 TLM',
+        rank: 0,
+        total_vote_power: 0,
+        number_voters: 0,
+        avg_vote_time_stamp: date,
+      },
+      {
+        cust_name: 'testcust3',
+        requestedpay: '0.0000 TLM',
+        rank: 0,
+        total_vote_power: 0,
+        number_voters: 0,
+        avg_vote_time_stamp: date,
+      },
+      {
+        cust_name: 'testcust4',
+        requestedpay: '0.0000 TLM',
+        rank: 0,
+        total_vote_power: 0,
+        number_voters: 0,
+        avg_vote_time_stamp: date,
+      },
+      {
+        cust_name: 'testcust5',
+        requestedpay: '0.0000 TLM',
+        rank: 0,
+        total_vote_power: 0,
+        number_voters: 0,
+        avg_vote_time_stamp: date,
+      },
+    ];
+    it('adding test custodians should work', async () => {
+      await shared.daccustodian_contract.tstaddcust('testcust1', dacId);
+      await shared.daccustodian_contract.tstaddcust('testcust2', dacId);
+      await shared.daccustodian_contract.tstaddcust('testcust3', dacId);
+      await shared.daccustodian_contract.tstaddcust('testcust4', dacId);
+      await shared.daccustodian_contract.tstaddcust('testcust5', dacId);
+    });
+    it('should add custodians', async () => {
+      await assertRowsEqual(
+        shared.daccustodian_contract.custodiansTable({
+          scope: dacId,
+        }),
+        table_contents
+      );
+    });
+    it('migrate1 should work', async () => {
+      await shared.daccustodian_contract.migrate1(dacId);
+    });
+    it('should delete custodians', async () => {
+      await assertRowsEqual(
+        shared.daccustodian_contract.custodiansTable({
+          scope: dacId,
+        }),
+        []
+      );
+    });
+    it('should have migrated to custodians2', async () => {
+      await assertRowsEqual(
+        shared.daccustodian_contract.custodians2Table({
+          scope: dacId,
+        }),
+        table_contents
+      );
+    });
+    it('migrate2 should work', async () => {
+      await shared.daccustodian_contract.migrate2(dacId);
+    });
+    it('should have migrated back to custodians', async () => {
+      await assertRowsEqual(
+        shared.daccustodian_contract.custodiansTable({
+          scope: dacId,
+        }),
+        table_contents
+      );
+    });
+  });
+
   context('fillstate', async () => {
     let dacId = 'migratedac';
     before(async () => {
