@@ -1856,6 +1856,9 @@ describe('Daccustodian', () => {
                   cust_name: x.candidate_name,
                   requestedpay: x.requestedpay,
                   rank: x.rank,
+                  total_vote_power: x.total_vote_power,
+                  number_voters: x.number_voters,
+                  avg_vote_time_stamp: x.avg_vote_time_stamp,
                 };
               });
 

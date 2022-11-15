@@ -140,7 +140,6 @@ ACTION daccustodian::appointcust(const vector<name> &custs, const name &dac_id) 
         custodians.emplace(auth_account, [&](custodian &c) {
             c.cust_name    = cust;
             c.requestedpay = req_pay.quantity;
-            c.rank         = 0;
         });
     }
 }
