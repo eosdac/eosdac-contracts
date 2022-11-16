@@ -98,14 +98,25 @@ namespace eosdac {
         eosio::name  cust_name;
         eosio::asset requestedpay;
         uint64_t     total_vote_power;
+#ifdef MIGRATION_STAGE_2
+        uint64_t              rank;
+        uint32_t              number_voters;
+        eosio::time_point_sec avg_vote_time_stamp;
+#endif
 
         uint64_t primary_key() const {
             return cust_name.value;
         }
 
         uint64_t by_votes_rank() const {
-            return UINT64_MAX - total_vote_power;
+            return std::numeric_limits<uint64_t>::max() - total_vote_power;
         }
+
+#ifdef MIGRATION_STAGE_2
+        uint64_t by_decayed_votes() const {
+            return std::numeric_limits<uint64_t>::max() - rank;
+        }
+#endif
 
         uint64_t by_requested_pay() const {
             return S{requestedpay.amount}.to<uint64_t>();
@@ -114,7 +125,35 @@ namespace eosdac {
 
     using custodians_table = eosio::multi_index<"custodians"_n, custodian,
         eosio::indexed_by<"byvotesrank"_n, eosio::const_mem_fun<custodian, uint64_t, &custodian::by_votes_rank>>,
+#ifdef MIGRATION_STAGE_2
+        eosio::indexed_by<"bydecayed"_n, eosio::const_mem_fun<custodian, uint64_t, &custodian::by_decayed_votes>>,
+#endif
         eosio::indexed_by<"byreqpay"_n, eosio::const_mem_fun<custodian, uint64_t, &custodian::by_requested_pay>>>;
+
+    struct [[eosio::table("custodians2"), eosio::contract("daccustodian")]] custodian2 {
+        eosio::name           cust_name;
+        eosio::asset          requestedpay;
+        uint64_t              rank;
+        uint64_t              total_vote_power;
+        uint32_t              number_voters;
+        eosio::time_point_sec avg_vote_time_stamp;
+
+        uint64_t primary_key() const {
+            return cust_name.value;
+        }
+
+        uint64_t by_decayed_votes() const {
+            return std::numeric_limits<uint64_t>::max() - rank;
+        }
+
+        uint64_t by_requested_pay() const {
+            return S{requestedpay.amount}.to<uint64_t>();
+        }
+    };
+
+    using custodians2_table = eosio::multi_index<"custodians2"_n, custodian2,
+        eosio::indexed_by<"bydecayed"_n, eosio::const_mem_fun<custodian2, uint64_t, &custodian2::by_decayed_votes>>,
+        eosio::indexed_by<"byreqpay"_n, eosio::const_mem_fun<custodian2, uint64_t, &custodian2::by_requested_pay>>>;
 
     struct [[eosio::table("candidates"), eosio::contract("daccustodian")]] candidate {
         eosio::name           candidate_name;
@@ -496,6 +535,10 @@ namespace eosdac {
         ACTION claimbudget(const name &dac_id);
         ACTION setbudget(const name &dac_id, const uint16_t percentage);
         ACTION unsetbudget(const name &dac_id);
+        ACTION migrate1(const name dac_id);
+#ifdef MIGRATION_STAGE_2
+        ACTION migrate2(const name dac_id);
+#endif
 #ifdef DEBUG
         ACTION migratestate(const name &dac_id);
         ACTION resetvotes(const name &voter, const name &dac_id);
@@ -514,11 +557,11 @@ namespace eosdac {
 
         // helper function for testing to add custodian to custodians table without the need for elections
         ACTION tstaddcust(const name cust, const name dac_id) {
+            require_auth(get_self());
             auto custodians = custodians_table{get_self(), dac_id.value};
             custodians.emplace(get_self(), [&](auto &c) {
-                c.cust_name        = cust;
-                c.requestedpay     = ZERO_TRILIUM;
-                c.total_vote_power = 0;
+                c.cust_name    = cust;
+                c.requestedpay = ZERO_TRILIUM;
             });
         };
 

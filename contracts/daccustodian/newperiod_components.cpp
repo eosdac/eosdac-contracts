@@ -107,6 +107,11 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
                 c.cust_name        = cand_itr->candidate_name;
                 c.requestedpay     = cand_itr->requestedpay;
                 c.total_vote_power = cand_itr->total_vote_power;
+#ifdef MIGRATION_STAGE_2
+                c.rank                = cand_itr->rank;
+                c.number_voters       = cand_itr->number_voters;
+                c.avg_vote_time_stamp = cand_itr->avg_vote_time_stamp;
+#endif
             });
 
             currentCustodianCount++;
@@ -145,7 +150,7 @@ void daccustodian::add_auth_to_account(const name &accountToChange, const uint8_
         .send();
 }
 
-void daccustodian::add_all_auths(const name &           accountToChange,
+void daccustodian::add_all_auths(const name            &accountToChange,
     const vector<eosiosystem::permission_level_weight> &weights, const name &dac_id, const bool msig) {
     const auto globals = dacglobals::current(get_self(), dac_id);
 

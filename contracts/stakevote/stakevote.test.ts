@@ -11,6 +11,7 @@ import {
 } from 'lamington';
 import { SharedTestObjects, NUMBER_OF_CANDIDATES } from '../TestHelpers';
 import * as chai from 'chai';
+import _ = require('lodash');
 
 enum state_keys {
   total_weight_of_votes = 1,
@@ -338,47 +339,21 @@ describe('Stakevote', () => {
                 await shared.daccustodian_contract.custodiansTable({
                   scope: dacId,
                   limit: 14,
-                  indexPosition: 3,
+                  indexPosition: 2,
                   keyType: 'i64',
                 });
               let rs = rowsResult.rows;
-              rs.sort((a, b) => {
-                return parseInt(a.total_vote_power, 10) <
-                  parseInt(b.total_vote_power, 10)
-                  ? -1
-                  : parseInt(a.total_vote_power, 10) ==
-                    parseInt(b.total_vote_power, 10)
-                  ? 0
-                  : 1;
-              }).reverse();
-
-              const single_voter_weight = await get_expected_vote_weight(
-                regMembers[0],
-                stake_amount.amount_raw(),
-                dacId
-              );
-              console.log('single_voter_weight: ', single_voter_weight);
-              console.log('rs: ', JSON.stringify(rs, null, 2));
-
-              chai
-                .expect(parseInt(rs[0].total_vote_power, 10), '1')
-                .to.equal(shared.NUMBER_OF_REG_MEMBERS * single_voter_weight);
-              chai
-                .expect(parseInt(rs[1].total_vote_power, 10), '2')
-                .to.equal(shared.NUMBER_OF_REG_MEMBERS * single_voter_weight);
-              chai
-                .expect(parseInt(rs[2].total_vote_power, 10), '3')
-                .to.equal(shared.NUMBER_OF_REG_MEMBERS * single_voter_weight);
-              chai
-                .expect(parseInt(rs[3].total_vote_power, 10), '4')
-                .to.equal(
-                  (shared.NUMBER_OF_REG_MEMBERS * single_voter_weight) / 2
-                );
-              chai
-                .expect(parseInt(rs[4].total_vote_power, 10), '5')
-                .to.equal(
-                  (shared.NUMBER_OF_REG_MEMBERS * single_voter_weight) / 2
-                );
+              for (const i of _.range(5)) {
+                chai
+                  .expect(parseInt(rs[i].rank, 10), 'chai 1')
+                  .to.equal(
+                    await get_expected_rank(
+                      new Account(rs[i].cust_name),
+                      stake_amount.amount_raw(),
+                      dacId
+                    )
+                  );
+              }
             });
           });
         });
@@ -682,7 +657,7 @@ describe('Stakevote', () => {
             dacId,
             'total_votes_on_candidates'
           );
-          chai.expect(x).to.equal(expected);
+          chai.expect(expected - x).to.be.lessThanOrEqual(1); // account for rounding errors
         });
       });
     });
@@ -785,21 +760,14 @@ async function get_staketime(account: Account, dac_id: string) {
   const res = await shared.dac_token_contract.stakeconfigTable({
     scope: dac_id,
   });
-  console.log('stakeconfigTable: ', JSON.stringify(res, null, 2));
 
   const min_stake_time = res.rows[0].min_stake_time;
-  console.log('min_stake_time: ', min_stake_time);
   res = await shared.dac_token_contract.staketimeTable({
     scope: dac_id,
     lowerBound: account.name,
   });
-  console.log('staketimeTable: ', JSON.stringify(res, null, 2));
   const existing_staketime = res.rows.find((x) => x.account == account);
-  console.log(
-    `existing_staketime (account ${account.name}): ${existing_staketime}`
-  );
   const x = existing_staketime ? existing_staketime.delay : min_stake_time;
-  console.log('x: ', x);
   return x;
 }
 
@@ -822,4 +790,50 @@ async function get_expected_vote_weight(
   return Math.floor(
     stake_delta * (1 + (unstake_delay * time_multiplier) / max_stake_time)
   );
+}
+
+async function get_expected_rank(
+  account: Account | string,
+  stake_delta: number,
+  dac_id: string
+) {
+  /* 
+                const auto scaling_factor = S{10000.0}; // to improve accuracy of index when converting double to uint64_t
+
+            // log(0) is -infinity, so we always add 1. This does not change the order of the index.
+            const auto log_arg = S{total_vote_power} + S{1ull};
+            const auto log     = log2(log_arg.to<double>());
+            const auto x =
+                (S{log} + S{avg_vote_time_stamp.sec_since_epoch()}.to<double>() / S{SECONDS_TO_DOUBLE}.to<double>()) *
+                scaling_factor;
+            return x.to<uint64_t>();
+
+
+            static constexpr uint32_t MINUTES{60};
+static constexpr uint32_t HOURS{60 * MINUTES};
+static constexpr uint32_t DAYS{24 * HOURS};
+static constexpr uint32_t MONTHS{30 * DAYS};
+static constexpr uint32_t YEARS{12 * MONTHS};
+
+// TODO: Fill in final value for SECONDS_TO_DOUBLE
+static constexpr uint32_t SECONDS_TO_DOUBLE{30 * DAYS};
+            */
+  const minutes = 60;
+  const hours = 60 * minutes;
+  const days = 24 * hours;
+  const SECONDS_TO_DOUBLE = 30 * days;
+  const res = await shared.daccustodian_contract.candidatesTable({
+    scope: dac_id,
+    lowerBound: account.name,
+    upperBound: account.name,
+  });
+  const candidate = res.rows.find((x) => (x.candidate_name = account.name));
+  const avg_vote_time_stamp = candidate.avg_vote_time_stamp.getTime();
+  const scaling_factor = 10000;
+  const total_vote_power = candidate.total_vote_power;
+  const log = Math.log2(total_vote_power + 1);
+  const x =
+    (log + (avg_vote_time_stamp * scaling_factor) / SECONDS_TO_DOUBLE) *
+    scaling_factor;
+  return Math.floor(x);
 }
