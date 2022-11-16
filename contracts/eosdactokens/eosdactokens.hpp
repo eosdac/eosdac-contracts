@@ -42,6 +42,7 @@ namespace eosdac {
         ACTION staketime(name account, uint32_t unstake_time, symbol token_symbol);
         ACTION stakeconfig(stake_config config, symbol token_symbol);
         ACTION cancel(uint64_t unstake_id, symbol token_symbol);
+        ACTION claimunstkes(const name account, const symbol token_symbol);
 
         TABLE stake_info {
             name  account;

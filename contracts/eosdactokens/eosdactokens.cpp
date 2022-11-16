@@ -142,6 +142,13 @@ namespace eosdac {
         add_balance(to, quantity, payer);
     }
 
+    void eosdactokens::claimunstkes(const name account, const symbol token_symbol) {
+        require_auth(account);
+
+        // get_liquid has the side effect of erasing any unstakes that have expired
+        eosdac::get_liquid(account, get_self(), token_symbol);
+    }
+
     void eosdactokens::sub_balance(name owner, asset value) {
         accounts from_acnts(_self, owner.value);
 
