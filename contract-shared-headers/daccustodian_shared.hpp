@@ -23,39 +23,6 @@ using namespace std;
  **/
 #define PROPERTY(type, name)                                                                                           \
     type get_##name() const {                                                                                          \
-        return get<type>(state_keys::name);                                                                            \
-    }                                                                                                                  \
-    void set_##name(const type value) {                                                                                \
-        set(state_keys::name, value);                                                                                  \
-    }
-
-/**
- * A slightly more complicated getter/setter macro that allows optional values.
- * If value is not set, it returns a null optional. To unset a previously set
- * value, it has an unset function.
- * Since our variant can only hold certain number types, we sometimes need to
- * convert our desired type to a storage_type. Before storing, it will convert
- * the value to the storage_type and before returning, the getter will
- * automatically convert back to type.
- **/
-#define PROPERTY_OPTIONAL_TYPECASTING(type, storage_type, name)                                                        \
-    std::optional<type> get_##name() const {                                                                           \
-        return get_maybe<storage_type>(state_keys::name);                                                              \
-    }                                                                                                                  \
-    void set_##name(const type value) {                                                                                \
-        set(state_keys::name, storage_type(value));                                                                    \
-    }                                                                                                                  \
-    void unset_##name() {                                                                                              \
-        const auto search = data.find(state_keys::name);                                                               \
-        check(search != data.end(), "Cannot unset " #name ", no value set");                                           \
-        data.erase(state_keys::name);                                                                                  \
-    }
-
-/**
- * simple getter/setter
- **/
-#define PROPERTY2(type, name)                                                                                          \
-    type get_##name() const {                                                                                          \
         return get<type>(#name);                                                                                       \
     }                                                                                                                  \
     auto set_##name(const type &value) {                                                                               \
@@ -71,7 +38,7 @@ using namespace std;
  * the value to the storage_type and before returning, the getter will
  * automatically convert back to type.
  **/
-#define PROPERTY_OPTIONAL_TYPECASTING2(type, storage_type, name)                                                       \
+#define PROPERTY_OPTIONAL_TYPECASTING(type, storage_type, name)                                                        \
     std::optional<type> maybe_get_##name() const {                                                                     \
         return get_maybe<storage_type>(#name);                                                                         \
     }                                                                                                                  \
@@ -95,14 +62,12 @@ namespace eosdac {
 #define TRANSFER_DELAY 60 * 60
 #endif
     struct [[eosio::table("custodians"), eosio::contract("daccustodian")]] custodian {
-        eosio::name  cust_name;
-        eosio::asset requestedpay;
-        uint64_t     total_vote_power;
-#ifdef MIGRATION_STAGE_2
+        eosio::name           cust_name;
+        eosio::asset          requestedpay;
+        uint64_t              total_vote_power;
         uint64_t              rank;
         uint32_t              number_voters;
         eosio::time_point_sec avg_vote_time_stamp;
-#endif
 
         uint64_t primary_key() const {
             return cust_name.value;
@@ -112,11 +77,9 @@ namespace eosdac {
             return std::numeric_limits<uint64_t>::max() - total_vote_power;
         }
 
-#ifdef MIGRATION_STAGE_2
         uint64_t by_decayed_votes() const {
             return std::numeric_limits<uint64_t>::max() - rank;
         }
-#endif
 
         uint64_t by_requested_pay() const {
             return S{requestedpay.amount}.to<uint64_t>();
@@ -125,35 +88,8 @@ namespace eosdac {
 
     using custodians_table = eosio::multi_index<"custodians"_n, custodian,
         eosio::indexed_by<"byvotesrank"_n, eosio::const_mem_fun<custodian, uint64_t, &custodian::by_votes_rank>>,
-#ifdef MIGRATION_STAGE_2
         eosio::indexed_by<"bydecayed"_n, eosio::const_mem_fun<custodian, uint64_t, &custodian::by_decayed_votes>>,
-#endif
         eosio::indexed_by<"byreqpay"_n, eosio::const_mem_fun<custodian, uint64_t, &custodian::by_requested_pay>>>;
-
-    struct [[eosio::table("custodians2"), eosio::contract("daccustodian")]] custodian2 {
-        eosio::name           cust_name;
-        eosio::asset          requestedpay;
-        uint64_t              rank;
-        uint64_t              total_vote_power;
-        uint32_t              number_voters;
-        eosio::time_point_sec avg_vote_time_stamp;
-
-        uint64_t primary_key() const {
-            return cust_name.value;
-        }
-
-        uint64_t by_decayed_votes() const {
-            return std::numeric_limits<uint64_t>::max() - rank;
-        }
-
-        uint64_t by_requested_pay() const {
-            return S{requestedpay.amount}.to<uint64_t>();
-        }
-    };
-
-    using custodians2_table = eosio::multi_index<"custodians2"_n, custodian2,
-        eosio::indexed_by<"bydecayed"_n, eosio::const_mem_fun<custodian2, uint64_t, &custodian2::by_decayed_votes>>,
-        eosio::indexed_by<"byreqpay"_n, eosio::const_mem_fun<custodian2, uint64_t, &custodian2::by_requested_pay>>>;
 
     struct [[eosio::table("candidates"), eosio::contract("daccustodian")]] candidate {
         eosio::name           candidate_name;
@@ -218,10 +154,7 @@ namespace eosdac {
     };
     using weights = eosio::multi_index<"weights"_n, vote_weight>;
 
-    struct contr_config;
-    using configscontainer = eosio::singleton<"config2"_n, contr_config>;
-
-    struct [[eosio::table("config2"), eosio::contract("daccustodian")]] contr_config {
+    struct contr_config {
         //    The amount of assets that are locked up by each candidate applying for election.
         eosio::extended_asset lockupasset;
         //    The maximum number of votes that each member can make for a candidate.
@@ -254,75 +187,6 @@ namespace eosdac {
         uint32_t lockup_release_time_delay;
 
         eosio::extended_asset requested_pay_max;
-
-        static contr_config get_current_configs(eosio::name account, eosio::name scope) {
-            return configscontainer(account, scope.value).get_or_default(contr_config());
-        }
-
-        void save(eosio::name account, eosio::name scope, eosio::name payer = same_payer) {
-            configscontainer(account, scope.value).set(*this, payer);
-        }
-    };
-
-    struct contr_state2;
-    using statecontainer2 = eosio::singleton<"state2"_n, contr_state2>;
-
-    enum state_keys : uint8_t {
-        total_weight_of_votes       = 1,
-        total_votes_on_candidates   = 2,
-        number_active_candidates    = 3,
-        met_initial_votes_threshold = 4,
-        lastclaimbudgettime         = 5,
-        budget_percentage           = 6
-    };
-    using state_value_variant =
-        std::variant<uint32_t, uint64_t, int64_t, bool, std::vector<int64_t>, name, std::string, eosio::time_point_sec>;
-
-    struct [[eosio::table("state2"), eosio::contract("daccustodian")]] contr_state2 {
-        eosio::time_point_sec                  lastperiodtime = time_point_sec(0);
-        std::map<uint8_t, state_value_variant> data           = {{state_keys::total_weight_of_votes, int64_t(0)},
-            {state_keys::total_votes_on_candidates, int64_t(0)}, {state_keys::number_active_candidates, uint32_t(0)},
-            {state_keys::met_initial_votes_threshold, false}, {state_keys::lastclaimbudgettime, time_point_sec(0)}};
-
-        static contr_state2 get_current_state(const eosio::name account, const eosio::name scope) {
-            return statecontainer2(account, scope.value).get_or_default(contr_state2{});
-        }
-
-        void save(const eosio::name account, const eosio::name scope) {
-            statecontainer2(account, scope.value).set(*this, account);
-        }
-
-        void set(const state_keys key, const state_value_variant &value) {
-            data[key] = value;
-        }
-
-        template <typename T>
-        T get(const state_keys key) const {
-            const auto search = data.find(key);
-            check(search != data.end(), "Key %s not found in state data", std::to_string(key));
-            return std::get<T>(search->second);
-        }
-
-        template <typename T>
-        std::optional<T> get_maybe(const state_keys key) const {
-            const auto search = data.find(key);
-            if (search != data.end()) {
-                return std::get<T>(search->second);
-            } else {
-                return {};
-            }
-        }
-
-        /**
-         * What follows are type-safe getters/setters for polymorphic map values
-         **/
-
-        PROPERTY_OPTIONAL_TYPECASTING(uint16_t, uint32_t, budget_percentage);
-        PROPERTY(time_point_sec, lastclaimbudgettime);
-        PROPERTY(int64_t, total_weight_of_votes);
-        PROPERTY(bool, met_initial_votes_threshold);
-        PROPERTY(uint32_t, number_active_candidates);
-        PROPERTY(int64_t, total_votes_on_candidates);
     };
 
     struct [[eosio::table("votes"), eosio::contract("daccustodian")]] vote {
@@ -407,8 +271,11 @@ namespace eosdac {
         template <typename T>
         T get(const std::string &key) const {
             const auto search = data.find(key);
-            check(search != data.end(), "Key %s not found in dacglobals data", key);
-            return std::get<T>(search->second);
+            if (search == data.end()) {
+                return T{};
+            } else {
+                return std::get<T>(search->second);
+            }
         }
 
         template <typename T>
@@ -425,74 +292,38 @@ namespace eosdac {
         std::map<std::string, state_value_variant2> data = {};
 
         static dacglobals current(const eosio::name account, const eosio::name scope) {
-            return dacglobals_singleton(account, scope.value).get_or_default(get_migrated_state(account, scope));
+            return dacglobals_singleton(account, scope.value).get_or_default(dacglobals());
         }
 
         void save(const eosio::name account, const eosio::name scope) {
             dacglobals_singleton(account, scope.value).set(*this, account);
-            configscontainer(account, scope.value).remove();
-            statecontainer2(account, scope.value).remove();
         }
         /**
          * What follows are type-safe getters/setters for polymorphic map values
          **/
 
-        PROPERTY_OPTIONAL_TYPECASTING2(uint16_t, uint32_t, budget_percentage);
-        PROPERTY2(time_point_sec, lastclaimbudgettime);
-        PROPERTY2(int64_t, total_weight_of_votes);
-        PROPERTY2(bool, met_initial_votes_threshold);
-        PROPERTY2(uint32_t, number_active_candidates);
-        PROPERTY2(int64_t, total_votes_on_candidates);
-        PROPERTY2(eosio::time_point_sec, lastperiodtime);
+        PROPERTY_OPTIONAL_TYPECASTING(uint16_t, uint32_t, budget_percentage);
+        PROPERTY(time_point_sec, lastclaimbudgettime);
+        PROPERTY(int64_t, total_weight_of_votes);
+        PROPERTY(bool, met_initial_votes_threshold);
+        PROPERTY(uint32_t, number_active_candidates);
+        PROPERTY(int64_t, total_votes_on_candidates);
+        PROPERTY(eosio::time_point_sec, lastperiodtime);
 
         // from config2
-        PROPERTY2(eosio::extended_asset, lockupasset);
-        PROPERTY2(uint8_t, maxvotes);
-        PROPERTY2(uint8_t, numelected);
-        PROPERTY2(uint32_t, periodlength);
-        PROPERTY2(bool, should_pay_via_service_provider);
-        PROPERTY2(uint32_t, initial_vote_quorum_percent);
-        PROPERTY2(uint32_t, vote_quorum_percent);
-        PROPERTY2(uint8_t, auth_threshold_high);
-        PROPERTY2(uint8_t, auth_threshold_mid);
-        PROPERTY2(uint8_t, auth_threshold_low);
-        PROPERTY2(uint32_t, lockup_release_time_delay);
-        PROPERTY2(eosio::extended_asset, requested_pay_max);
-        PROPERTY2(uint64_t, token_supply_theshold);
-
-        static dacglobals get_migrated_state(const eosio::name account, const eosio::name dac_id) {
-            auto new_state = dacglobals{};
-
-            // migrate from state2
-            const auto state_2 = contr_state2::get_current_state(account, dac_id);
-            const auto p       = state_2.get_budget_percentage();
-            if (p) {
-                new_state.set_budget_percentage(*p);
-            }
-            new_state.set_lastclaimbudgettime(state_2.get_lastclaimbudgettime());
-            new_state.set_total_weight_of_votes(state_2.get_total_weight_of_votes());
-            new_state.set_met_initial_votes_threshold(state_2.get_met_initial_votes_threshold());
-            new_state.set_number_active_candidates(state_2.get_number_active_candidates());
-            new_state.set_total_votes_on_candidates(state_2.get_total_votes_on_candidates());
-            new_state.set_lastperiodtime(state_2.lastperiodtime);
-
-            // migrate from config2
-            const auto config_2 = contr_config::get_current_configs(account, dac_id);
-            new_state.set_lockupasset(config_2.lockupasset);
-            new_state.set_maxvotes(config_2.maxvotes);
-            new_state.set_numelected(config_2.numelected);
-            new_state.set_periodlength(config_2.periodlength);
-            new_state.set_should_pay_via_service_provider(config_2.should_pay_via_service_provider);
-            new_state.set_initial_vote_quorum_percent(config_2.initial_vote_quorum_percent);
-            new_state.set_vote_quorum_percent(config_2.vote_quorum_percent);
-            new_state.set_auth_threshold_high(config_2.auth_threshold_high);
-            new_state.set_auth_threshold_mid(config_2.auth_threshold_mid);
-            new_state.set_auth_threshold_low(config_2.auth_threshold_low);
-            new_state.set_lockup_release_time_delay(config_2.lockup_release_time_delay);
-            new_state.set_requested_pay_max(config_2.requested_pay_max);
-
-            return new_state;
-        }
+        PROPERTY(eosio::extended_asset, lockupasset);
+        PROPERTY(uint8_t, maxvotes);
+        PROPERTY(uint8_t, numelected);
+        PROPERTY(uint32_t, periodlength);
+        PROPERTY(bool, should_pay_via_service_provider);
+        PROPERTY(uint32_t, initial_vote_quorum_percent);
+        PROPERTY(uint32_t, vote_quorum_percent);
+        PROPERTY(uint8_t, auth_threshold_high);
+        PROPERTY(uint8_t, auth_threshold_mid);
+        PROPERTY(uint8_t, auth_threshold_low);
+        PROPERTY(uint32_t, lockup_release_time_delay);
+        PROPERTY(eosio::extended_asset, requested_pay_max);
+        PROPERTY(uint64_t, token_supply_theshold);
     };
 
     class daccustodian : public contract {
@@ -535,10 +366,7 @@ namespace eosdac {
         ACTION claimbudget(const name &dac_id);
         ACTION setbudget(const name &dac_id, const uint16_t percentage);
         ACTION unsetbudget(const name &dac_id);
-        ACTION migrate1(const name dac_id);
-#ifdef MIGRATION_STAGE_2
-        ACTION migrate2(const name dac_id);
-#endif
+
 #ifdef DEBUG
         ACTION migratestate(const name &dac_id);
         ACTION resetvotes(const name &voter, const name &dac_id);
