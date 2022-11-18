@@ -22,7 +22,5 @@
 #include "debug.cpp"
 #endif
 
-#include "migration.cpp"
-
 using namespace eosio;
 using namespace std;

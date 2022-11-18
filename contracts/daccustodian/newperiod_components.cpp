@@ -104,14 +104,12 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
             cand_itr++;
         } else {
             custodians.emplace(auth_account, [&](custodian &c) {
-                c.cust_name        = cand_itr->candidate_name;
-                c.requestedpay     = cand_itr->requestedpay;
-                c.total_vote_power = cand_itr->total_vote_power;
-#ifdef MIGRATION_STAGE_2
+                c.cust_name           = cand_itr->candidate_name;
+                c.requestedpay        = cand_itr->requestedpay;
+                c.total_vote_power    = cand_itr->total_vote_power;
                 c.rank                = cand_itr->rank;
                 c.number_voters       = cand_itr->number_voters;
                 c.avg_vote_time_stamp = cand_itr->avg_vote_time_stamp;
-#endif
             });
 
             currentCustodianCount++;
@@ -221,13 +219,6 @@ ACTION daccustodian::claimbudget(const name &dac_id) {
 
 #ifdef IS_DEV
 ACTION daccustodian::fillstate(const name &dac_id) {
-    auto config = contr_config{};
-    config.save(get_self(), dac_id, get_self());
-
-    auto state2 = contr_state2{};
-    state2.set_budget_percentage(123);
-    state2.save(get_self(), dac_id);
-
     auto globals = dacglobals::current(get_self(), dac_id);
     globals.save(get_self(), dac_id);
 }
