@@ -256,7 +256,7 @@ namespace eosdac {
 
     using candperms_table = multi_index<"candperms"_n, candperm>;
 
-    using state_value_variant2 =
+    using state_value_variant =
         std::variant<int8_t, uint8_t, int32_t, uint32_t, int64_t, uint64_t, int128_t, uint128_t, bool,
             std::vector<int64_t>, eosio::name, std::string, eosio::time_point_sec, eosio::asset, eosio::extended_asset>;
 
@@ -264,7 +264,7 @@ namespace eosdac {
     using dacglobals_singleton = eosio::singleton<"dacglobals"_n, dacglobals>;
     struct [[eosio::table("dacglobals"), eosio::contract("daccustodian")]] dacglobals {
       private:
-        auto set(std::string && key, const state_value_variant2 &value) {
+        auto set(std::string && key, const state_value_variant &value) {
             return data.insert_or_assign(std::forward<std::string>(key), value);
         }
 
@@ -289,7 +289,7 @@ namespace eosdac {
         }
 
       public:
-        std::map<std::string, state_value_variant2> data = {};
+        std::map<std::string, state_value_variant> data = {};
 
         static dacglobals current(const eosio::name account, const eosio::name scope) {
             return dacglobals_singleton(account, scope.value).get_or_default(dacglobals());
