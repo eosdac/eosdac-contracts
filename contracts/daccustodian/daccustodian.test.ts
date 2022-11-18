@@ -49,198 +49,10 @@ describe('Daccustodian', () => {
     somebody = await AccountManager.createAccount();
   });
 
-  context('Migration', async () => {
-    let dacId = 'migratecust';
-    const date = new Date(0);
-    let table_contents = [
-      {
-        cust_name: 'testcust1',
-        requestedpay: '0.0000 TLM',
-        rank: 0,
-        total_vote_power: 0,
-        number_voters: 0,
-        avg_vote_time_stamp: date,
-      },
-      {
-        cust_name: 'testcust2',
-        requestedpay: '0.0000 TLM',
-        rank: 0,
-        total_vote_power: 0,
-        number_voters: 0,
-        avg_vote_time_stamp: date,
-      },
-      {
-        cust_name: 'testcust3',
-        requestedpay: '0.0000 TLM',
-        rank: 0,
-        total_vote_power: 0,
-        number_voters: 0,
-        avg_vote_time_stamp: date,
-      },
-      {
-        cust_name: 'testcust4',
-        requestedpay: '0.0000 TLM',
-        rank: 0,
-        total_vote_power: 0,
-        number_voters: 0,
-        avg_vote_time_stamp: date,
-      },
-      {
-        cust_name: 'testcust5',
-        requestedpay: '0.0000 TLM',
-        rank: 0,
-        total_vote_power: 0,
-        number_voters: 0,
-        avg_vote_time_stamp: date,
-      },
-    ];
-    it('adding test custodians should work', async () => {
-      await shared.daccustodian_contract.tstaddcust('testcust1', dacId);
-      await shared.daccustodian_contract.tstaddcust('testcust2', dacId);
-      await shared.daccustodian_contract.tstaddcust('testcust3', dacId);
-      await shared.daccustodian_contract.tstaddcust('testcust4', dacId);
-      await shared.daccustodian_contract.tstaddcust('testcust5', dacId);
-    });
-    it('should add custodians', async () => {
-      await assertRowsEqual(
-        shared.daccustodian_contract.custodiansTable({
-          scope: dacId,
-        }),
-        table_contents
-      );
-    });
-    it('migrate1 should work', async () => {
-      await shared.daccustodian_contract.migrate1(dacId);
-    });
-    it('should delete custodians', async () => {
-      await assertRowsEqual(
-        shared.daccustodian_contract.custodiansTable({
-          scope: dacId,
-        }),
-        []
-      );
-    });
-    it('should have migrated to custodians2', async () => {
-      await assertRowsEqual(
-        shared.daccustodian_contract.custodians2Table({
-          scope: dacId,
-        }),
-        table_contents
-      );
-    });
-    it('migrate2 should work', async () => {
-      await shared.daccustodian_contract.migrate2(dacId);
-    });
-    it('should have migrated back to custodians', async () => {
-      await assertRowsEqual(
-        shared.daccustodian_contract.custodiansTable({
-          scope: dacId,
-        }),
-        table_contents
-      );
-    });
-  });
-
   context('fillstate', async () => {
     let dacId = 'migratedac';
     before(async () => {
       await shared.daccustodian_contract.fillstate(dacId);
-    });
-    it('dacglobal data should have been migrated from config and state2', async () => {
-      const res = await shared.daccustodian_contract.dacglobalsTable({
-        scope: dacId,
-      });
-      const s = res.rows[0];
-      chai.expect(s.data).to.deep.equal([
-        {
-          key: 'auth_threshold_high',
-          value: ['uint8', 0],
-        },
-        {
-          key: 'auth_threshold_low',
-          value: ['uint8', 0],
-        },
-        {
-          key: 'auth_threshold_mid',
-          value: ['uint8', 0],
-        },
-        {
-          key: 'budget_percentage',
-          value: ['uint32', 123],
-        },
-        {
-          key: 'initial_vote_quorum_percent',
-          value: ['uint32', 0],
-        },
-        {
-          key: 'lastclaimbudgettime',
-          value: ['time_point_sec', '1970-01-01T00:00:00'],
-        },
-        {
-          key: 'lastperiodtime',
-          value: ['time_point_sec', '1970-01-01T00:00:00'],
-        },
-        {
-          key: 'lockup_release_time_delay',
-          value: ['uint32', 0],
-        },
-        {
-          key: 'lockupasset',
-          value: [
-            'extended_asset',
-            {
-              quantity: '0 ',
-              contract: '',
-            },
-          ],
-        },
-        {
-          key: 'maxvotes',
-          value: ['uint8', 5],
-        },
-        {
-          key: 'met_initial_votes_threshold',
-          value: ['bool', 0],
-        },
-        {
-          key: 'number_active_candidates',
-          value: ['uint32', 0],
-        },
-        {
-          key: 'numelected',
-          value: ['uint8', 3],
-        },
-        {
-          key: 'periodlength',
-          value: ['uint32', 604800],
-        },
-        {
-          key: 'requested_pay_max',
-          value: [
-            'extended_asset',
-            {
-              quantity: '0 ',
-              contract: '',
-            },
-          ],
-        },
-        {
-          key: 'should_pay_via_service_provider',
-          value: ['bool', 0],
-        },
-        {
-          key: 'total_votes_on_candidates',
-          value: ['int64', 0],
-        },
-        {
-          key: 'total_weight_of_votes',
-          value: ['int64', 0],
-        },
-        {
-          key: 'vote_quorum_percent',
-          value: ['uint32', 0],
-        },
-      ]);
     });
   });
 
@@ -273,7 +85,7 @@ describe('Daccustodian', () => {
         'ERR::DAC_NOT_FOUND'
       );
       await assertRowsEqual(
-        shared.daccustodian_contract.config2Table({
+        shared.daccustodian_contract.dacglobalsTable({
           scope: 'unknowndac',
           limit: 1,
         }),
@@ -304,7 +116,7 @@ describe('Daccustodian', () => {
         'ERR::UPDATECONFIG_INVALID_AUTH_HIGH_TO_NUM_ELECTED'
       );
       await assertRowsEqual(
-        shared.daccustodian_contract.config2Table({
+        shared.daccustodian_contract.dacglobalsTable({
           scope: dacId,
           limit: 2,
         }),
@@ -335,7 +147,7 @@ describe('Daccustodian', () => {
         'ERR::UPDATECONFIG_INVALID_AUTH_HIGH_TO_MID_AUTH'
       );
       await assertRowsEqual(
-        shared.daccustodian_contract.config2Table({
+        shared.daccustodian_contract.dacglobalsTable({
           scope: dacId,
           limit: 2,
         }),
@@ -366,7 +178,7 @@ describe('Daccustodian', () => {
         'ERR::UPDATECONFIG_INVALID_AUTH_MID_TO_LOW_AUTH'
       );
       await assertRowsEqual(
-        shared.daccustodian_contract.config2Table({
+        shared.daccustodian_contract.dacglobalsTable({
           scope: dacId,
           limit: 2,
         }),
@@ -609,14 +421,6 @@ describe('Daccustodian', () => {
                 value: ['uint32', 31],
               },
               {
-                key: 'lastclaimbudgettime',
-                value: ['time_point_sec', '1970-01-01T00:00:00'],
-              },
-              {
-                key: 'lastperiodtime',
-                value: ['time_point_sec', '1970-01-01T00:00:00'],
-              },
-              {
                 key: 'lockup_release_time_delay',
                 value: ['uint32', 1233],
               },
@@ -633,14 +437,6 @@ describe('Daccustodian', () => {
               {
                 key: 'maxvotes',
                 value: ['uint8', 4],
-              },
-              {
-                key: 'met_initial_votes_threshold',
-                value: ['bool', 0],
-              },
-              {
-                key: 'number_active_candidates',
-                value: ['uint32', 0],
               },
               {
                 key: 'numelected',
@@ -667,14 +463,6 @@ describe('Daccustodian', () => {
               {
                 key: 'token_supply_theshold',
                 value: ['uint64', 10000001],
-              },
-              {
-                key: 'total_votes_on_candidates',
-                value: ['int64', 0],
-              },
-              {
-                key: 'total_weight_of_votes',
-                value: ['int64', 0],
               },
               {
                 key: 'vote_quorum_percent',
@@ -1016,10 +804,10 @@ describe('Daccustodian', () => {
         let dacState = await shared.daccustodian_contract.dacglobalsTable({
           scope: dacId,
         });
-        chai.expect(dacState.rows[0].data).to.deep.include({
-          key: 'total_weight_of_votes',
-          value: ['int64', 0],
-        });
+        const res = dacState.rows[0].data.find(
+          (x) => x.key === 'total_weight_of_votes'
+        );
+        chai.expect(res).to.be.undefined;
       });
     });
     context('After voting', async () => {
