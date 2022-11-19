@@ -225,157 +225,161 @@ namespace eosdac {
 
     using candperms_table = multi_index<"candperms"_n, candperm>;
 
-    struct dacglobals_struct;
-    using dacglobals_singleton = eosio::singleton<"dacglobals"_n, dacglobals_struct>;
-
-    struct [[eosio::table("dacglobals"), eosio::contract("daccustodian")]] dacglobals_struct
-        : public blabla{EOSLIB_SERIALIZE_DERIVED(dacglobals_struct, blabla, (data)(serial))};
-
-    struct dacglobals : Singleton<dacglobals_singleton, dacglobals_struct> {
+#define XXX(table_name, contract_name)                                                                                 \
+    struct table_name##_struct;                                                                                        \
+    using table_name##_singleton = eosio::singleton<#table_name##_n, table_name##_struct>;                             \
+    struct [[eosio::table(#table_name), eosio::contract(#contract_name)]] table_name##_struct                          \
+        : public SingletonStruct {                                                                                     \
+        EOSLIB_SERIALIZE_DERIVED(table_name##_struct, SingletonStruct, (data)(serial));                                \
+    };                                                                                                                 \
+    struct table_name : Singleton<table_name##_singleton, table_name##_struct> {                                       \
         using Singleton::Singleton;
-        PROPERTY_OPTIONAL_TYPECASTING(uint16_t, uint32_t, budget_percentage);
-        PROPERTY(time_point_sec, lastclaimbudgettime);
-        PROPERTY(int64_t, total_weight_of_votes);
-        PROPERTY(bool, met_initial_votes_threshold);
-        PROPERTY(uint32_t, number_active_candidates);
-        PROPERTY(int64_t, total_votes_on_candidates);
-        PROPERTY(eosio::time_point_sec, lastperiodtime);
-        PROPERTY(eosio::extended_asset, lockupasset);
-        PROPERTY(uint8_t, maxvotes);
-        PROPERTY(uint8_t, numelected);
-        PROPERTY(uint32_t, periodlength);
-        PROPERTY(bool, should_pay_via_service_provider);
-        PROPERTY(uint32_t, initial_vote_quorum_percent);
-        PROPERTY(uint32_t, vote_quorum_percent);
-        PROPERTY(uint8_t, auth_threshold_high);
-        PROPERTY(uint8_t, auth_threshold_mid);
-        PROPERTY(uint8_t, auth_threshold_low);
-        PROPERTY(uint32_t, lockup_release_time_delay);
-        PROPERTY(eosio::extended_asset, requested_pay_max);
-        PROPERTY(uint64_t, token_supply_theshold);
-    };
 
-    class daccustodian : public contract {
+    XXX(dacglobals, daccustodian)
+    PROPERTY_OPTIONAL_TYPECASTING(uint16_t, uint32_t, budget_percentage);
+    PROPERTY(time_point_sec, lastclaimbudgettime);
+    PROPERTY(int64_t, total_weight_of_votes);
+    PROPERTY(bool, met_initial_votes_threshold);
+    PROPERTY(uint32_t, number_active_candidates);
+    PROPERTY(int64_t, total_votes_on_candidates);
+    PROPERTY(eosio::time_point_sec, lastperiodtime);
+    PROPERTY(eosio::extended_asset, lockupasset);
+    PROPERTY(uint8_t, maxvotes);
+    PROPERTY(uint8_t, numelected);
+    PROPERTY(uint32_t, periodlength);
+    PROPERTY(bool, should_pay_via_service_provider);
+    PROPERTY(uint32_t, initial_vote_quorum_percent);
+    PROPERTY(uint32_t, vote_quorum_percent);
+    PROPERTY(uint8_t, auth_threshold_high);
+    PROPERTY(uint8_t, auth_threshold_mid);
+    PROPERTY(uint8_t, auth_threshold_low);
+    PROPERTY(uint32_t, lockup_release_time_delay);
+    PROPERTY(eosio::extended_asset, requested_pay_max);
+    PROPERTY(uint64_t, token_supply_theshold);
+}; // namespace eosdac
 
-      public:
-        daccustodian(name s, name code, datastream<const char *> ds) : contract(s, code, ds) {}
+class daccustodian : public contract {
 
-        ACTION updateconfige(const contr_config &new_config, const name &dac_id);
-        // ACTION transferobsv(name from, name to, asset quantity, name dac_id);
-        ACTION balanceobsv(const vector<account_balance_delta> &account_balance_deltas, const name &dac_id);
-        ACTION stakeobsv(const vector<account_stake_delta> &account_stake_deltas, const name &dac_id);
-        ACTION weightobsv(const vector<account_weight_delta> &account_weight_deltas, const name &dac_id);
+  public:
+    daccustodian(name s, name code, datastream<const char *> ds) : contract(s, code, ds) {}
 
-        ACTION nominatecane(const name &cand, const eosio::asset &requestedpay, const name &dac_id);
-        ACTION nominate(const name &cand, const name &dac_id);
-        ACTION withdrawcane(const name &cand, const name &dac_id);
-        ACTION removecand(const name &cand, const name &dac_id);
-        ACTION firecand(const name &cand, const bool lockupStake, const name &dac_id);
-        ACTION resigncust(const name &cust, const name &dac_id);
-        ACTION firecust(const name &cust, const name &dac_id);
-        ACTION appointcust(const vector<name> &cust, const name &dac_id);
-        ACTION updatebio(const name &cand, const std::string &bio, const name &dac_id);
-        ACTION flagcandprof(
-            const name &cand, const std::string &reason, const name &reporter, const bool block, const name &dac_id);
+    ACTION updateconfige(const contr_config &new_config, const name &dac_id);
+    // ACTION transferobsv(name from, name to, asset quantity, name dac_id);
+    ACTION balanceobsv(const vector<account_balance_delta> &account_balance_deltas, const name &dac_id);
+    ACTION stakeobsv(const vector<account_stake_delta> &account_stake_deltas, const name &dac_id);
+    ACTION weightobsv(const vector<account_weight_delta> &account_weight_deltas, const name &dac_id);
 
-        ACTION stprofile(const name &cand, const std::string &profile, const name &dac_id);
+    ACTION nominatecane(const name &cand, const eosio::asset &requestedpay, const name &dac_id);
+    ACTION nominate(const name &cand, const name &dac_id);
+    ACTION withdrawcane(const name &cand, const name &dac_id);
+    ACTION removecand(const name &cand, const name &dac_id);
+    ACTION firecand(const name &cand, const bool lockupStake, const name &dac_id);
+    ACTION resigncust(const name &cust, const name &dac_id);
+    ACTION firecust(const name &cust, const name &dac_id);
+    ACTION appointcust(const vector<name> &cust, const name &dac_id);
+    ACTION updatebio(const name &cand, const std::string &bio, const name &dac_id);
+    ACTION flagcandprof(
+        const name &cand, const std::string &reason, const name &reporter, const bool block, const name &dac_id);
 
-        ACTION updatereqpay(const name &cand, const eosio::asset &requestedpay, const name &dac_id);
-        ACTION votecust(const name &voter, const std::vector<name> &newvotes, const name &dac_id);
-        ACTION removecstvte(const name &voter, const name &dac_id);
-        ACTION voteproxy(const name &voter, const name &proxy, const name &dac_id);
-        ACTION regproxy(const name &proxy, const name &dac_id);
-        ACTION unregproxy(const name &proxy, const name &dac_id);
-        ACTION newperiod(const std::string &message, const name &dac_id);
-        ACTION runnewperiod(const std::string &message, const name &dac_id);
-        ACTION claimpay(const uint64_t payid, const name &dac_id);
-        ACTION removecuspay(const uint64_t payid, const name &dac_id);
-        ACTION rejectcuspay(const uint64_t payid, const name &dac_id);
-        ACTION paycpu(const name &dac_id);
-        ACTION claimbudget(const name &dac_id);
-        ACTION setbudget(const name &dac_id, const uint16_t percentage);
-        ACTION unsetbudget(const name &dac_id);
+    ACTION stprofile(const name &cand, const std::string &profile, const name &dac_id);
+
+    ACTION updatereqpay(const name &cand, const eosio::asset &requestedpay, const name &dac_id);
+    ACTION votecust(const name &voter, const std::vector<name> &newvotes, const name &dac_id);
+    ACTION removecstvte(const name &voter, const name &dac_id);
+    ACTION voteproxy(const name &voter, const name &proxy, const name &dac_id);
+    ACTION regproxy(const name &proxy, const name &dac_id);
+    ACTION unregproxy(const name &proxy, const name &dac_id);
+    ACTION newperiod(const std::string &message, const name &dac_id);
+    ACTION runnewperiod(const std::string &message, const name &dac_id);
+    ACTION claimpay(const uint64_t payid, const name &dac_id);
+    ACTION removecuspay(const uint64_t payid, const name &dac_id);
+    ACTION rejectcuspay(const uint64_t payid, const name &dac_id);
+    ACTION paycpu(const name &dac_id);
+    ACTION claimbudget(const name &dac_id);
+    ACTION setbudget(const name &dac_id, const uint16_t percentage);
+    ACTION unsetbudget(const name &dac_id);
 
 #ifdef DEBUG
-        ACTION migratestate(const name &dac_id);
-        ACTION resetvotes(const name &voter, const name &dac_id);
-        ACTION resetcands(const name &dac_id);
-        ACTION resetstate(const name &dac_id);
-        ACTION clearcands(const name &dac_id);
+    ACTION migratestate(const name &dac_id);
+    ACTION resetvotes(const name &voter, const name &dac_id);
+    ACTION resetcands(const name &dac_id);
+    ACTION resetstate(const name &dac_id);
+    ACTION clearcands(const name &dac_id);
 #endif
 
 #if defined(IS_DEV) || defined(DEBUG)
-        ACTION migraterank(const name &dac_id);
-        ACTION clearrank(const name &dac_id);
+    ACTION migraterank(const name &dac_id);
+    ACTION clearrank(const name &dac_id);
 #endif
 
 #ifdef IS_DEV
-        ACTION fillstate(const name &dac_id);
+    ACTION fillstate(const name &dac_id);
 
-        // helper function for testing to add custodian to custodians table without the need for elections
-        ACTION tstaddcust(const name cust, const name dac_id) {
-            require_auth(get_self());
-            auto custodians = custodians_table{get_self(), dac_id.value};
-            custodians.emplace(get_self(), [&](auto &c) {
-                c.cust_name    = cust;
-                c.requestedpay = ZERO_TRILIUM;
-            });
-        };
+    // helper function for testing to add custodian to custodians table without the need for elections
+    ACTION tstaddcust(const name cust, const name dac_id) {
+        require_auth(get_self());
+        auto custodians = custodians_table{get_self(), dac_id.value};
+        custodians.emplace(get_self(), [&](auto &c) {
+            c.cust_name    = cust;
+            c.requestedpay = ZERO_TRILIUM;
+        });
+    };
 
 #endif
-        /**
-         * This action is used to register a custom permission that will be used in the multisig instead of active.
-         *
-         * ### Assertions:
-         * - The account supplied to cand exists and is a registered candidate
-         * - The permission supplied exists as a permission on the account
-         *
-         * @param cand - The account id for the candidate setting a custom permission.
-         * @param permission - The permission name to use.
-         *
-         *
-         * ### Post Condition:
-         * The candidate will have a record entered into the database indicating the custom permission to use.
-         */
-        ACTION setperm(const name &cand, const name &permission, const name &dac_id);
+    /**
+     * This action is used to register a custom permission that will be used in the multisig instead of active.
+     *
+     * ### Assertions:
+     * - The account supplied to cand exists and is a registered candidate
+     * - The permission supplied exists as a permission on the account
+     *
+     * @param cand - The account id for the candidate setting a custom permission.
+     * @param permission - The permission name to use.
+     *
+     *
+     * ### Post Condition:
+     * The candidate will have a record entered into the database indicating the custom permission to use.
+     */
+    ACTION setperm(const name &cand, const name &permission, const name &dac_id);
 
-      private: // Private helper methods used by other actions.
-        void updateVoteWeight(
-            name custodian, const time_point_sec vote_time_stamp, int64_t weight, name dac_id, bool from_voting);
-        void updateVoteWeights(const vector<name> &votes, const time_point_sec vote_time_stamp, int64_t vote_weight,
-            name internal_dac_id, bool from_voting);
-        std::pair<int64_t, int64_t> get_vote_weight(name voter, name dac_id);
-        void                        modifyVoteWeights(const account_weight_delta &awd, const vector<name> &oldVotes,
-                                   const std::optional<time_point_sec> &oldVoteTimestamp, const vector<name> &newVotes, const name dac_id,
-                                   const bool from_voting);
-        void modifyProxiesWeight(int64_t vote_weight, name oldProxy, name newProxy, name dac_id, bool from_voting);
-        void assertPeriodTime(const dacglobals &globals);
-        void distributeMeanPay(name internal_dac_id);
-        vector<eosiosystem::permission_level_weight> get_perm_level_weights(
-            const custodians_table &custodians, const name &dac_id);
-        void add_all_auths(const name &accountToChange, const vector<eosiosystem::permission_level_weight> &weights,
-            const name &dac_id, const bool msig = false);
-        void add_all_auths_msig(
-            const name &accountToChange, vector<eosiosystem::permission_level_weight> &weights, const name &dac_id);
-        void add_auth_to_account(const name &accountToChange, const uint8_t threshold, const name &permission,
-            const name &parent, vector<eosiosystem::permission_level_weight> weights, const bool msig = false);
-        void setMsigAuths(name dac_id);
-        void transferCustodianBudget(const dacdir::dac &dac);
-        void removeCustodian(name cust, name internal_dac_id);
-        void disableCandidate(name cust, name internal_dac_id);
-        void removeCandidate(name cust, name internal_dac_id);
-        void allocateCustodians(bool early_election, name internal_dac_id);
-        bool permissionExists(name account, name permission);
-        bool _check_transaction_authorization(const char *trx_data, uint32_t trx_size, const char *pubkeys_data,
-            uint32_t pubkeys_size, const char *perms_data, uint32_t perms_size);
+  private: // Private helper methods used by other actions.
+    void updateVoteWeight(
+        name custodian, const time_point_sec vote_time_stamp, int64_t weight, name dac_id, bool from_voting);
+    void updateVoteWeights(const vector<name> &votes, const time_point_sec vote_time_stamp, int64_t vote_weight,
+        name internal_dac_id, bool from_voting);
+    std::pair<int64_t, int64_t> get_vote_weight(name voter, name dac_id);
+    void                        modifyVoteWeights(const account_weight_delta &awd, const vector<name> &oldVotes,
+                               const std::optional<time_point_sec> &oldVoteTimestamp, const vector<name> &newVotes, const name dac_id,
+                               const bool from_voting);
+    void modifyProxiesWeight(int64_t vote_weight, name oldProxy, name newProxy, name dac_id, bool from_voting);
+    void assertPeriodTime(const dacglobals &globals);
+    void distributeMeanPay(name internal_dac_id);
+    vector<eosiosystem::permission_level_weight> get_perm_level_weights(
+        const custodians_table &custodians, const name &dac_id);
+    void add_all_auths(const name &accountToChange, const vector<eosiosystem::permission_level_weight> &weights,
+        const name &dac_id, const bool msig = false);
+    void add_all_auths_msig(
+        const name &accountToChange, vector<eosiosystem::permission_level_weight> &weights, const name &dac_id);
+    void add_auth_to_account(const name &accountToChange, const uint8_t threshold, const name &permission,
+        const name &parent, vector<eosiosystem::permission_level_weight> weights, const bool msig = false);
+    void setMsigAuths(name dac_id);
+    void transferCustodianBudget(const dacdir::dac &dac);
+    void removeCustodian(name cust, name internal_dac_id);
+    void disableCandidate(name cust, name internal_dac_id);
+    void removeCandidate(name cust, name internal_dac_id);
+    void allocateCustodians(bool early_election, name internal_dac_id);
+    bool permissionExists(name account, name permission);
+    bool _check_transaction_authorization(const char *trx_data, uint32_t trx_size, const char *pubkeys_data,
+        uint32_t pubkeys_size, const char *perms_data, uint32_t perms_size);
 
-        permission_level getCandidatePermission(name account, name internal_dac_id);
-        void             validateUnstake(name code, name cand, name dac_id);
-        void validateUnstakeAmount(const name &code, const name &cand, const asset &unstake_amount, const name &dac_id);
-        void validateMinStake(name account, name dac_id);
-        uint16_t       get_budget_percentage(const name &dac_id, const dacglobals &globals);
-        time_point_sec calculate_avg_vote_time_stamp(const time_point_sec vote_time_before,
-            const time_point_sec vote_time_stamp, const int64_t weight, const uint64_t total_votes);
-        void update_number_of_votes(const vector<name> &oldvotes, const vector<name> &newvotes, const name &dac_id);
-    };
-}; // namespace eosdac
+    permission_level getCandidatePermission(name account, name internal_dac_id);
+    void             validateUnstake(name code, name cand, name dac_id);
+    void     validateUnstakeAmount(const name &code, const name &cand, const asset &unstake_amount, const name &dac_id);
+    void     validateMinStake(name account, name dac_id);
+    uint16_t get_budget_percentage(const name &dac_id, const dacglobals &globals);
+    time_point_sec calculate_avg_vote_time_stamp(const time_point_sec vote_time_before,
+        const time_point_sec vote_time_stamp, const int64_t weight, const uint64_t total_votes);
+    void update_number_of_votes(const vector<name> &oldvotes, const vector<name> &newvotes, const name &dac_id);
+};
+}
+; // namespace eosdac
