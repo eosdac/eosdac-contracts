@@ -16,40 +16,9 @@
 #include "safemath/serr.hpp"
 #include "safemath/util.hpp"
 
+#include "safemath/singleton.hpp"
+
 using namespace std;
-
-/**
- * simple getter/setter
- **/
-#define PROPERTY(type, name)                                                                                           \
-    type get_##name() const {                                                                                          \
-        return get<type>(#name);                                                                                       \
-    }                                                                                                                  \
-    auto set_##name(const type &value) {                                                                               \
-        return set(#name, value);                                                                                      \
-    }
-
-/**
- * A slightly more complicated getter/setter macro that allows optional values.
- * If value is not set, it returns a null optional. To unset a previously set
- * value, it has an unset function.
- * Since our variant can only hold certain number types, we sometimes need to
- * convert our desired type to a storage_type. Before storing, it will convert
- * the value to the storage_type and before returning, the getter will
- * automatically convert back to type.
- **/
-#define PROPERTY_OPTIONAL_TYPECASTING(type, storage_type, name)                                                        \
-    std::optional<type> maybe_get_##name() const {                                                                     \
-        return get_maybe<storage_type>(#name);                                                                         \
-    }                                                                                                                  \
-    void set_##name(const type &value) {                                                                               \
-        set(#name, static_cast<storage_type>(value));                                                                  \
-    }                                                                                                                  \
-    void unset_##name() {                                                                                              \
-        const auto search = data.find(#name);                                                                          \
-        check(search != data.end(), "Cannot unset " #name ", no value set");                                           \
-        data.erase(#name);                                                                                             \
-    }
 
 namespace eosdac {
 
@@ -256,52 +225,14 @@ namespace eosdac {
 
     using candperms_table = multi_index<"candperms"_n, candperm>;
 
-    using state_value_variant =
-        std::variant<int8_t, uint8_t, int32_t, uint32_t, int64_t, uint64_t, int128_t, uint128_t, bool,
-            std::vector<int64_t>, eosio::name, std::string, eosio::time_point_sec, eosio::asset, eosio::extended_asset>;
+    struct dacglobals_struct;
+    using dacglobals_singleton = eosio::singleton<"dacglobals"_n, dacglobals_struct>;
 
-    struct dacglobals;
-    using dacglobals_singleton = eosio::singleton<"dacglobals"_n, dacglobals>;
-    struct [[eosio::table("dacglobals"), eosio::contract("daccustodian")]] dacglobals {
-      private:
-        auto set(std::string && key, const state_value_variant &value) {
-            return data.insert_or_assign(std::forward<std::string>(key), value);
-        }
+    struct [[eosio::table("dacglobals"), eosio::contract("daccustodian")]] dacglobals_struct
+        : public blabla{EOSLIB_SERIALIZE_DERIVED(dacglobals_struct, blabla, (data)(serial))};
 
-        template <typename T>
-        T get(const std::string &key) const {
-            const auto search = data.find(key);
-            if (search == data.end()) {
-                return T{};
-            } else {
-                return std::get<T>(search->second);
-            }
-        }
-
-        template <typename T>
-        std::optional<T> get_maybe(const std::string &key) const {
-            const auto search = data.find(key);
-            if (search != data.end()) {
-                return std::get<T>(search->second);
-            } else {
-                return {};
-            }
-        }
-
-      public:
-        std::map<std::string, state_value_variant> data = {};
-
-        static dacglobals current(const eosio::name account, const eosio::name scope) {
-            return dacglobals_singleton(account, scope.value).get_or_default(dacglobals());
-        }
-
-        void save(const eosio::name account, const eosio::name scope) {
-            dacglobals_singleton(account, scope.value).set(*this, account);
-        }
-        /**
-         * What follows are type-safe getters/setters for polymorphic map values
-         **/
-
+    struct dacglobals : Singleton<dacglobals_singleton, dacglobals_struct> {
+        using Singleton::Singleton;
         PROPERTY_OPTIONAL_TYPECASTING(uint16_t, uint32_t, budget_percentage);
         PROPERTY(time_point_sec, lastclaimbudgettime);
         PROPERTY(int64_t, total_weight_of_votes);
@@ -309,8 +240,6 @@ namespace eosdac {
         PROPERTY(uint32_t, number_active_candidates);
         PROPERTY(int64_t, total_votes_on_candidates);
         PROPERTY(eosio::time_point_sec, lastperiodtime);
-
-        // from config2
         PROPERTY(eosio::extended_asset, lockupasset);
         PROPERTY(uint8_t, maxvotes);
         PROPERTY(uint8_t, numelected);

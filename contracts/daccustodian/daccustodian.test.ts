@@ -403,6 +403,7 @@ describe('Daccustodian', () => {
         }),
         [
           {
+            serial: 1,
             data: [
               {
                 key: 'auth_threshold_high',
@@ -632,6 +633,10 @@ describe('Daccustodian', () => {
             );
           });
           it('should succeed', async () => {
+            const result = await shared.daccustodian_contract.dacglobalsTable({
+              scope: dacId,
+            });
+            console.log('serial: ' + result.rows[0].serial);
             await shared.daccustodian_contract.nominatecane(
               newUser1.name,
               '25.0000 EOS',

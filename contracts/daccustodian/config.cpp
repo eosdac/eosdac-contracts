@@ -45,7 +45,7 @@ ACTION daccustodian::updateconfige(const contr_config &new_config, const name &d
         "Symbol mismatch dac symbol is %s but symbol given is %s", dacForScope.symbol.get_symbol(),
         new_config.lockupasset.quantity.symbol);
 
-    auto globals = dacglobals::current(get_self(), dac_id);
+    auto globals = dacglobals{get_self(), dac_id};
 
     globals.set_lockupasset(new_config.lockupasset);
     globals.set_maxvotes(new_config.maxvotes);
@@ -61,22 +61,19 @@ ACTION daccustodian::updateconfige(const contr_config &new_config, const name &d
     globals.set_requested_pay_max(new_config.requested_pay_max);
     globals.set_token_supply_theshold(new_config.token_supply_theshold);
 
-    globals.save(get_self(), dac_id);
     print("Succesfully updated the daccustodian config for: ", dac_id);
 }
 
 ACTION daccustodian::setbudget(const name &dac_id, const uint16_t percentage) {
     require_auth(get_self());
 
-    auto globals = dacglobals::current(get_self(), dac_id);
+    auto globals = dacglobals{get_self(), dac_id};
     globals.set_budget_percentage(percentage);
-    globals.save(get_self(), dac_id);
 }
 
 ACTION daccustodian::unsetbudget(const name &dac_id) {
     require_auth(get_self());
 
-    auto globals = dacglobals::current(get_self(), dac_id);
+    auto globals = dacglobals{get_self(), dac_id};
     globals.unset_budget_percentage();
-    globals.save(get_self(), dac_id);
 }

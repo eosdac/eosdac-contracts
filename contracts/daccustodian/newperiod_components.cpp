@@ -3,7 +3,7 @@ using namespace eosdac;
 void daccustodian::distributeMeanPay(name dac_id) {
     custodians_table  custodians(get_self(), dac_id.value);
     pending_pay_table pending_pay(get_self(), dac_id.value);
-    const auto        globals = dacglobals::current(get_self(), dac_id);
+    const auto        globals = dacglobals{get_self(), dac_id};
     name              owner   = dacdir::dac_for_id(dac_id).owner;
 
     // Find the mean pay using a temporary vector to hold the requestedpay amounts.
@@ -68,7 +68,7 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
 
     custodians_table custodians(get_self(), dac_id.value);
     candidates_table registered_candidates(get_self(), dac_id.value);
-    const auto       globals      = dacglobals::current(get_self(), dac_id);
+    const auto       globals      = dacglobals{get_self(), dac_id};
     name             auth_account = dacdir::dac_for_id(dac_id).owner;
     auto             byvotes      = registered_candidates.get_index<"bydecayed"_n>();
 
@@ -150,7 +150,7 @@ void daccustodian::add_auth_to_account(const name &accountToChange, const uint8_
 
 void daccustodian::add_all_auths(const name            &accountToChange,
     const vector<eosiosystem::permission_level_weight> &weights, const name &dac_id, const bool msig) {
-    const auto globals = dacglobals::current(get_self(), dac_id);
+    const auto globals = dacglobals{get_self(), dac_id};
 
     add_auth_to_account(accountToChange, globals.get_auth_threshold_high(), HIGH_PERMISSION, "active"_n, weights, msig);
 
@@ -183,7 +183,7 @@ ACTION daccustodian::claimbudget(const name &dac_id) {
     const auto dac          = dacdir::dac_for_id(dac_id);
     const auto auth_account = dac.owner;
     require_auth(auth_account);
-    auto globals = dacglobals::current(get_self(), dac_id);
+    auto globals = dacglobals{get_self(), dac_id};
     check(globals.get_lastclaimbudgettime() < globals.get_lastperiodtime(),
         "Claimbudget can only be called once per period");
     const auto treasury_account = dac.account_for_type(dacdir::TREASURY);
@@ -214,13 +214,11 @@ ACTION daccustodian::claimbudget(const name &dac_id) {
     }
 
     globals.set_lastclaimbudgettime(time_point_sec(current_time_point()));
-    globals.save(get_self(), dac_id);
 }
 
 #ifdef IS_DEV
 ACTION daccustodian::fillstate(const name &dac_id) {
-    auto globals = dacglobals::current(get_self(), dac_id);
-    globals.save(get_self(), dac_id);
+    auto globals = dacglobals{get_self(), dac_id};
 }
 #endif
 
@@ -228,7 +226,7 @@ ACTION daccustodian::fillstate(const name &dac_id) {
 
 ACTION daccustodian::migratestate(const name &dac_id) {
     check(!dacglobals_singleton(get_self(), dac_id.value).exists(), "Already migrated dac %s", dac_id);
-    auto new_state = dacglobals::current(get_self(), dac_id);
+    auto new_state = dacglobals{get_self(), dac_id};
     new_state.save(get_self(), dac_id);
 }
 #endif
@@ -250,7 +248,7 @@ ACTION daccustodian::newperiod(const string &message, const name &dac_id) {
 
 ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
     /* This is a housekeeping method, it can be called by anyone by design */
-    auto globals = dacglobals::current(get_self(), dac_id);
+    auto globals = dacglobals{get_self(), dac_id};
     assertPeriodTime(globals);
 
     dacdir::dac found_dac          = dacdir::dac_for_id(dac_id);
@@ -306,7 +304,6 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
     setMsigAuths(dac_id);
 
     globals.set_lastperiodtime(current_block_time().to_time_point());
-    globals.save(get_self(), dac_id);
 }
 
 uint16_t daccustodian::get_budget_percentage(const name &dac_id, const dacglobals &globals) {

@@ -392,7 +392,7 @@ void referendum::proposeMsig(referendum_data ref, name dac_id) {
 
     vector<permission_level> reqd_perms;
 
-    const auto globals  = dacglobals::current(custodian_contract, dac_id);
+    const auto globals  = dacglobals{custodian_contract, dac_id};
     uint8_t    count    = 0;
     uint8_t    num_reqs = min(255, globals.get_numelected() * 2);
 
