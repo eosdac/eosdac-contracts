@@ -227,7 +227,6 @@ ACTION daccustodian::fillstate(const name &dac_id) {
 ACTION daccustodian::migratestate(const name &dac_id) {
     check(!dacglobals_singleton(get_self(), dac_id.value).exists(), "Already migrated dac %s", dac_id);
     auto new_state = dacglobals{get_self(), dac_id};
-    new_state.save(get_self(), dac_id);
 }
 #endif
 
