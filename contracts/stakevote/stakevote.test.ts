@@ -106,8 +106,13 @@ describe('Stakevote', () => {
         });
       });
       it('before voting, total_weight_of_votes should be zero', async () => {
-        const x = await get_from_dacglobals(dacId, 'total_weight_of_votes');
-        chai.expect(x).to.equal(0);
+        let dacState = await shared.daccustodian_contract.dacglobalsTable({
+          scope: dacId,
+        });
+        const res = dacState.rows[0].data.find(
+          (x) => x.key === 'total_weight_of_votes'
+        );
+        chai.expect(res).to.be.undefined;
       });
       it('should create weights table entries', async () => {
         const expected_weight = await get_expected_vote_weight(
