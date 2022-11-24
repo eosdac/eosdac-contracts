@@ -225,16 +225,30 @@ namespace eosdac {
 
     using candperms_table = multi_index<"candperms"_n, candperm>;
 
-    SINGLETON(dacglobals, daccustodian, PROPERTY_OPTIONAL_TYPECASTING(uint16_t, uint32_t, budget_percentage);
-              PROPERTY(time_point_sec, lastclaimbudgettime); PROPERTY(int64_t, total_weight_of_votes);
-              PROPERTY(bool, met_initial_votes_threshold); PROPERTY(uint32_t, number_active_candidates);
-              PROPERTY(int64_t, total_votes_on_candidates); PROPERTY(eosio::time_point_sec, lastperiodtime);
-              PROPERTY(eosio::extended_asset, lockupasset); PROPERTY(uint8_t, maxvotes); PROPERTY(uint8_t, numelected);
-              PROPERTY(uint32_t, periodlength); PROPERTY(bool, should_pay_via_service_provider);
-              PROPERTY(uint32_t, initial_vote_quorum_percent); PROPERTY(uint32_t, vote_quorum_percent);
-              PROPERTY(uint8_t, auth_threshold_high); PROPERTY(uint8_t, auth_threshold_mid);
-              PROPERTY(uint8_t, auth_threshold_low); PROPERTY(uint32_t, lockup_release_time_delay);
-              PROPERTY(eosio::extended_asset, requested_pay_max); PROPERTY(uint64_t, token_supply_theshold);)
+    // clang-format off
+    SINGLETON(dacglobals, daccustodian, 
+            PROPERTY_OPTIONAL_TYPECASTING(uint16_t, uint32_t, budget_percentage);
+            PROPERTY(time_point_sec, lastclaimbudgettime); 
+            PROPERTY(int64_t, total_weight_of_votes);
+            PROPERTY(bool, met_initial_votes_threshold); 
+            PROPERTY(uint32_t, number_active_candidates);
+            PROPERTY(int64_t, total_votes_on_candidates); 
+            PROPERTY(eosio::time_point_sec, lastperiodtime);
+            PROPERTY(eosio::extended_asset, lockupasset); 
+            PROPERTY(uint8_t, maxvotes); 
+            PROPERTY(uint8_t, numelected);
+            PROPERTY(uint32_t, periodlength); 
+            PROPERTY(bool, should_pay_via_service_provider);
+            PROPERTY(uint32_t, initial_vote_quorum_percent); 
+            PROPERTY(uint32_t, vote_quorum_percent);
+            PROPERTY(uint8_t, auth_threshold_high); 
+            PROPERTY(uint8_t, auth_threshold_mid);
+            PROPERTY(uint8_t, auth_threshold_low); 
+            PROPERTY(uint32_t, lockup_release_time_delay);
+            PROPERTY(eosio::extended_asset, requested_pay_max); 
+            PROPERTY(uint64_t, token_supply_theshold);
+    )
+    // clang-format on
 
     class daccustodian : public contract {
 
