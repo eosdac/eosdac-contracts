@@ -6,7 +6,7 @@ using namespace eosdac;
 ACTION daccustodian::nominatecane(const name &cand, const asset &requestedpay, const name &dac_id) {
     require_auth(cand);
     assertValidMember(cand, dac_id);
-    auto globals = dacglobals::current(get_self(), dac_id);
+    auto globals = dacglobals{get_self(), dac_id};
 
     check(requestedpay.amount >= 0, "ERR::UPDATEREQPAY_UNDER_ZERO::Requested pay amount must not be negative.");
     // This implicitly asserts that the symbol of requestedpay matches the globals.max pay.
@@ -17,7 +17,6 @@ ACTION daccustodian::nominatecane(const name &cand, const asset &requestedpay, c
 
     const auto number_active_candidates = globals.get_number_active_candidates();
     globals.set_number_active_candidates(S{number_active_candidates} + S<uint32_t>{1});
-    globals.save(get_self(), dac_id);
 
     candidates_table registered_candidates(get_self(), dac_id.value);
 
@@ -115,7 +114,7 @@ ACTION daccustodian::appointcust(const vector<name> &custs, const name &dac_id) 
     name        auth_account = dac.owner;
     require_auth(auth_account);
 
-    const auto       globals = dacglobals::current(get_self(), dac_id);
+    const auto       globals = dacglobals{get_self(), dac_id};
     custodians_table custodians(_self, dac_id.value);
     check(custodians.begin() == custodians.end(), "ERR:CUSTODIANS_NOT_EMPTY::Custodians table is not empty");
     candidates_table candidates(_self, dac_id.value);
@@ -147,7 +146,7 @@ ACTION daccustodian::appointcust(const vector<name> &custs, const name &dac_id) 
 // private methods for the above actions
 
 void daccustodian::validateMinStake(name account, name dac_id) {
-    const auto globals        = dacglobals::current(get_self(), dac_id);
+    const auto globals        = dacglobals{get_self(), dac_id};
     const auto required_stake = globals.get_lockupasset();
 
     if (required_stake.quantity.amount > 0) {
@@ -194,10 +193,9 @@ void daccustodian::disableCandidate(name cand, name dac_id) {
         return;
     }
 
-    auto       globals                  = dacglobals::current(get_self(), dac_id);
+    auto       globals                  = dacglobals{get_self(), dac_id};
     const auto number_active_candidates = globals.get_number_active_candidates();
     globals.set_number_active_candidates(S{number_active_candidates} - S<uint32_t>{1});
-    globals.save(_self, dac_id);
 
     eosio::print("Remove from nominated candidate by setting them to inactive.");
     // Set the is_active flag to false instead of deleting in order to retain votes if they return to he dac.

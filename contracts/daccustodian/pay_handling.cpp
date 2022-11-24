@@ -4,7 +4,7 @@ using namespace eosdac;
 ACTION daccustodian::claimpay(const uint64_t payid, const name &dac_id) {
     auto        pending_pay = pending_pay_table{get_self(), dac_id.value};
     const auto  dac         = dacdir::dac_for_id(dac_id);
-    const auto  globals     = dacglobals::current(get_self(), dac_id);
+    const auto  globals     = dacglobals{get_self(), dac_id};
     const auto &payClaim    = pending_pay.get(payid, "ERR::CLAIMPAY_INVALID_CLAIM_ID::Invalid pay claim id.");
 
     assertValidMember(payClaim.receiver, dac_id);
