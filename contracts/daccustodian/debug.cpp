@@ -8,13 +8,13 @@ void daccustodian::resetvotes(const name &voter, const name &dac_id) {
     check(existingVote != votes_cast_by_members.end(), "No votes");
 }
 
-void daccustodian::collectvotes(const name &dac_id) {
+void daccustodian::collectvotes(const name &dac_id, name from, name to) {
     require_auth(get_self());
 
     votes_table votes_cast_by_members(_self, dac_id.value);
-    auto        vote_ittr = votes_cast_by_members.begin();
+    auto        vote_ittr = votes_cast_by_members.lower_bound(from.value);
 
-    while (vote_ittr != votes_cast_by_members.end()) {
+    while (vote_ittr != votes_cast_by_members.end() && vote_ittr->voter != to) {
         update_number_of_votes({}, vote_ittr->candidates, dac_id);
         const auto [vote_weight, vote_weight_quorum] = get_vote_weight(vote_ittr->voter, dac_id);
         modifyVoteWeights({vote_ittr->voter, vote_weight, vote_weight_quorum}, {}, {}, vote_ittr->candidates,

@@ -542,7 +542,7 @@ namespace eosdac {
 #ifdef DEBUG
         ACTION migratestate(const name &dac_id);
         ACTION resetvotes(const name &voter, const name &dac_id);
-        ACTION collectvotes(const name &dac_id);
+        ACTION collectvotes(const name &dac_id, name from, name to);
         ACTION resetcands(const name &dac_id);
         ACTION resetstate(const name &dac_id);
         ACTION clearcands(const name &dac_id);
