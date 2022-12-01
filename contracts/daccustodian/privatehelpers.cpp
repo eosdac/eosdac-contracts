@@ -86,8 +86,8 @@ std::pair<int64_t, int64_t> daccustodian::get_vote_weight(name voter, name dac_i
 }
 
 void daccustodian::modifyVoteWeights(const account_weight_delta &awd, const vector<name> &oldVotes,
-    const std::optional<time_point_sec> &oldVoteTimestamp, const vector<name> &newVotes, const name dac_id,
-    const bool from_voting) {
+    const std::optional<time_point_sec> &oldVoteTimestamp, const vector<name> &newVotes, time_point_sec new_time_stamp,
+    const name dac_id, const bool from_voting) {
     auto err = Err{"daccustodian::modifyVoteWeights"};
     // This could be optimised with set diffing to avoid remove then add for unchanged votes. - later
 
@@ -120,7 +120,7 @@ void daccustodian::modifyVoteWeights(const account_weight_delta &awd, const vect
     if (oldVoteTimestamp.has_value()) {
         updateVoteWeights(oldVotes, *oldVoteTimestamp, -awd.weight_delta, dac_id, from_voting);
     }
-    updateVoteWeights(newVotes, now(), awd.weight_delta, dac_id, from_voting);
+    updateVoteWeights(newVotes, new_time_stamp, awd.weight_delta, dac_id, from_voting);
 }
 
 permission_level daccustodian::getCandidatePermission(name account, name dac_id) {
