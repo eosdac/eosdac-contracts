@@ -19,6 +19,7 @@ void daccustodian::collectvotes(const name &dac_id) {
         const auto [vote_weight, vote_weight_quorum] = get_vote_weight(vote_ittr->voter, dac_id);
         modifyVoteWeights({vote_ittr->voter, vote_weight, vote_weight_quorum}, {}, {}, vote_ittr->candidates,
             vote_ittr->vote_time_stamp, dac_id, true);
+        vote_ittr++;
     }
 }
 
@@ -28,8 +29,8 @@ void daccustodian::resetstate(const name &dac_id) {
 
     currentState.set_total_weight_of_votes(0);
     currentState.set_total_votes_on_candidates(0);
-    currentState.set_number_active_candidates(0);
-    currentState.set_met_initial_votes_threshold(false);
+    // currentState.set_number_active_candidates(0);
+    // currentState.set_met_initial_votes_threshold(false);
 }
 
 void daccustodian::resetcands(const name &dac_id) {
