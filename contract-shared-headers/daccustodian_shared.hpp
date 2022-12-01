@@ -294,6 +294,7 @@ namespace eosdac {
 #ifdef DEBUG
         ACTION migratestate(const name &dac_id);
         ACTION resetvotes(const name &voter, const name &dac_id);
+        ACTION collectvotes(const name &dac_id);
         ACTION resetcands(const name &dac_id);
         ACTION resetstate(const name &dac_id);
         ACTION clearcands(const name &dac_id);
@@ -341,8 +342,8 @@ namespace eosdac {
             name internal_dac_id, bool from_voting);
         std::pair<int64_t, int64_t> get_vote_weight(name voter, name dac_id);
         void                        modifyVoteWeights(const account_weight_delta &awd, const vector<name> &oldVotes,
-                                   const std::optional<time_point_sec> &oldVoteTimestamp, const vector<name> &newVotes, const name dac_id,
-                                   const bool from_voting);
+                                   const std::optional<time_point_sec> &oldVoteTimestamp, const vector<name> &newVotes,
+                                   time_point_sec new_time_stamp, const name dac_id, const bool from_voting);
         void modifyProxiesWeight(int64_t vote_weight, name oldProxy, name newProxy, name dac_id, bool from_voting);
         void assertPeriodTime(const dacglobals &globals);
         void distributeMeanPay(name internal_dac_id);

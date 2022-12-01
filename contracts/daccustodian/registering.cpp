@@ -47,7 +47,7 @@ ACTION daccustodian::withdrawcane(const name &cand, const name &dac_id) {
     require_auth(cand);
     auto        registered_candidates = candidates_table{_self, dac_id.value};
     const auto &reg_candidate         = registered_candidates.get(
-                cand.value, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
+        cand.value, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
     check(reg_candidate.is_active, "ERR::REMOVECANDIDATE_CANDIDATE_NOT_ACTIVE::Candidate is not active.");
     disableCandidate(cand, dac_id);
 }
@@ -187,7 +187,7 @@ void daccustodian::removeCustodian(name cust, name dac_id) {
 void daccustodian::disableCandidate(name cand, name dac_id) {
     auto        registered_candidates = candidates_table{_self, dac_id.value};
     const auto &reg_candidate         = registered_candidates.get(
-                cand.value, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
+        cand.value, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
 
     if (!reg_candidate.is_active) {
         return;
@@ -208,7 +208,7 @@ void daccustodian::disableCandidate(name cand, name dac_id) {
 void daccustodian::removeCandidate(name cand, name dac_id) {
     auto        registered_candidates = candidates_table{_self, dac_id.value};
     const auto &reg_candidate         = registered_candidates.get(
-                cand.value, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
+        cand.value, "ERR::REMOVECANDIDATE_NOT_CURRENT_CANDIDATE::Candidate is not already registered.");
     check(!reg_candidate.is_active, "ERR::REMOVECANDIDATE_CANDIDATE_IS_ACTIVE::Candidate is still active.");
 
     // remove entry for candperms
@@ -252,7 +252,7 @@ ACTION daccustodian::unregproxy(const name &proxy_member, const name &dac_id) {
         auto        existingVote = votes_cast_by_members.find(proxy_member.value);
         if (existingVote != votes_cast_by_members.end()) {
             modifyVoteWeights({name{}, found_proxy->total_weight, found_proxy->total_weight}, existingVote->candidates,
-                existingVote->vote_time_stamp, {}, dac_id, false);
+                existingVote->vote_time_stamp, {}, now(), dac_id, false);
         }
     }
 
