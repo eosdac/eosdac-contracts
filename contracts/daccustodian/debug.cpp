@@ -31,6 +31,7 @@ void daccustodian::resetstate(const name &dac_id) {
     currentState.set_total_votes_on_candidates(0);
     // currentState.set_number_active_candidates(0);
     // currentState.set_met_initial_votes_threshold(false);
+    currentState.save(get_self(), dac_id);
 }
 
 void daccustodian::resetcands(const name &dac_id) {
