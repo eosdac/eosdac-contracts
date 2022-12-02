@@ -30,7 +30,7 @@ namespace eosdac {
 #ifndef TRANSFER_DELAY
 #define TRANSFER_DELAY 60 * 60
 #endif
-    struct [[eosio::table("custodians"), eosio::contract("daccustodian")]] custodian {
+    struct [[eosio::table("custodians1"), eosio::contract("daccustodian")]] custodian {
         eosio::name           cust_name;
         eosio::asset          requestedpay;
         uint64_t              total_vote_power;
@@ -55,7 +55,7 @@ namespace eosdac {
         }
     };
 
-    using custodians_table = eosio::multi_index<"custodians"_n, custodian,
+    using custodians_table = eosio::multi_index<"custodians1"_n, custodian,
         eosio::indexed_by<"byvotesrank"_n, eosio::const_mem_fun<custodian, uint64_t, &custodian::by_votes_rank>>,
         eosio::indexed_by<"bydecayed"_n, eosio::const_mem_fun<custodian, uint64_t, &custodian::by_decayed_votes>>,
         eosio::indexed_by<"byreqpay"_n, eosio::const_mem_fun<custodian, uint64_t, &custodian::by_requested_pay>>>;
