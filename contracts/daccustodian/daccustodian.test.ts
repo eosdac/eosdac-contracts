@@ -12,6 +12,7 @@ import {
   TableRowsResult,
   assertBalanceEqual,
   Asset,
+  ContractDeployer,
 } from 'lamington';
 const _ = require('lodash');
 import {
@@ -403,7 +404,6 @@ describe('Daccustodian', () => {
         }),
         [
           {
-            serial: 1,
             data: [
               {
                 key: 'auth_threshold_high',
@@ -636,7 +636,6 @@ describe('Daccustodian', () => {
             const result = await shared.daccustodian_contract.dacglobalsTable({
               scope: dacId,
             });
-            console.log('serial: ' + result.rows[0].serial);
             await shared.daccustodian_contract.nominatecane(
               newUser1.name,
               '25.0000 EOS',
@@ -768,6 +767,13 @@ describe('Daccustodian', () => {
     let dacId = 'canddac';
     let cands: Account[];
     before(async () => {
+      await shared.useNew();
+      shared.daccustodian_contract = await debugPromise(
+        ContractDeployer.deployWithName('daccustodian', 'daccustodian'),
+        'created daccustodian'
+      );
+      console.log('deployed new version of contract');
+
       await shared.initDac(dacId, '4,CANDAC', '1000000.0000 CANDAC');
       await shared.updateconfig(dacId, '12.0000 CANDAC');
       await shared.dac_token_contract.stakeconfig(

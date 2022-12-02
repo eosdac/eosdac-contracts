@@ -25,6 +25,7 @@ import * as chai from 'chai';
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { rename, stat } from 'node:fs/promises';
 
 export var NUMBER_OF_CANDIDATES = 7;
 
@@ -67,7 +68,45 @@ export class SharedTestObjects {
     return SharedTestObjects.instance;
   }
 
+  public async useOld() {
+    // assumes daccustodian is new contract
+    const is_old = await fileExists(
+      './artifacts/compiled_contracts/contracts/daccustodian.new'
+    );
+    if (is_old) {
+      // old contract is already in place, nothing to do
+      return;
+    }
+    await rename(
+      './artifacts/compiled_contracts/contracts/daccustodian',
+      './artifacts/compiled_contracts/contracts/daccustodian.new'
+    );
+    await rename(
+      './artifacts/compiled_contracts/contracts/daccustodian.old',
+      './artifacts/compiled_contracts/contracts/daccustodian'
+    );
+  }
+  public async useNew() {
+    const is_new = await fileExists(
+      './artifacts/compiled_contracts/contracts/daccustodian.old'
+    );
+    if (is_new) {
+      // new contract is already in place, nothing to do
+      return;
+    }
+    await rename(
+      './artifacts/compiled_contracts/contracts/daccustodian',
+      './artifacts/compiled_contracts/contracts/daccustodian.old'
+    );
+    await rename(
+      './artifacts/compiled_contracts/contracts/daccustodian.new',
+      './artifacts/compiled_contracts/contracts/daccustodian'
+    );
+  }
+
   private async initAndGetSharedObjects() {
+    await this.useOld();
+
     console.log('Init eos blockchain');
     await sleep(1000);
     this.tokenIssuer = await AccountManager.createAccount('federation');
@@ -925,7 +964,7 @@ export class SharedTestObjects {
 // Not used for now but could be useful later
 async function setup_external(name: string) {
   const compiled_dir = path.normalize(
-    `${__dirname}/../artifacts/compiled_contracts/${name}`
+    `${__dirname}/./compiled_contracts/${name}`
   );
 
   if (!fs.existsSync(compiled_dir)) {
@@ -974,4 +1013,14 @@ enum ref_type {
 enum dac_state_type {
   dac_state_typeINACTIVE = 0,
   dac_state_typeACTIVE = 1,
+}
+
+// returns true if file exists, false otherwise
+async function fileExists(path: string) {
+  try {
+    await stat(path);
+    return true;
+  } catch (err) {
+    return false;
+  }
 }
