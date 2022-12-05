@@ -581,7 +581,8 @@ namespace eosdac {
         config configs = current_configs(dac_id);
 
         check(approved_count >= configs.proposal_threshold,
-            "ERR::STARTWORK_INSUFFICIENT_VOTES::Insufficient votes on worker proposal.");
+            "ERR::STARTWORK_INSUFFICIENT_VOTES::Insufficient votes on worker proposal. Has %s but needs %s.",
+            approved_count, configs.proposal_threshold);
     }
 
     void dacproposals::arbitrator_rule_on_proposal(name arbitrator, name proposal_id, name dac_id) {

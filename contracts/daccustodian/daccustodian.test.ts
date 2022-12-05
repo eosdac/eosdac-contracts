@@ -767,13 +767,6 @@ describe('Daccustodian', () => {
     let dacId = 'canddac';
     let cands: Account[];
     before(async () => {
-      await shared.useNew();
-      shared.daccustodian_contract = await debugPromise(
-        ContractDeployer.deployWithName('daccustodian', 'daccustodian'),
-        'created daccustodian'
-      );
-      console.log('deployed new version of contract');
-
       await shared.initDac(dacId, '4,CANDAC', '1000000.0000 CANDAC');
       await shared.updateconfig(dacId, '12.0000 CANDAC');
       await shared.dac_token_contract.stakeconfig(
@@ -1617,7 +1610,7 @@ describe('Daccustodian', () => {
               );
 
               await assertRowCount(
-                shared.daccustodian_contract.custodiansTable({
+                shared.daccustodian_contract.custodians1Table({
                   scope: dacId,
                   limit: 20,
                 }),
@@ -1643,7 +1636,7 @@ describe('Daccustodian', () => {
                 keyType: 'i64',
               });
 
-              let res2 = await shared.daccustodian_contract.custodiansTable({
+              let res2 = await shared.daccustodian_contract.custodians1Table({
                 scope: dacId,
                 limit: 100,
                 indexPosition: 2, // bydecayed index
@@ -1689,7 +1682,7 @@ describe('Daccustodian', () => {
               );
 
               const custodians =
-                await shared.daccustodian_contract.custodiansTable({
+                await shared.daccustodian_contract.custodians1Table({
                   scope: dacId,
                   limit: 20,
                 });
@@ -1941,7 +1934,7 @@ describe('Daccustodian', () => {
           });
           it('custodians should the mean pay from the valid requested pays. (Requested pay exceeding the max pay should be ignored from the mean.)', async () => {
             let custodianRows =
-              await shared.daccustodian_contract.custodiansTable({
+              await shared.daccustodian_contract.custodians1Table({
                 scope: dacId,
                 limit: 12,
               });
@@ -2694,7 +2687,7 @@ describe('Daccustodian', () => {
           });
         });
         it('should delete custodian table entry', async () => {
-          const res = await shared.daccustodian_contract.custodiansTable({
+          const res = await shared.daccustodian_contract.custodians1Table({
             scope: dacId,
             limit: 20,
             lowerBound: electedCandidateToFire.name,
@@ -2848,7 +2841,7 @@ describe('Daccustodian', () => {
       chai.expect(candidates.rows[0].number_voters).to.equal(0);
       chai.expect(candidates.rows[0].is_active).to.equal(1);
 
-      let custodians = await shared.daccustodian_contract.custodiansTable({
+      let custodians = await shared.daccustodian_contract.custodians1Table({
         scope: dacId,
         limit: 20,
       });

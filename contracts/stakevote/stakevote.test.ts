@@ -332,7 +332,7 @@ describe('Stakevote', () => {
               );
 
               await assertRowCount(
-                shared.daccustodian_contract.custodiansTable({
+                shared.daccustodian_contract.custodians1Table({
                   scope: dacId,
                   limit: 20,
                 }),
@@ -341,7 +341,7 @@ describe('Stakevote', () => {
             });
             it('Should have highest ranked votes in custodians', async () => {
               let rowsResult =
-                await shared.daccustodian_contract.custodiansTable({
+                await shared.daccustodian_contract.custodians1Table({
                   scope: dacId,
                   limit: 14,
                   indexPosition: 2,

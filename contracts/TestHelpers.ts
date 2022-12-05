@@ -68,45 +68,7 @@ export class SharedTestObjects {
     return SharedTestObjects.instance;
   }
 
-  public async useOld() {
-    // assumes daccustodian is new contract
-    const is_old = await fileExists(
-      './artifacts/compiled_contracts/contracts/daccustodian.new'
-    );
-    if (is_old) {
-      // old contract is already in place, nothing to do
-      return;
-    }
-    await rename(
-      './artifacts/compiled_contracts/contracts/daccustodian',
-      './artifacts/compiled_contracts/contracts/daccustodian.new'
-    );
-    await rename(
-      './artifacts/compiled_contracts/contracts/daccustodian.old',
-      './artifacts/compiled_contracts/contracts/daccustodian'
-    );
-  }
-  public async useNew() {
-    const is_new = await fileExists(
-      './artifacts/compiled_contracts/contracts/daccustodian.old'
-    );
-    if (is_new) {
-      // new contract is already in place, nothing to do
-      return;
-    }
-    await rename(
-      './artifacts/compiled_contracts/contracts/daccustodian',
-      './artifacts/compiled_contracts/contracts/daccustodian.old'
-    );
-    await rename(
-      './artifacts/compiled_contracts/contracts/daccustodian.new',
-      './artifacts/compiled_contracts/contracts/daccustodian'
-    );
-  }
-
   private async initAndGetSharedObjects() {
-    await this.useOld();
-
     console.log('Init eos blockchain');
     await sleep(1000);
     this.tokenIssuer = await AccountManager.createAccount('federation');
@@ -128,6 +90,7 @@ export class SharedTestObjects {
       'dacdirectory',
       'index.worlds'
     );
+
     this.daccustodian_contract = await debugPromise(
       ContractDeployer.deployWithName('daccustodian', 'daccustodian'),
       'created daccustodian'
