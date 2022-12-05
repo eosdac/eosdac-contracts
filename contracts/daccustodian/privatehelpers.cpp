@@ -46,7 +46,7 @@ time_point_sec daccustodian::calculate_avg_vote_time_stamp(const time_point_sec 
 
     const auto initial     = S{vote_time_before.sec_since_epoch()}.to<int128_t>();
     const auto current     = S{vote_time_stamp.sec_since_epoch()}.to<int128_t>();
-    const auto time_delta  = (current - initial).abs();
+    const auto time_delta  = (current - initial);
     const auto new_seconds = initial + time_delta * S{weight}.to<int128_t>() / S{total_votes}.to<int128_t>();
 
     return time_point_sec{new_seconds.to<uint32_t>()};

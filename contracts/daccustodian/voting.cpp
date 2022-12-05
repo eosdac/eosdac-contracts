@@ -4,6 +4,7 @@ ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, c
 #ifndef IS_DEV
     // check(dac_id == "testa"_n || dac_id == "testb"_n, "Voting is not yet enabled in the Planet DAOs.");
 #endif
+
     candidates_table registered_candidates(_self, dac_id.value);
     const auto       globals = dacglobals{get_self(), dac_id};
 
