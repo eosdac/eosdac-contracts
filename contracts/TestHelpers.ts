@@ -25,6 +25,7 @@ import * as chai from 'chai';
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { rename, stat } from 'node:fs/promises';
 
 export var NUMBER_OF_CANDIDATES = 7;
 
@@ -89,6 +90,7 @@ export class SharedTestObjects {
       'dacdirectory',
       'index.worlds'
     );
+
     this.daccustodian_contract = await debugPromise(
       ContractDeployer.deployWithName('daccustodian', 'daccustodian'),
       'created daccustodian'
@@ -925,7 +927,7 @@ export class SharedTestObjects {
 // Not used for now but could be useful later
 async function setup_external(name: string) {
   const compiled_dir = path.normalize(
-    `${__dirname}/../artifacts/compiled_contracts/${name}`
+    `${__dirname}/./compiled_contracts/${name}`
   );
 
   if (!fs.existsSync(compiled_dir)) {
@@ -974,4 +976,14 @@ enum ref_type {
 enum dac_state_type {
   dac_state_typeINACTIVE = 0,
   dac_state_typeACTIVE = 1,
+}
+
+// returns true if file exists, false otherwise
+async function fileExists(path: string) {
+  try {
+    await stat(path);
+    return true;
+  } catch (err) {
+    return false;
+  }
 }

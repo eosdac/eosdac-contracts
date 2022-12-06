@@ -58,7 +58,7 @@ describe('Safemath', () => {
   it('uunderflow should throw invalid unsigned subtraction error', async () => {
     await assertEOSErrorIncludesMessage(
       contract.uunderflow(),
-      'invalid unsigned subtraction: result would be negative'
+      'invalid unsigned subtraction: uint64_t 1 - 2 result would be negative'
     );
   });
   it('usdivzero should throw invalid unsigned subtraction error', async () => {

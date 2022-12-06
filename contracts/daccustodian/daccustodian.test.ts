@@ -12,6 +12,7 @@ import {
   TableRowsResult,
   assertBalanceEqual,
   Asset,
+  ContractDeployer,
 } from 'lamington';
 const _ = require('lodash');
 import {
@@ -403,7 +404,6 @@ describe('Daccustodian', () => {
         }),
         [
           {
-            serial: 1,
             data: [
               {
                 key: 'auth_threshold_high',
@@ -636,7 +636,6 @@ describe('Daccustodian', () => {
             const result = await shared.daccustodian_contract.dacglobalsTable({
               scope: dacId,
             });
-            console.log('serial: ' + result.rows[0].serial);
             await shared.daccustodian_contract.nominatecane(
               newUser1.name,
               '25.0000 EOS',
@@ -1611,7 +1610,7 @@ describe('Daccustodian', () => {
               );
 
               await assertRowCount(
-                shared.daccustodian_contract.custodiansTable({
+                shared.daccustodian_contract.custodians1Table({
                   scope: dacId,
                   limit: 20,
                 }),
@@ -1637,7 +1636,7 @@ describe('Daccustodian', () => {
                 keyType: 'i64',
               });
 
-              let res2 = await shared.daccustodian_contract.custodiansTable({
+              let res2 = await shared.daccustodian_contract.custodians1Table({
                 scope: dacId,
                 limit: 100,
                 indexPosition: 2, // bydecayed index
@@ -1683,7 +1682,7 @@ describe('Daccustodian', () => {
               );
 
               const custodians =
-                await shared.daccustodian_contract.custodiansTable({
+                await shared.daccustodian_contract.custodians1Table({
                   scope: dacId,
                   limit: 20,
                 });
@@ -1935,7 +1934,7 @@ describe('Daccustodian', () => {
           });
           it('custodians should the mean pay from the valid requested pays. (Requested pay exceeding the max pay should be ignored from the mean.)', async () => {
             let custodianRows =
-              await shared.daccustodian_contract.custodiansTable({
+              await shared.daccustodian_contract.custodians1Table({
                 scope: dacId,
                 limit: 12,
               });
@@ -2688,7 +2687,7 @@ describe('Daccustodian', () => {
           });
         });
         it('should delete custodian table entry', async () => {
-          const res = await shared.daccustodian_contract.custodiansTable({
+          const res = await shared.daccustodian_contract.custodians1Table({
             scope: dacId,
             limit: 20,
             lowerBound: electedCandidateToFire.name,
@@ -2842,7 +2841,7 @@ describe('Daccustodian', () => {
       chai.expect(candidates.rows[0].number_voters).to.equal(0);
       chai.expect(candidates.rows[0].is_active).to.equal(1);
 
-      let custodians = await shared.daccustodian_contract.custodiansTable({
+      let custodians = await shared.daccustodian_contract.custodians1Table({
         scope: dacId,
         limit: 20,
       });
@@ -3593,9 +3592,7 @@ async function get_expected_avg_vote_time_stamp(
       avg_vote_time_stamp = new Date(0);
     } else {
       const delta_milliseconds =
-        (Math.abs(
-          ourvote.vote_time_stamp.getTime() - avg_vote_time_stamp.getTime()
-        ) *
+        ((ourvote.vote_time_stamp.getTime() - avg_vote_time_stamp.getTime()) *
           (-1 * vote_weight)) /
         total_vote_power;
       let new_milliseconds = Math.floor(
@@ -3607,7 +3604,7 @@ async function get_expected_avg_vote_time_stamp(
   }
   total_vote_power += vote_weight;
   const delta_milliseconds =
-    (Math.abs(now.getTime() - avg_vote_time_stamp.getTime()) * vote_weight) /
+    ((now.getTime() - avg_vote_time_stamp.getTime()) * vote_weight) /
     total_vote_power;
   let new_milliseconds = Math.floor(
     avg_vote_time_stamp.getTime() + delta_milliseconds
