@@ -1,13 +1,10 @@
 
 using namespace eosdac;
 
-void daccustodian::updateVoteWeight(
-    name custodian, const time_point_sec vote_time_stamp, int64_t weight, name dac_id, bool from_voting) {
+void daccustodian::updateVoteWeight(name voter, name custodian, const time_point_sec vote_time_stamp, int64_t weight,
+    name dac_id, bool from_voting, const vector<name> &votes) {
     auto err = Err{"daccustodian::updateVoteWeight"};
-    if (weight == 0) {
-        print("Vote has no weight - No need to continue. ");
-        return;
-    }
+
     candidates_table registered_candidates(_self, dac_id.value);
 
     auto candItr = registered_candidates.find(custodian.value);
@@ -26,37 +23,69 @@ void daccustodian::updateVoteWeight(
             c.total_vote_power = new_vote_power.to<uint64_t>();
         }
 
-        if (from_voting) {
-            if (c.total_vote_power == 0) {
-                c.avg_vote_time_stamp = time_point_sec(0);
-            } else {
-                c.avg_vote_time_stamp =
-                    calculate_avg_vote_time_stamp(c.avg_vote_time_stamp, vote_time_stamp, weight, c.total_vote_power);
-                check(c.avg_vote_time_stamp <= now(), "avg_vote_time_stamp pushed into the future: %s",
-                    c.avg_vote_time_stamp);
-            }
+        auto       votes_cast_by_members = votes_table{_self, dac_id.value};
+        const auto existingVote          = votes_cast_by_members.find(voter.value);
+
+        auto delta = calc_avg_vote_time_delta(c.avg_vote_time_stamp, vote_time_stamp, weight, c.total_vote_power);
+
+        if (weight < 0) {
+            // removing vote, reduce total vote power by the amount added when adding vote
+            check(existingVote != votes_cast_by_members.end(),
+                "ERR::VOTE_NOT_FOUND::Vote not found for voter %s. Weight: %s", voter, weight);
+            c.avg_vote_time_stamp -= existingVote->avg_vote_time_delta;
+        } else {
+            // adding vote, calculate new average vote time stamp and save delta for later
+            c.avg_vote_time_stamp += delta;
         }
+
+        if (from_voting) {
+            // if this is called from a voting action, we need to insert/update the vote in the vote table
+            if (weight > 0 && votes.size() == 0) {
+                // Remove the vote if the array of candidates is empty
+                votes_cast_by_members.erase(existingVote);
+            } else {
+                upsert(votes_cast_by_members, voter.value, voter, [&](vote &v) {
+                    v.voter           = voter;
+                    v.candidates      = votes;
+                    v.vote_time_stamp = now();
+                    v.vote_count++;
+                    v.avg_vote_time_delta = delta;
+                });
+            }
+        } else {
+            // if this is called from a weight change, we must only update the delta
+            votes_cast_by_members.modify(existingVote, same_payer, [&](auto &v) {
+                v.avg_vote_time_delta = delta;
+            });
+        }
+
+        check(c.avg_vote_time_stamp <= now(), "avg_vote_time_stamp pushed into the future: %s", c.avg_vote_time_stamp);
+
         c.update_index();
     });
 }
 
-time_point_sec daccustodian::calculate_avg_vote_time_stamp(const time_point_sec vote_time_before,
+time_point_sec daccustodian::calc_avg_vote_time_delta(const time_point_sec vote_time_before,
     const time_point_sec vote_time_stamp, const int64_t weight, const uint64_t total_votes) {
     auto err = Err{"daccustodian::calculate_avg_vote_time_stamp"};
 
-    const auto initial     = S{vote_time_before.sec_since_epoch()}.to<int128_t>();
-    const auto current     = S{vote_time_stamp.sec_since_epoch()}.to<int128_t>();
-    const auto time_delta  = (current - initial);
-    const auto new_seconds = initial + time_delta * S{weight}.to<int128_t>() / S{total_votes}.to<int128_t>();
+    if (total_votes == 0) {
+        return time_point_sec(0);
+    }
 
-    return time_point_sec{new_seconds.to<uint32_t>()};
+    const auto initial    = S{vote_time_before.sec_since_epoch()}.to<int128_t>();
+    const auto current    = S{vote_time_stamp.sec_since_epoch()}.to<int128_t>();
+    const auto time_delta = (current - initial);
+    const auto delta      = time_delta * S{weight}.to<int128_t>() / S{total_votes}.to<int128_t>();
+
+    return time_point_sec{delta.to<uint32_t>()};
 }
 
-void daccustodian::updateVoteWeights(const vector<name> &votes, const time_point_sec vote_time_stamp,
+void daccustodian::updateVoteWeights(const name voter, const vector<name> &votes, const time_point_sec vote_time_stamp,
     int64_t vote_weight, name dac_id, bool from_voting) {
 
     for (const auto &cust : votes) {
-        updateVoteWeight(cust, vote_time_stamp, vote_weight, dac_id, from_voting);
+        updateVoteWeight(voter, cust, vote_time_stamp, vote_weight, dac_id, from_voting, votes);
     }
 }
 
@@ -91,11 +120,6 @@ void daccustodian::modifyVoteWeights(const account_weight_delta &awd, const vect
     auto err = Err{"daccustodian::modifyVoteWeights"};
     // This could be optimised with set diffing to avoid remove then add for unchanged votes. - later
 
-    if (awd.weight_delta == 0) {
-        print("Voter has no weight therefore no need to update vote weights");
-        return;
-    }
-
     auto globals = dacglobals{get_self(), dac_id};
 
     // New voter -> Add the tokens to the total weight.
@@ -117,9 +141,9 @@ void daccustodian::modifyVoteWeights(const account_weight_delta &awd, const vect
     globals.set_total_votes_on_candidates(total_stake_time_weight_of_votes);
 
     if (oldVoteTimestamp.has_value()) {
-        updateVoteWeights(oldVotes, *oldVoteTimestamp, -awd.weight_delta, dac_id, from_voting);
+        updateVoteWeights(awd.account, oldVotes, *oldVoteTimestamp, -awd.weight_delta, dac_id, from_voting);
     }
-    updateVoteWeights(newVotes, new_time_stamp, awd.weight_delta, dac_id, from_voting);
+    updateVoteWeights(awd.account, newVotes, new_time_stamp, awd.weight_delta, dac_id, from_voting);
 }
 
 permission_level daccustodian::getCandidatePermission(name account, name dac_id) {

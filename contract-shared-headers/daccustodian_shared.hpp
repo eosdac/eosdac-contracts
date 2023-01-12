@@ -163,6 +163,7 @@ namespace eosdac {
         name                  proxy;
         std::vector<name>     candidates;
         eosio::time_point_sec vote_time_stamp;
+        eosio::time_point_sec avg_vote_time_delta;
         uint8_t               vote_count; // wraps around automatically if > 255
 
         uint64_t primary_key() const {
@@ -336,10 +337,10 @@ namespace eosdac {
         ACTION setperm(const name &cand, const name &permission, const name &dac_id);
 
       private: // Private helper methods used by other actions.
-        void updateVoteWeight(
-            name custodian, const time_point_sec vote_time_stamp, int64_t weight, name dac_id, bool from_voting);
-        void updateVoteWeights(const vector<name> &votes, const time_point_sec vote_time_stamp, int64_t vote_weight,
-            name internal_dac_id, bool from_voting);
+        void updateVoteWeight(name voter, name custodian, const time_point_sec vote_time_stamp, int64_t weight,
+            name dac_id, bool from_voting, const vector<name> &votes);
+        void updateVoteWeights(const name voter, const vector<name> &votes, const time_point_sec vote_time_stamp,
+            int64_t vote_weight, name internal_dac_id, bool from_voting);
         std::pair<int64_t, int64_t> get_vote_weight(name voter, name dac_id);
         void                        modifyVoteWeights(const account_weight_delta &awd, const vector<name> &oldVotes,
                                    const std::optional<time_point_sec> &oldVoteTimestamp, const vector<name> &newVotes,
@@ -370,7 +371,7 @@ namespace eosdac {
         void validateUnstakeAmount(const name &code, const name &cand, const asset &unstake_amount, const name &dac_id);
         void validateMinStake(name account, name dac_id);
         uint16_t       get_budget_percentage(const name &dac_id, const dacglobals &globals);
-        time_point_sec calculate_avg_vote_time_stamp(const time_point_sec vote_time_before,
+        time_point_sec calc_avg_vote_time_delta(const time_point_sec vote_time_before,
             const time_point_sec vote_time_stamp, const int64_t weight, const uint64_t total_votes);
         void update_number_of_votes(const vector<name> &oldvotes, const vector<name> &newvotes, const name &dac_id);
     };

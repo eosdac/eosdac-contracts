@@ -24,8 +24,8 @@ ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, c
     }
 
     // Find a vote that has been cast by this voter previously.
-    votes_table votes_cast_by_members(_self, dac_id.value);
-    auto        existingVote = votes_cast_by_members.find(voter.value);
+    auto votes_cast_by_members = votes_table{_self, dac_id.value};
+    auto existingVote          = votes_cast_by_members.find(voter.value);
 
     const auto [vote_weight, vote_weight_quorum] = get_vote_weight(voter, dac_id);
     if (existingVote != votes_cast_by_members.end()) {
@@ -34,30 +34,17 @@ ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, c
         modifyVoteWeights({voter, vote_weight, vote_weight_quorum}, existingVote->candidates,
             existingVote->vote_time_stamp, newvotes, now(), dac_id, true);
 
-        if (newvotes.size() == 0) {
-            // Remove the vote if the array of candidates is empty
-            votes_cast_by_members.erase(existingVote);
-            eosio::print("\n Removing empty vote.");
-        } else {
-            votes_cast_by_members.modify(existingVote, voter, [&](vote &v) {
-                v.candidates      = newvotes;
-                v.proxy           = name();
-                v.vote_time_stamp = now();
-                v.vote_count++;
-            });
-        }
-
     } else {
         update_number_of_votes({}, newvotes, dac_id);
 
         modifyVoteWeights({voter, vote_weight, vote_weight_quorum}, {}, {}, newvotes, now(), dac_id, true);
 
-        votes_cast_by_members.emplace(voter, [&](vote &v) {
-            v.voter           = voter;
-            v.candidates      = newvotes;
-            v.vote_time_stamp = now();
-            v.vote_count      = 0;
-        });
+        // votes_cast_by_members.emplace(voter, [&](vote &v) {
+        //     v.voter           = voter;
+        //     v.candidates      = newvotes;
+        //     v.vote_time_stamp = now();
+        //     v.vote_count      = 0;
+        // });
     }
 }
 
