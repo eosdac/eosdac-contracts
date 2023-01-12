@@ -32,18 +32,15 @@ void daccustodian::updateVoteWeight(name voter, name custodian, const time_point
             // removing vote, reduce total vote power by the amount added when adding vote
             check(existingVote != votes_cast_by_members.end(),
                 "ERR::VOTE_NOT_FOUND::Vote not found for voter %s. Weight: %s", voter, weight);
+            check(false, "user is removing vote c.avg_vote_time_stamp: %s existingVote->avg_vote_time_delta: %s",
+                c.avg_vote_time_stamp, existingVote->avg_vote_time_delta);
             c.avg_vote_time_stamp -= existingVote->avg_vote_time_delta;
+            votes_cast_by_members.erase(existingVote);
         } else {
             // adding vote, calculate new average vote time stamp and save delta for later
             c.avg_vote_time_stamp += delta;
-        }
-
-        if (from_voting) {
-            // if this is called from a voting action, we need to insert/update the vote in the vote table
-            if (weight > 0 && votes.size() == 0) {
-                // Remove the vote if the array of candidates is empty
-                votes_cast_by_members.erase(existingVote);
-            } else {
+            if (from_voting) {
+                // if this is called from a voting action, we need to insert/update the vote in the vote table
                 upsert(votes_cast_by_members, voter.value, voter, [&](vote &v) {
                     v.voter           = voter;
                     v.candidates      = votes;
@@ -51,12 +48,12 @@ void daccustodian::updateVoteWeight(name voter, name custodian, const time_point
                     v.vote_count++;
                     v.avg_vote_time_delta = delta;
                 });
+            } else {
+                // if this is called from a weight change, we must only update the delta
+                votes_cast_by_members.modify(existingVote, same_payer, [&](auto &v) {
+                    v.avg_vote_time_delta = delta;
+                });
             }
-        } else {
-            // if this is called from a weight change, we must only update the delta
-            votes_cast_by_members.modify(existingVote, same_payer, [&](auto &v) {
-                v.avg_vote_time_delta = delta;
-            });
         }
 
         check(c.avg_vote_time_stamp <= now(), "avg_vote_time_stamp pushed into the future: %s", c.avg_vote_time_stamp);
