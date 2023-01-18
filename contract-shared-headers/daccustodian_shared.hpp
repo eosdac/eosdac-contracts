@@ -69,7 +69,7 @@ namespace eosdac {
         uint8_t               is_active;
         uint32_t              number_voters;
         eosio::time_point_sec avg_vote_time_stamp;
-        uint64_t              running_weight_time; // The running sum of weight*time from all votes for this candidate
+        uint128_t             running_weight_time; // The running sum of weight*time from all votes for this candidate
 
         uint64_t calc_decayed_votes_index() const {
             auto       err            = Err{"calc_decayed_votes_index"};
