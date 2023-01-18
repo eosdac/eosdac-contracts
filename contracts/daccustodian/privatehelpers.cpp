@@ -1,9 +1,13 @@
 
 using namespace eosdac;
 
-void daccustodian::updateVoteWeight(name voter, name custodian, const time_point_sec vote_time_stamp, int64_t weight,
-    name dac_id, bool from_voting, const vector<name> &votes) {
+void daccustodian::updateVoteWeight(
+    name custodian, const time_point_sec vote_time_stamp, int64_t weight, name dac_id, bool from_voting) {
     auto err = Err{"daccustodian::updateVoteWeight"};
+    if (weight == 0) {
+        print("Vote has no weight - No need to continue. ");
+        return;
+    }
 
     candidates_table registered_candidates(_self, dac_id.value);
 
@@ -42,11 +46,11 @@ time_point_sec daccustodian::calc_avg_vote_time(const candidate &cand) {
     return time_point_sec{delta.to<uint32_t>()};
 }
 
-void daccustodian::updateVoteWeights(const name voter, const vector<name> &votes, const time_point_sec vote_time_stamp,
+void daccustodian::updateVoteWeights(const vector<name> &votes, const time_point_sec vote_time_stamp,
     int64_t vote_weight, name dac_id, bool from_voting) {
 
     for (const auto &cust : votes) {
-        updateVoteWeight(voter, cust, vote_time_stamp, vote_weight, dac_id, from_voting, votes);
+        updateVoteWeight(cust, vote_time_stamp, vote_weight, dac_id, from_voting);
     }
 }
 
@@ -81,6 +85,11 @@ void daccustodian::modifyVoteWeights(const account_weight_delta &awd, const vect
     auto err = Err{"daccustodian::modifyVoteWeights"};
     // This could be optimised with set diffing to avoid remove then add for unchanged votes. - later
 
+    if (awd.weight_delta == 0) {
+        print("Voter has no weight therefore no need to update vote weights");
+        return;
+    }
+
     auto globals = dacglobals{get_self(), dac_id};
 
     // New voter -> Add the tokens to the total weight.
@@ -102,9 +111,9 @@ void daccustodian::modifyVoteWeights(const account_weight_delta &awd, const vect
     globals.set_total_votes_on_candidates(total_stake_time_weight_of_votes);
 
     if (oldVoteTimestamp.has_value()) {
-        updateVoteWeights(awd.account, oldVotes, *oldVoteTimestamp, -awd.weight_delta, dac_id, from_voting);
+        updateVoteWeights(oldVotes, *oldVoteTimestamp, -awd.weight_delta, dac_id, from_voting);
     }
-    updateVoteWeights(awd.account, newVotes, new_time_stamp, awd.weight_delta, dac_id, from_voting);
+    updateVoteWeights(newVotes, new_time_stamp, awd.weight_delta, dac_id, from_voting);
 }
 
 permission_level daccustodian::getCandidatePermission(name account, name dac_id) {
