@@ -164,7 +164,6 @@ namespace eosdac {
         name                  proxy;
         std::vector<name>     candidates;
         eosio::time_point_sec vote_time_stamp;
-        eosio::time_point_sec avg_vote_time_delta;
         uint8_t               vote_count; // wraps around automatically if > 255
 
         uint64_t primary_key() const {
