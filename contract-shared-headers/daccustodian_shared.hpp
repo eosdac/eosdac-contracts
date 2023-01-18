@@ -307,6 +307,7 @@ namespace eosdac {
             PROPERTY(uint32_t, lockup_release_time_delay);
             PROPERTY(eosio::extended_asset, requested_pay_max); 
             PROPERTY(uint64_t, token_supply_theshold);
+            PROPERTY(bool, maintenance_mode);
     )
     // clang-format on
 
@@ -358,6 +359,7 @@ namespace eosdac {
         ACTION resetcands(const name &dac_id);
         ACTION resetstate(const name &dac_id);
         ACTION clearcands(const name &dac_id);
+        ACTION maintenance(const bool maintenance);
 #endif
 
 #if defined(IS_DEV) || defined(DEBUG)
@@ -437,5 +439,10 @@ namespace eosdac {
         uint16_t       get_budget_percentage(const name &dac_id, const dacglobals &globals);
         time_point_sec calc_avg_vote_time(const candidate &cand);
         void update_number_of_votes(const vector<name> &oldvotes, const vector<name> &newvotes, const name &dac_id);
+
+        bool maintenance_mode() {
+            const auto globals = dacglobals{get_self(), get_self()};
+            return globals.get_maintenance_mode();
+        }
     };
 }; // namespace eosdac

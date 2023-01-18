@@ -65,3 +65,10 @@ void daccustodian::clearcands(const name &dac_id) {
         cand = candidates.erase(cand);
     }
 }
+
+void daccustodian::maintenance(const bool maintenance) {
+    require_auth(get_self());
+
+    auto globals = dacglobals{get_self(), get_self()};
+    globals.set_maintenance_mode(maintenance);
+}

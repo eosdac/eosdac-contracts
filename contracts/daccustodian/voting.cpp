@@ -8,6 +8,8 @@ ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, c
     candidates_table registered_candidates(_self, dac_id.value);
     const auto       globals = dacglobals{get_self(), dac_id};
 
+    check(!maintenance_mode(), "Voting is currently disabled for maintenance. Please try again in a few minutes");
+
     require_auth(voter);
     assertValidMember(voter, dac_id);
     check(newvotes.size() <= globals.get_maxvotes(),
