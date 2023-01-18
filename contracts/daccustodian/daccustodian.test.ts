@@ -787,6 +787,98 @@ describe('Daccustodian', () => {
     });
   });
 
+  context('candidates_migration', async () => {
+    let regMembers: Account[];
+    let dacId = 'migratedac';
+    let cands: Account[];
+    let candidates_before;
+    let candidates_after;
+    before(async () => {
+      await shared.initDac(dacId, '4,MGRDAC', '1000000.0000 MGRDAC');
+      await shared.updateconfig(dacId, '12.0000 MGRDAC');
+      await shared.dac_token_contract.stakeconfig(
+        { enabled: true, min_stake_time: 5, max_stake_time: 20 },
+        '4,MGRDAC',
+        { from: shared.auth_account }
+      );
+      regMembers = await shared.getRegMembers(dacId, '1000.0000 MGRDAC');
+      cands = await shared.getStakeObservedCandidates(dacId, '12.0000 MGRDAC');
+    });
+    context('migrate1', async () => {
+      it('before migrate, candidate table should be filled', async () => {
+        candidates_before = (
+          await shared.daccustodian_contract.candidatesTable({
+            scope: dacId,
+            limit: 100,
+          })
+        ).rows;
+        chai.expect(candidates_before.length).to.equal(NUMBER_OF_CANDIDATES);
+      });
+      it('should work', async () => {
+        await shared.daccustodian_contract.migrate1(dacId);
+      });
+      it('should have copied candidates to candidates2 table', async () => {
+        candidates_after = (
+          await shared.daccustodian_contract.candidates2Table({
+            scope: dacId,
+            limit: 100,
+          })
+        ).rows;
+        chai.expect(candidates_before).to.deep.equal(candidates_after);
+      });
+      it('should have deleted candidates from candidates table', async () => {
+        const candidates = (
+          await shared.daccustodian_contract.candidatesTable({
+            scope: dacId,
+            limit: 100,
+          })
+        ).rows;
+        chai.expect(candidates.length).to.equal(0);
+      });
+    });
+    context('migrate2', async () => {
+      it('before migrate, candidates table should be empty', async () => {
+        const candidates = (
+          await shared.daccustodian_contract.candidatesTable({
+            scope: dacId,
+            limit: 100,
+          })
+        ).rows;
+        chai.expect(candidates.length).to.equal(0);
+      });
+      it('before migrate, candidate2 table should be filled', async () => {
+        candidates_before = (
+          await shared.daccustodian_contract.candidates2Table({
+            scope: dacId,
+            limit: 100,
+          })
+        ).rows;
+        chai.expect(candidates_before.length).to.equal(NUMBER_OF_CANDIDATES);
+      });
+      it('should work', async () => {
+        await shared.daccustodian_contract.migrate2(dacId);
+      });
+      it('should have copied candidates to candidates table', async () => {
+        candidates_after = (
+          await shared.daccustodian_contract.candidatesTable({
+            scope: dacId,
+            limit: 100,
+          })
+        ).rows;
+        chai.expect(candidates_before).to.deep.equal(candidates_after);
+      });
+      it('should have deleted candidates from candidates2 table', async () => {
+        const candidates = (
+          await shared.daccustodian_contract.candidates2Table({
+            scope: dacId,
+            limit: 100,
+          })
+        ).rows;
+        chai.expect(candidates.length).to.equal(0);
+      });
+    });
+  });
+
   context('candidates voting', async () => {
     let regMembers: Account[];
     let dacId = 'canddac';
@@ -3683,11 +3775,6 @@ async function vote_and_check(dacId, voter, candidates) {
       (x) => x.candidate_name == candidate.name
     );
     chai.expect(votedCandidate.candidate_name).to.equal(candidate.name);
-    console.log(
-      `OHAI candidate ${candidate.name} avg_vote_time_stamp ${
-        votedCandidate.avg_vote_time_stamp
-      } expected_avg_cand[candidate.name]: ${expected_avg_cand[candidate.name]}`
-    );
     chai
       .expect(votedCandidate.avg_vote_time_stamp)
       .to.closeToTime(expected_avg_cand[candidate.name], 3);
