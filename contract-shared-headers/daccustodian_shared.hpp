@@ -124,9 +124,6 @@ namespace eosdac {
         uint8_t               is_active;
         uint32_t              number_voters;
         eosio::time_point_sec avg_vote_time_stamp;
-#ifndef MIGRATION_STAGE_1
-        uint128_t running_weight_time; // The running sum of weight*time from all votes for this candidate
-#endif
 
         uint64_t calc_decayed_votes_index() const {
             auto       err            = Err{"calc_decayed_votes_index"};
