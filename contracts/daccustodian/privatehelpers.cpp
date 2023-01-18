@@ -23,38 +23,10 @@ void daccustodian::updateVoteWeight(name voter, name custodian, const time_point
             c.total_vote_power = new_vote_power.to<uint64_t>();
         }
 
-        auto       votes_cast_by_members = votes_table{_self, dac_id.value};
-        const auto existingVote          = votes_cast_by_members.find(voter.value);
+        c.running_weight_time = S<uint64_t>{c.running_weight_time}.add_signed_to_unsigned(
+            S{weight} * S{vote_time_stamp.sec_since_epoch()}.to<int64_t>());
 
-        auto delta = calc_avg_vote_time_delta(c.avg_vote_time_stamp, vote_time_stamp, weight, c.total_vote_power);
-
-        if (weight < 0) {
-            // removing vote, reduce total vote power by the amount added when adding vote
-            check(existingVote != votes_cast_by_members.end(),
-                "ERR::VOTE_NOT_FOUND::Vote not found for voter %s. Weight: %s", voter, weight);
-            check(false, "user is removing vote c.avg_vote_time_stamp: %s existingVote->avg_vote_time_delta: %s",
-                c.avg_vote_time_stamp, existingVote->avg_vote_time_delta);
-            c.avg_vote_time_stamp -= existingVote->avg_vote_time_delta;
-            votes_cast_by_members.erase(existingVote);
-        } else {
-            // adding vote, calculate new average vote time stamp and save delta for later
-            c.avg_vote_time_stamp += delta;
-            if (from_voting) {
-                // if this is called from a voting action, we need to insert/update the vote in the vote table
-                upsert(votes_cast_by_members, voter.value, voter, [&](vote &v) {
-                    v.voter           = voter;
-                    v.candidates      = votes;
-                    v.vote_time_stamp = now();
-                    v.vote_count++;
-                    v.avg_vote_time_delta = delta;
-                });
-            } else {
-                // if this is called from a weight change, we must only update the delta
-                votes_cast_by_members.modify(existingVote, same_payer, [&](auto &v) {
-                    v.avg_vote_time_delta = delta;
-                });
-            }
-        }
+        c.avg_vote_time_stamp = calc_avg_vote_time(c);
 
         check(c.avg_vote_time_stamp <= now(), "avg_vote_time_stamp pushed into the future: %s", c.avg_vote_time_stamp);
 
@@ -62,19 +34,11 @@ void daccustodian::updateVoteWeight(name voter, name custodian, const time_point
     });
 }
 
-time_point_sec daccustodian::calc_avg_vote_time_delta(const time_point_sec vote_time_before,
-    const time_point_sec vote_time_stamp, const int64_t weight, const uint64_t total_votes) {
-    auto err = Err{"daccustodian::calculate_avg_vote_time_stamp"};
-
-    if (total_votes == 0) {
+time_point_sec daccustodian::calc_avg_vote_time(const candidate &cand) {
+    if (cand.total_vote_power == 0) {
         return time_point_sec(0);
     }
-
-    const auto initial    = S{vote_time_before.sec_since_epoch()}.to<int128_t>();
-    const auto current    = S{vote_time_stamp.sec_since_epoch()}.to<int128_t>();
-    const auto time_delta = (current - initial);
-    const auto delta      = time_delta * S{weight}.to<int128_t>() / S{total_votes}.to<int128_t>();
-
+    const auto delta = S{cand.running_weight_time} / S{cand.total_vote_power};
     return time_point_sec{delta.to<uint32_t>()};
 }
 

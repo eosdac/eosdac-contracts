@@ -69,6 +69,7 @@ namespace eosdac {
         uint8_t               is_active;
         uint32_t              number_voters;
         eosio::time_point_sec avg_vote_time_stamp;
+        uint64_t              running_weight_time; // The running sum of weight*time from all votes for this candidate
 
         uint64_t calc_decayed_votes_index() const {
             auto       err            = Err{"calc_decayed_votes_index"};
@@ -371,8 +372,7 @@ namespace eosdac {
         void validateUnstakeAmount(const name &code, const name &cand, const asset &unstake_amount, const name &dac_id);
         void validateMinStake(name account, name dac_id);
         uint16_t       get_budget_percentage(const name &dac_id, const dacglobals &globals);
-        time_point_sec calc_avg_vote_time_delta(const time_point_sec vote_time_before,
-            const time_point_sec vote_time_stamp, const int64_t weight, const uint64_t total_votes);
+        time_point_sec calc_avg_vote_time(const candidate &cand);
         void update_number_of_votes(const vector<name> &oldvotes, const vector<name> &newvotes, const name &dac_id);
     };
 }; // namespace eosdac
