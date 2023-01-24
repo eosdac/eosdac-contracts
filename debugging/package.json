@@ -1,0 +1,11 @@
+{
+  "name": "debugging",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "eosio-helpers": "^2.7.0",
+    "ijavascript": "^5.2.1",
+    "lodash": "^4.17.21"
+  }
+}
