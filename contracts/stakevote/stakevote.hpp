@@ -61,6 +61,8 @@ CONTRACT stakevote : public contract {
         return new_weight < int64_t{0};
     }
 
+    std::pair<int64_t, int64_t> calculate_weight_and_quorum_deltas(const name account, const name dac_id);
+
     struct [[eosio::table("stakes"), eosio::contract("eosdactokens")]] stake_info {
         name  account;
         asset stake;

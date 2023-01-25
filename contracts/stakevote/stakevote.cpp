@@ -20,53 +20,32 @@ void stakevote::stakeobsv(const vector<account_stake_delta> &stake_deltas, const
             .send();
     }
 
-    // Send weightobsv to update the vote weights, update weights table
-    vector<account_weight_delta> weight_deltas;
-    auto                         weights = weight_table{get_self(), dac_id.value};
+    auto weight_deltas = vector<account_weight_delta>{};
+    auto weights       = weight_table{get_self(), dac_id.value};
 
     for (const auto &asd : stake_deltas) {
-        const auto weight_delta_quorum = S{asd.stake_delta.amount};
+        // Destructured variables cannot be captured by reference in a lambda. That's why we are forced to use std::tie
+        int64_t weight_delta;
+        int64_t weight_quorum_delta;
+        std::tie(weight_delta, weight_quorum_delta) = calculate_weight_and_quorum_deltas(asd.account, dac_id);
 
-        const auto stake_delta     = S{asd.stake_delta.amount}.to<double>("stakeobsv stake_delta");
-        const auto unstake_delay   = S{asd.unstake_delay}.to<double>("stakeobsv unstake_delay");
-        const auto time_multiplier = S{config.time_multiplier}.to<double>("stakeobsv time_multiplier");
-        const auto weight_delta    = stake_delta * (S{1.0} + unstake_delay * time_multiplier / max_stake_time);
+        weight_deltas.push_back({asd.account, S{weight_delta}.to<int64_t>(), S{weight_quorum_delta}.to<int64_t>()});
 
-        const auto vw_itr = weights.find(asd.account.value);
-        if (vw_itr != weights.end()) {
-            weights.modify(vw_itr, same_payer, [&](auto &v) {
-                if (weight_delta < 0.0 && would_turn_negative(v.voter, weight_delta, v.weight)) {
-                    // due to rounding differences that accumulate every time a user stakes and unstakes,
-                    // the calculated vote_weight could become negative, set it to 0 in this case.
-                    v.weight = 0;
-                } else {
-                    v.weight = S<uint64_t>{v.weight}.add_signed_to_unsigned(
-                        weight_delta, "add_signed_to_unsigned weight_delta");
-                }
-                if (weight_delta_quorum < int64_t{0}) {
-                    check(weight_delta_quorum.abs().to<int64_t>("stakeobsv weight_delta_quorum") <=
-                              S<uint64_t>{v.weight_quorum}.to<int64_t>("stakeobsv v.weight_quorum"),
-                        "ERR:INVALID_WEIGHT_DELTA_QUORUM_UPDATE: %s Trying to subtract weight_delta_quorum %s from %s",
-                        v.voter, weight_delta_quorum, v.weight_quorum);
-                }
-                v.weight_quorum = S<uint64_t>{v.weight_quorum}.add_signed_to_unsigned(
-                    weight_delta_quorum, "add_signed_to_unsigned weight_delta_quorum");
-            });
-            if (vw_itr->weight == 0) {
-                weights.erase(vw_itr);
-            }
-        } else {
-            weights.emplace(get_self(), [&](auto &v) {
-                v.voter         = asd.account;
-                v.weight        = weight_delta.to<uint64_t>("stakeobsv weight_delta");
-                v.weight_quorum = weight_delta_quorum.to<uint64_t>("stakeobsv weight_delta_quorum");
-            });
+        auto vw_itr = weights.find(asd.account.value);
+        upsert(weights, vw_itr, get_self(), [&](auto &v) {
+            v.voter = asd.account;
+            v.weight =
+                S<uint64_t>{v.weight}.add_signed_to_unsigned(weight_delta, "add_signed_to_unsigned weight_delta");
+            v.weight_quorum = S<uint64_t>{v.weight_quorum}.add_signed_to_unsigned(
+                weight_quorum_delta, "add_signed_to_unsigned weight_delta_quorum");
+        });
+
+        if (vw_itr->weight == 0) {
+            weights.erase(vw_itr);
         }
-
-        weight_deltas.push_back(
-            {asd.account, weight_delta.to<int64_t>("stakeobsv weight_delta 2"), weight_delta_quorum});
     }
 
+    // Send weightobsv to update the vote weights, update weights table
     if (custodian_contract) {
         action(permission_level{get_self(), "notify"_n}, *custodian_contract, "weightobsv"_n,
             make_tuple(weight_deltas, dac_id))
@@ -115,6 +94,44 @@ void stakevote::clearweights(uint16_t batch_size, name dac_id) {
         row = weights.erase(row);
         counter--;
     }
+}
+
+/**
+ * @brief Calculate the vote weight and vote quorum of an account based on the current stake, time multiplier, unstake
+ * delay, and max stake time.
+ *
+ * @param account
+ * @param dac_id
+ * @return returns a std::pair of [weight_delta, weight_quorum_delta].
+ */
+std::pair<int64_t, int64_t> stakevote::calculate_weight_and_quorum_deltas(const name account, const name dac_id) {
+    const auto dac             = dacdir::dac_for_id(dac_id);
+    const auto token_contract  = dac.symbol.get_contract();
+    const auto stakes          = stakes_table{token_contract, dac_id.value};
+    const auto config          = config_item::get_current_configs(get_self(), dac_id);
+    const auto token_config    = stake_config::get_current_configs(token_contract, dac_id);
+    const auto max_stake_time  = S{token_config.max_stake_time}.to<double>();
+    const auto time_multiplier = S{config.time_multiplier}.to<double>();
+
+    const auto stakes_itr = stakes.find(account.value);
+
+    const auto new_weight_quorum = stakes_itr != stakes.end() ? S{(stakes_itr->stake).amount} : S{int64_t{}};
+
+    // calculate new weight and weight_quorum
+    const auto stake_amount  = new_weight_quorum.to<double>();
+    const auto unstake_delay = S{staketime_info::get_delay(token_contract, dac_id, stakes_itr->account)}.to<double>();
+    const auto new_weight    = stake_amount * (S{1.0} + unstake_delay * time_multiplier / max_stake_time);
+
+    // calculate deltas
+    const auto weights           = weight_table{get_self(), dac_id.value};
+    const auto weight_itr        = weights.find(account.value);
+    const auto old_weight        = S{weight_itr != weights.end() ? weight_itr->weight : uint64_t{}};
+    const auto old_weight_quorum = S{weight_itr != weights.end() ? weight_itr->weight_quorum : uint64_t{}};
+
+    const auto weight_delta        = new_weight.to<int64_t>() - old_weight.to<int64_t>();
+    const auto weight_quorum_delta = new_weight_quorum - old_weight_quorum.to<int64_t>();
+
+    return {weight_delta, weight_quorum_delta};
 }
 
 void stakevote::collectwts(uint16_t batch_size, name dac_id, bool assert) {
