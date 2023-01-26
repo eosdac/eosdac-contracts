@@ -833,12 +833,9 @@ static constexpr uint32_t SECONDS_TO_DOUBLE{30 * DAYS};
     upperBound: account.name,
   });
   const candidate = res.rows.find((x) => (x.candidate_name = account.name));
-  const avg_vote_time_stamp = candidate.avg_vote_time_stamp.getTime();
+  const avg_vote_time_stamp = candidate.avg_vote_time_stamp.getTime() / 1000;
   const scaling_factor = 10000;
-  const total_vote_power = candidate.total_vote_power;
-  const log = Math.log2(total_vote_power + 1);
-  const x =
-    (log + (avg_vote_time_stamp * scaling_factor) / SECONDS_TO_DOUBLE) *
-    scaling_factor;
+  const log = Math.log2(candidate.total_vote_power + 1);
+  const x = (log + avg_vote_time_stamp / SECONDS_TO_DOUBLE) * scaling_factor;
   return Math.floor(x);
 }
