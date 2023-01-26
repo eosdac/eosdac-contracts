@@ -8,6 +8,7 @@ void daccustodian::updateVoteWeight(
         print("Vote has no weight - No need to continue. ");
         return;
     }
+
     candidates_table registered_candidates(_self, dac_id.value);
 
     auto candItr = registered_candidates.find(custodian.value);
@@ -25,31 +26,28 @@ void daccustodian::updateVoteWeight(
         } else {
             c.total_vote_power = new_vote_power.to<uint64_t>();
         }
+#ifndef MIGRATION_STAGE_1
+        c.running_weight_time = S<uint128_t>{c.running_weight_time}.add_signed_to_unsigned(
+            S{weight}.to<int128_t>() * S{vote_time_stamp.sec_since_epoch()}.to<int128_t>());
+#endif
+        c.avg_vote_time_stamp = calc_avg_vote_time(c);
 
-        if (from_voting) {
-            if (c.total_vote_power == 0) {
-                c.avg_vote_time_stamp = time_point_sec(0);
-            } else {
-                c.avg_vote_time_stamp =
-                    calculate_avg_vote_time_stamp(c.avg_vote_time_stamp, vote_time_stamp, weight, c.total_vote_power);
-                check(c.avg_vote_time_stamp <= now(), "avg_vote_time_stamp pushed into the future: %s",
-                    c.avg_vote_time_stamp);
-            }
-        }
+        check(c.avg_vote_time_stamp <= now(), "avg_vote_time_stamp pushed into the future: %s", c.avg_vote_time_stamp);
+
         c.update_index();
     });
 }
 
-time_point_sec daccustodian::calculate_avg_vote_time_stamp(const time_point_sec vote_time_before,
-    const time_point_sec vote_time_stamp, const int64_t weight, const uint64_t total_votes) {
-    auto err = Err{"daccustodian::calculate_avg_vote_time_stamp"};
-
-    const auto initial     = S{vote_time_before.sec_since_epoch()}.to<int128_t>();
-    const auto current     = S{vote_time_stamp.sec_since_epoch()}.to<int128_t>();
-    const auto time_delta  = (current - initial);
-    const auto new_seconds = initial + time_delta * S{weight}.to<int128_t>() / S{total_votes}.to<int128_t>();
-
-    return time_point_sec{new_seconds.to<uint32_t>()};
+time_point_sec daccustodian::calc_avg_vote_time(const candidate &cand) {
+    if (cand.total_vote_power == 0) {
+        return time_point_sec(0);
+    }
+#ifndef MIGRATION_STAGE_1
+    const auto delta = S{cand.running_weight_time} / S{cand.total_vote_power}.to<uint128_t>();
+#else
+    const auto delta = S{0};
+#endif
+    return time_point_sec{delta.to<uint32_t>()};
 }
 
 void daccustodian::updateVoteWeights(const vector<name> &votes, const time_point_sec vote_time_stamp,
