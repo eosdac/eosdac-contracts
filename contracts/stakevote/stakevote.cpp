@@ -29,7 +29,7 @@ void stakevote::stakeobsv(const vector<account_stake_delta> &stake_deltas, const
         int64_t weight_quorum_delta;
         std::tie(weight_delta, weight_quorum_delta) = calculate_weight_and_quorum_deltas(asd.account, dac_id);
 
-        weight_deltas.push_back({asd.account, S{weight_delta}.to<int64_t>(), S{weight_quorum_delta}.to<int64_t>()});
+        weight_deltas.push_back({asd.account, weight_delta, weight_quorum_delta});
 
         auto vw_itr = weights.find(asd.account.value);
         upsert(weights, vw_itr, get_self(), [&](auto &v) {
