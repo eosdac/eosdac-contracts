@@ -69,7 +69,9 @@ namespace eosdac {
         uint8_t               is_active;
         uint32_t              number_voters;
         eosio::time_point_sec avg_vote_time_stamp;
-
+#ifndef MIGRATION_STAGE_1
+        uint128_t running_weight_time; // The running sum of weight*time from all votes for this candidate
+#endif
         uint64_t calc_decayed_votes_index() const {
             auto       err            = Err{"calc_decayed_votes_index"};
             const auto scaling_factor = S{10000.0}; // to improve accuracy of index when converting double to uint64_t
@@ -111,6 +113,61 @@ namespace eosdac {
         eosio::indexed_by<"byvotesrank"_n, eosio::const_mem_fun<candidate, uint64_t, &candidate::by_votes_rank>>,
         eosio::indexed_by<"byreqpay"_n, eosio::const_mem_fun<candidate, uint64_t, &candidate::by_requested_pay>>,
         eosio::indexed_by<"bydecayed"_n, eosio::const_mem_fun<candidate, uint64_t, &candidate::by_decayed_votes>>>;
+
+    // candidates2 temporary table
+    struct [[eosio::table("candidates2"), eosio::contract("daccustodian")]] candidate2 {
+        eosio::name           candidate_name;
+        eosio::asset          requestedpay;
+        uint64_t              rank;
+        uint64_t              gap_filler; // Currently unused, can be recycled in the future
+        uint64_t              total_vote_power;
+        uint8_t               is_active;
+        uint32_t              number_voters;
+        eosio::time_point_sec avg_vote_time_stamp;
+
+        uint64_t calc_decayed_votes_index() const {
+            auto       err            = Err{"calc_decayed_votes_index"};
+            const auto scaling_factor = S{10000.0}; // to improve accuracy of index when converting double to uint64_t
+
+            // log(0) is -infinity, so we always add 1. This does not change the order of the index.
+            const auto log_arg = S{total_vote_power} + S{1ull};
+            const auto log     = log2(log_arg.to<double>());
+            const auto x =
+                (S{log} + S{avg_vote_time_stamp.sec_since_epoch()}.to<double>() / S{SECONDS_TO_DOUBLE}.to<double>()) *
+                scaling_factor;
+            return x.to<uint64_t>();
+        }
+
+        uint64_t by_decayed_votes() const {
+            return std::numeric_limits<uint64_t>::max() - rank;
+        }
+
+        void update_index() {
+            rank = calc_decayed_votes_index();
+        }
+
+        uint64_t primary_key() const {
+            return candidate_name.value;
+        }
+        uint64_t by_number_votes() const {
+            return total_vote_power;
+        }
+        uint64_t by_votes_rank() const {
+            return S{UINT64_MAX} - S{total_vote_power};
+        }
+        uint64_t by_requested_pay() const {
+            return S{requestedpay.amount}.to<uint64_t>();
+        }
+    };
+
+    using candidates2_table = eosio::multi_index<"candidates2"_n, candidate2,
+        eosio::indexed_by<"bycandidate"_n, eosio::const_mem_fun<candidate2, uint64_t, &candidate2::primary_key>>,
+        eosio::indexed_by<"byvotes"_n, eosio::const_mem_fun<candidate2, uint64_t, &candidate2::by_number_votes>>,
+        eosio::indexed_by<"byvotesrank"_n, eosio::const_mem_fun<candidate2, uint64_t, &candidate2::by_votes_rank>>,
+        eosio::indexed_by<"byreqpay"_n, eosio::const_mem_fun<candidate2, uint64_t, &candidate2::by_requested_pay>>,
+        eosio::indexed_by<"bydecayed"_n, eosio::const_mem_fun<candidate2, uint64_t, &candidate2::by_decayed_votes>>>;
+
+    //// end of candidates2 temp table
 
     struct [[eosio::table]] vote_weight {
         eosio::name voter;
@@ -247,6 +304,7 @@ namespace eosdac {
             PROPERTY(uint32_t, lockup_release_time_delay);
             PROPERTY(eosio::extended_asset, requested_pay_max); 
             PROPERTY(uint64_t, token_supply_theshold);
+            PROPERTY(bool, maintenance_mode);
     )
     // clang-format on
 
@@ -298,6 +356,7 @@ namespace eosdac {
         ACTION resetcands(const name &dac_id);
         ACTION resetstate(const name &dac_id);
         ACTION clearcands(const name &dac_id);
+        ACTION maintenance(const bool maintenance);
 #endif
 
 #if defined(IS_DEV) || defined(DEBUG)
@@ -318,6 +377,11 @@ namespace eosdac {
             });
         };
 
+#endif
+
+        ACTION migrate1(const name dac_id);
+#ifndef MIGRATION_STAGE_1
+        ACTION migrate2(const name dac_id);
 #endif
         /**
          * This action is used to register a custom permission that will be used in the multisig instead of active.
@@ -370,8 +434,12 @@ namespace eosdac {
         void validateUnstakeAmount(const name &code, const name &cand, const asset &unstake_amount, const name &dac_id);
         void validateMinStake(name account, name dac_id);
         uint16_t       get_budget_percentage(const name &dac_id, const dacglobals &globals);
-        time_point_sec calculate_avg_vote_time_stamp(const time_point_sec vote_time_before,
-            const time_point_sec vote_time_stamp, const int64_t weight, const uint64_t total_votes);
+        time_point_sec calc_avg_vote_time(const candidate &cand);
         void update_number_of_votes(const vector<name> &oldvotes, const vector<name> &newvotes, const name &dac_id);
+
+        bool maintenance_mode() {
+            const auto globals = dacglobals{get_self(), get_self()};
+            return globals.get_maintenance_mode();
+        }
     };
 }; // namespace eosdac

@@ -20,6 +20,8 @@ ACTION daccustodian::weightobsv(const vector<account_weight_delta> &account_weig
     auto dac            = dacdir::dac_for_id(dac_id);
     auto token_contract = dac.symbol.get_contract();
 
+    check(!maintenance_mode(), "Maintenance mode. Please try again in a few minutes");
+
     const auto router_account = dac.account_for_type_maybe(dacdir::VOTE_WEIGHT);
 
     check(has_auth(token_contract) || (router_account && has_auth(*router_account)),

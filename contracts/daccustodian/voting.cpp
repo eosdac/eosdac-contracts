@@ -8,6 +8,8 @@ ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, c
     candidates_table registered_candidates(_self, dac_id.value);
     const auto       globals = dacglobals{get_self(), dac_id};
 
+    check(!maintenance_mode(), "Voting is currently disabled for maintenance. Please try again in a few minutes");
+
     require_auth(voter);
     assertValidMember(voter, dac_id);
     check(newvotes.size() <= globals.get_maxvotes(),
@@ -24,8 +26,8 @@ ACTION daccustodian::votecust(const name &voter, const vector<name> &newvotes, c
     }
 
     // Find a vote that has been cast by this voter previously.
-    votes_table votes_cast_by_members(_self, dac_id.value);
-    auto        existingVote = votes_cast_by_members.find(voter.value);
+    auto votes_cast_by_members = votes_table{_self, dac_id.value};
+    auto existingVote          = votes_cast_by_members.find(voter.value);
 
     const auto [vote_weight, vote_weight_quorum] = get_vote_weight(voter, dac_id);
     if (existingVote != votes_cast_by_members.end()) {

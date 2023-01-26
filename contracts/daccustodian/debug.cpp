@@ -45,6 +45,9 @@ void daccustodian::resetcands(const name &dac_id) {
             c.number_voters    = 0;
             // c.is_active           = 0;
             c.avg_vote_time_stamp = eosio::time_point_sec();
+#ifndef MIGRATION_STAGE_1
+            c.running_weight_time = 0;
+#endif
             c.update_index();
         });
 
@@ -61,4 +64,11 @@ void daccustodian::clearcands(const name &dac_id) {
     while (cand != candidates.end()) {
         cand = candidates.erase(cand);
     }
+}
+
+void daccustodian::maintenance(const bool maintenance) {
+    require_auth(get_self());
+
+    auto globals = dacglobals{get_self(), get_self()};
+    globals.set_maintenance_mode(maintenance);
 }
