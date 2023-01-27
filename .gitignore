@@ -42,3 +42,6 @@ node_modules
 /artifacts/compiled_contracts/contracts/safemath
 /contracts/safemath/safemath.ts
 artifacts/compiled_contracts
+/debugging/tables.json
+/debugging/yarn-error.log
+/debugging/yarn.lock
