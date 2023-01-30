@@ -82,20 +82,6 @@ void stakevote::updateconfig(config_item &new_config, const name dac_id) {
     new_config.save(get_self(), dac_id, get_self());
 }
 
-#if defined(DEBUG) || defined(IS_DEV)
-
-void stakevote::clearweights(uint16_t batch_size, name dac_id) {
-    require_auth(get_self());
-    weight_table weights(get_self(), dac_id.value);
-
-    auto row     = weights.begin();
-    auto counter = batch_size;
-    while (row != weights.end() && counter > 0) {
-        row = weights.erase(row);
-        counter--;
-    }
-}
-
 /**
  * @brief Calculate the vote weight and vote quorum of an account based on the current stake, time multiplier, unstake
  * delay, and max stake time.
@@ -132,6 +118,20 @@ std::pair<int64_t, int64_t> stakevote::calculate_weight_and_quorum_deltas(const 
     const auto weight_quorum_delta = new_weight_quorum - old_weight_quorum.to<int64_t>();
 
     return {weight_delta, weight_quorum_delta};
+}
+
+#if defined(DEBUG) || defined(IS_DEV)
+
+void stakevote::clearweights(uint16_t batch_size, name dac_id) {
+    require_auth(get_self());
+    weight_table weights(get_self(), dac_id.value);
+
+    auto row     = weights.begin();
+    auto counter = batch_size;
+    while (row != weights.end() && counter > 0) {
+        row = weights.erase(row);
+        counter--;
+    }
 }
 
 void stakevote::collectwts(uint16_t batch_size, name dac_id, bool assert) {
