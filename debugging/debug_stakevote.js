@@ -7,7 +7,7 @@ STAKEVOTE_CONTRACT = 'stkvt.worlds';
 DAO_CONTRACT = 'dao.worlds';
 TOKEN_CONTRACT = 'token.worlds';
 MAX = 2 ** 32;
-
+CACHE_FILE = 'tables_stakevote.json';
 let tables = {}; // dac_id -> { stakes, weights, config, stakeconfig }
 let virtual_weights = {}; // dac_id -> { voter -> {voter, weight, weight_quorum } }
 let differences = {}; // dac_id ->  { ours, theirs }
@@ -15,22 +15,23 @@ let differences = {}; // dac_id ->  { ours, theirs }
 function save() {
   const json = JSON.stringify(tables, null, 2);
   const fs = require('fs');
-  fs.writeFileSync('tables.json', json);
+  fs.writeFileSync(CACHE_FILE, json);
 }
 function load() {
   const fs = require('fs');
-  const json = fs.readFileSync('tables.json');
+  const json = fs.readFileSync(CACHE_FILE);
   tables = JSON.parse(json);
 }
 async function main() {
   // if tables.json exists, load from file
-  if (require('fs').existsSync('tables.json')) {
+  if (require('fs').existsSync(CACHE_FILE)) {
     load();
   } else {
-    await fetch_all_tables('kavian');
+    await fetch_all_tables();
     save();
   }
   for (const dac_id of Object.keys(tables)) {
+    // if (dac_id !== 'nerix') continue;
     await handle_dac(dac_id);
     await compare_to_chain(dac_id);
   }
@@ -121,7 +122,7 @@ function upsert(dac_id, voter, weight, weight_quorum) {
   };
 }
 function amount(x) {
-  return Math.floor(parseFloat(x) * 10000);
+  return Math.round(parseFloat(x) * 10000);
 }
 
 async function get_unstake_delay(dac_id, stake) {

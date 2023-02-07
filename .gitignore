@@ -45,3 +45,5 @@ artifacts/compiled_contracts
 /debugging/tables.json
 /debugging/yarn-error.log
 /debugging/yarn.lock
+/debugging/tables_stakevote.json
+/debugging/tables_daccustodian.json
