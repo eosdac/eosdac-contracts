@@ -76,6 +76,7 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
 
     int32_t electcount            = globals.get_numelected();
     uint8_t currentCustodianCount = 0;
+    uint8_t newCustodianCount     = 0;
 
     if (!early_election) {
         eosio::print("Empty the custodians table to get a full set of new custodians based on the current votes.");
@@ -112,9 +113,14 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
                 c.avg_vote_time_stamp = cand_itr->avg_vote_time_stamp;
             });
 
+            newCustodianCount++;
             currentCustodianCount++;
             cand_itr++;
         }
+    }
+    if (newCustodianCount >= globals.get_auth_threshold_high()) {
+        action(permission_level{get_self(), "owner"_n}, DACDIRECTORY_CONTRACT, "hdlegovchg"_n, std::make_tuple(dac_id))
+            .send();
     }
 }
 
@@ -148,7 +154,7 @@ void daccustodian::add_auth_to_account(const name &accountToChange, const uint8_
         .send();
 }
 
-void daccustodian::add_all_auths(const name            &accountToChange,
+void daccustodian::add_all_auths(const name &           accountToChange,
     const vector<eosiosystem::permission_level_weight> &weights, const name &dac_id, const bool msig) {
     const auto globals = dacglobals{get_self(), dac_id};
 

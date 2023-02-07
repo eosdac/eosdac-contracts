@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../contract-shared-headers/dacdirectory_shared.hpp"
+#include "../../contract-shared-headers/safemath/singleton.hpp"
 #include "nft.hpp"
 #include <eosio/eosio.hpp>
 #include <eosio/multi_index.hpp>
@@ -26,6 +27,10 @@ namespace eosdac {
             ACTION setowner(name dac_id, name new_owner);
             ACTION settitle(name dac_id, string title);
             ACTION setstatus(name dac_id, uint8_t value);
+            ACTION hdlegovchg(name dac_id);
+            ACTION setsocials(const name dac_id, const bool active);
+            ACTION setsociallnk(const name dac_id, const string key, const string link);
+
 #ifdef IS_DEV
             ACTION indextest();
 #endif
@@ -38,6 +43,12 @@ namespace eosdac {
                 const name authorized_minter, const name collection_name, const name schema_name,
                 const int32_t preset_id, const name new_asset_owner, const atomicdata::ATTRIBUTE_MAP &immutable_data,
                 const atomicdata::ATTRIBUTE_MAP &mutable_data, const vector<asset> &backed_tokens);
+
+            // clang-format off
+            SINGLETON(dacglobals, dacdirectory, 
+                PROPERTY(bool, socials_active); 
+            )
+            // clang-format on
 
           private:
             void upsert_nft(const uint64_t id, const std::optional<name> old_owner_optional, const name new_owner);
