@@ -66,6 +66,18 @@ void daccustodian::clearcands(const name &dac_id) {
     }
 }
 
+void daccustodian::clearcusts(const name &dac_id) {
+    require_auth(get_self());
+
+    custodians_table custodians(_self, dac_id.value);
+
+    auto cust = custodians.begin();
+
+    while (cust != custodians.end()) {
+        cust = custodians.erase(cust);
+    }
+}
+
 void daccustodian::maintenance(const bool maintenance) {
     require_auth(get_self());
 
