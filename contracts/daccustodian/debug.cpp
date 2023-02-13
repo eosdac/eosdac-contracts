@@ -45,9 +45,7 @@ void daccustodian::resetcands(const name &dac_id) {
             c.number_voters    = 0;
             // c.is_active           = 0;
             c.avg_vote_time_stamp = eosio::time_point_sec();
-#ifndef MIGRATION_STAGE_1
             c.running_weight_time = 0;
-#endif
             c.update_index();
         });
 
