@@ -26,10 +26,8 @@ void daccustodian::updateVoteWeight(
         } else {
             c.total_vote_power = new_vote_power.to<uint64_t>();
         }
-#ifndef MIGRATION_STAGE_1
         c.running_weight_time = S<uint128_t>{c.running_weight_time}.add_signed_to_unsigned(
             S{weight}.to<int128_t>() * S{vote_time_stamp.sec_since_epoch()}.to<int128_t>());
-#endif
         c.avg_vote_time_stamp = calc_avg_vote_time(c);
 
         check(c.avg_vote_time_stamp <= now(), "avg_vote_time_stamp pushed into the future: %s", c.avg_vote_time_stamp);
@@ -42,11 +40,7 @@ time_point_sec daccustodian::calc_avg_vote_time(const candidate &cand) {
     if (cand.total_vote_power == 0) {
         return time_point_sec(0);
     }
-#ifndef MIGRATION_STAGE_1
     const auto delta = S{cand.running_weight_time} / S{cand.total_vote_power}.to<uint128_t>();
-#else
-    const auto delta = S{0};
-#endif
     return time_point_sec{delta.to<uint32_t>()};
 }
 
