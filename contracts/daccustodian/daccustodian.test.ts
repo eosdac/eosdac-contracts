@@ -1501,6 +1501,118 @@ describe('Daccustodian', () => {
       );
     });
   });
+  context('setsocials', async () => {
+    let dacId = 'setsocials';
+    let anybody: Account;
+    before(async () => {
+      await shared.initDac(dacId, '4,SOCIAL', '1000000.0000 SOCIAL');
+      anybody = await AccountManager.createAccount();
+    });
+    context('with wrong auth', async () => {
+      it('should fail', async () => {
+        await assertMissingAuthority(
+          shared.dacdirectory_contract.setsocials(dacId, true, {
+            from: anybody,
+          })
+        );
+      });
+    });
+    context('with correct auth', async () => {
+      it('before setting true, table should be empty', async () => {
+        await assertRowCount(
+          shared.dacdirectory_contract.dacglobalsTable({
+            scope: dacId,
+          }),
+          0
+        );
+      });
+      it('should succeed', async () => {
+        await shared.dacdirectory_contract.setsocials(dacId, true, {
+          from: shared.auth_account,
+        });
+      });
+      it('should set socials active', async () => {
+        const actual = await get_from_dacglobals(
+          dacId,
+          'socials_active',
+          shared.dacdirectory_contract
+        );
+        chai.expect(actual).to.equal(1);
+      });
+    });
+  });
+  context('setsociallnk', async () => {
+    let anybody: Account;
+    before(async () => {
+      await shared.initDac('setsociallnk', '4,SLINK', '1000000.0000 SLINK');
+      anybody = await AccountManager.createAccount();
+    });
+    context('with wrong auth', async () => {
+      it('should fail', async () => {
+        await assertMissingAuthority(
+          shared.dacdirectory_contract.setsociallnk(
+            'setsociallnk',
+            'twitter',
+            'https://twitter.com',
+            { from: anybody }
+          )
+        );
+      });
+    });
+    context('with correct auth', async () => {
+      it('setting twitter link should succeed', async () => {
+        await shared.dacdirectory_contract.setsociallnk(
+          'setsociallnk',
+          'twitter',
+          'https://twitter.com',
+          { from: shared.auth_account }
+        );
+      });
+      it('should have set twitter link', async () => {
+        const actual = await get_from_dacglobals(
+          'setsociallnk',
+          'twitter',
+          shared.dacdirectory_contract
+        );
+        chai.expect(actual).to.equal('https://twitter.com');
+      });
+      it('setting invalid key should fail', async () => {
+        await assertEOSErrorIncludesMessage(
+          shared.dacdirectory_contract.setsociallnk(
+            'setsociallnk',
+            'invalid',
+            'https://twitter.com',
+            { from: shared.auth_account }
+          ),
+          'Provided key invalid is not allowed.'
+        );
+      });
+      it('setting web link should succeed', async () => {
+        await shared.dacdirectory_contract.setsociallnk(
+          'setsociallnk',
+          'web',
+          'https://web.com',
+          { from: shared.auth_account }
+        );
+      });
+      it('should have set web link', async () => {
+        const actual = await get_from_dacglobals(
+          'setsociallnk',
+          'web',
+          shared.dacdirectory_contract
+        );
+        chai.expect(actual).to.equal('https://web.com');
+      });
+      it('twitter link should still be set', async () => {
+        const actual = await get_from_dacglobals(
+          'setsociallnk',
+          'twitter',
+          shared.dacdirectory_contract
+        );
+        chai.expect(actual).to.equal('https://twitter.com');
+      });
+    });
+  });
 
   context('New Period Elections', async () => {
     let dacId = 'nperidac';
@@ -1523,6 +1635,10 @@ describe('Daccustodian', () => {
       // With 16 voting members with 2000 each and a threshold of 31 percent
       // this will total to 320_000 vote value which will be enough to start the DAC
       regMembers = await shared.getRegMembers(dacId, '20000.0000 PERDAC');
+
+      await shared.dacdirectory_contract.setsocials(dacId, true, {
+        from: shared.auth_account,
+      });
     });
     context('without an activation account', async () => {
       context('before a dac has commenced periods', async () => {
@@ -1625,6 +1741,14 @@ describe('Daccustodian', () => {
                 { from: shared.auth_account }
               );
             });
+            it('before newperiod, socials should be true', async () => {
+              const actual = await get_from_dacglobals(
+                dacId,
+                'socials_active',
+                shared.dacdirectory_contract
+              );
+              chai.expect(actual).to.equal(1);
+            });
             it('should succeed with custodians populated', async () => {
               await shared.daccustodian_contract.newperiod(
                 'initial new period',
@@ -1642,6 +1766,15 @@ describe('Daccustodian', () => {
                 number_of_custodians
               );
             });
+            it('should have set socials to false', async () => {
+              const actual = await get_from_dacglobals(
+                dacId,
+                'socials_active',
+                shared.dacdirectory_contract
+              );
+              chai.expect(actual).to.equal(0);
+            });
+
             it('Candidates bydecayed index should sort by rank descending', async () => {
               const res = await shared.daccustodian_contract.candidatesTable({
                 scope: dacId,
@@ -3566,8 +3699,12 @@ async function get_balance(
   return 0.0;
 }
 
-async function get_from_dacglobals(dacId, key) {
-  const res = await shared.daccustodian_contract.dacglobalsTable({
+async function get_from_dacglobals(
+  dacId,
+  key,
+  contract = shared.daccustodian_contract
+) {
+  const res = await contract.dacglobalsTable({
     scope: dacId,
   });
   const data = res.rows[0].data;
