@@ -651,6 +651,23 @@ export class SharedTestObjects {
       'pay'
     );
 
+    await UpdateAuth.execUpdateAuth(
+      this.dacdirectory_contract.account.active,
+      this.dacdirectory_contract.account.name,
+      'govmanage',
+      'active',
+      UpdateAuth.AuthorityToSet.forContractCode(
+        this.daccustodian_contract.account
+      )
+    );
+    await UpdateAuth.execLinkAuth(
+      this.dacdirectory_contract.account.active,
+      this.dacdirectory_contract.account.name,
+      this.dacdirectory_contract.account.name,
+      'hdlegovchg',
+      'govmanage'
+    );
+
     await this.referendum_contract.account.addCodePermission();
   }
 

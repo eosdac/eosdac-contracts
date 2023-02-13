@@ -119,8 +119,8 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
         }
     }
     if (newCustodianCount >= globals.get_auth_threshold_high()) {
-        action(
-            permission_level{get_self(), "govmanage"_n}, DACDIRECTORY_CONTRACT, "hdlegovchg"_n, std::make_tuple(dac_id))
+        action(permission_level{DACDIRECTORY_CONTRACT, "govmanage"_n}, DACDIRECTORY_CONTRACT, "hdlegovchg"_n,
+            std::make_tuple(dac_id))
             .send();
     }
 }
