@@ -356,6 +356,7 @@ namespace eosdac {
         ACTION resetcands(const name &dac_id);
         ACTION resetstate(const name &dac_id);
         ACTION clearcands(const name &dac_id);
+        ACTION clearcusts(const name &dac_id);
         ACTION maintenance(const bool maintenance);
 #endif
 
