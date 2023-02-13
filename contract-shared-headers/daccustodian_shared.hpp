@@ -69,9 +69,8 @@ namespace eosdac {
         uint8_t               is_active;
         uint32_t              number_voters;
         eosio::time_point_sec avg_vote_time_stamp;
-#ifndef MIGRATION_STAGE_1
-        uint128_t running_weight_time; // The running sum of weight*time from all votes for this candidate
-#endif
+        uint128_t             running_weight_time; // The running sum of weight*time from all votes for this candidate
+
         uint64_t calc_decayed_votes_index() const {
             auto       err            = Err{"calc_decayed_votes_index"};
             const auto scaling_factor = S{10000.0}; // to improve accuracy of index when converting double to uint64_t
@@ -356,6 +355,7 @@ namespace eosdac {
         ACTION resetcands(const name &dac_id);
         ACTION resetstate(const name &dac_id);
         ACTION clearcands(const name &dac_id);
+        ACTION clearcusts(const name &dac_id);
         ACTION maintenance(const bool maintenance);
 #endif
 
@@ -379,10 +379,6 @@ namespace eosdac {
 
 #endif
 
-        ACTION migrate1(const name dac_id);
-#ifndef MIGRATION_STAGE_1
-        ACTION migrate2(const name dac_id);
-#endif
         /**
          * This action is used to register a custom permission that will be used in the multisig instead of active.
          *

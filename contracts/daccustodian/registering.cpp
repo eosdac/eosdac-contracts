@@ -62,6 +62,7 @@ ACTION daccustodian::removecand(const name &cand, const name &dac_id) {
 ACTION daccustodian::firecand(const name &cand, const bool lockupStake, const name &dac_id) {
     auto dac = dacdir::dac_for_id(dac_id);
     require_auth(dac.owner);
+    check(false, "This feature is currently disabled.");
     disableCandidate(cand, dac_id);
     removeCandidate(cand, dac_id);
 }
@@ -74,6 +75,7 @@ ACTION daccustodian::resigncust(const name &cust, const name &dac_id) {
 ACTION daccustodian::firecust(const name &cust, const name &dac_id) {
     auto dac = dacdir::dac_for_id(dac_id);
     require_auth(dac.owner);
+    check(false, "This feature is currently disabled.");
     removeCustodian(cust, dac_id);
     removeCandidate(cust, dac_id);
 }
