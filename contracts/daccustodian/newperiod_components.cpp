@@ -74,9 +74,9 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
 
     auto cand_itr = byvotes.begin();
 
-    auto electcount            = S{globals.get_numelected()};
-    auto currentCustodianCount = S{uint8_t{0}};
-    auto newCustodianCount     = S{uint8_t{0}};
+    const auto electcount            = S{globals.get_numelected()};
+    auto       currentCustodianCount = S{uint8_t{0}};
+    auto       newCustodianCount     = S{uint8_t{0}};
 
     if (!early_election) {
         eosio::print("Empty the custodians table to get a full set of new custodians based on the current votes.");
