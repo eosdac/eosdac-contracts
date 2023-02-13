@@ -247,8 +247,8 @@ namespace eosdac {
             const auto dac          = dacdir::dac_for_id(dac_id);
             const auto auth_account = dac.owner;
             require_auth(auth_account);
-            auto globals      = dacglobals{get_self(), dac_id};
-            auto allowed_keys = set<string>{
+            auto       globals      = dacglobals{get_self(), dac_id};
+            const auto allowed_keys = set<string>{
                 "twitter",
                 "telegram",
                 "web",
@@ -259,7 +259,7 @@ namespace eosdac {
                 "tiktok",
                 "medium",
             };
-            check(allowed_keys.find(key) != allowed_keys.end(), fmt("Provided key %s is not allowed.", key));
+            check(allowed_keys.find(key) != allowed_keys.end(), "Provided key %s is not allowed.", key);
 
             globals.set(key, link);
         }
