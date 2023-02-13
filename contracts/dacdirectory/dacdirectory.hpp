@@ -27,9 +27,9 @@ namespace eosdac {
             ACTION setowner(name dac_id, name new_owner);
             ACTION settitle(name dac_id, string title);
             ACTION setstatus(name dac_id, uint8_t value);
-            ACTION hdlegovchg(name dac_id);
+            ACTION hdlegovchg(const name dac_id);
             ACTION setsocials(const name dac_id, const bool active);
-            ACTION setsociallnk(const name dac_id, const string key, const string link);
+            ACTION setsociallnk(const name dac_id, const string &key, const string &link);
 
 #ifdef IS_DEV
             ACTION indextest();

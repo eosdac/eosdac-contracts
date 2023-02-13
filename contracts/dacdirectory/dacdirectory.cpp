@@ -229,7 +229,7 @@ namespace eosdac {
             });
         }
 
-        void dacdirectory::hdlegovchg(name dac_id) {
+        void dacdirectory::hdlegovchg(const name dac_id) {
             require_auth(get_self());
             auto globals = dacglobals{get_self(), dac_id};
             globals.set_socials_active(false);
@@ -243,7 +243,7 @@ namespace eosdac {
             globals.set_socials_active(active);
         }
 
-        void dacdirectory::setsociallnk(const name dac_id, const string key, const string link) {
+        void dacdirectory::setsociallnk(const name dac_id, const string &key, const string &link) {
             const auto dac          = dacdir::dac_for_id(dac_id);
             const auto auth_account = dac.owner;
             require_auth(auth_account);

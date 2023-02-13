@@ -74,9 +74,9 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
 
     auto cand_itr = byvotes.begin();
 
-    int32_t electcount            = globals.get_numelected();
-    uint8_t currentCustodianCount = 0;
-    uint8_t newCustodianCount     = 0;
+    auto electcount            = S{globals.get_numelected()};
+    auto currentCustodianCount = S{uint8_t{0}};
+    auto newCustodianCount     = S{uint8_t{0}};
 
     if (!early_election) {
         eosio::print("Empty the custodians table to get a full set of new custodians based on the current votes.");
@@ -93,7 +93,7 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
 
     eosio::print("Select only enough candidates to fill the gaps.");
     for (auto itr = custodians.begin(); itr != custodians.end(); itr++) {
-        ++currentCustodianCount;
+        currentCustodianCount++;
     }
 
     while (currentCustodianCount < electcount) {
@@ -155,7 +155,7 @@ void daccustodian::add_auth_to_account(const name &accountToChange, const uint8_
         .send();
 }
 
-void daccustodian::add_all_auths(const name &           accountToChange,
+void daccustodian::add_all_auths(const name            &accountToChange,
     const vector<eosiosystem::permission_level_weight> &weights, const name &dac_id, const bool msig) {
     const auto globals = dacglobals{get_self(), dac_id};
 
