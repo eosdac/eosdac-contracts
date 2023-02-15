@@ -229,6 +229,41 @@ namespace eosdac {
             });
         }
 
+        void dacdirectory::hdlegovchg(const name dac_id) {
+            require_auth(get_self());
+            auto globals = dacglobals{get_self(), dac_id};
+            globals.set_socials_active(false);
+        }
+
+        void dacdirectory::setsocials(const name dac_id, const bool active) {
+            const auto dac          = dacdir::dac_for_id(dac_id);
+            const auto auth_account = dac.owner;
+            require_auth(auth_account);
+            auto globals = dacglobals{get_self(), dac_id};
+            globals.set_socials_active(active);
+        }
+
+        void dacdirectory::setsociallnk(const name dac_id, const string &key, const string &link) {
+            const auto dac          = dacdir::dac_for_id(dac_id);
+            const auto auth_account = dac.owner;
+            require_auth(auth_account);
+            auto       globals      = dacglobals{get_self(), dac_id};
+            const auto allowed_keys = set<string>{
+                "twitter",
+                "telegram",
+                "web",
+                "discord",
+                "instagram",
+                "facebook",
+                "youtube",
+                "tiktok",
+                "medium",
+            };
+            check(allowed_keys.find(key) != allowed_keys.end(), "Provided key %s is not allowed.", key);
+
+            globals.set(key, link);
+        }
+
         void dacdirectory::upsert_nft(
             const uint64_t id, const std::optional<name> old_owner_optional, const name new_owner) {
             const auto  assets = atomicassets::assets_t(NFT_CONTRACT, new_owner.value);

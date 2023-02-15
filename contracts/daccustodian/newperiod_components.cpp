@@ -74,8 +74,9 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
 
     auto cand_itr = byvotes.begin();
 
-    int32_t electcount            = globals.get_numelected();
-    uint8_t currentCustodianCount = 0;
+    const auto electcount            = S{globals.get_numelected()};
+    auto       currentCustodianCount = S{uint8_t{0}};
+    auto       newCustodianCount     = S{uint8_t{0}};
 
     if (!early_election) {
         eosio::print("Empty the custodians table to get a full set of new custodians based on the current votes.");
@@ -92,7 +93,7 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
 
     eosio::print("Select only enough candidates to fill the gaps.");
     for (auto itr = custodians.begin(); itr != custodians.end(); itr++) {
-        ++currentCustodianCount;
+        currentCustodianCount++;
     }
 
     while (currentCustodianCount < electcount) {
@@ -112,9 +113,15 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
                 c.avg_vote_time_stamp = cand_itr->avg_vote_time_stamp;
             });
 
+            newCustodianCount++;
             currentCustodianCount++;
             cand_itr++;
         }
+    }
+    if (newCustodianCount >= globals.get_auth_threshold_high()) {
+        action(permission_level{DACDIRECTORY_CONTRACT, "govmanage"_n}, DACDIRECTORY_CONTRACT, "hdlegovchg"_n,
+            std::make_tuple(dac_id))
+            .send();
     }
 }
 
