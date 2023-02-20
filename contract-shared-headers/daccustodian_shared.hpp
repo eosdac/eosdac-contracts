@@ -60,6 +60,11 @@ namespace eosdac {
         eosio::indexed_by<"bydecayed"_n, eosio::const_mem_fun<custodian, uint64_t, &custodian::by_decayed_votes>>,
         eosio::indexed_by<"byreqpay"_n, eosio::const_mem_fun<custodian, uint64_t, &custodian::by_requested_pay>>>;
 
+    using pending_custodians_table = eosio::multi_index<"pendingcusts"_n, custodian,
+        eosio::indexed_by<"byvotesrank"_n, eosio::const_mem_fun<custodian, uint64_t, &custodian::by_votes_rank>>,
+        eosio::indexed_by<"bydecayed"_n, eosio::const_mem_fun<custodian, uint64_t, &custodian::by_decayed_votes>>,
+        eosio::indexed_by<"byreqpay"_n, eosio::const_mem_fun<custodian, uint64_t, &custodian::by_requested_pay>>>;
+
     struct [[eosio::table("candidates"), eosio::contract("daccustodian")]] candidate {
         eosio::name           candidate_name;
         eosio::asset          requestedpay;
@@ -420,7 +425,7 @@ namespace eosdac {
         void removeCustodian(name cust, name internal_dac_id);
         void disableCandidate(name cust, name internal_dac_id);
         void removeCandidate(name cust, name internal_dac_id);
-        void allocateCustodians(bool early_election, name internal_dac_id);
+        void allocateCustodians(name internal_dac_id);
         bool permissionExists(name account, name permission);
         bool _check_transaction_authorization(const char *trx_data, uint32_t trx_size, const char *pubkeys_data,
             uint32_t pubkeys_size, const char *perms_data, uint32_t perms_size);

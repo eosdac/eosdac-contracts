@@ -168,20 +168,24 @@ void daccustodian::validateMinStake(name account, name dac_id) {
 void daccustodian::removeCustodian(name cust, name dac_id) {
 
     custodians_table custodians(_self, dac_id.value);
-    auto             elected = custodians.find(cust.value);
-    check(elected != custodians.end(),
+    auto             elected = custodians.require_find(cust.value,
         "ERR::REMOVECUSTODIAN_NOT_CURRENT_CUSTODIAN::The entered account name is not for a current custodian.");
-
-    eosio::print("Remove custodian from the custodians table.");
     custodians.erase(elected);
 
+    pending_custodians_table pending_custs(get_self(), dac_id.value);
+
+    auto pending = pending_custs.find(cust.value);
+    if (pending != pending_custs.end()) {
+        pending_custs.erase(pending);
+    }
     // Remove the candidate from being eligible for the next election period.
     disableCandidate(cust, dac_id);
 
-    // Allocate the next set of candidates to only fill the gap for the missing slot.
-    allocateCustodians(true, dac_id);
+    // Rather than allocate to fill the gaps leave the gap to avoid nasty suprises from newly added custodians.
 
     // Update the auths to give control to the new set of custodians.
+    // If too many are removed to satisfy the auth this should fail and therefore prevent the custodian to withdraw
+    // before the end of the period.
     setMsigAuths(dac_id);
 }
 
