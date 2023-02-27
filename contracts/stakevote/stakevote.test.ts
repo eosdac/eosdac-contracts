@@ -330,6 +330,14 @@ describe('Stakevote', () => {
                   from: regMembers[0], // Could be run by anyone.
                 }
               );
+              await sleep(6_000);
+              await shared.daccustodian_contract.newperiod(
+                'new period',
+                dacId,
+                {
+                  from: regMembers[0], // Could be run by anyone.
+                }
+              );
 
               await assertRowCount(
                 shared.daccustodian_contract.custodians1Table({
