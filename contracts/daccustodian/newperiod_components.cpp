@@ -161,10 +161,12 @@ void daccustodian::add_auth_to_account(const name &accountToChange, const uint8_
         std::sort(weights.begin(), weights.end());
     }
 
-    const auto auth = eosiosystem::authority{.threshold = threshold, .keys = {}, .accounts = weights};
-    action(permission_level{accountToChange, "owner"_n}, "eosio"_n, "updateauth"_n,
-        std::make_tuple(accountToChange, permission, parent, auth))
-        .send();
+    if (weights.size() > 0) {
+        const auto auth = eosiosystem::authority{.threshold = threshold, .keys = {}, .accounts = weights};
+        action(permission_level{accountToChange, "owner"_n}, "eosio"_n, "updateauth"_n,
+            std::make_tuple(accountToChange, permission, parent, auth))
+            .send();
+    }
 }
 
 void daccustodian::add_all_auths(const name &           accountToChange,
