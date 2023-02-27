@@ -1684,7 +1684,7 @@ describe('Daccustodian', () => {
           context(
             'without enough candidates with > 0 votes to fill the configs',
             async () => {
-              it('should fail with not enough candidates error', async () => {
+              it('should fail with not enough candidates error 1', async () => {
                 await assertEOSErrorIncludesMessage(
                   shared.daccustodian_contract.newperiod(
                     'initial new period',
@@ -1749,7 +1749,7 @@ describe('Daccustodian', () => {
               );
               chai.expect(actual).to.equal(1);
             });
-            it('should succeed with custodians populated', async () => {
+            it('should succeed with custodians in pendingcusts', async () => {
               await shared.daccustodian_contract.newperiod(
                 'initial new period',
                 dacId,
@@ -1759,7 +1759,7 @@ describe('Daccustodian', () => {
               );
 
               await assertRowCount(
-                shared.daccustodian_contract.custodians1Table({
+                shared.daccustodian_contract.pendingcustsTable({
                   scope: dacId,
                   limit: 20,
                 }),
@@ -1794,7 +1794,7 @@ describe('Daccustodian', () => {
                 keyType: 'i64',
               });
 
-              let res2 = await shared.daccustodian_contract.custodians1Table({
+              let res2 = await shared.daccustodian_contract.pendingcustsTable({
                 scope: dacId,
                 limit: 100,
                 indexPosition: 2, // bydecayed index
@@ -1828,91 +1828,6 @@ describe('Daccustodian', () => {
                 }),
                 0
               );
-            });
-            it('should set the auths', async () => {
-              let account = await debugPromise(
-                EOSManager.rpc.get_account(shared.auth_account.name),
-                'get account info'
-              );
-              let permissions = account.permissions.sort(
-                (a: { perm_name: string }, b: { perm_name: string }) =>
-                  a.perm_name.localeCompare(b.perm_name)
-              );
-
-              const custodians =
-                await shared.daccustodian_contract.custodians1Table({
-                  scope: dacId,
-                  limit: 20,
-                });
-              const expected_accounts = custodians.rows.map((row) => {
-                return {
-                  permission: {
-                    actor: row.cust_name,
-                    permission: 'active',
-                  },
-                  weight: 1,
-                };
-              });
-
-              let ownerPermission = permissions[0];
-              let ownerRequiredAuth = ownerPermission.required_auth;
-              chai.expect(ownerPermission.parent).to.eq('owner');
-              chai.expect(ownerPermission.perm_name).to.eq('active');
-              chai.expect(ownerRequiredAuth.threshold).to.eq(1);
-              chai.expect(ownerRequiredAuth.keys.length).to.eq(1);
-
-              let adminPermission = permissions[1];
-              let adminRequiredAuth = adminPermission.required_auth;
-              chai.expect(adminPermission.parent).to.eq('one');
-              chai.expect(adminPermission.perm_name).to.eq('admin');
-              chai.expect(adminRequiredAuth.threshold).to.eq(1);
-              chai.expect(adminRequiredAuth.accounts).to.deep.equal([
-                {
-                  permission: {
-                    actor: shared.daccustodian_contract.account.name,
-                    permission: 'eosio.code',
-                  },
-                  weight: 1,
-                },
-              ]);
-
-              let highPermission = permissions[2];
-              let highRequiredAuth = highPermission.required_auth;
-              chai.expect(highPermission.parent).to.eq('active');
-              chai.expect(highPermission.perm_name).to.eq('high');
-              chai.expect(highRequiredAuth.threshold).to.eq(4);
-
-              let highAccounts = highRequiredAuth.accounts;
-              chai.expect(highAccounts).to.deep.equal(expected_accounts);
-
-              let lowPermission = permissions[3];
-              let lowRequiredAuth = lowPermission.required_auth;
-
-              chai.expect(lowPermission.parent).to.eq('med');
-              chai.expect(lowPermission.perm_name).to.eq('low');
-              chai.expect(lowRequiredAuth.threshold).to.eq(2);
-
-              let lowAccounts = lowRequiredAuth.accounts;
-              chai.expect(lowAccounts).to.deep.equal(expected_accounts);
-
-              let medPermission = permissions[4];
-              let medRequiredAuth = medPermission.required_auth;
-
-              chai.expect(medPermission.parent).to.eq('high');
-              chai.expect(medPermission.perm_name).to.eq('med');
-              chai.expect(medRequiredAuth.threshold).to.eq(3);
-
-              let medAccounts = medRequiredAuth.accounts;
-              chai.expect(medAccounts).to.deep.equal(expected_accounts);
-
-              let onePermission = account.permissions[5];
-              let oneRequiredAuth = onePermission.required_auth;
-
-              chai.expect(onePermission.parent).to.eq('low');
-              chai.expect(onePermission.perm_name).to.eq('one');
-              chai.expect(oneRequiredAuth.threshold).to.eq(1);
-              let oneAccounts = oneRequiredAuth.accounts;
-              chai.expect(oneAccounts).to.deep.equal(expected_accounts);
             });
           });
           // it('should succeed setting up testuser', async () => {
@@ -2080,6 +1995,97 @@ describe('Daccustodian', () => {
                 from: newUser1,
               }
             );
+          });
+          it('should set the auths', async () => {
+            let account = await debugPromise(
+              EOSManager.rpc.get_account(shared.auth_account.name),
+              'get account info'
+            );
+            let permissions = account.permissions.sort(
+              (a: { perm_name: string }, b: { perm_name: string }) =>
+                a.perm_name.localeCompare(b.perm_name)
+            );
+
+            const custodians =
+              await shared.daccustodian_contract.custodians1Table({
+                scope: dacId,
+                limit: 20,
+              });
+            const expected_accounts = custodians.rows.map((row) => {
+              return {
+                permission: {
+                  actor: row.cust_name,
+                  permission: 'active',
+                },
+                weight: 1,
+              };
+            });
+
+            let ownerPermission = permissions[0];
+            let ownerRequiredAuth = ownerPermission.required_auth;
+            chai.expect(ownerPermission.parent).to.eq('owner');
+            chai.expect(ownerPermission.perm_name).to.eq('active');
+            chai.expect(ownerRequiredAuth.threshold).to.eq(1);
+            chai.expect(ownerRequiredAuth.keys.length).to.eq(1);
+
+            let adminPermission = permissions[1];
+            let adminRequiredAuth = adminPermission.required_auth;
+            chai.expect(adminPermission.parent).to.eq('one');
+            chai.expect(adminPermission.perm_name).to.eq('admin');
+            chai.expect(adminRequiredAuth.threshold).to.eq(1);
+            chai.expect(adminRequiredAuth.accounts).to.deep.equal([
+              {
+                permission: {
+                  actor: shared.daccustodian_contract.account.name,
+                  permission: 'eosio.code',
+                },
+                weight: 1,
+              },
+            ]);
+
+            let highPermission = permissions[2];
+            let highRequiredAuth = highPermission.required_auth;
+            chai.expect(highPermission.parent).to.eq('active');
+            chai.expect(highPermission.perm_name).to.eq('high');
+            chai.expect(highRequiredAuth.threshold).to.eq(4);
+
+            let highAccounts = highRequiredAuth.accounts;
+            chai.expect(highAccounts).to.deep.equal(expected_accounts);
+
+            let lowPermission = permissions[3];
+            let lowRequiredAuth = lowPermission.required_auth;
+
+            chai.expect(lowPermission.parent).to.eq('med');
+            chai.expect(lowPermission.perm_name).to.eq('low');
+            chai.expect(lowRequiredAuth.threshold).to.eq(2);
+
+            let lowAccounts = lowRequiredAuth.accounts;
+            chai.expect(lowAccounts).to.deep.equal(expected_accounts);
+
+            let medPermission = permissions[4];
+            let medRequiredAuth = medPermission.required_auth;
+
+            chai.expect(medPermission.parent).to.eq('high');
+            chai.expect(medPermission.perm_name).to.eq('med');
+            chai.expect(medRequiredAuth.threshold).to.eq(3);
+
+            let medAccounts = medRequiredAuth.accounts;
+            chai.expect(medAccounts).to.deep.equal(expected_accounts);
+
+            let onePermission = account.permissions[5];
+            let oneRequiredAuth = onePermission.required_auth;
+
+            chai.expect(onePermission.parent).to.eq('low');
+            chai.expect(onePermission.perm_name).to.eq('one');
+            chai.expect(oneRequiredAuth.threshold).to.eq(1);
+            let oneAccounts = oneRequiredAuth.accounts;
+            chai.expect(oneAccounts).to.deep.equal(expected_accounts);
+          });
+          it('running newperiod again should succeed', async () => {
+            await sleep(6_000);
+            await shared.daccustodian_contract.newperiod('new period', dacId, {
+              from: newUser1,
+            });
           });
           it('custodians should have been paid', async () => {
             await assertRowCount(
@@ -2267,6 +2273,10 @@ describe('Daccustodian', () => {
       await shared.daccustodian_contract.newperiod('resigndac', dacId, {
         from: regMembers[0],
       });
+      await sleep(6_000);
+      await shared.daccustodian_contract.newperiod('resigndac', dacId, {
+        from: regMembers[0],
+      });
     });
     it('should fail with incorrect auth returning auth error', async () => {
       let electedCandidateToResign = existing_candidates[0];
@@ -2280,56 +2290,52 @@ describe('Daccustodian', () => {
     });
     context('with correct auth', async () => {
       context('for a currently elected custodian', async () => {
-        context('without enough elected candidates to replace', async () => {
-          it('should fail with not enough candidates error', async () => {
-            let electedCandidateToResign = existing_candidates[3];
-            // The implementation of `voteForCustodians` only votes for enough to
-            // satisfy the config that requires 5 candidates be voted for.
-            // Therefore the `resigncust` would fail because a replacement candidate is not
-            // available until another candiate has been voted for.
-            await assertEOSErrorIncludesMessage(
-              shared.daccustodian_contract.resigncust(
-                electedCandidateToResign.name,
-                dacId,
-                {
-                  auths: [
-                    {
-                      actor: electedCandidateToResign.name,
-                      permission: 'active',
-                    },
-                    {
-                      actor: shared.auth_account.name,
-                      permission: 'active',
-                    },
-                  ],
-                }
-              ),
-              'NEWPERIOD_NOT_ENOUGH_CANDIDATES'
+        context('with enough elected candidates to replace', async () => {
+          let electedCandidateToResign: Account;
+          it('should work', async () => {
+            electedCandidateToResign = existing_candidates[3];
+            // After this, 4 candidates will be left. This is still enough to satisfy the auth threshold.
+            await shared.daccustodian_contract.resigncust(
+              electedCandidateToResign.name,
+              dacId,
+              {
+                auths: [
+                  {
+                    actor: electedCandidateToResign.name,
+                    permission: 'active',
+                  },
+                  {
+                    actor: shared.auth_account.name,
+                    permission: 'active',
+                  },
+                ],
+              }
             );
           });
-          context(
-            'with enough elected candidates to replace a removed candidate',
-            async () => {
-              let electedCandidateToResign: Account;
-              before(async () => {
-                electedCandidateToResign = existing_candidates[3];
-                await debugPromise(
-                  shared.daccustodian_contract.votecust(
-                    regMembers[14].name,
-                    [
-                      existing_candidates[0].name,
-                      existing_candidates[1].name,
-                      existing_candidates[2].name,
-                      existing_candidates[5].name,
-                    ],
-                    dacId,
-                    { from: regMembers[14] }
-                  ),
-                  'voting for an extra candidate'
-                );
-              });
-              it('should succeed', async () => {
-                await shared.daccustodian_contract.resigncust(
+          it('should disable candidate', async () => {
+            const res = await shared.daccustodian_contract.candidatesTable({
+              scope: dacId,
+              limit: 20,
+              lowerBound: electedCandidateToResign.name,
+              upperBound: electedCandidateToResign.name,
+            });
+            chai
+              .expect(res.rows[0].candidate_name)
+              .to.equal(electedCandidateToResign.name);
+            chai.expect(res.rows[0].is_active).to.equal(0);
+          });
+        });
+
+        context(
+          'without enough elected candidates to replace a removed candidate',
+          async () => {
+            let electedCandidateToResign: Account;
+            before(async () => {
+              electedCandidateToResign = existing_candidates[2];
+            });
+            it('should fail with THRESHOLD_CANNOT_BE_MET error', async () => {
+              await assertEOSErrorIncludesMessage(
+                shared.daccustodian_contract.resigncust(
                   electedCandidateToResign.name,
                   dacId,
                   {
@@ -2341,23 +2347,12 @@ describe('Daccustodian', () => {
                       { actor: shared.auth_account.name, permission: 'active' },
                     ],
                   }
-                );
-              });
-              it('should disable candidate', async () => {
-                const res = await shared.daccustodian_contract.candidatesTable({
-                  scope: dacId,
-                  limit: 20,
-                  lowerBound: electedCandidateToResign.name,
-                  upperBound: electedCandidateToResign.name,
-                });
-                chai
-                  .expect(res.rows[0].candidate_name)
-                  .to.equal(electedCandidateToResign.name);
-                chai.expect(res.rows[0].is_active).to.equal(0);
-              });
-            }
-          );
-        });
+                ),
+                'ERR::THRESHOLD_CANNOT_BE_MET::'
+              );
+            });
+          }
+        );
       });
       context('for an unelected candidate', async () => {
         it('should fail with not current custodian error', async () => {
