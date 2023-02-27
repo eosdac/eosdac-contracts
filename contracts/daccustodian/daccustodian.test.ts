@@ -2348,7 +2348,8 @@ describe('Daccustodian', () => {
                     ],
                   }
                 ),
-                'ERR::THRESHOLD_CANNOT_BE_MET::'
+                'Invalid authority',
+                'action_validate_exception'
               );
             });
           }

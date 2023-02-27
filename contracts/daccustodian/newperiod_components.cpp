@@ -162,7 +162,6 @@ void daccustodian::add_auth_to_account(const name &accountToChange, const uint8_
     }
 
     if (weights.size() > 0) {
-        check(weights.size() >= threshold, "ERR::THRESHOLD_CANNOT_BE_MET::Not enough weights to meet threshold");
         const auto auth = eosiosystem::authority{.threshold = threshold, .keys = {}, .accounts = weights};
         action(permission_level{accountToChange, "owner"_n}, "eosio"_n, "updateauth"_n,
             std::make_tuple(accountToChange, permission, parent, auth))
