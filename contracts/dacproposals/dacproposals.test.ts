@@ -17,13 +17,14 @@ import { EosioToken } from '../external_contracts/eosio.token/eosio.token';
 
 import { SharedTestObjects } from '../TestHelpers';
 import * as chai from 'chai';
+import { expect } from 'chai';
 
 let shared: SharedTestObjects;
 
 enum VoteType {
-  vote_abstain = 0,
-  vote_approve,
-  vote_deny,
+  vote_abstain = '',
+  vote_approve = 'approve',
+  vote_deny = 'deny',
 }
 
 enum ProposalState {
@@ -35,22 +36,22 @@ enum ProposalState {
   ProposalStateExpired,
 }
 
-let proposalHash = 'jhsdfkjhsdfkjhkjsdf';
+const proposalHash = 'jhsdfkjhsdfkjhkjsdf';
 let planet: Account;
 
-describe('Dacproposals', () => {
+describe.only('Dacproposals', () => {
   let otherAccount: Account;
   let proposer1Account: Account;
   let arbitrator: Account;
   let propDacCustodians: Account[];
   let regMembers: Account[];
-  let dacId = 'popdac';
+  const dacId = 'popdac';
   let delegateeCustodian: Account;
-  let proposeApproveTheshold = 4;
-  let category = 3;
-  let newpropid = 'newpropid';
-  let notfoundpropid = 'notfoundid';
-  let otherfoundpropid = 'otherid';
+  const proposeApproveTheshold = 4;
+  const category = 3;
+  const newpropid = 'newpropid';
+  const notfoundpropid = 'notfoundid';
+  const otherfoundpropid = 'otherid';
   let eosiotoken: EosioToken;
 
   before(async () => {
@@ -94,7 +95,6 @@ describe('Dacproposals', () => {
               proposal_threshold: 7,
               finalize_threshold: 5,
               approval_duration: 130,
-              transfer_delay: 3,
             },
             dacId,
             { from: otherAccount }
@@ -109,7 +109,6 @@ describe('Dacproposals', () => {
             proposal_threshold: proposeApproveTheshold,
             finalize_threshold: 3,
             approval_duration: 130,
-            transfer_delay: 3,
           },
           dacId,
           { from: shared.auth_account }
@@ -117,13 +116,17 @@ describe('Dacproposals', () => {
       });
       it('should have correct config in config table', async () => {
         await assertRowsEqual(
-          shared.dacproposals_contract.configTable({ scope: dacId }),
+          shared.dacproposals_contract.configsTable({ scope: dacId }),
           [
             {
-              proposal_threshold: proposeApproveTheshold,
-              finalize_threshold: 3,
-              approval_duration: 130,
-              transfer_delay: 3,
+              data: [
+                { key: 'approval_duration', value: [130, 'uint32'] },
+                {
+                  key: 'proposal_threshold',
+                  value: [proposeApproveTheshold, 'uint8'],
+                },
+                { key: 'finalize_threshold', value: [3, 'uint8'] },
+              ],
             },
           ]
         );
@@ -488,7 +491,7 @@ describe('Dacproposals', () => {
     });
   });
   context('delegate vote', async () => {
-    let delgatepropid = 'delegateprop';
+    const delgatepropid = 'delegateprop';
     context('without valid auth', async () => {
       before(async () => {
         await shared.dacproposals_contract.createprop(
@@ -611,7 +614,7 @@ describe('Dacproposals', () => {
     });
   });
   context('comment', async () => {
-    let commentPropId = 'commentprop';
+    const commentPropId = 'commentprop';
     before(async () => {
       await shared.dacproposals_contract.createprop(
         proposer1Account.name,
@@ -874,7 +877,7 @@ describe('Dacproposals', () => {
     });
     context('start work with enough votes', async () => {
       before(async () => {
-        let eosLoadAction: EosioAction = {
+        const eosLoadAction: EosioAction = {
           account: 'eosio.token',
           name: 'transfer',
           authorization: [{ actor: 'eosio', permission: 'active' }],
@@ -885,7 +888,7 @@ describe('Dacproposals', () => {
             memo: 'initial funds for proposal payments',
           },
         };
-        let propLoadAction: EosioAction = {
+        const propLoadAction: EosioAction = {
           account: shared.dac_token_contract.account.name,
           name: 'transfer',
           authorization: [
@@ -924,10 +927,10 @@ describe('Dacproposals', () => {
       });
       context('Without delay', async () => {
         it('should populate the escrow table', async () => {
-          let proposalRow = await shared.dacescrow_contract.escrowsTable({
+          const proposalRow = await shared.dacescrow_contract.escrowsTable({
             scope: 'dacescrow',
           });
-          let row = proposalRow.rows[0];
+          const row = proposalRow.rows[0];
           chai.expect(row.key).to.eq(newpropid);
           chai.expect(row.sender).to.eq('treasury');
           chai.expect(row.receiver).to.eq(proposer1Account.name);
@@ -940,12 +943,14 @@ describe('Dacproposals', () => {
           chai.expect(row.arbitrator_pay.quantity).to.eq('10.0000 PROPDAC');
         });
         it('should update the proposal state to in_progress', async () => {
-          let proposalRow = await shared.dacproposals_contract.proposalsTable({
-            scope: dacId,
-            lowerBound: newpropid,
-            upperBound: newpropid,
-          });
-          let row = proposalRow.rows[0];
+          const proposalRow = await shared.dacproposals_contract.proposalsTable(
+            {
+              scope: dacId,
+              lowerBound: newpropid,
+              upperBound: newpropid,
+            }
+          );
+          const row = proposalRow.rows[0];
           chai.expect(row.proposal_id).to.eq(newpropid);
           chai.expect(row.arbitrator).to.eq(arbitrator.name);
           chai.expect(row.content_hash).to.eq(proposalHash);
@@ -979,14 +984,13 @@ describe('Dacproposals', () => {
       });
     });
     context('proposal with short expiry', async () => {
-      let propId = 'shortexpprop';
+      const propId = 'shortexpprop';
       it('should create a proposal with a short expiry', async () => {
         await shared.dacproposals_contract.updateconfig(
           {
             proposal_threshold: proposeApproveTheshold,
             finalize_threshold: 5,
             approval_duration: 3, // set short for expiry of the
-            transfer_delay: 3,
           },
           dacId,
           { from: shared.auth_account }
@@ -1213,7 +1217,7 @@ describe('Dacproposals', () => {
       });
     });
     context('proposal in pending approval state', async () => {
-      let wrongStateProp = 'wrongpropid';
+      const wrongStateProp = 'wrongpropid';
       before(async () => {
         await shared.dacproposals_contract.createprop(
           proposer1Account.name,
@@ -1268,7 +1272,7 @@ describe('Dacproposals', () => {
     });
 
     context('proposal not in pending_finalize state', async () => {
-      let wrongFinProp = 'wrongfinid';
+      const wrongFinProp = 'wrongfinid';
       before(async () => {
         await shared.dacproposals_contract.createprop(
           proposer1Account.name,
@@ -1431,12 +1435,7 @@ describe('Dacproposals', () => {
               );
             });
             it('escrow table should contain 0 row after finalize is done', async () => {
-              await assertRowCount(
-                shared.dacescrow_contract.escrowsTable({
-                  scope: 'dacescrow',
-                }),
-                0
-              );
+              await assertRowCount(shared.dacescrow_contract.escrowsTable(), 0);
             });
           });
         }
@@ -1445,7 +1444,7 @@ describe('Dacproposals', () => {
   });
 
   context('arbapprove', async () => {
-    let arbApproveId = 'arbapproveid';
+    const arbApproveId = 'arbapproveid';
     context('with invalid prop', async () => {
       it('should fail with proposal not found error', async () => {
         await assertEOSErrorIncludesMessage(
@@ -1466,7 +1465,6 @@ describe('Dacproposals', () => {
             proposal_threshold: proposeApproveTheshold,
             finalize_threshold: 5,
             approval_duration: 30,
-            transfer_delay: 3,
           },
           dacId,
           { from: shared.auth_account }
@@ -1572,7 +1570,7 @@ describe('Dacproposals', () => {
           });
         });
         it('It should prevent arbapprove with wrong state error.', async () => {
-          let escrowAction: EosioAction = {
+          const escrowAction: EosioAction = {
             account: shared.dacescrow_contract.account.name,
             name: 'approve',
             authorization: [{ actor: arbitrator.name, permission: 'active' }],
@@ -1581,7 +1579,7 @@ describe('Dacproposals', () => {
               approver: arbitrator.name,
             },
           };
-          let proposalAction: EosioAction = {
+          const proposalAction: EosioAction = {
             account: shared.dacproposals_contract.account.name,
             name: 'arbapprove',
             authorization: [{ actor: arbitrator.name, permission: 'active' }],
@@ -1634,7 +1632,7 @@ describe('Dacproposals', () => {
       context('After the escrow and proposal have been disputed', async () => {
         before(async () => {
           // Dispute the proposal for not getting approved.
-          let escrowAction: EosioAction = {
+          const escrowAction: EosioAction = {
             account: shared.dacescrow_contract.account.name,
             name: 'dispute',
             authorization: [
@@ -1644,7 +1642,7 @@ describe('Dacproposals', () => {
               key: arbApproveId,
             },
           };
-          let proposalAction: EosioAction = {
+          const proposalAction: EosioAction = {
             account: shared.dacproposals_contract.account.name,
             name: 'dispute',
             authorization: [
@@ -1660,7 +1658,7 @@ describe('Dacproposals', () => {
           });
         });
         it('It should succeed to allow arbapprove', async () => {
-          let escrowAction: EosioAction = {
+          const escrowAction: EosioAction = {
             account: shared.dacescrow_contract.account.name,
             name: 'approve',
             authorization: [{ actor: arbitrator.name, permission: 'active' }],
@@ -1669,7 +1667,7 @@ describe('Dacproposals', () => {
               approver: arbitrator.name,
             },
           };
-          let proposalAction: EosioAction = {
+          const proposalAction: EosioAction = {
             account: shared.dacproposals_contract.account.name,
             name: 'arbapprove',
             authorization: [{ actor: arbitrator.name, permission: 'active' }],
@@ -1714,7 +1712,7 @@ describe('Dacproposals', () => {
     });
   });
   context('arbdeny', async () => {
-    let arbDenyId = 'arbdenyid';
+    const arbDenyId = 'arbdenyid';
     context('with invalid prop', async () => {
       it('should fail with proposal not found error', async () => {
         await assertEOSErrorIncludesMessage(
@@ -1735,7 +1733,6 @@ describe('Dacproposals', () => {
             proposal_threshold: proposeApproveTheshold,
             finalize_threshold: 5,
             approval_duration: 30,
-            transfer_delay: 3,
           },
           dacId,
           { from: shared.auth_account }
@@ -1841,7 +1838,7 @@ describe('Dacproposals', () => {
           });
         });
         it('It should prevent arbdeny with wrong state error.', async () => {
-          let escrowAction: EosioAction = {
+          const escrowAction: EosioAction = {
             account: shared.dacescrow_contract.account.name,
             name: 'disapprove',
             authorization: [{ actor: arbitrator.name, permission: 'active' }],
@@ -1850,7 +1847,7 @@ describe('Dacproposals', () => {
               disapprover: arbitrator.name,
             },
           };
-          let proposalAction: EosioAction = {
+          const proposalAction: EosioAction = {
             account: shared.dacproposals_contract.account.name,
             name: 'arbdeny',
             authorization: [{ actor: arbitrator.name, permission: 'active' }],
@@ -1903,7 +1900,7 @@ describe('Dacproposals', () => {
         });
         before(async () => {
           // Dispute the proposal for not getting approved.
-          let escrowAction: EosioAction = {
+          const escrowAction: EosioAction = {
             account: shared.dacescrow_contract.account.name,
             name: 'dispute',
             authorization: [
@@ -1913,7 +1910,7 @@ describe('Dacproposals', () => {
               key: arbDenyId,
             },
           };
-          let proposalAction: EosioAction = {
+          const proposalAction: EosioAction = {
             account: shared.dacproposals_contract.account.name,
             name: 'dispute',
             authorization: [
@@ -1929,7 +1926,7 @@ describe('Dacproposals', () => {
           });
         });
         it('It should succeed to allow arbdeny', async () => {
-          let escrowAction: EosioAction = {
+          const escrowAction: EosioAction = {
             account: shared.dacescrow_contract.account.name,
             name: 'disapprove',
             authorization: [{ actor: arbitrator.name, permission: 'active' }],
@@ -1938,7 +1935,7 @@ describe('Dacproposals', () => {
               disapprover: arbitrator.name,
             },
           };
-          let proposalAction: EosioAction = {
+          const proposalAction: EosioAction = {
             account: shared.dacproposals_contract.account.name,
             name: 'arbdeny',
             authorization: [{ actor: arbitrator.name, permission: 'active' }],
@@ -1983,14 +1980,14 @@ describe('Dacproposals', () => {
     });
   });
   context('cancelwip tests', async () => {
-    let cancelpropid = 'cancelwipid';
+    const cancelpropid = 'cancelwipid';
+    const content_hash = 'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa';
     before(async () => {
       await shared.dacproposals_contract.updateconfig(
         {
           proposal_threshold: proposeApproveTheshold,
           finalize_threshold: 5,
           approval_duration: 30,
-          transfer_delay: 3,
         },
         dacId,
         { from: shared.auth_account }
@@ -2005,7 +2002,7 @@ describe('Dacproposals', () => {
           quantity: '10.0000 PROPDAC',
           contract: shared.dac_token_contract.name,
         },
-        'asdfasdfasdfasdfasdfasdfajjhjhjsdffdsa',
+        content_hash,
         cancelpropid, // proposal id
         category,
         130, // job duration
@@ -2077,7 +2074,7 @@ describe('Dacproposals', () => {
             );
           });
           it('should contain initial votes for proposal', async () => {
-            let result = await shared.dacproposals_contract.propvotesTable({
+            const result = await shared.dacproposals_contract.propvotesTable({
               scope: dacId,
               indexPosition: 3,
               keyType: 'i64',
@@ -2121,20 +2118,38 @@ describe('Dacproposals', () => {
               0
             );
           });
+          it('escrow table should contain expected rows', async () => {
+            const escrow = (await shared.dacescrow_contract.escrowsTable())
+              .rows[0];
+            expect(escrow.key).to.equal(cancelpropid);
+            expect(escrow.arb).to.equal(arbitrator.name);
+            expect(escrow.arbitrator_pay.quantity).to.equal('10.0000 PROPDAC');
+            expect(escrow.arbitrator_pay.contract).to.equal(
+              shared.dac_token_contract.name
+            );
+
+            expect(escrow.receiver).to.equal(proposer1Account.name);
+            expect(escrow.sender).to.equal(shared.treasury_account.name);
+            expect(escrow.receiver_pay.quantity).to.equal('106.0000 EOS');
+            expect(escrow.receiver_pay.contract).to.equal('eosio.token');
+            expect(escrow.memo).to.equal(
+              `${proposer1Account.name}:${cancelpropid}:${content_hash}`
+            );
+            expect(escrow.disputed).to.be.false;
+            expect(escrow.expires).to.equalDate(new Date());
+          });
         });
-        it('escrow table should contain expected rows', async () => {});
       });
     });
   });
   context('cancelprop tests', async () => {
-    let cancelpropid = 'cancelpropid';
+    const cancelpropid = 'cancelpropid';
     before(async () => {
       await shared.dacproposals_contract.updateconfig(
         {
           proposal_threshold: proposeApproveTheshold,
           finalize_threshold: 5,
           approval_duration: 30,
-          transfer_delay: 3,
         },
         dacId,
         { from: shared.auth_account }
@@ -2225,13 +2240,15 @@ describe('Dacproposals', () => {
               0
             );
           });
+          it('escrow table should contain expected rows', async () => {
+            await assertRowCount(shared.dacescrow_contract.escrowsTable(), 1);
+          });
         });
-        it('escrow table should contain expected rows', async () => {});
       });
     });
   });
   context('delegate categories', async () => {
-    let propId = 'delegateid2';
+    const propId = 'delegateid2';
     context(
       'created proposal but still needing one vote for approval',
       async () => {
@@ -2241,7 +2258,6 @@ describe('Dacproposals', () => {
               proposal_threshold: proposeApproveTheshold,
               finalize_threshold: 5,
               approval_duration: 130,
-              transfer_delay: 3,
             },
             dacId,
             { from: shared.auth_account }
@@ -2450,7 +2466,7 @@ describe('Dacproposals', () => {
     context(
       'created a proposal but still need 2 votes for approval for complex case',
       async () => {
-        let propId = 'complexprop';
+        const propId = 'complexprop';
         before(async () => {
           await shared.dacproposals_contract.createprop(
             proposer1Account.name,

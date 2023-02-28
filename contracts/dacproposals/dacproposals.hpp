@@ -14,22 +14,32 @@ using namespace std;
 
 namespace eosdac {
 
+    static constexpr eosio::name VOTE_PROP_APPROVE{"propapprove"};
+    static constexpr eosio::name VOTE_PROP_DENY{"propdeny"};
+    static constexpr eosio::name VOTE_FINAL_APPROVE{"finalapprove"};
+    static constexpr eosio::name VOTE_FINAL_DENY{"finaldeny"};
+
+    static constexpr eosio::name VOTE_ABSTAIN{""};
+    static constexpr eosio::name VOTE_APPROVE{"approve"};
+    static constexpr eosio::name VOTE_DENY{"deny"};
+
     CONTRACT dacproposals : public contract {
-        enum VoteTypePublic : uint8_t {
-            vote_abstain = 0,
-            vote_approve,
-            vote_deny,
+        enum VoteTypePublic : uint64_t {
+            vote_abstain = VOTE_ABSTAIN.value,
+            vote_approve = VOTE_APPROVE.value,
+            vote_deny    = VOTE_DENY.value,
         };
-        enum VoteType : uint8_t {
-            none = 0,
+
+        enum VoteType : uint64_t {
+            none = VOTE_ABSTAIN.value,
             // a vote type to indicate a custodian's approval of a worker proposal.
-            proposal_approve,
+            proposal_approve = VOTE_PROP_APPROVE.value,
             // a vote type to indicate a custodian's denial of a worker proposal.
-            proposal_deny,
+            proposal_deny = VOTE_PROP_DENY.value,
             // a vote type to indicate a custodian's acceptance of a worker proposal as completed.
-            finalize_approve,
+            finalize_approve = VOTE_FINAL_APPROVE.value,
             // a vote type to indicate a custodian's rejection of a worker proposal as completed.
-            finalize_deny
+            finalize_deny = VOTE_FINAL_DENY.value
         };
 
         enum ProposalState : uint8_t {
@@ -79,14 +89,21 @@ namespace eosdac {
             eosio::indexed_by<"arbitrator"_n, eosio::const_mem_fun<proposal, uint64_t, &proposal::arbitrator_key>>,
             eosio::indexed_by<"category"_n, eosio::const_mem_fun<proposal, uint64_t, &proposal::category_key>>>;
 
-        TABLE config {
-            uint16_t proposal_threshold = 4;
-            uint16_t finalize_threshold = 1;
+        struct config {
+            uint8_t  proposal_threshold = 4;
+            uint8_t  finalize_threshold = 1;
             uint32_t approval_duration  = 30 * 24 * 60 * 60;
-            uint32_t transfer_delay     = 60 * 60;
         };
 
-        using configs_table = eosio::singleton<"config"_n, config>;
+        // using configs_table = eosio::singleton<"config"_n, config>;
+
+        // clang-format off
+        SINGLETON(configs, dacproposals, 
+            PROPERTY(uint8_t, proposal_threshold); 
+            PROPERTY(uint8_t, finalize_threshold);
+            PROPERTY(uint32_t, approval_duration); 
+        );
+        // clang-format on
 
         dacproposals(name receiver, name code, datastream<const char *> ds) : contract(receiver, code, ds) {}
 
@@ -94,8 +111,8 @@ namespace eosdac {
             extended_asset arbitrator_pay, string content_hash, name id, uint16_t category, uint32_t job_duration,
             name dac_id);
 
-        ACTION voteprop(name custodian, name proposal_id, uint8_t vote, name dac_id);
-        ACTION votepropfin(name custodian, name proposal_id, uint8_t vote, name dac_id);
+        ACTION voteprop(name custodian, name proposal_id, name vote, name dac_id);
+        ACTION votepropfin(name custodian, name proposal_id, name vote, name dac_id);
 
         ACTION delegatevote(name custodian, name proposal_id, name delegatee_custodian, name dac_id);
         ACTION delegatecat(name custodian, uint64_t category, name delegatee_custodian, name dac_id);
@@ -110,7 +127,7 @@ namespace eosdac {
         ACTION dispute(name proposal_id, name dac_id);
         ACTION comment(name commenter, name proposal_id, string comment, string comment_category, name dac_id);
         ACTION updateconfig(config new_config, name dac_id);
-        ACTION clearconfig(name dac_id);
+        // ACTION clearconfig(name dac_id);
         ACTION clearexpprop(name proposal_id, name dac_id);
         ACTION updpropvotes(name proposal_id, name dac_id);
 
@@ -120,14 +137,14 @@ namespace eosdac {
         void    check_proposal_can_start(name proposal_id, name dac_id);
         int16_t count_votes(proposal prop, VoteType vote_type, name dac_id);
         void    arbitrator_rule_on_proposal(name arbitrator, name proposal_id, name dac_id);
-        void    _voteprop(name custodian, name proposal_id, uint8_t vote, name dac_id);
+        void    _voteprop(name custodian, name proposal_id, name vote, name dac_id);
 
         TABLE proposalvote {
             uint64_t           vote_id;
             name               voter;
             optional<name>     proposal_id;
             optional<uint64_t> category_id;
-            optional<uint8_t>  vote;
+            optional<name>     vote;
             optional<name>     delegatee;
             optional<string>   comment_hash;
 
@@ -162,12 +179,5 @@ namespace eosdac {
                 eosio::const_mem_fun<proposalvote, uint128_t, &proposalvote::get_prop_and_voter>>,
             indexed_by<"catandvoter"_n,
                 eosio::const_mem_fun<proposalvote, uint128_t, &proposalvote::get_category_and_voter>>>;
-
-        config current_configs(name dac_id) {
-            configs_table configs(_self, dac_id.value);
-            config        conf = configs.get_or_default(config());
-            configs.set(conf, _self);
-            return conf;
-        }
     };
 } // namespace eosdac

@@ -35,8 +35,9 @@ namespace eosdac {
         auto treasury = dac.account_for_type(dacdir::TREASURY);
         auto auth     = dac.owner;
         check(arbitrator != auth && arbitrator != treasury, "Arbitrator must be a third party");
+        auto current_configs = configs{get_self(), dac_id};
 
-        uint32_t approval_duration = current_configs(dac_id).approval_duration;
+        uint32_t approval_duration = current_configs.get_approval_duration();
 
         proposals.emplace(proposer, [&](proposal &p) {
             p.proposal_id    = id;
@@ -52,39 +53,40 @@ namespace eosdac {
         });
     }
 
-    ACTION dacproposals::voteprop(name custodian, name proposal_id, uint8_t vote, name dac_id) {
-        switch (vote) {
+    ACTION dacproposals::voteprop(name custodian, name proposal_id, name vote, name dac_id) {
+        switch (VoteTypePublic{vote.value}) {
         case vote_approve:
-            _voteprop(custodian, proposal_id, proposal_approve, dac_id);
+            _voteprop(custodian, proposal_id, VOTE_PROP_APPROVE, dac_id);
             break;
         case vote_deny:
-            _voteprop(custodian, proposal_id, proposal_deny, dac_id);
+            _voteprop(custodian, proposal_id, VOTE_PROP_DENY, dac_id);
             break;
         case vote_abstain:
-            _voteprop(custodian, proposal_id, none, dac_id);
+            _voteprop(custodian, proposal_id, ""_n, dac_id);
             break;
         default:
-            check(false, "voteprop called with invalid vote type %s", to_string(vote));
+            check(false, "voteprop called with invalid vote type %s. Allowed %s or %s", vote, VOTE_APPROVE, VOTE_DENY);
         }
     }
 
-    ACTION dacproposals::votepropfin(name custodian, name proposal_id, uint8_t vote, name dac_id) {
-        switch (vote) {
+    ACTION dacproposals::votepropfin(name custodian, name proposal_id, name vote, name dac_id) {
+        switch (VoteTypePublic{vote.value}) {
         case vote_approve:
-            _voteprop(custodian, proposal_id, finalize_approve, dac_id);
+            _voteprop(custodian, proposal_id, VOTE_FINAL_APPROVE, dac_id);
             break;
         case vote_deny:
-            _voteprop(custodian, proposal_id, finalize_deny, dac_id);
+            _voteprop(custodian, proposal_id, VOTE_FINAL_DENY, dac_id);
             break;
         case vote_abstain:
-            _voteprop(custodian, proposal_id, none, dac_id);
+            _voteprop(custodian, proposal_id, ""_n, dac_id);
             break;
         default:
-            check(false, "votepropfin called with invalid vote type %s", to_string(vote));
+            check(
+                false, "votepropfin called with invalid vote type %s. Allowed %s or %s", vote, VOTE_APPROVE, VOTE_DENY);
         }
     }
 
-    void dacproposals::_voteprop(name custodian, name proposal_id, uint8_t vote, name dac_id) {
+    void dacproposals::_voteprop(name custodian, name proposal_id, name vote, name dac_id) {
         require_auth(custodian);
 
         auto auth_account = dacdir::dac_for_id(dac_id).owner;
@@ -100,12 +102,12 @@ namespace eosdac {
         case ProposalStatePending_approval:
         case ProposalStateHas_enough_approvals_votes:
             check(prop.has_not_expired(), "ERR::PROPOSAL_EXPIRED::Proposal has expired.");
-            check(vote == proposal_approve || vote == proposal_deny,
+            check(vote == VOTE_PROP_APPROVE || vote == VOTE_PROP_DENY,
                 "ERR::VOTEPROP_INVALID_VOTE::Invalid vote for the current proposal state.");
             break;
         case ProposalStatePending_finalize:
         case ProposalStateHas_enough_finalize_votes:
-            check(vote == finalize_approve || vote == finalize_deny,
+            check(vote == VOTE_FINAL_APPROVE || vote == VOTE_FINAL_DENY,
                 "ERR::VOTEPROP_INVALID_VOTE::Invalid vote for the current proposal state.");
             break;
         default:
@@ -281,8 +283,9 @@ namespace eosdac {
         int16_t approved_count = count_votes(prop, finalize_approve, dac_id);
 
         print_f("Worker proposal % for finalizing with: % votes\n", proposal_id.value, approved_count);
+        auto current_configs = configs{get_self(), dac_id};
 
-        check(approved_count >= current_configs(dac_id).finalize_threshold,
+        check(approved_count >= current_configs.get_finalize_threshold(),
             "ERR::FINALIZE_INSUFFICIENT_VOTES::Insufficient votes on worker proposal to be finalized.");
 
         transferfunds(prop, dac_id);
@@ -370,20 +373,21 @@ namespace eosdac {
 
         auto auth_account = dacdir::dac_for_id(dac_id).owner;
         require_auth(auth_account);
-
-        configs_table configs(_self, dac_id.value);
-        configs.set(new_config, auth_account);
+        auto current_configs = configs{get_self(), dac_id};
+        current_configs.set_proposal_threshold(new_config.proposal_threshold);
+        current_configs.set_finalize_threshold(new_config.finalize_threshold);
+        current_configs.set_approval_duration(new_config.approval_duration);
     }
 
-    ACTION dacproposals::clearconfig(name dac_id) {
-        auto auth_account = dacdir::dac_for_id(dac_id).owner;
-        require_auth(auth_account);
+    // ACTION dacproposals::clearconfig(name dac_id) {
+    //     auto auth_account = dacdir::dac_for_id(dac_id).owner;
+    //     require_auth(auth_account);
 
-        configs_table configs(_self, dac_id.value);
-        if (configs.exists()) {
-            configs.remove();
-        }
-    }
+    //     configs_table configs(_self, dac_id.value);
+    //     if (configs.exists()) {
+    //         configs.remove();
+    //     }
+    // }
 
     ACTION dacproposals::clearexpprop(name proposal_id, name dac_id) {
         proposal_table proposals(_self, dac_id.value);
@@ -409,7 +413,7 @@ namespace eosdac {
                 newPropState = ProposalStateExpired;
             } else {
                 approved_count = count_votes(prop, proposal_approve, dac_id);
-                newPropState   = (approved_count >= current_configs(dac_id).proposal_threshold)
+                newPropState   = (approved_count >= configs(get_self(), dac_id).get_proposal_threshold())
                                      ? ProposalStateHas_enough_approvals_votes
                                      : ProposalStatePending_approval;
             }
@@ -417,7 +421,7 @@ namespace eosdac {
         case ProposalStatePending_finalize:
         case ProposalStateHas_enough_finalize_votes:
             approved_count = count_votes(prop, finalize_approve, dac_id);
-            newPropState   = (approved_count >= current_configs(dac_id).finalize_threshold)
+            newPropState   = (approved_count >= configs(get_self(), dac_id).get_finalize_threshold())
                                  ? ProposalStateHas_enough_finalize_votes
                                  : ProposalStatePending_finalize;
             break;
@@ -431,9 +435,9 @@ namespace eosdac {
 
     void dacproposals::transferfunds(const proposal &prop, name dac_id) {
         proposal_table proposals(_self, dac_id.value);
-        config         configs  = current_configs(dac_id);
-        auto           treasury = dacdir::dac_for_id(dac_id).account_for_type(dacdir::TREASURY);
-        auto           escrow   = dacdir::dac_for_id(dac_id).account_for_type(dacdir::ESCROW);
+        // auto           current_configs = configs(get_self(), dac_id);
+        auto treasury = dacdir::dac_for_id(dac_id).account_for_type(dacdir::TREASURY);
+        auto escrow   = dacdir::dac_for_id(dac_id).account_for_type(dacdir::ESCROW);
 
         eosio::action(eosio::permission_level{treasury, "escrow"_n}, escrow, "approve"_n,
             make_tuple(prop.proposal_id.value, treasury))
@@ -494,7 +498,7 @@ namespace eosdac {
                 // Assign vote to either a direct approved vote or a delegated vote.
                 if (direct_vote_itr->delegatee) {
                     delegated_proposal_votes[direct_vote_itr->delegatee.value()]++;
-                } else if (direct_vote_itr->vote && direct_vote_itr->vote.value() == vote_type) {
+                } else if (direct_vote_itr->vote && direct_vote_itr->vote.value() == name{vote_type}) {
                     approval_proposal_votes.insert(direct_vote_itr->voter);
                 }
                 direct_vote_itr++;
@@ -518,7 +522,7 @@ namespace eosdac {
         // Find the difference between current custodians and the ones that have already voted to avoid double votes.
         std::vector<name> nonvoting_custodians(current_custodians.size());
         auto              end_itr = std::set_difference(current_custodians.begin(), current_custodians.end(),
-                         voted_custodians.begin(), voted_custodians.end(), nonvoting_custodians.begin());
+            voted_custodians.begin(), voted_custodians.end(), nonvoting_custodians.begin());
 
         nonvoting_custodians.resize(end_itr - nonvoting_custodians.begin());
 
@@ -578,11 +582,11 @@ namespace eosdac {
         int16_t approved_count = count_votes(prop, proposal_approve, dac_id);
 
         print_f("Worker proposal % to start work with: % votes\n", proposal_id.value, approved_count);
-        config configs = current_configs(dac_id);
 
-        check(approved_count >= configs.proposal_threshold,
+        auto proposal_threshold = configs(get_self(), dac_id).get_proposal_threshold();
+        check(approved_count >= proposal_threshold,
             "ERR::STARTWORK_INSUFFICIENT_VOTES::Insufficient votes on worker proposal. Has %s but needs %s.",
-            approved_count, configs.proposal_threshold);
+            approved_count, proposal_threshold);
     }
 
     void dacproposals::arbitrator_rule_on_proposal(name arbitrator, name proposal_id, name dac_id) {
