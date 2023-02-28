@@ -79,10 +79,11 @@ void daccustodian::allocateCustodians(name dac_id) {
 
     // Empty the custodians table to get a full set of new custodians based on the current votes.
     auto cust_itr = custodians.begin();
-    while (cust_itr != custodians.end()) {
-        cust_itr = custodians.erase(cust_itr);
+    if (pending_custs.begin() != pending_custs.end()) {
+        while (cust_itr != custodians.end()) {
+            cust_itr = custodians.erase(cust_itr);
+        }
     }
-
     // Move pending custodians into custodians1
     auto pending_cust_itr = pending_custs.begin();
     while (pending_cust_itr != pending_custs.end()) {
