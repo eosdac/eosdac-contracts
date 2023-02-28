@@ -62,49 +62,53 @@ void daccustodian::assertPeriodTime(const dacglobals &globals) {
         globals.get_periodlength(), periodBlockCount);
 }
 
-void daccustodian::allocateCustodians(bool early_election, name dac_id) {
+void daccustodian::allocateCustodians(name dac_id) {
 
-    eosio::print("Configure custodians for the next period.");
+    // Configure custodians for the next period.
 
-    custodians_table custodians(get_self(), dac_id.value);
+    custodians_table         custodians(get_self(), dac_id.value);
+    pending_custodians_table pending_custs(get_self(), dac_id.value);
+
     candidates_table registered_candidates(get_self(), dac_id.value);
     const auto       globals      = dacglobals{get_self(), dac_id};
     name             auth_account = dacdir::dac_for_id(dac_id).owner;
     auto             byvotes      = registered_candidates.get_index<"bydecayed"_n>();
 
-    auto cand_itr = byvotes.begin();
+    const auto electcount = S{globals.get_numelected()};
+    auto       cand_itr   = byvotes.begin();
 
-    const auto electcount            = S{globals.get_numelected()};
-    auto       currentCustodianCount = S{uint8_t{0}};
-    auto       newCustodianCount     = S{uint8_t{0}};
-
-    if (!early_election) {
-        eosio::print("Empty the custodians table to get a full set of new custodians based on the current votes.");
-        auto cust_itr = custodians.begin();
+    // Empty the custodians table to get a full set of new custodians based on the current votes.
+    auto cust_itr = custodians.begin();
+    if (pending_custs.begin() != pending_custs.end()) {
         while (cust_itr != custodians.end()) {
-            const auto &reg_candidate = registered_candidates.get(cust_itr->cust_name.value,
-                "ERR::NEWPERIOD_EXPECTED_CAND_NOT_FOUND::Corrupt data: Trying to set a lockup delay on candidate leaving office.");
-            registered_candidates.modify(reg_candidate, same_payer, [&](candidate &c) {
-                eosio::print("Lockup stake for release delay.");
-            });
             cust_itr = custodians.erase(cust_itr);
         }
     }
-
-    eosio::print("Select only enough candidates to fill the gaps.");
-    for (auto itr = custodians.begin(); itr != custodians.end(); itr++) {
-        currentCustodianCount++;
+    // Move pending custodians into custodians1
+    auto pending_cust_itr = pending_custs.begin();
+    while (pending_cust_itr != pending_custs.end()) {
+        custodians.emplace(auth_account, [&](custodian &c) {
+            c.cust_name           = pending_cust_itr->cust_name;
+            c.requestedpay        = pending_cust_itr->requestedpay;
+            c.total_vote_power    = pending_cust_itr->total_vote_power;
+            c.rank                = pending_cust_itr->rank;
+            c.number_voters       = pending_cust_itr->number_voters;
+            c.avg_vote_time_stamp = pending_cust_itr->avg_vote_time_stamp;
+        });
+        pending_cust_itr = pending_custs.erase(pending_cust_itr);
     }
+
+    auto currentCustodianCount = S{uint8_t{0}};
 
     while (currentCustodianCount < electcount) {
         check(cand_itr != byvotes.end() && cand_itr->total_vote_power > 0,
             "ERR::NEWPERIOD_NOT_ENOUGH_CANDIDATES::There are not enough eligible candidates to run new period without causing potential lock out permission structures for this DAC.");
 
-        //  If the candidate is inactive or is already a custodian skip to the next one.
-        if (!cand_itr->is_active || custodians.find(cand_itr->candidate_name.value) != custodians.end()) {
+        // If the candidate is inactive or is already a pending custodian skip to the next one.
+        if (!cand_itr->is_active) {
             cand_itr++;
         } else {
-            custodians.emplace(auth_account, [&](custodian &c) {
+            pending_custs.emplace(auth_account, [&](custodian &c) {
                 c.cust_name           = cand_itr->candidate_name;
                 c.requestedpay        = cand_itr->requestedpay;
                 c.total_vote_power    = cand_itr->total_vote_power;
@@ -113,11 +117,20 @@ void daccustodian::allocateCustodians(bool early_election, name dac_id) {
                 c.avg_vote_time_stamp = cand_itr->avg_vote_time_stamp;
             });
 
-            newCustodianCount++;
             currentCustodianCount++;
             cand_itr++;
         }
     }
+
+    auto newCustodianCount = S{uint8_t{0}};
+
+    // Find how many new custodians do not exist in the current custodians.
+    for (auto pending_itr = pending_custs.begin(); pending_itr != pending_custs.end(); pending_itr++) {
+        if (custodians.find(pending_itr->cust_name.value) == custodians.end()) {
+            newCustodianCount++;
+        }
+    }
+
     if (newCustodianCount >= globals.get_auth_threshold_high()) {
         action(permission_level{DACDIRECTORY_CONTRACT, "govmanage"_n}, DACDIRECTORY_CONTRACT, "hdlegovchg"_n,
             std::make_tuple(dac_id))
@@ -149,10 +162,12 @@ void daccustodian::add_auth_to_account(const name &accountToChange, const uint8_
         std::sort(weights.begin(), weights.end());
     }
 
-    const auto auth = eosiosystem::authority{.threshold = threshold, .keys = {}, .accounts = weights};
-    action(permission_level{accountToChange, "owner"_n}, "eosio"_n, "updateauth"_n,
-        std::make_tuple(accountToChange, permission, parent, auth))
-        .send();
+    if (weights.size() > 0) {
+        const auto auth = eosiosystem::authority{.threshold = threshold, .keys = {}, .accounts = weights};
+        action(permission_level{accountToChange, "owner"_n}, "eosio"_n, "updateauth"_n,
+            std::make_tuple(accountToChange, permission, parent, auth))
+            .send();
+    }
 }
 
 void daccustodian::add_all_auths(const name            &accountToChange,
@@ -207,8 +222,8 @@ ACTION daccustodian::claimbudget(const name &dac_id) {
     // percentage value is scaled by 100, so to calculate percent we need to divide by (100 * 100 == 10000)
     const auto allocation_for_period = treasury_balance * budget_percentage / 10000;
 
-    // if the calculated allocation_for_period is very small round it up to 10 TLM or the full treasury balance to avoid
-    // dust transactions for low percentage/balances in treasury.
+    // if the calculated allocation_for_period is very small round it up to 10 TLM or the full treasury balance to
+    // avoid dust transactions for low percentage/balances in treasury.
     const auto rounded_allocation_for_period = std::max(allocation_for_period, asset{100000, symbol{"TLM", 4}});
 
     // Because this has been rounded up, ensure we don't attempt to transfer more than the treasury balance.
@@ -298,13 +313,13 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
 
     globals.set_met_initial_votes_threshold(true);
 
-    // Distribute Pay is called before allocateCustodians is called to ensure custodians are paid for the just passed
-    // period. This also implies custodians should not be paid the first time this is called.
-    // Distribute pay to the current custodians.
+    // Distribute Pay is called before allocateCustodians is called to ensure custodians are paid for the just
+    // passed period. This also implies custodians should not be paid the first time this is called. Distribute pay
+    // to the current custodians.
     distributeMeanPay(dac_id);
 
     // Set custodians for the next period.
-    allocateCustodians(false, dac_id);
+    allocateCustodians(dac_id);
 
     // Set the auths on the dacauthority account
     setMsigAuths(dac_id);
