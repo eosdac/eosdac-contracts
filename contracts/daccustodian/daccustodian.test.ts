@@ -1614,6 +1614,72 @@ describe('Daccustodian', () => {
     });
   });
 
+  context(
+    'First Newperiod with existing custodians after pending change',
+    async () => {
+      let dacId = 'pendingdac';
+      let regMembers: Account[];
+      let newUser1: Account;
+      let candidates: Account[];
+      let number_of_custodians = 5;
+      before(async () => {
+        await shared.initDac(dacId, '4,PENDDAC', '1000000.0000 PENDDAC');
+        await shared.updateconfig(dacId, '12.0000 PENDDAC');
+        await shared.dac_token_contract.stakeconfig(
+          { enabled: true, min_stake_time: 5, max_stake_time: 20 },
+          '4,PENDDAC',
+          { from: shared.auth_account }
+        );
+        newUser1 = await debugPromise(
+          AccountManager.createAccount(),
+          'create account for capture stake'
+        );
+
+        // With 16 voting members with 2000 each and a threshold of 31 percent
+        // this will total to 320_000 vote value which will be enough to start the DAC
+        regMembers = await shared.getRegMembers(dacId, '20000.0000 PENDDAC');
+
+        candidates = await shared.getStakeObservedCandidates(
+          dacId,
+          '12.0000 PENDDAC'
+        );
+
+        await shared.daccustodian_contract.tstaddcust(candidates[0], dacId);
+        await shared.daccustodian_contract.tstaddcust(candidates[1], dacId);
+        await shared.daccustodian_contract.tstaddcust(candidates[2], dacId);
+        await shared.daccustodian_contract.tstaddcust(candidates[3], dacId);
+        await shared.daccustodian_contract.tstaddcust(candidates[4], dacId);
+
+        await shared.voteForCustodians(regMembers, candidates, dacId);
+      });
+      it('should succeed with custodians in pendingcusts', async () => {
+        await shared.daccustodian_contract.newperiod(
+          'initial new period',
+          dacId,
+          {
+            from: regMembers[0], // Could be run by anyone.
+          }
+        );
+
+        await assertRowCount(
+          shared.daccustodian_contract.pendingcustsTable({
+            scope: dacId,
+            limit: 20,
+          }),
+          number_of_custodians
+        );
+      });
+      it('should leave existing custodians since this is the first election after the change', async () => {
+        await assertRowCount(
+          shared.daccustodian_contract.custodians1Table({
+            scope: dacId,
+            limit: 20,
+          }),
+          5
+        );
+      });
+    }
+  );
   context('New Period Elections', async () => {
     let dacId = 'nperidac';
     let regMembers: Account[];
