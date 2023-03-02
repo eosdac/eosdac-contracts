@@ -219,12 +219,13 @@ namespace eosdac {
     }
 
     ACTION dacproposals::startwork(name proposal_id, name dac_id) {
-        check_proposal_can_start(proposal_id, dac_id);
 
         auto        proposals = proposal_table{get_self(), dac_id.value};
         const auto &prop      = proposals.get(proposal_id.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found.");
 
         require_auth(prop.proposer);
+        check_proposal_can_start(proposal_id, dac_id);
+
         assertValidMember(prop.proposer, dac_id);
 
         // print("Transfer funds to escrow account");
