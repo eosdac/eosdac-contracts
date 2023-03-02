@@ -80,6 +80,10 @@ describe.only('Dacproposals', () => {
     await shared.daccustodian_contract.newperiod('propDac', dacId, {
       from: regMembers[0],
     });
+    await sleep(6_000);
+    await shared.daccustodian_contract.newperiod('propDac', dacId, {
+      from: regMembers[0],
+    });
 
     otherAccount = regMembers[1];
     arbitrator = regMembers[2];
