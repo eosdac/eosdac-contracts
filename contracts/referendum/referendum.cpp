@@ -41,56 +41,59 @@ void referendum::updateconfig(config_item config, name dac_id) {
     config.save(get_self(), dac_id, auth_account);
 }
 
-void referendum::propose(name proposer, name referendum_id, uint8_t type, uint8_t voting_type, string title,
+void referendum::propose(name proposer, name referendum_id, name type_name, name voting_type_name, string title,
     string content, name dac_id, vector<action> acts) {
 
     checkDAC(dac_id);
     require_auth(proposer);
     assertValidMember(proposer, dac_id);
+    auto ref_type    = referendum_type(type_name.value);
+    auto voting_type = count_type(voting_type_name.value);
 #if ENABLE_BINDING_VOTE == 0
-    check(type != vote_type::TYPE_BINDING,
+    check(ref_type != referendum_type::TYPE_BINDING,
         "ERR::CONTRACT_NOT_COMPILED::Contract was not compiled to allow binding votes");
 #endif
 
     auto config = config_item::get_current_configs(get_self(), dac_id);
-    check(config.allow_vote_type.at(type), "ERR::VOTING_TYPE_NOT_ALLOWED::This type of vote is not allowed");
+    check(config.allow_vote_type.at(type_name), "ERR::VOTING_TYPE_NOT_ALLOWED::This type of vote is not allowed");
 
-    check(type < vote_type::TYPE_INVALID, "ERR::TYPE_INVALID::Referendum type is invalid");
-    check(voting_type < count_type::COUNT_INVALID, "ERR::COUNT_TYPE_INVALID::Referendum vote counting type is invalid");
+    switch (ref_type) {
+    case referendum_type::TYPE_BINDING:
+    case referendum_type::TYPE_SEMI_BINDING:
+        check(hasAuth(acts), "ERR::PERMS_FAILED::The authorization supplied with the action does not pass");
+        check(acts.size() > 0, "ERR::TYPE_REQUIRES_ACTION::This type of referendum requires an action to be executed");
+        break;
+    case referendum_type::TYPE_OPINION:
+        check(acts.size() == 0, "ERR::CANT_SEND_ACT::Can't supply an action with opinion based referendum");
+        break;
+    default:
+        check(false, "ERR::TYPE_INVALID::Referendum type is invalid");
+    };
+
+    string msg;
+
+    switch (voting_type) {
+    case count_type::COUNT_ACCOUNT:
+        msg = "ERR::ACCOUNT_VOTE_NOT_ALLOWED::Account vote is not allowed for this type of referendum";
+        check(config.allow_per_account_voting.at(name{ref_type}), msg);
+        break;
+    case count_type::COUNT_TOKEN:
+        break;
+    default:
+        check(false, "ERR::COUNT_TYPE_INVALID::Referendum vote counting type is invalid");
+    };
 
     // Get transaction hash for content_ref and next id
     auto     size   = transaction_size();
-    char    *buffer = (char *)(512 < size ? malloc(size) : alloca(size));
+    char *   buffer = (char *)(512 < size ? malloc(size) : alloca(size));
     uint32_t read   = read_transaction(buffer, size);
     check(size == read, "ERR::READ_TRANSACTION_FAILED::read_transaction failed");
     checksum256 trx_id = sha256(buffer, read);
 
-    // Calculate a referendum id
-    //    name referendum_id = nextID(trx_id);
-
-    check(type < vote_type::TYPE_INVALID, "ERR::TYPE_INVALID::Referendum type is invalid");
-    check(voting_type < count_type::COUNT_INVALID, "ERR::COUNT_TYPE_INVALID::Referendum vote counting type is invalid");
-
-    // Do checks if it is account based voting
-    if (voting_type == count_type::COUNT_ACCOUNT) {
-        string msg = "ERR::ACCOUNT_VOTE_NOT_ALLOWED::Account vote is not allowed for this type of referendum";
-        check(config.allow_per_account_voting.at(type), msg);
-    }
-
-    // If the type is binding or semi binding then it must contain the action
-    if (acts.size() == 0) {
-        check(type == vote_type::TYPE_OPINION,
-            "ERR::TYPE_REQUIRES_ACTION::This type of referendum requires an action to be executed");
-    } else {
-        check(
-            type < vote_type::TYPE_OPINION, "ERR::CANT_SEND_ACT::Can't supply an action with opinion based referendum");
-        check(hasAuth(acts), "ERR::PERMS_FAILED::The authorization supplied with the action does not pass");
-    }
-
     // Check the fee has been paid
     deposits_table deposits(get_self(), get_self().value);
     auto           dep          = deposits.find(proposer.value);
-    extended_asset fee_required = config.fee[type];
+    extended_asset fee_required = config.fee[name{ref_type}];
     if (fee_required.quantity.amount > 0) {
         check(dep != deposits.end(),
             "ERR::FEE_REQUIRED::A fee is required to propose this type of referendum.  Please send the correct fee to this contract and try again.");
@@ -118,30 +121,27 @@ void referendum::propose(name proposer, name referendum_id, uint8_t type, uint8_
     uint32_t time_now = current_time_point().sec_since_epoch();
     //    config_item config = config_item::get_current_configs(get_self(), dac_id);
     uint32_t expiry_time = time_now + config.duration;
-    //    uint32_t expiry_time = time_now;
 
     // Save to database
     referenda_table referenda(get_self(), dac_id.value);
     referenda.emplace(proposer, [&](referendum_data &r) {
-        std::map<uint8_t, uint64_t> token_votes = {
-            {vote_choice::VOTE_YES, 0}, {vote_choice::VOTE_NO, 0}, {vote_choice::VOTE_ABSTAIN, 0}};
-        std::map<uint8_t, uint64_t> account_votes = {
-            {vote_choice::VOTE_YES, 0}, {vote_choice::VOTE_NO, 0}, {vote_choice::VOTE_ABSTAIN, 0}};
+        std::map<name, uint64_t> empty_votes = {{VOTE_PROP_YES, 0}, {VOTE_PROP_NO, 0}, {VOTE_PROP_ABSTAIN, 0}};
 
         r.referendum_id = referendum_id;
         r.proposer      = proposer;
-        r.type          = type;
-        r.voting_type   = voting_type;
+        r.type          = name{ref_type};
+        r.voting_type   = name{voting_type};
         r.title         = title;
         r.content_ref   = trx_id;
-        r.token_votes   = token_votes;
-        r.account_votes = account_votes;
+        r.token_votes   = empty_votes;
+        r.account_votes = empty_votes;
         r.expires       = time_point_sec(expiry_time);
         r.acts          = acts;
+        r.status        = REFERENDUM_STATUS_OPEN;
     });
 }
 
-void referendum::vote(name voter, name referendum_id, uint8_t vote, name dac_id) {
+void referendum::vote(name voter, name referendum_id, name vote, name dac_id) {
 
     checkDAC(dac_id);
     assertValidMember(voter, dac_id);
@@ -153,7 +153,7 @@ void referendum::vote(name voter, name referendum_id, uint8_t vote, name dac_id)
     uint32_t time_now = current_time_point().sec_since_epoch();
     check(ref.expires.sec_since_epoch() >= time_now,
         "ERR::REFERENDUM_EXPIRED::Referendum is closed, no more voting is allowed");
-    check(ref.status == referendum_status::STATUS_OPEN, "ERR::REFERENDUM_NOT_OPEN::Referendum is not open for voting");
+    check(ref.status == REFERENDUM_STATUS_OPEN, "ERR::REFERENDUM_NOT_OPEN::Referendum is not open for voting");
 
     uint64_t current_votes_token = 0;
     if (ref.token_votes.find(vote) != ref.token_votes.end()) {
@@ -164,23 +164,18 @@ void referendum::vote(name voter, name referendum_id, uint8_t vote, name dac_id)
         current_votes_account = ref.account_votes[vote];
     }
 
-    uint64_t new_votes_token    = current_votes_token;
-    uint64_t new_votes_accounts = current_votes_account;
-
-    if (vote == vote_choice::VOTE_REMOVE) { // remove vote
-        new_votes_accounts--;
-    }
+    uint64_t new_votes_token = current_votes_token;
 
     // get vote weight from token (staked balance - unstaking balance)
     asset    weightAsset = get_staked(voter, dac.symbol.get_contract(), dac.symbol.get_symbol());
     uint64_t weight      = weightAsset.amount;
-    uint8_t  old_vote    = vote_choice::VOTE_REMOVE;
+    name     old_vote    = VOTE_PROP_REMOVE;
     // get existing vote
     votes_table votes(get_self(), dac_id.value);
     auto        existing_vote_data = votes.find(voter.value);
     if (existing_vote_data != votes.end()) {
         if (existing_vote_data->votes.find(referendum_id) != existing_vote_data->votes.end()) {
-            old_vote = uint8_t(existing_vote_data->votes.at(referendum_id));
+            old_vote = existing_vote_data->votes.at(referendum_id);
         }
 
         auto ev = *existing_vote_data;
@@ -188,14 +183,14 @@ void referendum::vote(name voter, name referendum_id, uint8_t vote, name dac_id)
         print("Going to modify votes");
 
         auto existing_votes = ev.votes;
-        if (vote == vote_choice::VOTE_REMOVE) {
+        if (vote == VOTE_PROP_REMOVE) {
             existing_votes.erase(referendum_id);
         } else {
-            if (old_vote == vote_choice::VOTE_REMOVE) {
+            if (old_vote == VOTE_PROP_REMOVE) {
                 // new vote, check that they havent voted for more than 20 to avoid timeouts during clean and
                 // when updating vote weight
                 check(existing_votes.size() < 20,
-                    "ERR::::Can only vote on 20 referenda at a time, try using the clean action to remove old votes");
+                    "ERR::TO_MANY_REF_VOTED_ON::Can only vote on 20 referenda at a time, try using the clean action to remove old votes");
             }
             existing_votes[referendum_id] = vote;
         }
@@ -206,26 +201,42 @@ void referendum::vote(name voter, name referendum_id, uint8_t vote, name dac_id)
 
         print("Modified vote");
     } else {
+
         votes.emplace(voter, [&](vote_info &v) {
             v.voter = voter;
-            map<name, uint8_t> votes;
+            map<name, name> votes;
             votes.emplace(referendum_id, vote);
             v.votes = votes;
         });
     }
 
-    check(old_vote < vote_choice::VOTE_INVALID, "ERR::OLD_INVALID::Old vote is invalid");
-    check(vote < vote_choice::VOTE_INVALID, "ERR::NEW_INVALID::New vote is invalid");
-
     auto token_votes   = ref.token_votes;
     auto account_votes = ref.account_votes;
-    if (old_vote > vote_choice::VOTE_REMOVE) {
+
+    switch (vote_choice{old_vote.value}) {
+    case vote_choice::VOTE_REMOVE:
+        break;
+    case vote_choice::VOTE_ABSTAIN:
+    case vote_choice::VOTE_NO:
+    case vote_choice::VOTE_YES:
         token_votes[old_vote] -= weight;
         account_votes[old_vote]--;
+        break;
+    default:
+        check(false, "ERR::OLD_INVALID::Old vote is invalid");
     }
-    if (vote > vote_choice::VOTE_REMOVE) {
+
+    switch (vote_choice{vote.value}) {
+    case vote_choice::VOTE_REMOVE:
+        break;
+    case vote_choice::VOTE_ABSTAIN:
+    case vote_choice::VOTE_NO:
+    case vote_choice::VOTE_YES:
         token_votes[vote] += weight;
         account_votes[vote]++;
+        break;
+    default:
+        check(false, "ERR::NEW_INVALID::New vote is invalid");
     }
 
     auto ref2 = referenda.find(referendum_id.value);
@@ -245,7 +256,7 @@ void referendum::updatestatus(name referendum_id, name dac_id) {
     const auto ref = referenda.require_find(referendum_id.value, "ERR::REFERENDUM_NOT_FOUND::Referendum not found");
     const auto new_status = ref->get_status(get_self(), dac_id);
     referenda.modify(ref, same_payer, [&](auto &r) {
-        r.status = new_status;
+        r.status = name{new_status};
     });
 }
 
@@ -265,18 +276,19 @@ void referendum::exec(name referendum_id, name dac_id) {
     auto            ref = referenda.require_find(referendum_id.value, "ERR:REFERENDUM_NOT_FOUND::Referendum not found");
     const auto      calculated_status = ref->get_status(get_self(), dac_id);
 
-    check(ref->type < vote_type::TYPE_OPINION, "ERR::CANNOT_EXEC::Cannot exec this type of referendum");
+    check(ref->type != REFERENDUM_OPINION, "ERR::CANNOT_EXEC::Cannot exec this type of referendum");
     check(ref->acts.size(), "ERR::NO_ACTION::No action to execute");
-    check(ref->status == referendum_status::STATUS_PASSING,
+    // TODO: Check if this might be redundant
+    check(ref->status == REFERENDUM_STATUS_PASSING,
         "ERR:REFERENDUM_NOT_PASSED::Referendum has not passed required number of yes votes");
     check(calculated_status == referendum_status::STATUS_PASSING,
         "ERR:REFERENDUM_NOT_PASSED::Referendum has not passed required number of yes votes");
 
-    if (ref->type == vote_type::TYPE_BINDING) {
+    if (ref->type == REFERENDUM_BINDING) {
         for (auto a : ref->acts) {
             a.send();
         }
-    } else if (ref->type == vote_type::TYPE_SEMI_BINDING) {
+    } else if (ref->type == REFERENDUM_SEMI) {
         proposeMsig(*ref, dac_id);
     }
 
@@ -296,15 +308,26 @@ void referendum::stakeobsv(vector<account_stake_delta> stake_deltas, name dac_id
         auto        existing_vote_data = votes.find(asd.account.value);
 
         if (existing_vote_data != votes.end()) {
-            for (auto v : existing_vote_data->votes) {
-                auto ref = referenda.find(v.first.value);
+            auto existing_votes = existing_vote_data->votes;
+
+            auto v = existing_votes.begin();
+            while (v != existing_votes.end()) {
+                auto ref = referenda.find(v->first.value);
 
                 if (ref != referenda.end()) {
                     referenda.modify(ref, same_payer, [&](referendum_data &r) {
-                        r.token_votes[v.second] += asd.stake_delta.amount;
+                        r.token_votes[v->second] += asd.stake_delta.amount;
                     });
+                    v++;
+                } else {
+                    // If the referendum cannot be found remove the vote.
+                    v = existing_votes.erase(v);
                 }
             }
+            // set back the cleaned votes for the voter.
+            votes.modify(existing_vote_data, same_payer, [&](auto &existing) {
+                existing.votes = existing_votes;
+            });
         }
     }
 }
@@ -317,7 +340,7 @@ void referendum::clean(name account, name dac_id) {
     votes_table     votes(get_self(), dac_id.value);
     auto            existing_vote_data = votes.find(account.value);
 
-    map<name, uint8_t> new_votes;
+    map<name, name> new_votes;
     if (existing_vote_data != votes.end()) {
         for (auto vd : existing_vote_data->votes) {
             if (referenda.find(vd.first.value) != referenda.end()) {
@@ -358,10 +381,10 @@ bool referendum::hasAuth(vector<action> acts) {
     auto packed_trx   = pack(trx);
     auto packed_perms = pack(check_perms);
 
-    bool res = referendum::_check_transaction_authorization(
+    auto res = check_transaction_authorization(
         packed_trx.data(), packed_trx.size(), (const char *)0, 0, packed_perms.data(), packed_perms.size());
 
-    return res;
+    return (res > 0);
 }
 
 void referendum::checkDAC(name dac_id) {

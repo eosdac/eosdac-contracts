@@ -39,7 +39,7 @@ enum ProposalState {
 const proposalHash = 'jhsdfkjhsdfkjhkjsdf';
 let planet: Account;
 
-describe.only('Dacproposals', () => {
+describe('Dacproposals', () => {
   let otherAccount: Account;
   let proposer1Account: Account;
   let arbitrator: Account;

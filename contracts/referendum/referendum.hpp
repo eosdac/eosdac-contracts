@@ -29,6 +29,23 @@ using namespace eosio;
 using namespace eosdac;
 using namespace std;
 
+static constexpr eosio::name VOTE_PROP_REMOVE{"remove"};
+static constexpr eosio::name VOTE_PROP_YES{"yes"};
+static constexpr eosio::name VOTE_PROP_NO{"no"};
+static constexpr eosio::name VOTE_PROP_ABSTAIN{"abstain"};
+
+static constexpr eosio::name REFERENDUM_BINDING{"binding"};
+static constexpr eosio::name REFERENDUM_SEMI{"semibinding"};
+static constexpr eosio::name REFERENDUM_OPINION{"opinion"};
+
+static constexpr eosio::name COUNT_TYPE_TOKEN{"token"};
+static constexpr eosio::name COUNT_TYPE_ACCOUNT{"account"};
+
+static constexpr eosio::name REFERENDUM_STATUS_OPEN{"open"};
+static constexpr eosio::name REFERENDUM_STATUS_PASSING{"passing"};
+static constexpr eosio::name REFERENDUM_STATUS_FAILING{"failing"};
+static constexpr eosio::name REFERENDUM_STATUS_QUORUM_UNMET{"quorum.unmet"};
+
 CONTRACT referendum : public contract {
 
   public:
@@ -45,15 +62,28 @@ CONTRACT referendum : public contract {
 
     // End custodian structs
 
-    enum vote_choice : uint8_t { VOTE_REMOVE = 0, VOTE_YES = 1, VOTE_NO = 2, VOTE_ABSTAIN = 3, VOTE_INVALID = 4 };
-    enum vote_type : uint8_t { TYPE_BINDING = 0, TYPE_SEMI_BINDING = 1, TYPE_OPINION = 2, TYPE_INVALID = 3 };
-    enum count_type : uint8_t { COUNT_TOKEN = 0, COUNT_ACCOUNT = 1, COUNT_INVALID = 2 };
-    enum referendum_status : uint8_t {
-        STATUS_OPEN           = 0,
-        STATUS_PASSING        = 1,
-        STATUS_FAILING        = 2,
-        STATUS_QUORUM_NOT_MET = 3,
-        STATUS_INVALID        = 4
+    enum vote_choice : uint64_t {
+        VOTE_REMOVE  = VOTE_PROP_REMOVE.value,
+        VOTE_YES     = VOTE_PROP_YES.value,
+        VOTE_NO      = VOTE_PROP_NO.value,
+        VOTE_ABSTAIN = VOTE_PROP_ABSTAIN.value,
+    };
+
+    enum referendum_type : uint64_t {
+        TYPE_BINDING      = REFERENDUM_BINDING.value,
+        TYPE_SEMI_BINDING = REFERENDUM_SEMI.value,
+        TYPE_OPINION      = REFERENDUM_OPINION.value,
+    };
+    enum count_type : uint64_t {
+        COUNT_TOKEN   = COUNT_TYPE_TOKEN.value,
+        COUNT_ACCOUNT = COUNT_TYPE_ACCOUNT.value,
+    };
+
+    enum referendum_status : uint64_t {
+        STATUS_OPEN           = REFERENDUM_STATUS_OPEN.value,
+        STATUS_PASSING        = REFERENDUM_STATUS_PASSING.value,
+        STATUS_FAILING        = REFERENDUM_STATUS_FAILING.value,
+        STATUS_QUORUM_NOT_MET = REFERENDUM_STATUS_QUORUM_UNMET.value,
     };
 
     struct account_stake_delta {
@@ -66,13 +96,13 @@ CONTRACT referendum : public contract {
     using config_container = eosio::singleton<"config"_n, config_item>;
     struct [[eosio::table("config"), eosio::contract("referendum")]] config_item {
         uint32_t duration;
-        // Key for all the maps is vote_type
-        map<uint8_t, extended_asset> fee;
-        map<uint8_t, uint16_t>       pass;           // Percentage with 2 decimal places, eg. 1001 == 10.01%
-        map<uint8_t, uint64_t>       quorum_token;   // Sum of currency units, yes no and abstain votes
-        map<uint8_t, uint64_t>       quorum_account; // Sum of accounts, yes no and abstain votes
-        map<uint8_t, uint8_t>        allow_per_account_voting;
-        map<uint8_t, uint8_t>        allow_vote_type;
+        // Key for all the maps is referendum_type
+        map<name, extended_asset> fee;
+        map<name, uint16_t>       pass;           // Percentage with 2 decimal places, eg. 1001 == 10.01%
+        map<name, uint64_t>       quorum_token;   // Sum of currency units, yes no and abstain votes
+        map<name, uint64_t>       quorum_account; // Sum of accounts, yes no and abstain votes
+        map<name, uint8_t>        allow_per_account_voting;
+        map<name, bool>           allow_vote_type;
 
         static config_item get_current_configs(eosio::name account, eosio::name scope) {
             return config_container(account, scope.value).get_or_default(config_item());
@@ -84,17 +114,17 @@ CONTRACT referendum : public contract {
     };
 
     struct [[eosio::table("referendums"), eosio::contract("referendum")]] referendum_data {
-        name                        referendum_id;
-        name                        proposer;
-        uint8_t                     type;
-        uint8_t                     voting_type; // 0 = token, 1 = account
-        uint8_t                     status;
-        string                      title;
-        checksum256                 content_ref;
-        std::map<uint8_t, uint64_t> token_votes; // <vote, count>
-        std::map<uint8_t, uint64_t> account_votes;
-        time_point_sec              expires;
-        vector<action>              acts;
+        name                     referendum_id;
+        name                     proposer;
+        name                     type;
+        name                     voting_type;
+        name                     status;
+        string                   title;
+        checksum256              content_ref;
+        std::map<name, uint64_t> token_votes; // <vote, count>
+        std::map<name, uint64_t> account_votes;
+        time_point_sec           expires;
+        vector<action>           acts;
 
         uint64_t primary_key() const {
             return referendum_id.value;
@@ -103,11 +133,12 @@ CONTRACT referendum : public contract {
             return proposer.value;
         }
 
-        std::pair<uint64_t, std::map<uint8_t, uint64_t>> quorum_votes(
+        std::pair<uint64_t, std::map<name, uint64_t>> quorum_votes(
             const name contract, const name dac_id, const config_item &config) const {
-            if (voting_type == count_type::COUNT_TOKEN) {
+            switch (count_type(voting_type.value)) {
+            case COUNT_TOKEN:
                 return {config.quorum_token.at(type), token_votes};
-            } else {
+            case COUNT_ACCOUNT:
                 return {config.quorum_account.at(type), account_votes};
             }
         }
@@ -115,9 +146,9 @@ CONTRACT referendum : public contract {
         referendum_status get_status(const name contract, const name dac_id) const {
             const auto config          = config_item::get_current_configs(contract, dac_id);
             const auto [quorum, votes] = quorum_votes(contract, dac_id, config);
-            const auto current_yes     = votes.at(VOTE_YES);
-            const auto current_no      = votes.at(VOTE_NO);
-            const auto current_abstain = votes.at(VOTE_ABSTAIN);
+            const auto current_yes     = votes.at(VOTE_PROP_YES);
+            const auto current_no      = votes.at(VOTE_PROP_NO);
+            const auto current_abstain = votes.at(VOTE_PROP_ABSTAIN);
             const auto current_all     = S{current_yes} + S{current_no} + S{current_abstain};
             const auto pass_rate       = config.pass.at(type); // integer with 2 decimals
             const auto time_now        = current_time_point().sec_since_epoch();
@@ -145,8 +176,8 @@ CONTRACT referendum : public contract {
         indexed_by<"byproposer"_n, const_mem_fun<referendum_data, uint64_t, &referendum_data::by_proposer>>>;
 
     struct [[eosio::table("votes"), eosio::contract("referendum")]] vote_info {
-        name                    voter;
-        std::map<name, uint8_t> votes; // <referendum_id, vote>
+        name                 voter;
+        std::map<name, name> votes; // <referendum_id, vote>
 
         uint64_t primary_key() const {
             return voter.value;
@@ -168,18 +199,6 @@ CONTRACT referendum : public contract {
     using deposits_table = eosio::multi_index<"deposits"_n, deposit_info,
         indexed_by<"bysym"_n, const_mem_fun<deposit_info, uint128_t, &deposit_info::by_sym>>>;
 
-    /*
-     * TODO : replace with the native function once cdt 1.7.0 is released
-     *
-     * https://github.com/EOSIO/eosio.contracts/pull/257
-     */
-    bool _check_transaction_authorization(const char *trx_data, uint32_t trx_size, const char *pubkeys_data,
-        uint32_t pubkeys_size, const char *perms_data, uint32_t perms_size) {
-        auto res = internal_use_do_not_use::check_transaction_authorization(
-            trx_data, trx_size, pubkeys_data, pubkeys_size, perms_data, perms_size);
-
-        return (res > 0);
-    }
     bool hasAuth(vector<action> acts);
     void proposeMsig(referendum_data ref, name dac_id);
     void checkDAC(name dac_id);
@@ -191,12 +210,12 @@ CONTRACT referendum : public contract {
     // Actions
     ACTION updateconfig(config_item config, name dac_id);
 
-    ACTION propose(name proposer, name referendum_id, uint8_t type, uint8_t voting_type, string title, string content,
+    ACTION propose(name proposer, name referendum_id, name type, name voting_type_name, string title, string content,
         name dac_id, vector<action> acts);
     ACTION cancel(name referendum_id, name dac_id);
     ACTION vote(
-        name voter, name referendum_id, uint8_t vote, name dac_id); // vote: 0=no vote (remove), 1=yes, 2=no, 3=abstain
-    ACTION exec(name referendum_id, name dac_id); // Exec the action if type is binding or semi-binding
+        name voter, name referendum_id, name vote, name dac_id); // vote: 0=no vote (remove), 1=yes, 2=no, 3=abstain
+    ACTION exec(name referendum_id, name dac_id);                // Exec the action if type is binding or semi-binding
     ACTION clean(name account, name dac_id);
     ACTION refund(name account);
     ACTION updatestatus(name referendum_id, name dac_id);
