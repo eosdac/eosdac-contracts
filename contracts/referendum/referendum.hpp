@@ -221,6 +221,8 @@ CONTRACT referendum : public contract {
     ACTION updatestatus(name referendum_id, name dac_id);
     ACTION clearconfig(name dac_id);
 
+    ACTION publresult(referendum_data ref);
+
     // Observation of stake deltas
     ACTION stakeobsv(vector<account_stake_delta> stake_deltas, name dac_id);
 

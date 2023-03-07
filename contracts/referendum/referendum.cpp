@@ -272,26 +272,29 @@ void referendum::cancel(name referendum_id, name dac_id) {
 
 void referendum::exec(name referendum_id, name dac_id) {
     checkDAC(dac_id);
+
+    action(eosio::permission_level{get_self(), "active"_n}, get_self(), "updatestatus"_n,
+        make_tuple(referendum_id, dac_id))
+        .send();
+
     referenda_table referenda(get_self(), dac_id.value);
     auto            ref = referenda.require_find(referendum_id.value, "ERR:REFERENDUM_NOT_FOUND::Referendum not found");
-    const auto      calculated_status = ref->get_status(get_self(), dac_id);
 
-    check(ref->type != REFERENDUM_OPINION, "ERR::CANNOT_EXEC::Cannot exec this type of referendum");
-    check(ref->acts.size(), "ERR::NO_ACTION::No action to execute");
-    // TODO: Check if this might be redundant
     check(ref->status == REFERENDUM_STATUS_PASSING,
         "ERR:REFERENDUM_NOT_PASSED::Referendum has not passed required number of yes votes");
-    check(calculated_status == referendum_status::STATUS_PASSING,
-        "ERR:REFERENDUM_NOT_PASSED::Referendum has not passed required number of yes votes");
 
-    if (ref->type == REFERENDUM_BINDING) {
-        for (auto a : ref->acts) {
-            a.send();
+    if (ref->type != REFERENDUM_OPINION) {
+        check(ref->acts.size(), "ERR::NO_ACTION::No action to execute");
+
+        if (ref->type == REFERENDUM_BINDING) {
+            for (auto a : ref->acts) {
+                a.send();
+            }
+        } else if (ref->type == REFERENDUM_SEMI) {
+            proposeMsig(*ref, dac_id);
         }
-    } else if (ref->type == REFERENDUM_SEMI) {
-        proposeMsig(*ref, dac_id);
     }
-
+    action(permission_level{get_self(), "active"_n}, get_self(), "publresult"_n, make_tuple(*ref)).send();
     referenda.erase(ref);
 }
 
@@ -363,6 +366,10 @@ void referendum::clearconfig(name dac_id) {
 
     config_container c = config_container(get_self(), dac_id.value);
     c.remove();
+}
+
+ACTION referendum::publresult(referendum_data ref) {
+    require_auth(get_self());
 }
 
 // Private
