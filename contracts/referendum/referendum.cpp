@@ -273,10 +273,6 @@ void referendum::cancel(name referendum_id, name dac_id) {
 void referendum::exec(name referendum_id, name dac_id) {
     checkDAC(dac_id);
 
-    action(eosio::permission_level{get_self(), "active"_n}, get_self(), "updatestatus"_n,
-        make_tuple(referendum_id, dac_id))
-        .send();
-
     referenda_table referenda(get_self(), dac_id.value);
     auto            ref = referenda.require_find(referendum_id.value, "ERR:REFERENDUM_NOT_FOUND::Referendum not found");
 
