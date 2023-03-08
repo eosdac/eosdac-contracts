@@ -60,7 +60,7 @@ let candidates: Account[];
 // let arbitrator: Account;
 let planet: Account;
 
-describe('referendum', () => {
+describe('Referendum', () => {
   before(async () => {
     shared = await SharedTestObjects.getInstance();
     referendum = shared.referendum_contract;
@@ -80,6 +80,10 @@ describe('referendum', () => {
     await configureAuths();
     await linkPermissions();
 
+    await shared.daccustodian_contract.newperiod(dacId, dacId, {
+      from: regMembers[0],
+    });
+    await sleep(6_000);
     await shared.daccustodian_contract.newperiod(dacId, dacId, {
       from: regMembers[0],
     });
