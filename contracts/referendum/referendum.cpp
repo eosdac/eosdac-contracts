@@ -273,6 +273,8 @@ void referendum::cancel(name referendum_id, name dac_id) {
 void referendum::exec(name referendum_id, name dac_id) {
     checkDAC(dac_id);
 
+    updatestatus(referendum_id, dac_id);
+
     referenda_table referenda(get_self(), dac_id.value);
     auto            ref = referenda.require_find(referendum_id.value, "ERR:REFERENDUM_NOT_FOUND::Referendum not found");
 
