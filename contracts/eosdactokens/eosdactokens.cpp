@@ -403,10 +403,10 @@ namespace eosdac {
         }
 
         // send notification for unstake at current delay and then stake with new delay
-        name  custodian_contract = dac.account_for_type(dacdir::CUSTODIAN);
-        name  vote_contract      = dac.account_for_type(dacdir::VOTE_WEIGHT);
-        name  notify_contract    = (vote_contract) ? vote_contract : custodian_contract;
-        asset current_stake      = eosdac::get_staked(account, get_self(), token_symbol);
+        const auto custodian_contract = dac.account_for_type_maybe(dacdir::CUSTODIAN);
+        const auto vote_contract      = dac.account_for_type_maybe(dacdir::VOTE_WEIGHT);
+        const auto notify_contract    = (vote_contract) ? *vote_contract : *custodian_contract;
+        asset      current_stake      = eosdac::get_staked(account, get_self(), token_symbol);
 
         account_stake_delta         stake_deltas_sub = {account, -current_stake, unstake_time_before};
         account_stake_delta         stake_deltas_add = {account, current_stake, unstake_time};
