@@ -9,14 +9,13 @@
 #include <eosio/time.hpp>
 
 #include "config.hpp"
+#include "contracts-common/safemath.hpp"
+#include "contracts-common/serr.hpp"
+#include "contracts-common/singleton.hpp"
+#include "contracts-common/util.hpp"
 #include "daccustodian_shared.hpp"
 #include "eosdactokens_shared.hpp"
 #include "external_types.hpp"
-#include "safemath/safemath.hpp"
-#include "safemath/serr.hpp"
-#include "safemath/util.hpp"
-
-#include "safemath/singleton.hpp"
 
 using namespace std;
 

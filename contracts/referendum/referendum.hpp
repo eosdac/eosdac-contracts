@@ -12,18 +12,18 @@
 #include <numeric>
 
 #include "../../contract-shared-headers/config.hpp"
+#include "../../contract-shared-headers/contracts-common/safemath.hpp"
 #include "../../contract-shared-headers/daccustodian_shared.hpp"
 #include "../../contract-shared-headers/dacdirectory_shared.hpp"
 #include "../../contract-shared-headers/eosdactokens_shared.hpp"
-#include "../../contract-shared-headers/safemath/safemath.hpp"
 
 // WARNING : Do not use ENABLE_BINDING_VOTE if this will be a shared contract (ie RESTRICT_DAC should be set if
 // ENABLE_BINDING_VOTE==1)
-//#ifndef ENABLE_BINDING_VOTE
-//#define ENABLE_BINDING_VOTE 1
-//#endif
+// #ifndef ENABLE_BINDING_VOTE
+// #define ENABLE_BINDING_VOTE 1
+// #endif
 // Remove this to enable multiple dacs
-//#define RESTRICT_DAC "eos.dac"
+// #define RESTRICT_DAC "eos.dac"
 
 using namespace eosio;
 using namespace eosdac;

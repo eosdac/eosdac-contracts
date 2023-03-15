@@ -1,8 +1,8 @@
 #pragma once
 
+#include "contracts-common/util.hpp"
 #include "dacdirectory_shared.hpp"
 #include "eosio/eosio.hpp"
-#include "safemath/util.hpp"
 #include <eosio/asset.hpp>
 
 namespace eosdac {

@@ -1,7 +1,7 @@
 #pragma once
 
+#include "../../contract-shared-headers/contracts-common/singleton.hpp"
 #include "../../contract-shared-headers/dacdirectory_shared.hpp"
-#include "../../contract-shared-headers/safemath/singleton.hpp"
 #include "nft.hpp"
 #include <eosio/eosio.hpp>
 #include <eosio/multi_index.hpp>

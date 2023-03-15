@@ -1,7 +1,7 @@
 #pragma once
 
 #include "config.hpp"
-#include "safemath/util.hpp"
+#include "contracts-common/util.hpp"
 #include <eosio/eosio.hpp>
 #include <eosio/multi_index.hpp>
 #include <eosio/symbol.hpp>
