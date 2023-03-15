@@ -224,8 +224,8 @@ describe('EOSDacTokens', () => {
     let staker1: l.Account;
     let staker2: l.Account;
     before(async () => {
-      staker1 = await l.AccountManager.createAccount();
-      staker2 = await l.AccountManager.createAccount();
+      staker1 = await l.AccountManager.createAccount('abcstaker1');
+      staker2 = await l.AccountManager.createAccount('abcstaker2');
       await shared.dac_token_contract.issue(
         issuer.name,
         '30000.0000 ABC',
@@ -545,6 +545,118 @@ describe('EOSDacTokens', () => {
             { from: staker1 }
           );
         });
+      });
+    });
+  });
+  context('resetstakes', async () => {
+    let user1: Account;
+    let user2: Account;
+    before(async () => {
+      user1 = await l.AccountManager.createAccount('abcuser1');
+      user2 = await l.AccountManager.createAccount('abcuser2');
+      await shared.dac_token_contract.issue(
+        issuer.name,
+        '200.0000 ABC',
+        'initial issued tokens',
+        { from: issuer }
+      );
+      await shared.dac_token_contract.transfer(
+        issuer.name,
+        user1.name,
+        '100.0000 ABC',
+        'please take these tokens for staking',
+        validAuths
+      );
+      await shared.dac_token_contract.transfer(
+        issuer.name,
+        user2.name,
+        '100.0000 ABC',
+        'please take these tokens for staking',
+        validAuths
+      );
+    });
+    context('staketime', async () => {
+      it('should populate staketimesTable', async () => {
+        await shared.dac_token_contract.staketime(user1, 14, '4,ABC', {
+          from: user1,
+        });
+        await shared.dac_token_contract.staketime(user2, 14, '4,ABC', {
+          from: user2,
+        });
+        await l.assertRowsEqual(
+          shared.dac_token_contract.staketimeTable({ scope: 'abcdac' }),
+          [
+            {
+              account: user1.name,
+              delay: 14,
+            },
+            {
+              account: user2.name,
+              delay: 14,
+            },
+          ]
+        );
+      });
+      it('staking and unstaking', async () => {
+        await shared.dac_token_contract.stake(user1.name, '10.0000 ABC', {
+          from: user1,
+        });
+        await shared.dac_token_contract.unstake(user1.name, '4.0000 ABC', {
+          from: user1,
+        });
+        // await l.sleep(10_000);
+        await shared.dac_token_contract.unstake(user1.name, '6.0000 ABC', {
+          from: user1,
+        });
+        await l.assertRowsEqual(
+          shared.dac_token_contract.staketimeTable({ scope: 'abcdac' }),
+          [
+            {
+              account: user1.name,
+              delay: 14,
+            },
+            {
+              account: user2.name,
+              delay: 14,
+            },
+          ]
+        );
+      });
+      it('unstake 1 should not reset staketime', async () => {
+        await l.sleep(4_000);
+        await shared.dac_token_contract.claimunstkes(user1.name, '4,ABC', {
+          from: user1,
+        });
+
+        await l.assertRowsEqual(
+          shared.dac_token_contract.staketimeTable({ scope: 'abcdac' }),
+          [
+            {
+              account: user1.name,
+              delay: 14,
+            },
+            {
+              account: user2.name,
+              delay: 14,
+            },
+          ]
+        );
+      });
+      it('unstake 2nd should reset staketime', async () => {
+        await l.sleep(10_000);
+
+        await shared.dac_token_contract.claimunstkes(user1.name, '4,ABC', {
+          from: user1,
+        });
+        await l.assertRowsEqual(
+          shared.dac_token_contract.staketimeTable({ scope: 'abcdac' }),
+          [
+            {
+              account: user2.name,
+              delay: 14,
+            },
+          ]
+        );
       });
     });
   });

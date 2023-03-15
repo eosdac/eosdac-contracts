@@ -176,10 +176,14 @@ namespace eosdac {
 
         asset liquid = get_balance(owner, code, sym.code());
 
+        auto canDeleteStakeTime = true;
+
         auto existing_stake = stakes.find(owner.value);
         if (existing_stake != stakes.end()) {
             liquid -= existing_stake->stake;
+            canDeleteStakeTime = false;
         }
+
         auto unstakes_itr = unstakes_idx.find(owner.value);
         while (unstakes_itr != unstakes_idx.end() && unstakes_itr->account == owner) {
             if (unstakes_itr->released()) {
@@ -188,10 +192,18 @@ namespace eosdac {
                 unstakes_itr = unstakes_idx.erase(unstakes_itr);
             } else {
                 print("NOT yet released");
-
+                canDeleteStakeTime = false;
                 // otherwise it still negatively impacts the liquid balance
                 liquid -= unstakes_itr->stake;
                 unstakes_itr++;
+            }
+        }
+        if (canDeleteStakeTime) {
+            staketimes_table staketimes(code, dac.dac_id.value);
+
+            auto existing_time = staketimes.find(owner.value);
+            if (existing_time != staketimes.end()) {
+                staketimes.erase(existing_time);
             }
         }
 
