@@ -166,7 +166,7 @@ namespace eosdac {
         }
     }
 
-    asset get_liquid(name owner, name code, symbol sym, bool readonly = false) {
+    asset get_liquid(name owner, name code, symbol sym) {
         // Hardcoding a precision of 4, it doesnt matter because the index ignores precision
         dacdir::dac dac = dacdir::dac_for_symbol(extended_symbol{sym, code});
 
@@ -176,7 +176,7 @@ namespace eosdac {
 
         asset liquid = get_balance(owner, code, sym.code());
 
-        auto canDeleteStakeTime = !readonly;
+        auto canDeleteStakeTime = true;
 
         auto existing_stake = stakes.find(owner.value);
         if (existing_stake != stakes.end()) {
