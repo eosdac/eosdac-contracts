@@ -612,10 +612,6 @@ describe('EOSDacTokens', () => {
           shared.dac_token_contract.staketimeTable({ scope: 'abcdac' }),
           [
             {
-              account: user1.name,
-              delay: 14,
-            },
-            {
               account: user2.name,
               delay: 14,
             },
@@ -631,10 +627,6 @@ describe('EOSDacTokens', () => {
         await l.assertRowsEqual(
           shared.dac_token_contract.staketimeTable({ scope: 'abcdac' }),
           [
-            {
-              account: user1.name,
-              delay: 14,
-            },
             {
               account: user2.name,
               delay: 14,
