@@ -1,3 +1,3 @@
-[submodule "contract-shared-headers/safemath"]
-	path = contract-shared-headers/safemath
-	url = git@github.com:Alien-Worlds/safemath.git
+[submodule "contract-shared-headers/contracts-common"]
+	path = contract-shared-headers/contracts-common
+	url = git@github.com:Alien-Worlds/contracts-common.git

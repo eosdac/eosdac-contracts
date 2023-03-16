@@ -1,5 +1,5 @@
-#include "../../contract-shared-headers/safemath/safemath.hpp"
-#include "../../contract-shared-headers/safemath/util.hpp"
+#include "../../contract-shared-headers/contracts-common/safemath.hpp"
+#include "../../contract-shared-headers/contracts-common/util.hpp"
 #include <eosio/eosio.hpp>
 #include <experimental/type_traits>
 #include <math.h>

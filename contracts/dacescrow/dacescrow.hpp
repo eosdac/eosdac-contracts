@@ -1,4 +1,4 @@
-#include "../../contract-shared-headers/safemath/util.hpp"
+#include "../../contract-shared-headers/contracts-common/util.hpp"
 #include "dacescrow_shared.hpp"
 #include <eosio/asset.hpp>
 #include <eosio/eosio.hpp>

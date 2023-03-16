@@ -4,10 +4,10 @@
 #include <eosio/singleton.hpp>
 #include <eosio/time.hpp>
 
+#include "../../contract-shared-headers/contracts-common/safemath.hpp"
 #include "../../contract-shared-headers/daccustodian_shared.hpp"
 #include "../../contract-shared-headers/dacdirectory_shared.hpp"
 #include "../../contract-shared-headers/eosdactokens_shared.hpp"
-#include "../../contract-shared-headers/safemath/safemath.hpp"
 
 using namespace eosio;
 using namespace std;
