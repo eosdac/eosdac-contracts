@@ -142,7 +142,7 @@ void referendum::propose(name proposer, name referendum_id, name type_name, name
 }
 
 void referendum::vote(name voter, name referendum_id, name vote, name dac_id) {
-
+    require_auth(voter);
     checkDAC(dac_id);
     assertValidMember(voter, dac_id);
     auto dac = dacdir::dac_for_id(dac_id);
