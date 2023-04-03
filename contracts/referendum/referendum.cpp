@@ -34,8 +34,9 @@ void referendum::refund(name account) {
 void referendum::updateconfig(config_item config, name dac_id) {
     checkDAC(dac_id);
 
-    auto dac          = dacdir::dac_for_id(dac_id);
-    auto auth_account = dac.owner;
+    auto dac = dacdir::dac_for_id(dac_id);
+    // auto auth_account = dac.owner; // Enable this when givin DAOs full control.
+    auto auth_account = get_self();
     require_auth(auth_account);
 
     config.save(get_self(), dac_id, auth_account);
@@ -85,7 +86,7 @@ void referendum::propose(name proposer, name referendum_id, name type_name, name
 
     // Get transaction hash for content_ref and next id
     auto     size   = transaction_size();
-    char *   buffer = (char *)(512 < size ? malloc(size) : alloca(size));
+    char    *buffer = (char *)(512 < size ? malloc(size) : alloca(size));
     uint32_t read   = read_transaction(buffer, size);
     check(size == read, "ERR::READ_TRANSACTION_FAILED::read_transaction failed");
     checksum256 trx_id = sha256(buffer, read);
