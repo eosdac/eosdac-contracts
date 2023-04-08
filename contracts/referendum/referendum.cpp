@@ -154,7 +154,6 @@ void referendum::vote(name voter, name referendum_id, name vote, name dac_id) {
     uint32_t time_now = current_time_point().sec_since_epoch();
     check(ref.expires.sec_since_epoch() >= time_now,
         "ERR::REFERENDUM_EXPIRED::Referendum is closed, no more voting is allowed");
-    check(ref.status == REFERENDUM_STATUS_OPEN, "ERR::REFERENDUM_NOT_OPEN::Referendum is not open for voting");
 
     uint64_t current_votes_token = 0;
     if (ref.token_votes.find(vote) != ref.token_votes.end()) {
@@ -181,8 +180,6 @@ void referendum::vote(name voter, name referendum_id, name vote, name dac_id) {
 
         auto ev = *existing_vote_data;
 
-        print("Going to modify votes");
-
         auto existing_votes = ev.votes;
         if (vote == VOTE_PROP_REMOVE) {
             existing_votes.erase(referendum_id);
@@ -200,7 +197,6 @@ void referendum::vote(name voter, name referendum_id, name vote, name dac_id) {
             v.votes = existing_votes;
         });
 
-        print("Modified vote");
     } else {
 
         votes.emplace(voter, [&](vote_info &v) {
