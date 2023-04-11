@@ -104,6 +104,7 @@ describe('Referendum', () => {
   });
   context('updateconfig', async () => {
     it('without auth, should fail', async () => {
+      let anybody = await AccountManager.createAccount();
       await assertMissingAuthority(
         referendum.updateconfig(
           {
@@ -115,7 +116,8 @@ describe('Referendum', () => {
             allow_per_account_voting: [],
             allow_vote_type: [],
           },
-          dacId
+          dacId,
+          { from: anybody }
         )
       );
     });
@@ -218,7 +220,7 @@ describe('Referendum', () => {
           ],
         },
         dacId,
-        { from: shared.auth_account }
+        { from: shared.referendum_contract.account }
       );
     });
   });
