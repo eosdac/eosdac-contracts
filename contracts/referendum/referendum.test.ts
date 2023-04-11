@@ -4,12 +4,9 @@ import {
   EOSManager,
   debugPromise,
   assertMissingAuthority,
-  assertRowsEqual,
   assertEOSErrorIncludesMessage,
   assertRowCount,
   assertBalanceEqual,
-  EosioAction,
-  ContractLoader,
   AccountManager,
   UpdateAuth,
 } from 'lamington';
@@ -17,8 +14,6 @@ import { SharedTestObjects } from '../TestHelpers';
 import { Msigworlds } from '../msigworlds/msigworlds';
 import { currentHeadTimeWithAddedSeconds } from '../msigworlds/msigworlds.test';
 const api = EOSManager.api;
-
-import * as chai from 'chai';
 
 let shared: SharedTestObjects;
 let referendum: Referendum;
@@ -32,7 +27,6 @@ enum vote_type {
   TYPE_BINDING = 'binding',
   TYPE_SEMI_BINDING = 'semibinding',
   TYPE_OPINION = 'opinion',
-  // TYPE_INVALID = 3,
 }
 
 enum count_type {
@@ -91,7 +85,7 @@ describe('Referendum', () => {
     serialized_actions = await api.serializeActions([
       {
         account: shared.dac_token_contract.name,
-        authorization: [{ actor: planet.name, permission: 'high' }],
+        authorization: [{ actor: planet.name, permission: 'active' }],
         name: 'transfer',
         data: {
           from: planet.name,
@@ -224,47 +218,23 @@ describe('Referendum', () => {
       );
     });
   });
-  context('propose', async () => {
-    it('without auth, should fail', async () => {
-      await assertMissingAuthority(
-        referendum.propose(
-          user1.name,
-          'ref1',
-          vote_type.TYPE_SEMI_BINDING,
-          count_type.COUNT_TOKEN,
-          'title',
-          'content',
-          dacId,
-          serialized_actions
-        )
-      );
-    });
-    it('if proposer is not member, should fail', async () => {
-      await assertEOSErrorIncludesMessage(
-        referendum.propose(
-          user1.name,
-          'ref1',
-          vote_type.TYPE_SEMI_BINDING,
-          count_type.COUNT_TOKEN,
-          'title',
-          'content',
-          dacId,
-          serialized_actions,
-          { from: user1 }
-        ),
-        'GENERAL_REG_MEMBER_NOT_FOUND'
-      );
-    });
-    context('with registered member', async () => {
-      before(async () => {
-        await shared.dac_token_contract.memberreg(
-          user1.name,
-          shared.configured_dac_memberterms,
-          dacId,
-          { from: user1 }
+  context('semibinding proposal', async () => {
+    context('propose', async () => {
+      it('without auth, should fail', async () => {
+        await assertMissingAuthority(
+          referendum.propose(
+            user1.name,
+            'ref1',
+            vote_type.TYPE_SEMI_BINDING,
+            count_type.COUNT_TOKEN,
+            'title',
+            'content',
+            dacId,
+            serialized_actions
+          )
         );
       });
-      it('without deposit, should fail', async () => {
+      it('if proposer is not member, should fail', async () => {
         await assertEOSErrorIncludesMessage(
           referendum.propose(
             user1.name,
@@ -277,128 +247,222 @@ describe('Referendum', () => {
             serialized_actions,
             { from: user1 }
           ),
-          'ERR::FEE_REQUIRED'
+          'GENERAL_REG_MEMBER_NOT_FOUND'
         );
       });
-      context('when deposited enough money', async () => {
+      context('with registered member', async () => {
         before(async () => {
-          await shared.dac_token_contract.transfer(
+          await shared.dac_token_contract.memberreg(
             user1.name,
-            referendum.account.name,
-            '100.0000 REF',
-            'fee deposit',
+            shared.configured_dac_memberterms,
+            dacId,
             { from: user1 }
+          );
+        });
+        it('without deposit, should fail', async () => {
+          await assertEOSErrorIncludesMessage(
+            referendum.propose(
+              user1.name,
+              'ref1',
+              vote_type.TYPE_SEMI_BINDING,
+              count_type.COUNT_TOKEN,
+              'title',
+              'content',
+              dacId,
+              serialized_actions,
+              { from: user1 }
+            ),
+            'ERR::FEE_REQUIRED'
+          );
+        });
+        context('when deposited enough money', async () => {
+          before(async () => {
+            await shared.dac_token_contract.transfer(
+              user1.name,
+              referendum.account.name,
+              '100.0000 REF',
+              'fee deposit',
+              { from: user1 }
+            );
+          });
+          it('should work', async () => {
+            await referendum.propose(
+              user1.name,
+              'ref1',
+              vote_type.TYPE_SEMI_BINDING,
+              count_type.COUNT_TOKEN,
+              'title',
+              'content',
+              dacId,
+              serialized_actions,
+              { from: user1 }
+            );
+          });
+          it('should have transferred the fee to treasury', async () => {
+            await assertBalanceEqual(
+              shared.dac_token_contract.accountsTable({
+                scope: shared.treasury_account.name,
+              }),
+              '1.0000 REF'
+            );
+          });
+        });
+      });
+    });
+    context('vote', async () => {
+      it('should work', async () => {
+        await referendum.vote(
+          user1.name,
+          'ref1',
+          voting_type.VOTE_PROP_YES,
+          dacId,
+          { from: user1 }
+        );
+      });
+    });
+    context('exec', async () => {
+      it('should work', async () => {
+        await referendum.exec('ref1', dacId);
+      });
+      it('should create the proposal', async () => {
+        await assertRowCount(
+          shared.msigworlds_contract.proposalsTable({ scope: dacId }),
+          1
+        );
+      });
+    });
+    context('msig exec', async () => {
+      context('high with only 3 approvals', async () => {
+        before(async () => {
+          await shared.msigworlds_contract.approve(
+            'ref1',
+            { actor: candidates[0].name, permission: 'active' },
+            dacId,
+            null,
+            { from: candidates[0] }
+          );
+
+          await shared.msigworlds_contract.approve(
+            'ref1',
+            { actor: candidates[1].name, permission: 'active' },
+            dacId,
+            null,
+            { from: candidates[1] }
+          );
+
+          await shared.msigworlds_contract.approve(
+            'ref1',
+            { actor: candidates[2].name, permission: 'active' },
+            dacId,
+            null,
+            { from: candidates[2] }
+          );
+        });
+
+        it('should fail', async () => {
+          await assertEOSErrorIncludesMessage(
+            shared.msigworlds_contract.exec('ref1', candidates[0].name, dacId, {
+              from: candidates[0],
+            }),
+            'msigworlds::exec transaction authorization failed'
+          );
+        });
+      });
+      context('high with 4 approvals', async () => {
+        before(async () => {
+          await shared.msigworlds_contract.approve(
+            'ref1',
+            { actor: candidates[3].name, permission: 'active' },
+            dacId,
+            null,
+            { from: candidates[3] }
           );
         });
         it('should work', async () => {
-          await referendum.propose(
-            user1.name,
+          await shared.msigworlds_contract.exec(
             'ref1',
-            vote_type.TYPE_SEMI_BINDING,
-            count_type.COUNT_TOKEN,
-            'title',
-            'content',
+            candidates[0].name,
             dacId,
-            serialized_actions,
+            {
+              from: candidates[0],
+            }
+          );
+        });
+        it('should have transferred the token', async () => {
+          await assertBalanceEqual(
+            shared.dac_token_contract.accountsTable({
+              scope: user1.name,
+            }),
+            '1010.1234 REF'
+          );
+        });
+      });
+    });
+  });
+  context('binding proposal', async () => {
+    context('propose', async () => {
+      context('with registered member', async () => {
+        before(async () => {
+          await shared.dac_token_contract.memberreg(
+            user1.name,
+            shared.configured_dac_memberterms,
+            dacId,
             { from: user1 }
           );
         });
-        it('should have transferred the fee to treasury', async () => {
-          await assertBalanceEqual(
-            shared.dac_token_contract.accountsTable({
-              scope: shared.treasury_account.name,
-            }),
-            '1.0000 REF'
-          );
+        context('when deposited enough money', async () => {
+          before(async () => {
+            await shared.dac_token_contract.transfer(
+              user1.name,
+              referendum.account.name,
+              '2.0000 REF',
+              'fee deposit',
+              { from: user1 }
+            );
+          });
+          it('should work', async () => {
+            await referendum.propose(
+              user1.name,
+              'refbind',
+              vote_type.TYPE_BINDING,
+              count_type.COUNT_TOKEN,
+              'title',
+              'content',
+              dacId,
+              serialized_actions,
+              { from: user1 }
+            );
+          });
+          it('should have transferred the fee to treasury', async () => {
+            await assertBalanceEqual(
+              shared.dac_token_contract.accountsTable({
+                scope: shared.treasury_account.name,
+              }),
+              '2.0000 REF'
+            );
+          });
         });
       });
     });
-  });
-  context('vote', async () => {
-    it('should work', async () => {
-      await referendum.vote(
-        user1.name,
-        'ref1',
-        voting_type.VOTE_PROP_YES,
-        dacId,
-        { from: user1 }
-      );
-    });
-  });
-  context('exec', async () => {
-    it('should work', async () => {
-      await referendum.exec('ref1', dacId);
-    });
-    it('should create the proposal', async () => {
-      await assertRowCount(
-        shared.msigworlds_contract.proposalsTable({ scope: dacId }),
-        1
-      );
-    });
-  });
-  context('msig exec', async () => {
-    context('high with only 3 approvals', async () => {
-      before(async () => {
-        await shared.msigworlds_contract.approve(
-          'ref1',
-          { actor: candidates[0].name, permission: 'active' },
-          dacId,
-          null,
-          { from: candidates[0] }
-        );
-
-        await shared.msigworlds_contract.approve(
-          'ref1',
-          { actor: candidates[1].name, permission: 'active' },
-          dacId,
-          null,
-          { from: candidates[1] }
-        );
-
-        await shared.msigworlds_contract.approve(
-          'ref1',
-          { actor: candidates[2].name, permission: 'active' },
-          dacId,
-          null,
-          { from: candidates[2] }
-        );
-      });
-
-      it('should fail', async () => {
-        await assertEOSErrorIncludesMessage(
-          shared.msigworlds_contract.exec('ref1', candidates[0].name, dacId, {
-            from: candidates[0],
-          }),
-          'msigworlds::exec transaction authorization failed'
-        );
-      });
-    });
-    context('high with 4 approvals', async () => {
-      before(async () => {
-        await shared.msigworlds_contract.approve(
-          'ref1',
-          { actor: candidates[3].name, permission: 'active' },
-          dacId,
-          null,
-          { from: candidates[3] }
-        );
-      });
+    context('vote', async () => {
       it('should work', async () => {
-        await shared.msigworlds_contract.exec(
-          'ref1',
-          candidates[0].name,
+        await referendum.vote(
+          user1.name,
+          'refbind',
+          voting_type.VOTE_PROP_YES,
           dacId,
-          {
-            from: candidates[0],
-          }
+          { from: user1 }
         );
       });
-      it('should have transferred the token', async () => {
-        await assertBalanceEqual(
-          shared.dac_token_contract.accountsTable({
-            scope: user1.name,
-          }),
-          '1010.1234 REF'
+    });
+    context('exec', async () => {
+      it('should work', async () => {
+        await referendum.exec('refbind', dacId);
+      });
+      it('should create the proposal', async () => {
+        await assertRowCount(
+          shared.msigworlds_contract.proposalsTable({ scope: dacId }),
+          1
         );
       });
     });
@@ -479,6 +543,25 @@ async function configureAuths() {
     'add one auth to planet'
   );
 
+  await debugPromise(
+    UpdateAuth.execUpdateAuth(
+      planet.owner,
+      planet.name,
+      'active',
+      'owner',
+      UpdateAuth.AuthorityToSet.explicitAuthorities(
+        1,
+        [
+          code_permission_level(1, shared.referendum_contract.name),
+          { weight: 1, permission: { actor: planet.name, permission: 'high' } },
+        ],
+        [{ weight: 1, key: planet.publicKey }],
+        []
+      )
+    ),
+    'make daccustodian the owner of the planet'
+  );
+
   /* The daccustodian contract will need to make eosio::updateauth calls on
    * behalf of the planet, so we need to add a custom permission to allow this
    */
@@ -507,4 +590,12 @@ async function linkPermissions() {
     'transfer',
     'high'
   );
+}
+
+//This could be usefuly to put into Lamington's `UpdateAuth.AuthorityToSet`
+function code_permission_level(weight: number, account: string) {
+  return {
+    weight,
+    permission: { actor: account, permission: 'eosio.code' },
+  };
 }

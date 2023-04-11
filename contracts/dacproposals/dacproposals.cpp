@@ -31,10 +31,10 @@ namespace eosdac {
             "ERR::CREATEPROP_INVALID_proposal_pay::Invalid pay amount. Must be greater than 0.");
         check(is_account(arbitrator), "ERR::CREATEPROP_INVALID_ARBITRATOR::Invalid arbitrator.");
 
-        auto dac      = dacdir::dac_for_id(dac_id);
-        auto treasury = dac.account_for_type(dacdir::TREASURY);
-        auto auth     = dac.owner;
-        check(arbitrator != auth && arbitrator != treasury, "Arbitrator must be a third party");
+        auto dac            = dacdir::dac_for_id(dac_id);
+        auto funding_source = dac.account_for_type(dacdir::SPENDINGS);
+        auto auth           = dac.owner;
+        check(arbitrator != auth && arbitrator != funding_source, "Arbitrator must be a third party");
         auto current_configs = configs{get_self(), dac_id};
 
         uint32_t approval_duration = current_configs.get_approval_duration();
@@ -228,31 +228,31 @@ namespace eosdac {
 
         assertValidMember(prop.proposer, dac_id);
 
-        // print("Transfer funds to escrow account");
         string memo = prop.proposer.to_string() + ":" + proposal_id.to_string() + ":" + prop.content_hash;
 
         time_point_sec time_now = time_point_sec(current_time_point().sec_since_epoch());
 
-        const auto treasury = dacdir::dac_for_id(dac_id).account_for_type(dacdir::TREASURY);
-        const auto escrow   = dacdir::dac_for_id(dac_id).account_for_type(dacdir::ESCROW);
+        const auto funding_source = dacdir::dac_for_id(dac_id).account_for_type(dacdir::SPENDINGS);
+        const auto escrow         = dacdir::dac_for_id(dac_id).account_for_type(dacdir::ESCROW);
 
-        check(is_account(treasury), "ERR::TREASURY_ACCOUNT_NOT_FOUND::Treasury account not found");
+        check(is_account(funding_source), "ERR::FUNDING_SOURCE_ACCOUNT_NOT_FOUND::Funding account not found");
         check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
 
         proposals.modify(prop, same_payer, [&](auto &p) {
             p.state = ProposalStateWork_in_progress;
         });
 
-        dacescrow::init_action{escrow, {treasury, "escrow"_n}}
-            .to_action(treasury, prop.proposer, prop.arbitrator, time_now + (prop.job_duration * 2), memo, proposal_id)
+        dacescrow::init_action{escrow, {funding_source, "escrow"_n}}
+            .to_action(
+                funding_source, prop.proposer, prop.arbitrator, time_now + (prop.job_duration * 2), memo, proposal_id)
             .send();
 
-        action(eosio::permission_level{treasury, "xfer"_n}, prop.proposal_pay.contract, "transfer"_n,
-            make_tuple(treasury, escrow, prop.proposal_pay.quantity, "rec:" + proposal_id.to_string()))
+        action(eosio::permission_level{funding_source, "xfer"_n}, prop.proposal_pay.contract, "transfer"_n,
+            make_tuple(funding_source, escrow, prop.proposal_pay.quantity, "rec:" + proposal_id.to_string()))
             .send();
 
-        action(eosio::permission_level{treasury, "xfer"_n}, prop.arbitrator_pay.contract, "transfer"_n,
-            make_tuple(treasury, escrow, prop.arbitrator_pay.quantity, "arb:" + proposal_id.to_string()))
+        action(eosio::permission_level{funding_source, "xfer"_n}, prop.arbitrator_pay.contract, "transfer"_n,
+            make_tuple(funding_source, escrow, prop.arbitrator_pay.quantity, "arb:" + proposal_id.to_string()))
             .send();
     }
 
@@ -436,12 +436,11 @@ namespace eosdac {
 
     void dacproposals::transferfunds(const proposal &prop, name dac_id) {
         proposal_table proposals(_self, dac_id.value);
-        // auto           current_configs = configs(get_self(), dac_id);
-        auto treasury = dacdir::dac_for_id(dac_id).account_for_type(dacdir::TREASURY);
-        auto escrow   = dacdir::dac_for_id(dac_id).account_for_type(dacdir::ESCROW);
+        auto           funding_source = dacdir::dac_for_id(dac_id).account_for_type(dacdir::SPENDINGS);
+        auto           escrow         = dacdir::dac_for_id(dac_id).account_for_type(dacdir::ESCROW);
 
-        eosio::action(eosio::permission_level{treasury, "escrow"_n}, escrow, "approve"_n,
-            make_tuple(prop.proposal_id.value, treasury))
+        eosio::action(eosio::permission_level{funding_source, "escrow"_n}, escrow, "approve"_n,
+            make_tuple(prop.proposal_id.value, funding_source))
             .send();
 
         clearprop(prop, dac_id);
@@ -523,7 +522,7 @@ namespace eosdac {
         // Find the difference between current custodians and the ones that have already voted to avoid double votes.
         std::vector<name> nonvoting_custodians(current_custodians.size());
         auto              end_itr = std::set_difference(current_custodians.begin(), current_custodians.end(),
-            voted_custodians.begin(), voted_custodians.end(), nonvoting_custodians.begin());
+                         voted_custodians.begin(), voted_custodians.end(), nonvoting_custodians.begin());
 
         nonvoting_custodians.resize(end_itr - nonvoting_custodians.begin());
 

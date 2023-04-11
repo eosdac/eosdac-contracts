@@ -8,13 +8,19 @@ void referendum::receive(name from, name to, asset quantity, string memo) {
     deposits_table deposits(get_self(), get_self().value);
     auto           existing = deposits.find(from.value);
 
-    check(existing == deposits.end(),
-        "ERR:EXISTING_DEPOSIT::There is an existing deposit, please call refund and try again");
-
-    deposits.emplace(get_self(), [&](deposit_info &d) {
-        d.account = from;
-        d.deposit = extended_asset(quantity, get_first_receiver());
-    });
+    if (existing == deposits.end()) {
+        deposits.emplace(get_self(), [&](deposit_info &d) {
+            d.account = from;
+            d.deposit = extended_asset(quantity, get_first_receiver());
+        });
+    } else {
+        check(
+            get_first_receiver() == existing->deposit.contract && quantity.symbol == existing->deposit.quantity.symbol,
+            "ERR:EXISTING_DEPOSIT_WITH_DIFFERENT_TOKEN::There is an existing deposit with a different token, please call refund and try again.");
+        deposits.modify(existing, same_payer, [&](deposit_info &d) {
+            d.deposit = extended_asset(d.deposit.quantity + quantity, d.deposit.contract);
+        });
+    }
 }
 
 void referendum::refund(name account) {
@@ -32,8 +38,6 @@ void referendum::refund(name account) {
 }
 
 void referendum::updateconfig(config_item config, name dac_id) {
-    checkDAC(dac_id);
-
     auto dac = dacdir::dac_for_id(dac_id);
     // auto auth_account = dac.owner; // Enable this when givin DAOs full control.
     auto auth_account = get_self();
@@ -44,26 +48,28 @@ void referendum::updateconfig(config_item config, name dac_id) {
 
 void referendum::propose(name proposer, name referendum_id, name type_name, name voting_type_name, string title,
     string content, name dac_id, vector<action> acts) {
-
-    checkDAC(dac_id);
     require_auth(proposer);
     assertValidMember(proposer, dac_id);
     auto ref_type    = referendum_type(type_name.value);
     auto voting_type = count_type(voting_type_name.value);
-#if ENABLE_BINDING_VOTE == 0
-    check(ref_type != referendum_type::TYPE_BINDING,
-        "ERR::CONTRACT_NOT_COMPILED::Contract was not compiled to allow binding votes");
-#endif
+    // #if ENABLE_BINDING_VOTE == 0
+    //     check(ref_type != referendum_type::TYPE_BINDING,
+    //         "ERR::CONTRACT_NOT_COMPILED::Contract was not compiled to allow binding votes");
+    // #endif
 
     auto config = config_item::get_current_configs(get_self(), dac_id);
     check(config.allow_vote_type.at(type_name), "ERR::VOTING_TYPE_NOT_ALLOWED::This type of vote is not allowed");
 
     switch (ref_type) {
     case referendum_type::TYPE_BINDING:
-    case referendum_type::TYPE_SEMI_BINDING:
-        check(hasAuth(acts), "ERR::PERMS_FAILED::The authorization supplied with the action does not pass");
+    case referendum_type::TYPE_SEMI_BINDING: {
+        auto dac          = dacdir::dac_for_id(dac_id);
+        auto auth_account = dac.account_for_type(dacdir::account_type::MSIGOWNED);
+
+        check(
+            hasAuth(acts, auth_account), "ERR::PERMS_FAILED::The authorization supplied with the action does not pass");
         check(acts.size() > 0, "ERR::TYPE_REQUIRES_ACTION::This type of referendum requires an action to be executed");
-        break;
+    } break;
     case referendum_type::TYPE_OPINION:
         check(acts.size() == 0, "ERR::CANT_SEND_ACT::Can't supply an action with opinion based referendum");
         break;
@@ -144,7 +150,6 @@ void referendum::propose(name proposer, name referendum_id, name type_name, name
 
 void referendum::vote(name voter, name referendum_id, name vote, name dac_id) {
     require_auth(voter);
-    checkDAC(dac_id);
     assertValidMember(voter, dac_id);
     auto dac = dacdir::dac_for_id(dac_id);
 
@@ -248,7 +253,6 @@ void referendum::vote(name voter, name referendum_id, name vote, name dac_id) {
 }
 
 void referendum::updatestatus(name referendum_id, name dac_id) {
-    checkDAC(dac_id);
     auto       referenda = referenda_table{get_self(), dac_id.value};
     const auto ref = referenda.require_find(referendum_id.value, "ERR::REFERENDUM_NOT_FOUND::Referendum not found");
     const auto new_status = ref->get_status(get_self(), dac_id);
@@ -258,7 +262,6 @@ void referendum::updatestatus(name referendum_id, name dac_id) {
 }
 
 void referendum::cancel(name referendum_id, name dac_id) {
-    checkDAC(dac_id);
     referenda_table referenda(get_self(), dac_id.value);
     auto            ref = referenda.get(referendum_id.value, "ERR::REFERENDUM_NOT_FOUND::Referendum not found");
 
@@ -268,8 +271,6 @@ void referendum::cancel(name referendum_id, name dac_id) {
 }
 
 void referendum::exec(name referendum_id, name dac_id) {
-    checkDAC(dac_id);
-
     updatestatus(referendum_id, dac_id);
 
     referenda_table referenda(get_self(), dac_id.value);
@@ -294,7 +295,6 @@ void referendum::exec(name referendum_id, name dac_id) {
 }
 
 void referendum::stakeobsv(vector<account_stake_delta> stake_deltas, name dac_id) {
-    checkDAC(dac_id);
     auto dac            = dacdir::dac_for_id(dac_id);
     auto token_contract = dac.symbol.get_contract();
     require_auth(token_contract);
@@ -331,7 +331,6 @@ void referendum::stakeobsv(vector<account_stake_delta> stake_deltas, name dac_id
 }
 
 void referendum::clean(name account, name dac_id) {
-    checkDAC(dac_id);
     require_auth(account);
 
     referenda_table referenda(get_self(), dac_id.value);
@@ -353,8 +352,6 @@ void referendum::clean(name account, name dac_id) {
 }
 
 void referendum::clearconfig(name dac_id) {
-    checkDAC(dac_id);
-
     auto dac          = dacdir::dac_for_id(dac_id);
     auto auth_account = dac.owner;
     require_auth(auth_account);
@@ -369,7 +366,7 @@ ACTION referendum::publresult(referendum_data ref) {
 
 // Private
 
-bool referendum::hasAuth(vector<action> acts) {
+bool referendum::hasAuth(vector<action> acts, name required_auth_account) {
     // TODO : this only checks if the permissions provided in the actions can authenticate the action
     // not if this contract will be able to execute it
     transaction trx;
@@ -377,6 +374,11 @@ bool referendum::hasAuth(vector<action> acts) {
 
     auto check_perms = std::vector<permission_level>();
     for (auto a : acts) {
+        for (auto auth : a.authorization) {
+            check(auth.actor == required_auth_account,
+                "ERR::REQUESTED_AUTHS_FOR_ACTIONS_OUTSIDE_DAO::Actions includes unauthorised transactions for DAO: %s",
+                auth.actor);
+        }
         check_perms.insert(check_perms.end(), a.authorization.begin(), a.authorization.end());
     }
 
@@ -387,12 +389,6 @@ bool referendum::hasAuth(vector<action> acts) {
         packed_trx.data(), packed_trx.size(), (const char *)0, 0, packed_perms.data(), packed_perms.size());
 
     return (res > 0);
-}
-
-void referendum::checkDAC(name dac_id) {
-#ifdef RESTRICT_DAC
-    check(dac_id == name(RESTRICT_DAC), "DAC not permitted");
-#endif
 }
 
 void referendum::proposeMsig(referendum_data ref, name dac_id) {
