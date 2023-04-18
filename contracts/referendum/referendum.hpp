@@ -201,7 +201,6 @@ CONTRACT referendum : public contract {
 
     bool hasAuth(vector<action> acts, name required_auth_account);
     void proposeMsig(referendum_data ref, name dac_id);
-    void checkDAC(name dac_id);
 
   public:
     using contract::contract;
