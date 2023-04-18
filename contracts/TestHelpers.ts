@@ -29,6 +29,8 @@ import { rename, stat } from 'node:fs/promises';
 
 export var NUMBER_OF_CANDIDATES = 7;
 
+type config_type = Partial<{ planet: Account; vote_weight_account: Account }>;
+
 export class SharedTestObjects {
   // Shared Instances to use between tests.
   private static instance: SharedTestObjects;
@@ -169,7 +171,7 @@ export class SharedTestObjects {
     dacId: string,
     symbol: string,
     initialAsset: string,
-    config?: any
+    config?: config_type
   ) {
     await this.setup_new_auth_account();
     // Further setup after the inital singleton object have been created.
@@ -305,7 +307,7 @@ export class SharedTestObjects {
   private async register_dac_with_directory(
     dacId: string,
     tokenSymbol: string,
-    config?: any
+    config?: config_type
   ) {
     const accounts = [
       {
@@ -325,18 +327,87 @@ export class SharedTestObjects {
         value: this.referendum_contract.account.name,
       },
     ];
-    if (config && config.planet) {
-      accounts.push({
-        key: Account_type.MSIGOWNED,
-        value: config.planet.name,
-      });
-    }
-    if (config && config.vote_weight_account) {
-      console.log('adding ', config.vote_weight_account.name);
-      accounts.push({
-        key: Account_type.VOTING,
-        value: config.vote_weight_account.name,
-      });
+    if (config) {
+      if (config.planet) {
+        accounts.push({
+          key: Account_type.MSIGOWNED,
+          value: config.planet.name,
+        });
+        accounts.push({
+          key: Account_type.SPENDINGS,
+          value: config.planet.name,
+        });
+        await debugPromise(
+          UpdateAuth.execUpdateAuth(
+            [{ actor: config.planet.name, permission: 'active' }],
+            config.planet.name,
+            'escrow',
+            'active',
+            UpdateAuth.AuthorityToSet.forContractCode(
+              this.dacproposals_contract.account
+            )
+          ),
+          'add escrow auth'
+        );
+
+        await debugPromise(
+          UpdateAuth.execUpdateAuth(
+            [{ actor: config.planet.name, permission: 'active' }],
+            config.planet.name,
+            'xfer',
+            'active',
+            UpdateAuth.AuthorityToSet.forContractCode(
+              this.dacproposals_contract.account
+            )
+          ),
+          'add xfer to SPENDINGS'
+        );
+        await UpdateAuth.execLinkAuth(
+          [{ actor: config.planet.name, permission: 'active' }],
+          config.planet.name,
+          this.dacescrow_contract.account.name,
+          'init',
+          'escrow'
+        );
+
+        await debugPromise(
+          UpdateAuth.execLinkAuth(
+            [{ actor: config.planet.name, permission: 'active' }],
+            config.planet.name,
+            this.dacescrow_contract.account.name,
+            'approve',
+            'escrow'
+          ),
+          'linking escrow perm to planet spendings'
+        );
+        await debugPromise(
+          UpdateAuth.execLinkAuth(
+            [{ actor: config.planet.name, permission: 'active' }],
+            config.planet.name,
+            this.dac_token_contract.account.name,
+            'transfer',
+            'xfer'
+          ),
+          'linking xfer perm to transfer tokens'
+        );
+        await debugPromise(
+          UpdateAuth.execLinkAuth(
+            [{ actor: config.planet.name, permission: 'active' }],
+            config.planet.name,
+            'eosio.token',
+            'transfer',
+            'xfer'
+          ),
+          'linking xfer perm to transfer tokens'
+        );
+      }
+      if (config.vote_weight_account) {
+        console.log('adding ', config.vote_weight_account.name);
+        accounts.push({
+          key: Account_type.VOTING,
+          value: config.vote_weight_account.name,
+        });
+      }
     }
 
     await this.dacdirectory_contract.regdac(
@@ -415,41 +486,10 @@ export class SharedTestObjects {
       UpdateAuth.execUpdateAuth(
         this.treasury_account.active,
         this.treasury_account.name,
-        'escrow',
-        'active',
-        UpdateAuth.AuthorityToSet.forContractCode(
-          this.dacproposals_contract.account
-        )
-      ),
-      'add escrow auth'
-    );
-
-    await debugPromise(
-      UpdateAuth.execUpdateAuth(
-        this.treasury_account.active,
-        this.treasury_account.name,
         'xfer',
         'active',
-        UpdateAuth.AuthorityToSet.explicitAuthorities(
-          1,
-          [
-            {
-              permission: {
-                actor: this.daccustodian_contract.account.name,
-                permission: 'eosio.code',
-              },
-              weight: 1,
-            },
-            {
-              permission: {
-                actor: this.dacproposals_contract.account.name,
-                permission: 'eosio.code',
-              },
-              weight: 1,
-            },
-          ],
-          [],
-          []
+        UpdateAuth.AuthorityToSet.forContractCode(
+          this.daccustodian_contract.account
         )
       ),
       'add xfer to treasury'
@@ -534,25 +574,6 @@ export class SharedTestObjects {
       this.dac_token_contract.account.name,
       'weightobsv',
       'notify'
-    );
-
-    await UpdateAuth.execLinkAuth(
-      this.treasury_account.active,
-      this.treasury_account.name,
-      this.dacescrow_contract.account.name,
-      'init',
-      'escrow'
-    );
-
-    await debugPromise(
-      UpdateAuth.execLinkAuth(
-        this.treasury_account.active,
-        this.treasury_account.name,
-        this.dacescrow_contract.account.name,
-        'approve',
-        'escrow'
-      ),
-      'linking escrow perm to treasury'
     );
 
     await UpdateAuth.execLinkAuth(
@@ -976,6 +997,7 @@ export enum Account_type {
   VOTING = 8,
   ACTIVATION = 9,
   REFERENDUM = 10,
+  SPENDINGS = 11,
   EXTERNAL = 254,
   OTHER = 255,
 }

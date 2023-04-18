@@ -89,6 +89,18 @@ describe('Dacproposals', () => {
     arbitrator = regMembers[2];
     proposer1Account = regMembers[3];
     delegateeCustodian = propDacCustodians[4];
+
+    await debugPromise(
+      UpdateAuth.execUpdateAuth(planet.active, planet.name, 'active', 'owner', {
+        accounts: [
+          { permission: { actor: planet.name, permission: 'high' }, weight: 1 },
+        ],
+        keys: [],
+        threshold: 1,
+        waits: [],
+      }),
+      'make high the active of the planet'
+    );
   });
   context('updateconfig', async () => {
     context('without valid auth', async () => {
@@ -887,7 +899,7 @@ describe('Dacproposals', () => {
           authorization: [{ actor: 'eosio', permission: 'active' }],
           data: {
             from: 'eosio',
-            to: shared.treasury_account.name,
+            to: planet.name,
             quantity: '100000.0000 EOS',
             memo: 'initial funds for proposal payments',
           },
@@ -903,7 +915,7 @@ describe('Dacproposals', () => {
           ],
           data: {
             from: shared.tokenIssuer.name,
-            to: shared.treasury_account.name,
+            to: planet.name,
             quantity: '100000.0000 PROPDAC',
             memo: 'initial funds for proposal payments',
           },
@@ -936,7 +948,7 @@ describe('Dacproposals', () => {
           });
           const row = proposalRow.rows[0];
           chai.expect(row.key).to.eq(newpropid);
-          chai.expect(row.sender).to.eq('treasury');
+          chai.expect(row.sender).to.eq(planet.name);
           chai.expect(row.receiver).to.eq(proposer1Account.name);
           chai.expect(row.arb).to.eq(arbitrator.name);
           chai.expect(row.receiver_pay.quantity).to.eq('100.0000 EOS');
@@ -1355,10 +1367,10 @@ describe('Dacproposals', () => {
                 [{ balance: '10.0000 PROPDAC' }]
               );
             });
-            it('treasury should sent funds to escrow', async () => {
+            it('planet should sent funds to escrow', async () => {
               await assertRowsEqual(
                 shared.dac_token_contract.accountsTable({
-                  scope: shared.treasury_account.name,
+                  scope: planet.name,
                 }),
                 [{ balance: '99990.0000 PROPDAC' }]
               );
@@ -1418,10 +1430,10 @@ describe('Dacproposals', () => {
                 [{ balance: '20000.0000 PROPDAC' }]
               );
             });
-            it('dacescrow arbitrator funds should be returned to treasury', async () => {
+            it('dacescrow arbitrator funds should be returned to planet', async () => {
               await assertRowsEqual(
                 shared.dac_token_contract.accountsTable({
-                  scope: shared.treasury_account.name,
+                  scope: planet.name,
                 }),
                 [{ balance: '100000.0000 PROPDAC' }]
               );
@@ -1624,10 +1636,10 @@ describe('Dacproposals', () => {
             [{ balance: '10.0000 PROPDAC' }]
           );
         });
-        it('treasury should sent funds to escrow', async () => {
+        it('planet should sent funds to escrow', async () => {
           await assertRowsEqual(
             shared.dac_token_contract.accountsTable({
-              scope: shared.treasury_account.name,
+              scope: planet.name,
             }),
             [{ balance: '99990.0000 PROPDAC' }]
           );
@@ -1704,10 +1716,10 @@ describe('Dacproposals', () => {
           );
         });
 
-        it('dacescrow arbitrator funds should not be returned to treasury', async () => {
+        it('dacescrow arbitrator funds should not be returned to planet', async () => {
           await assertRowsEqual(
             shared.dac_token_contract.accountsTable({
-              scope: shared.treasury_account.name,
+              scope: planet.name,
             }),
             [{ balance: '99990.0000 PROPDAC' }]
           );
@@ -1893,10 +1905,10 @@ describe('Dacproposals', () => {
               [{ balance: '0.0000 PROPDAC' }]
             );
           });
-          it('treasury should sent funds to escrow', async () => {
+          it('planet should sent funds to escrow', async () => {
             await assertRowsEqual(
               shared.dac_token_contract.accountsTable({
-                scope: shared.treasury_account.name,
+                scope: planet.name,
               }),
               [{ balance: '99980.0000 PROPDAC' }]
             );
@@ -1971,10 +1983,10 @@ describe('Dacproposals', () => {
             );
           });
 
-          it('dacescrow arbitrator funds should be returned to treasury', async () => {
+          it('dacescrow arbitrator funds should be returned to planet', async () => {
             await assertRowsEqual(
               shared.dac_token_contract.accountsTable({
-                scope: shared.treasury_account.name,
+                scope: planet.name,
               }),
               [{ balance: '99980.0000 PROPDAC' }]
             );
@@ -2133,7 +2145,7 @@ describe('Dacproposals', () => {
             );
 
             expect(escrow.receiver).to.equal(proposer1Account.name);
-            expect(escrow.sender).to.equal(shared.treasury_account.name);
+            expect(escrow.sender).to.equal(planet.name);
             expect(escrow.receiver_pay.quantity).to.equal('106.0000 EOS');
             expect(escrow.receiver_pay.contract).to.equal('eosio.token');
             expect(escrow.memo).to.equal(
@@ -2751,6 +2763,38 @@ async function setup_planet() {
     planet.name,
     shared.dac_token_contract.name,
     'transfer',
+    'one'
+  );
+
+  await UpdateAuth.execLinkAuth(
+    planet.active,
+    planet.name,
+    shared.dac_token_contract.name,
+    'comment',
+    'one'
+  );
+
+  await UpdateAuth.execLinkAuth(
+    planet.active,
+    planet.name,
+    shared.dac_token_contract.name,
+    'delgatevote',
+    'one'
+  );
+
+  await UpdateAuth.execLinkAuth(
+    planet.active,
+    planet.name,
+    shared.dac_token_contract.name,
+    'delgatecat',
+    'one'
+  );
+
+  await UpdateAuth.execLinkAuth(
+    planet.active,
+    planet.name,
+    shared.dac_token_contract.name,
+    'voteprop',
     'one'
   );
 }

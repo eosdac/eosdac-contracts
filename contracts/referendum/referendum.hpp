@@ -101,7 +101,7 @@ CONTRACT referendum : public contract {
         map<name, uint16_t>       pass;           // Percentage with 2 decimal places, eg. 1001 == 10.01%
         map<name, uint64_t>       quorum_token;   // Sum of currency units, yes no and abstain votes
         map<name, uint64_t>       quorum_account; // Sum of accounts, yes no and abstain votes
-        map<name, uint8_t>        allow_per_account_voting;
+        map<name, bool>           allow_per_account_voting;
         map<name, bool>           allow_vote_type;
 
         static config_item get_current_configs(eosio::name account, eosio::name scope) {
@@ -199,9 +199,8 @@ CONTRACT referendum : public contract {
     using deposits_table = eosio::multi_index<"deposits"_n, deposit_info,
         indexed_by<"bysym"_n, const_mem_fun<deposit_info, uint128_t, &deposit_info::by_sym>>>;
 
-    bool hasAuth(vector<action> acts);
+    bool hasAuth(vector<action> acts, name required_auth_account);
     void proposeMsig(referendum_data ref, name dac_id);
-    void checkDAC(name dac_id);
 
   public:
     using contract::contract;
