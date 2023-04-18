@@ -46,6 +46,7 @@ const seconds = 1;
 const minutes = 60 * seconds;
 
 let serialized_actions: any;
+let serialized_actions_outside_dao: any;
 // let delegateeCustodian: Account;
 let regMembers: Account[];
 let candidates: Account[];
@@ -89,6 +90,22 @@ describe('Referendum', () => {
         name: 'transfer',
         data: {
           from: planet.name,
+          to: user1.name,
+          quantity: '10.1234 REF',
+          memo: 'testing',
+        },
+      },
+    ]);
+
+    serialized_actions_outside_dao = await api.serializeActions([
+      {
+        account: shared.dac_token_contract.name,
+        authorization: [
+          { actor: shared.daccustodian_contract.name, permission: 'active' },
+        ],
+        name: 'transfer',
+        data: {
+          from: shared.daccustodian_contract.name,
           to: user1.name,
           quantity: '10.1234 REF',
           memo: 'testing',
@@ -283,6 +300,22 @@ describe('Referendum', () => {
               '100.0000 REF',
               'fee deposit',
               { from: user1 }
+            );
+          });
+          it('with actions outside dao should fail', async () => {
+            await assertEOSErrorIncludesMessage(
+              referendum.propose(
+                user1.name,
+                'ref1',
+                vote_type.TYPE_SEMI_BINDING,
+                count_type.COUNT_TOKEN,
+                'title',
+                'content',
+                dacId,
+                serialized_actions_outside_dao,
+                { from: user1 }
+              ),
+              'ERR::REQUESTED_AUTHS_FOR_ACTIONS_OUTSIDE_DAO::'
             );
           });
           it('should work', async () => {
