@@ -263,9 +263,9 @@ void referendum::updatestatus(name referendum_id, name dac_id) {
 
 void referendum::cancel(name referendum_id, name dac_id) {
     referenda_table referenda(get_self(), dac_id.value);
-    auto            ref = referenda.get(referendum_id.value, "ERR::REFERENDUM_NOT_FOUND::Referendum not found");
+    auto ref = referenda.require_find(referendum_id.value, "ERR::REFERENDUM_NOT_FOUND::Referendum not found");
 
-    require_auth(ref.proposer);
+    require_auth(ref->proposer);
 
     referenda.erase(ref);
 }
