@@ -337,69 +337,6 @@ export class SharedTestObjects {
           key: Account_type.SPENDINGS,
           value: config.planet.name,
         });
-        await debugPromise(
-          UpdateAuth.execUpdateAuth(
-            [{ actor: config.planet.name, permission: 'active' }],
-            config.planet.name,
-            'escrow',
-            'active',
-            UpdateAuth.AuthorityToSet.forContractCode(
-              this.dacproposals_contract.account
-            )
-          ),
-          'add escrow auth'
-        );
-
-        await debugPromise(
-          UpdateAuth.execUpdateAuth(
-            [{ actor: config.planet.name, permission: 'active' }],
-            config.planet.name,
-            'xfer',
-            'active',
-            UpdateAuth.AuthorityToSet.forContractCode(
-              this.dacproposals_contract.account
-            )
-          ),
-          'add xfer to SPENDINGS'
-        );
-        await UpdateAuth.execLinkAuth(
-          [{ actor: config.planet.name, permission: 'active' }],
-          config.planet.name,
-          this.dacescrow_contract.account.name,
-          'init',
-          'escrow'
-        );
-
-        await debugPromise(
-          UpdateAuth.execLinkAuth(
-            [{ actor: config.planet.name, permission: 'active' }],
-            config.planet.name,
-            this.dacescrow_contract.account.name,
-            'approve',
-            'escrow'
-          ),
-          'linking escrow perm to planet spendings'
-        );
-        await debugPromise(
-          UpdateAuth.execLinkAuth(
-            [{ actor: config.planet.name, permission: 'active' }],
-            config.planet.name,
-            this.dac_token_contract.account.name,
-            'transfer',
-            'xfer'
-          ),
-          'linking xfer perm to transfer tokens'
-        );
-        await debugPromise(
-          UpdateAuth.execLinkAuth(
-            [{ actor: config.planet.name, permission: 'active' }],
-            config.planet.name,
-            'eosio.token',
-            'transfer',
-            'xfer'
-          ),
-          'linking xfer perm to transfer tokens'
-        );
       }
       if (config.vote_weight_account) {
         console.log('adding ', config.vote_weight_account.name);
