@@ -242,16 +242,16 @@ namespace eosdac {
             p.state = ProposalStateWork_in_progress;
         });
 
-        dacescrow::init_action{escrow, {funding_source, "escrow"_n}}
+        dacescrow::init_action{escrow, {funding_source, "active"_n}}
             .to_action(
                 funding_source, prop.proposer, prop.arbitrator, time_now + (prop.job_duration * 2), memo, proposal_id)
             .send();
 
-        action(eosio::permission_level{funding_source, "xfer"_n}, prop.proposal_pay.contract, "transfer"_n,
+        action(eosio::permission_level{funding_source, "active"_n}, prop.proposal_pay.contract, "transfer"_n,
             make_tuple(funding_source, escrow, prop.proposal_pay.quantity, "rec:" + proposal_id.to_string()))
             .send();
 
-        action(eosio::permission_level{funding_source, "xfer"_n}, prop.arbitrator_pay.contract, "transfer"_n,
+        action(eosio::permission_level{funding_source, "active"_n}, prop.arbitrator_pay.contract, "transfer"_n,
             make_tuple(funding_source, escrow, prop.arbitrator_pay.quantity, "arb:" + proposal_id.to_string()))
             .send();
     }
@@ -439,7 +439,7 @@ namespace eosdac {
         auto           funding_source = dacdir::dac_for_id(dac_id).account_for_type(dacdir::SPENDINGS);
         auto           escrow         = dacdir::dac_for_id(dac_id).account_for_type(dacdir::ESCROW);
 
-        eosio::action(eosio::permission_level{funding_source, "escrow"_n}, escrow, "approve"_n,
+        eosio::action(eosio::permission_level{funding_source, "active"_n}, escrow, "approve"_n,
             make_tuple(prop.proposal_id.value, funding_source))
             .send();
 

@@ -93,6 +93,13 @@ describe('Dacproposals', () => {
     await debugPromise(
       UpdateAuth.execUpdateAuth(planet.active, planet.name, 'active', 'owner', {
         accounts: [
+          {
+            permission: {
+              actor: shared.dacproposals_contract.account.name,
+              permission: 'eosio.code',
+            },
+            weight: 1,
+          },
           { permission: { actor: planet.name, permission: 'high' }, weight: 1 },
         ],
         keys: [],
