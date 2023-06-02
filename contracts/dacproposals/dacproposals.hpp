@@ -19,9 +19,17 @@ namespace eosdac {
     static constexpr eosio::name VOTE_FINAL_APPROVE{"finalapprove"};
     static constexpr eosio::name VOTE_FINAL_DENY{"finaldeny"};
 
-    static constexpr eosio::name VOTE_ABSTAIN{""};
+    static constexpr eosio::name VOTE_ABSTAIN{"abstain"};
     static constexpr eosio::name VOTE_APPROVE{"approve"};
     static constexpr eosio::name VOTE_DENY{"deny"};
+
+    static constexpr eosio::name STATE_PENDING_APPROVAL{"pendingappr"};
+    static constexpr eosio::name STATE_IN_PROGRESS{"inprogress"};
+    static constexpr eosio::name STATE_PENDING_FINALIZE{"pendingfin"};
+    static constexpr eosio::name STATE_HAS_ENOUGH_APP_VOTES{"apprvtes"};
+    static constexpr eosio::name STATE_HAS_ENOUGH_FIN_VOTES{"apprfinvtes"};
+    static constexpr eosio::name STATE_EXPIRED{"expired"};
+    static constexpr eosio::name STATE_DISPUTED{"indispute"};
 
     CONTRACT dacproposals : public contract {
         enum VoteTypePublic : uint64_t {
@@ -42,14 +50,14 @@ namespace eosdac {
             finalize_deny = VOTE_FINAL_DENY.value
         };
 
-        enum ProposalState : uint8_t {
-            ProposalStatePending_approval = 0,
-            ProposalStateWork_in_progress,
-            ProposalStatePending_finalize,
-            ProposalStateHas_enough_approvals_votes,
-            ProposalStateHas_enough_finalize_votes,
-            ProposalStateExpired,
-            ProposalStateInDispute,
+        enum ProposalState : uint64_t {
+            ProposalStatePending_approval           = STATE_PENDING_APPROVAL.value,
+            ProposalStateWork_in_progress           = STATE_IN_PROGRESS.value,
+            ProposalStatePending_finalize           = STATE_PENDING_FINALIZE.value,
+            ProposalStateHas_enough_approvals_votes = STATE_HAS_ENOUGH_APP_VOTES.value,
+            ProposalStateHas_enough_finalize_votes  = STATE_HAS_ENOUGH_FIN_VOTES.value,
+            ProposalStateExpired                    = STATE_EXPIRED.value,
+            ProposalStateInDispute                  = STATE_DISPUTED.value
         };
 
       public:
@@ -60,7 +68,7 @@ namespace eosdac {
             string         content_hash;
             extended_asset proposal_pay;
             extended_asset arbitrator_pay;
-            uint8_t        state;
+            name           state;
             time_point_sec expiry;
             uint32_t       job_duration; // job duration in seconds
             uint16_t       category;

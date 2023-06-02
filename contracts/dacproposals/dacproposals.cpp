@@ -46,7 +46,7 @@ namespace eosdac {
             p.content_hash   = content_hash;
             p.proposal_pay   = proposal_pay;
             p.arbitrator_pay = arbitrator_pay;
-            p.state          = ProposalStatePending_approval;
+            p.state          = STATE_PENDING_APPROVAL;
             p.category       = category;
             p.job_duration   = job_duration;
             p.expiry         = time_point_sec(current_time_point().sec_since_epoch()) + approval_duration;
@@ -98,7 +98,7 @@ namespace eosdac {
 
         const proposal &prop =
             proposals.get(proposal_id.value, "ERR::VOTEPROP_PROPOSAL_NOT_FOUND::Proposal not found.﻿");
-        switch (prop.state) {
+        switch (ProposalState{prop.state.value}) {
         case ProposalStatePending_approval:
         case ProposalStateHas_enough_approvals_votes:
             check(prop.has_not_expired(), "ERR::PROPOSAL_EXPIRED::Proposal has expired.");
@@ -239,20 +239,22 @@ namespace eosdac {
         check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
 
         proposals.modify(prop, same_payer, [&](auto &p) {
-            p.state = ProposalStateWork_in_progress;
+            p.state = STATE_IN_PROGRESS;
         });
 
         dacescrow::init_action{escrow, {funding_source, "active"_n}}
-            .to_action(
-                funding_source, prop.proposer, prop.arbitrator, time_now + (prop.job_duration * 2), memo, proposal_id)
+            .to_action(funding_source, prop.proposer, prop.arbitrator, time_now + (prop.job_duration * 2), memo,
+                proposal_id, dac_id)
             .send();
 
         action(eosio::permission_level{funding_source, "active"_n}, prop.proposal_pay.contract, "transfer"_n,
-            make_tuple(funding_source, escrow, prop.proposal_pay.quantity, "rec:" + proposal_id.to_string()))
+            make_tuple(funding_source, escrow, prop.proposal_pay.quantity,
+                "rec:" + proposal_id.to_string() + ":" + dac_id.to_string()))
             .send();
 
         action(eosio::permission_level{funding_source, "active"_n}, prop.arbitrator_pay.contract, "transfer"_n,
-            make_tuple(funding_source, escrow, prop.arbitrator_pay.quantity, "arb:" + proposal_id.to_string()))
+            make_tuple(funding_source, escrow, prop.arbitrator_pay.quantity,
+                "arb:" + proposal_id.to_string() + ":" + dac_id.to_string()))
             .send();
     }
 
@@ -264,11 +266,11 @@ namespace eosdac {
 
         require_auth(prop.proposer);
         assertValidMember(prop.proposer, dac_id);
-        check(prop.state == ProposalStateWork_in_progress,
+        check(prop.state == STATE_IN_PROGRESS,
             "ERR::COMPLETEWORK_WRONG_STATE::Worker proposal can only be completed from work_in_progress state");
 
         proposals.modify(prop, prop.proposer, [&](proposal &p) {
-            p.state = ProposalStatePending_finalize;
+            p.state = STATE_PENDING_FINALIZE;
         });
     }
 
@@ -278,7 +280,7 @@ namespace eosdac {
 
         const proposal &prop = proposals.get(proposal_id.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found.");
 
-        check(prop.state == ProposalStatePending_finalize || prop.state == ProposalStateHas_enough_finalize_votes,
+        check(prop.state == STATE_PENDING_FINALIZE || prop.state == STATE_HAS_ENOUGH_FIN_VOTES,
             "ERR::FINALIZE_WRONG_STATE::Proposal is not in the pending_finalize state therefore cannot be finalized.");
 
         int16_t approved_count = count_votes(prop, finalize_approve, dac_id);
@@ -300,10 +302,10 @@ namespace eosdac {
         proposal_table  proposals(_self, dac_id.value);
         const proposal &prop = proposals.get(proposal_id.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found.");
         require_auth(prop.proposer);
-        check(prop.state == ProposalStatePending_approval || prop.state == ProposalStateHas_enough_approvals_votes,
+        check(prop.state == STATE_PENDING_APPROVAL || prop.state == STATE_HAS_ENOUGH_APP_VOTES,
             "ERR::CANCELPROP_WRONG_STATE::Worker proposal is in the wrong state to be cancelled with cancelprop. Try cancelwip.");
 
-        escrows_table escrows = escrows_table(escrow, escrow.value);
+        escrows_table escrows = escrows_table(escrow, dac_id.value);
         auto          esc_itr = escrows.find(proposal_id.value);
         check(esc_itr == escrows.end(),
             "ERR::ESCROW_ACTIVE::There should not be an escrow for a proposal. Call cancelwip instead.");
@@ -317,12 +319,12 @@ namespace eosdac {
         proposal_table  proposals(_self, dac_id.value);
         const proposal &prop = proposals.get(proposal_id.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found.");
         require_auth(prop.proposer);
-        check(prop.state == ProposalStateWork_in_progress || prop.state == ProposalStatePending_finalize,
+        check(prop.state == STATE_IN_PROGRESS || prop.state == STATE_PENDING_FINALIZE,
             "ERR::CANCELWIP_WRONG_STATE::Worker proposal is in the wrong state to be cancelled with cancelwip. Try cancelprop.");
 
         auto escrow = dacdir::dac_for_id(dac_id).account_for_type(dacdir::ESCROW);
         check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
-        escrows_table escrows = escrows_table(escrow, escrow.value);
+        escrows_table escrows = escrows_table(escrow, dac_id.value);
         auto          esc_itr = escrows.find(proposal_id.value);
         check(esc_itr != escrows.end(),
             "ERR::ESCROW_ACTIVE::There should be an escrow for a proposal for this action. Call cancelprop instead.");
@@ -335,7 +337,7 @@ namespace eosdac {
         // The escrow should be locked first in a Transaction.
         auto escrow = dacdir::dac_for_id(dac_id).account_for_type(dacdir::ESCROW);
         check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
-        escrows_table escrows = escrows_table(escrow, escrow.value);
+        escrows_table escrows = escrows_table(escrow, dac_id.value);
         auto          esc_itr = escrows.find(proposal_id.value);
         check(esc_itr != escrows.end(),
             "ERR::ESCROW_ACTIVE::There should be an escrow for a proposal for this action. Call cancelprop instead.");
@@ -348,11 +350,11 @@ namespace eosdac {
 
         require_auth(prop.proposer);
         assertValidMember(prop.proposer, dac_id);
-        check(prop.state == ProposalStatePending_finalize,
+        check(prop.state == STATE_PENDING_FINALIZE,
             "ERR::DISPUTE_WRONG_STATE::Worker proposal can only be disputed from Pending_finalize state");
 
         proposals.modify(prop, prop.proposer, [&](proposal &p) {
-            p.state = ProposalStateInDispute;
+            p.state = STATE_DISPUTED;
         });
     }
 
@@ -407,7 +409,7 @@ namespace eosdac {
         int16_t       approved_count;
         ProposalState newPropState;
 
-        switch (prop.state) {
+        switch (ProposalState{prop.state.value}) {
         case ProposalStatePending_approval:
         case ProposalStateHas_enough_approvals_votes:
             if (!prop.has_not_expired()) {
@@ -426,10 +428,14 @@ namespace eosdac {
                                  ? ProposalStateHas_enough_finalize_votes
                                  : ProposalStatePending_finalize;
             break;
+        case ProposalStateExpired:
+        case ProposalStateInDispute:
+        case ProposalStateWork_in_progress:
+            check(false, "ERR::UPDPROPVOTES_WRONG_STATE::Cannot update votes for this proposal state");
         }
-        if (prop.state != newPropState) {
+        if (prop.state != name{newPropState}) {
             proposals.modify(prop, prop.proposer, [&](proposal &p) {
-                p.state = newPropState;
+                p.state = name{newPropState};
             });
         }
     }
@@ -440,7 +446,7 @@ namespace eosdac {
         auto           escrow         = dacdir::dac_for_id(dac_id).account_for_type(dacdir::ESCROW);
 
         eosio::action(eosio::permission_level{funding_source, "active"_n}, escrow, "approve"_n,
-            make_tuple(prop.proposal_id.value, funding_source))
+            make_tuple(prop.proposal_id.value, funding_source, dac_id))
             .send();
 
         clearprop(prop, dac_id);
@@ -575,7 +581,7 @@ namespace eosdac {
 
         const proposal &prop = proposals.get(proposal_id.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found.");
 
-        check(prop.state == ProposalStatePending_approval || prop.state == ProposalStateHas_enough_approvals_votes,
+        check(prop.state == STATE_PENDING_APPROVAL || prop.state == STATE_HAS_ENOUGH_APP_VOTES,
             "ERR::STARTWORK_WRONG_STATE::Proposal is not in the pending approval state therefore cannot start work.");
         check(prop.has_not_expired(), "ERR::PROPOSAL_EXPIRED::Proposal has expired.");
 
@@ -599,12 +605,12 @@ namespace eosdac {
         auto escrow = dacdir::dac_for_id(dac_id).account_for_type(dacdir::ESCROW);
         check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
 
-        escrows_table escrows = escrows_table(escrow, escrow.value);
+        escrows_table escrows = escrows_table(escrow, dac_id.value);
         auto          esc_itr = escrows.find(proposal_id.value);
         check(esc_itr == escrows.end(),
             "ERR::ESCROW_STILL_ACTIVE::Escrow is still active in escrow contract. It should have been either approved or dissapproved before calling this action.");
 
-        check(prop.state == ProposalStateInDispute,
+        check(prop.state == STATE_DISPUTED,
             "ERR::PROP_NOT_IN_DISPUTE_STATE::A proposal can only be denied by an arbitrator when in dispute state.");
 
         clearprop(prop, dac_id);

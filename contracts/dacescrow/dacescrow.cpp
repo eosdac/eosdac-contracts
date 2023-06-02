@@ -1,3 +1,4 @@
+#include "../../contract-shared-headers/contracts-common/util.hpp"
 #include <eosio/eosio.hpp>
 #include <eosio/transaction.hpp>
 
@@ -20,11 +21,13 @@ namespace eosdac {
 
         require_auth(from);
 
-        std::size_t separatorIdx = memo.find(":");
-        string      paymentType  = memo.substr(0, separatorIdx);
-        string      key          = memo.substr(separatorIdx + 1, memo.length() - separatorIdx - 1);
-        name        keyName      = name(key.c_str());
-        auto        esc_itr      = escrows.find(keyName.value);
+        auto   tokens      = split(memo, ":");
+        string paymentType = tokens[0];
+        auto   keyName     = name(tokens[1].c_str());
+        auto   dac_id      = name(tokens[2].c_str());
+
+        auto escrows = escrows_table(get_self(), dac_id.value);
+        auto esc_itr = escrows.find(keyName.value);
 
         check(esc_itr != escrows.end(), "Could not find existing escrow to deposit to, transfer cancelled");
 
@@ -44,7 +47,8 @@ namespace eosdac {
     }
 
     ACTION
-    dacescrow::init(name sender, name receiver, name arb, time_point_sec expires, string memo, name ext_reference) {
+    dacescrow::init(
+        name sender, name receiver, name arb, time_point_sec expires, string memo, name ext_reference, name dac_id) {
         require_auth(sender);
 
         check(receiver != arb, "Receiver cannot be the same as arbitrator");
@@ -53,6 +57,7 @@ namespace eosdac {
 
         extended_asset zero_asset{{0, symbol{"EOS", 4}}, "eosio.token"_n};
 
+        auto escrows   = escrows_table(get_self(), dac_id.value);
         auto by_sender = escrows.get_index<"bysender"_n>();
         check(
             escrows.find(ext_reference.value) == escrows.end(), "Already have an escrow with this external reference");
@@ -70,9 +75,10 @@ namespace eosdac {
         });
     }
 
-    ACTION dacescrow::approve(name key, name approver) {
+    ACTION dacescrow::approve(name key, name approver, name dac_id) {
         require_auth(approver);
 
+        auto escrows = escrows_table(get_self(), dac_id.value);
         auto esc_itr = escrows.find(key.value);
         check(esc_itr != escrows.end(), "Could not find escrow with that index");
 
@@ -97,9 +103,10 @@ namespace eosdac {
         escrows.erase(esc_itr);
     }
 
-    ACTION dacescrow::disapprove(name key, name disapprover) {
+    ACTION dacescrow::disapprove(name key, name disapprover, name dac_id) {
         require_auth(disapprover);
 
+        auto escrows = escrows_table(get_self(), dac_id.value);
         auto esc_itr = escrows.find(key.value);
         check(esc_itr != escrows.end(), "Could not find escrow with that index");
 
@@ -120,8 +127,9 @@ namespace eosdac {
     /*
      * Empties an unfilled escrow request
      */
-    ACTION dacescrow::cancel(name key) {
+    ACTION dacescrow::cancel(name key, name dac_id) {
 
+        auto escrows = escrows_table(get_self(), dac_id.value);
         auto esc_itr = escrows.find(key.value);
         check(esc_itr != escrows.end(), "Could not find escrow with that index");
 
@@ -135,7 +143,9 @@ namespace eosdac {
     /*
      * Allows the sender to withdraw the funds if the escrow has expired
      */
-    ACTION dacescrow::refund(name key) {
+    ACTION dacescrow::refund(name key, name dac_id) {
+
+        auto escrows = escrows_table(get_self(), dac_id.value);
         auto esc_itr = escrows.find(key.value);
         check(esc_itr != escrows.end(), "Could not find escrow with that index");
 
@@ -156,7 +166,9 @@ namespace eosdac {
         escrows.erase(esc_itr);
     }
 
-    ACTION dacescrow::dispute(name key) {
+    ACTION dacescrow::dispute(name key, name dac_id) {
+
+        auto escrows = escrows_table(get_self(), dac_id.value);
         auto esc_itr = escrows.find(key.value);
         check(esc_itr != escrows.end(), "Could not find escrow with that index");
 
@@ -169,10 +181,11 @@ namespace eosdac {
         });
     }
 
-    ACTION dacescrow::clean() {
+    ACTION dacescrow::clean(name dac_id) {
         require_auth(_self);
 
-        auto itr = escrows.begin();
+        auto escrows = escrows_table(get_self(), dac_id.value);
+        auto itr     = escrows.begin();
         while (itr != escrows.end()) {
             itr = escrows.erase(itr);
         }
