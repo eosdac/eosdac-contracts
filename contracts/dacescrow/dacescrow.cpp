@@ -20,8 +20,8 @@ namespace eosdac {
         }
 
         require_auth(from);
-
-        auto   tokens      = split(memo, ":");
+        auto tokens = split(memo, ":");
+        check(tokens.size() == 3, "Invalid memo format");
         string paymentType = tokens[0];
         auto   keyName     = name(tokens[1].c_str());
         auto   dac_id      = name(tokens[2].c_str());
