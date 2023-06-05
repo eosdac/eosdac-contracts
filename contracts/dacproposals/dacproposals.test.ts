@@ -28,12 +28,13 @@ enum VoteType {
 }
 
 enum ProposalState {
-  ProposalStatePending_approval = 0,
-  ProposalStateWork_in_progress,
-  ProposalStatePending_finalize,
-  ProposalStateHas_enough_approvals_votes,
-  ProposalStateHas_enough_finalize_votes,
-  ProposalStateExpired,
+  ProposalStatePending_approval = 'pendingappr',
+  ProposalStateWork_in_progress = 'inprogress',
+  ProposalStatePending_finalize = 'pendingfin',
+  ProposalStateHas_enough_approvals_votes = 'apprvtes',
+  ProposalStateHas_enough_finalize_votes = 'apprfinvtes',
+  ProposalStateExpired = 'expired',
+  ProposalStateDisputed = 'indispute',
 }
 
 const proposalHash = 'jhsdfkjhsdfkjhkjsdf';
@@ -951,7 +952,7 @@ describe('Dacproposals', () => {
       context('Without delay', async () => {
         it('should populate the escrow table', async () => {
           const proposalRow = await shared.dacescrow_contract.escrowsTable({
-            scope: 'dacescrow',
+            scope: dacId,
           });
           const row = proposalRow.rows[0];
           chai.expect(row.key).to.eq(newpropid);
@@ -1458,7 +1459,10 @@ describe('Dacproposals', () => {
               );
             });
             it('escrow table should contain 0 row after finalize is done', async () => {
-              await assertRowCount(shared.dacescrow_contract.escrowsTable(), 0);
+              await assertRowCount(
+                shared.dacescrow_contract.escrowsTable({ scope: dacId }),
+                0
+              );
             });
           });
         }
@@ -1600,6 +1604,7 @@ describe('Dacproposals', () => {
             data: {
               key: arbApproveId,
               approver: arbitrator.name,
+              dac_id: dacId,
             },
           };
           const proposalAction: EosioAction = {
@@ -1663,6 +1668,7 @@ describe('Dacproposals', () => {
             ],
             data: {
               key: arbApproveId,
+              dac_id: dacId,
             },
           };
           const proposalAction: EosioAction = {
@@ -1688,6 +1694,7 @@ describe('Dacproposals', () => {
             data: {
               key: arbApproveId,
               approver: arbitrator.name,
+              dac_id: dacId,
             },
           };
           const proposalAction: EosioAction = {
@@ -1868,6 +1875,7 @@ describe('Dacproposals', () => {
             data: {
               key: arbDenyId,
               disapprover: arbitrator.name,
+              dac_id: dacId,
             },
           };
           const proposalAction: EosioAction = {
@@ -1931,6 +1939,7 @@ describe('Dacproposals', () => {
             ],
             data: {
               key: arbDenyId,
+              dac_id: dacId,
             },
           };
           const proposalAction: EosioAction = {
@@ -1956,6 +1965,7 @@ describe('Dacproposals', () => {
             data: {
               key: arbDenyId,
               disapprover: arbitrator.name,
+              dac_id: dacId,
             },
           };
           const proposalAction: EosioAction = {
@@ -2142,8 +2152,9 @@ describe('Dacproposals', () => {
             );
           });
           it('escrow table should contain expected rows', async () => {
-            const escrow = (await shared.dacescrow_contract.escrowsTable())
-              .rows[0];
+            const escrow = (
+              await shared.dacescrow_contract.escrowsTable({ scope: dacId })
+            ).rows[0];
             expect(escrow.key).to.equal(cancelpropid);
             expect(escrow.arb).to.equal(arbitrator.name);
             expect(escrow.arbitrator_pay.quantity).to.equal('10.0000 PROPDAC');
@@ -2264,7 +2275,10 @@ describe('Dacproposals', () => {
             );
           });
           it('escrow table should contain expected rows', async () => {
-            await assertRowCount(shared.dacescrow_contract.escrowsTable(), 1);
+            await assertRowCount(
+              shared.dacescrow_contract.escrowsTable({ scope: dacId }),
+              1
+            );
           });
         });
       });
