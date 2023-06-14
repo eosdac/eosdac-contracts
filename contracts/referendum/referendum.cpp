@@ -37,28 +37,34 @@ void referendum::refund(name account) {
     deposits.erase(existing);
 }
 
-void referendum::updateconfig(config_item config, name dac_id) {
+void referendum::updateconfig(set_config_item new_config, name dac_id) {
     auto dac = dacdir::dac_for_id(dac_id);
     // auto auth_account = dac.owner; // Enable this when givin DAOs full control.
     auto auth_account = get_self();
     require_auth(auth_account);
+    auto config = config_item::get_current_configs(get_self(), dac_id);
+
+    config.duration                 = new_config.duration;
+    config.fee                      = new_config.fee;
+    config.pass                     = new_config.pass;
+    config.quorum_token             = new_config.quorum_token;
+    config.quorum_account           = new_config.quorum_account;
+    config.allow_per_account_voting = new_config.allow_per_account_voting;
+    config.allow_vote_type          = new_config.allow_vote_type;
 
     config.save(get_self(), dac_id, auth_account);
 }
 
-void referendum::propose(name proposer, name referendum_id, name type_name, name voting_type_name, string title,
-    string content, name dac_id, vector<action> acts) {
+void referendum::propose(name proposer, name type_name, name voting_type_name, string title, string content,
+    name dac_id, vector<action> acts) {
     require_auth(proposer);
     assertValidMember(proposer, dac_id);
     auto ref_type    = referendum_type(type_name.value);
     auto voting_type = count_type(voting_type_name.value);
-    // #if ENABLE_BINDING_VOTE == 0
-    //     check(ref_type != referendum_type::TYPE_BINDING,
-    //         "ERR::CONTRACT_NOT_COMPILED::Contract was not compiled to allow binding votes");
-    // #endif
 
     auto config = config_item::get_current_configs(get_self(), dac_id);
     check(config.allow_vote_type.at(type_name), "ERR::VOTING_TYPE_NOT_ALLOWED::This type of vote is not allowed");
+    auto next_referendum_id = config.next_referendum_id++;
 
     switch (ref_type) {
     case referendum_type::TYPE_BINDING:
@@ -118,7 +124,7 @@ void referendum::propose(name proposer, name referendum_id, name type_name, name
         // transfer fee to treasury account
         const auto   dac              = dacdir::dac_for_id(dac_id);
         const auto   treasury_account = dac.account_for_type(dacdir::TREASURY);
-        const string fee_memo         = fmt("Fee for referendum id %s", referendum_id);
+        const string fee_memo         = fmt("Fee for referendum id %s", next_referendum_id);
         eosio::action(eosio::permission_level{get_self(), "active"_n}, fee_required.contract, "transfer"_n,
             make_tuple(get_self(), treasury_account, fee_required.quantity, fee_memo))
             .send();
@@ -134,7 +140,7 @@ void referendum::propose(name proposer, name referendum_id, name type_name, name
     referenda.emplace(proposer, [&](referendum_data &r) {
         std::map<name, uint64_t> empty_votes = {{VOTE_PROP_YES, 0}, {VOTE_PROP_NO, 0}, {VOTE_PROP_ABSTAIN, 0}};
 
-        r.referendum_id = referendum_id;
+        r.referendum_id = next_referendum_id;
         r.proposer      = proposer;
         r.type          = name{ref_type};
         r.voting_type   = name{voting_type};
@@ -146,15 +152,17 @@ void referendum::propose(name proposer, name referendum_id, name type_name, name
         r.acts          = acts;
         r.status        = REFERENDUM_STATUS_OPEN;
     });
+
+    config.save(get_self(), dac_id);
 }
 
-void referendum::vote(name voter, name referendum_id, name vote, name dac_id) {
+void referendum::vote(name voter, uint64_t referendum_id, name vote, name dac_id) {
     require_auth(voter);
     assertValidMember(voter, dac_id);
     auto dac = dacdir::dac_for_id(dac_id);
 
     referenda_table referenda(get_self(), dac_id.value);
-    auto            ref = referenda.get(referendum_id.value, "ERR::REFERENDUM_NOT_FOUND::Referendum not found");
+    auto            ref = referenda.get(referendum_id, "ERR::REFERENDUM_NOT_FOUND::Referendum not found");
 
     uint32_t time_now = current_time_point().sec_since_epoch();
     check(ref.expires.sec_since_epoch() >= time_now,
@@ -206,7 +214,7 @@ void referendum::vote(name voter, name referendum_id, name vote, name dac_id) {
 
         votes.emplace(voter, [&](vote_info &v) {
             v.voter = voter;
-            map<name, name> votes;
+            map<uint64_t, name> votes;
             votes.emplace(referendum_id, vote);
             v.votes = votes;
         });
@@ -241,7 +249,7 @@ void referendum::vote(name voter, name referendum_id, name vote, name dac_id) {
         check(false, "ERR::NEW_INVALID::New vote is invalid");
     }
 
-    auto ref2 = referenda.find(referendum_id.value);
+    auto ref2 = referenda.find(referendum_id);
     referenda.modify(*ref2, same_payer, [&](auto &r) {
         r.token_votes   = token_votes;
         r.account_votes = account_votes;
@@ -252,29 +260,39 @@ void referendum::vote(name voter, name referendum_id, name vote, name dac_id) {
         .send();
 }
 
-void referendum::updatestatus(name referendum_id, name dac_id) {
-    auto       referenda = referenda_table{get_self(), dac_id.value};
-    const auto ref = referenda.require_find(referendum_id.value, "ERR::REFERENDUM_NOT_FOUND::Referendum not found");
+void referendum::updatestatus(uint64_t referendum_id, name dac_id) {
+    auto       referenda  = referenda_table{get_self(), dac_id.value};
+    const auto ref        = referenda.require_find(referendum_id, "ERR::REFERENDUM_NOT_FOUND::Referendum not found");
     const auto new_status = ref->get_status(get_self(), dac_id);
     referenda.modify(ref, same_payer, [&](auto &r) {
         r.status = name{new_status};
     });
 }
 
-void referendum::cancel(name referendum_id, name dac_id) {
+void referendum::cancel(uint64_t referendum_id, name dac_id) {
     referenda_table referenda(get_self(), dac_id.value);
-    auto ref = referenda.require_find(referendum_id.value, "ERR::REFERENDUM_NOT_FOUND::Referendum not found");
+    auto            ref = referenda.require_find(referendum_id, "ERR::REFERENDUM_NOT_FOUND::Referendum not found");
 
     require_auth(ref->proposer);
 
     referenda.erase(ref);
 }
 
-void referendum::exec(name referendum_id, name dac_id) {
+void referendum::rmvexpired(uint64_t referendum_id, name dac_id) {
     updatestatus(referendum_id, dac_id);
 
     referenda_table referenda(get_self(), dac_id.value);
-    auto            ref = referenda.require_find(referendum_id.value, "ERR:REFERENDUM_NOT_FOUND::Referendum not found");
+    auto            ref = referenda.require_find(referendum_id, "ERR::REFERENDUM_NOT_FOUND::Referendum not found");
+
+    check(ref->status == REFERENDUM_STATUS_EXPIRED, "ERR::REFERENDUM_NOT_EXPIRED::Referendum is not expired");
+    referenda.erase(ref);
+}
+
+void referendum::exec(uint64_t referendum_id, name dac_id) {
+    updatestatus(referendum_id, dac_id);
+
+    referenda_table referenda(get_self(), dac_id.value);
+    auto            ref = referenda.require_find(referendum_id, "ERR:REFERENDUM_NOT_FOUND::Referendum not found");
 
     check(ref->status == REFERENDUM_STATUS_PASSING,
         "ERR:REFERENDUM_NOT_PASSED::Referendum has not passed required number of yes votes");
@@ -310,7 +328,7 @@ void referendum::stakeobsv(vector<account_stake_delta> stake_deltas, name dac_id
 
             auto v = existing_votes.begin();
             while (v != existing_votes.end()) {
-                auto ref = referenda.find(v->first.value);
+                auto ref = referenda.find(v->first);
 
                 if (ref != referenda.end()) {
                     referenda.modify(ref, same_payer, [&](referendum_data &r) {
@@ -337,10 +355,10 @@ void referendum::clean(name account, name dac_id) {
     votes_table     votes(get_self(), dac_id.value);
     auto            existing_vote_data = votes.find(account.value);
 
-    map<name, name> new_votes;
+    map<uint64_t, name> new_votes;
     if (existing_vote_data != votes.end()) {
         for (auto vd : existing_vote_data->votes) {
-            if (referenda.find(vd.first.value) != referenda.end()) {
+            if (referenda.find(vd.first) != referenda.end()) {
                 new_votes[vd.first] = vd.second;
             }
         }
@@ -409,7 +427,7 @@ void referendum::proposeMsig(referendum_data ref, name dac_id) {
     auto             cand_idx = candidates.get_index<"byvotesrank"_n>();
     auto             cand_itr = cand_idx.begin();
 
-    name proposal_name = ref.referendum_id;
+    uint64_t proposal_id = ref.referendum_id;
 
     vector<permission_level> reqd_perms;
 
@@ -433,6 +451,6 @@ void referendum::proposeMsig(referendum_data ref, name dac_id) {
         {"description", fmt("Automated submission of passing referendum number %s", ref.referendum_id)}};
 
     action(permission_level{get_self(), "active"_n}, MSIG_CONTRACT, "propose"_n,
-        make_tuple(get_self(), proposal_name, reqd_perms, dac_id, metadata, trx))
+        make_tuple(get_self(), name{proposal_id}, reqd_perms, dac_id, metadata, trx))
         .send();
 }

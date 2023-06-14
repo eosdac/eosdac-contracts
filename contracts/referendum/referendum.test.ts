@@ -11,8 +11,7 @@ import {
   UpdateAuth,
 } from 'lamington';
 import { SharedTestObjects } from '../TestHelpers';
-import { Msigworlds } from '../msigworlds/msigworlds';
-import { currentHeadTimeWithAddedSeconds } from '../msigworlds/msigworlds.test';
+import { Referendum } from './referendum';
 const api = EOSManager.api;
 
 let shared: SharedTestObjects;
@@ -241,7 +240,6 @@ describe('Referendum', () => {
         await assertMissingAuthority(
           referendum.propose(
             user1.name,
-            'ref1',
             vote_type.TYPE_SEMI_BINDING,
             count_type.COUNT_TOKEN,
             'title',
@@ -255,7 +253,6 @@ describe('Referendum', () => {
         await assertEOSErrorIncludesMessage(
           referendum.propose(
             user1.name,
-            'ref1',
             vote_type.TYPE_SEMI_BINDING,
             count_type.COUNT_TOKEN,
             'title',
@@ -280,7 +277,6 @@ describe('Referendum', () => {
           await assertEOSErrorIncludesMessage(
             referendum.propose(
               user1.name,
-              'ref1',
               vote_type.TYPE_SEMI_BINDING,
               count_type.COUNT_TOKEN,
               'title',
@@ -306,7 +302,6 @@ describe('Referendum', () => {
             await assertEOSErrorIncludesMessage(
               referendum.propose(
                 user1.name,
-                'ref1',
                 vote_type.TYPE_SEMI_BINDING,
                 count_type.COUNT_TOKEN,
                 'title',
@@ -321,7 +316,6 @@ describe('Referendum', () => {
           it('should work', async () => {
             await referendum.propose(
               user1.name,
-              'ref1',
               vote_type.TYPE_SEMI_BINDING,
               count_type.COUNT_TOKEN,
               'title',
@@ -344,18 +338,14 @@ describe('Referendum', () => {
     });
     context('vote', async () => {
       it('should work', async () => {
-        await referendum.vote(
-          user1.name,
-          'ref1',
-          voting_type.VOTE_PROP_YES,
-          dacId,
-          { from: user1 }
-        );
+        await referendum.vote(user1.name, 1, voting_type.VOTE_PROP_YES, dacId, {
+          from: user1,
+        });
       });
     });
     context('exec', async () => {
       it('should work', async () => {
-        await referendum.exec('ref1', dacId);
+        await referendum.exec('1', dacId);
       });
       it('should create the proposal', async () => {
         await assertRowCount(
@@ -368,7 +358,7 @@ describe('Referendum', () => {
       context('high with only 3 approvals', async () => {
         before(async () => {
           await shared.msigworlds_contract.approve(
-            'ref1',
+            '............1',
             { actor: candidates[0].name, permission: 'active' },
             dacId,
             null,
@@ -376,7 +366,7 @@ describe('Referendum', () => {
           );
 
           await shared.msigworlds_contract.approve(
-            'ref1',
+            '............1',
             { actor: candidates[1].name, permission: 'active' },
             dacId,
             null,
@@ -384,7 +374,7 @@ describe('Referendum', () => {
           );
 
           await shared.msigworlds_contract.approve(
-            'ref1',
+            '............1',
             { actor: candidates[2].name, permission: 'active' },
             dacId,
             null,
@@ -394,9 +384,14 @@ describe('Referendum', () => {
 
         it('should fail', async () => {
           await assertEOSErrorIncludesMessage(
-            shared.msigworlds_contract.exec('ref1', candidates[0].name, dacId, {
-              from: candidates[0],
-            }),
+            shared.msigworlds_contract.exec(
+              '............1',
+              candidates[0].name,
+              dacId,
+              {
+                from: candidates[0],
+              }
+            ),
             'msigworlds::exec transaction authorization failed'
           );
         });
@@ -404,7 +399,7 @@ describe('Referendum', () => {
       context('high with 4 approvals', async () => {
         before(async () => {
           await shared.msigworlds_contract.approve(
-            'ref1',
+            '............1',
             { actor: candidates[3].name, permission: 'active' },
             dacId,
             null,
@@ -413,7 +408,7 @@ describe('Referendum', () => {
         });
         it('should work', async () => {
           await shared.msigworlds_contract.exec(
-            'ref1',
+            '............1',
             candidates[0].name,
             dacId,
             {
@@ -456,7 +451,6 @@ describe('Referendum', () => {
           it('should work', async () => {
             await referendum.propose(
               user1.name,
-              'refbind',
               vote_type.TYPE_BINDING,
               count_type.COUNT_TOKEN,
               'title',
@@ -479,18 +473,14 @@ describe('Referendum', () => {
     });
     context('vote', async () => {
       it('should work', async () => {
-        await referendum.vote(
-          user1.name,
-          'refbind',
-          voting_type.VOTE_PROP_YES,
-          dacId,
-          { from: user1 }
-        );
+        await referendum.vote(user1.name, 2, voting_type.VOTE_PROP_YES, dacId, {
+          from: user1,
+        });
       });
     });
     context('exec', async () => {
       it('should work', async () => {
-        await referendum.exec('refbind', dacId);
+        await referendum.exec('2', dacId);
       });
       it('should create the proposal', async () => {
         await assertRowCount(
