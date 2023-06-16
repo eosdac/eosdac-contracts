@@ -364,9 +364,13 @@ void referendum::clean(name account, name dac_id) {
         }
     }
 
-    votes.modify(*existing_vote_data, same_payer, [&new_votes](vote_info &v) {
-        v.votes = new_votes;
-    });
+    if (new_votes.size() == 0) {
+        votes.erase(existing_vote_data);
+    } else {
+        votes.modify(*existing_vote_data, same_payer, [&new_votes](vote_info &v) {
+            v.votes = new_votes;
+        });
+    }
 }
 
 void referendum::clearconfig(name dac_id) {
