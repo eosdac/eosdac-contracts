@@ -140,8 +140,7 @@ CONTRACT referendum : public contract {
             return proposer.value;
         }
 
-        std::pair<uint64_t, std::map<name, uint64_t>> quorum_votes(
-            const name contract, const name dac_id, const config_item &config) const {
+        std::pair<uint64_t, std::map<name, uint64_t>> quorum_votes(const config_item &config) const {
             switch (count_type(voting_type.value)) {
             case COUNT_TOKEN:
                 return {config.quorum_token.at(type), token_votes};
@@ -152,7 +151,7 @@ CONTRACT referendum : public contract {
 
         referendum_status get_status(const name contract, const name dac_id) const {
             const auto config          = config_item::get_current_configs(contract, dac_id);
-            const auto [quorum, votes] = quorum_votes(contract, dac_id, config);
+            const auto [quorum, votes] = quorum_votes(config);
             const auto current_yes     = votes.at(VOTE_PROP_YES);
             const auto current_no      = votes.at(VOTE_PROP_NO);
             const auto current_abstain = votes.at(VOTE_PROP_ABSTAIN);
