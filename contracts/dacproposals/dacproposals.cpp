@@ -393,11 +393,20 @@ namespace eosdac {
     // }
 
     ACTION dacproposals::clearexpprop(name proposal_id, name dac_id) {
-        proposal_table proposals(_self, dac_id.value);
-
+        proposal_table  proposals(_self, dac_id.value);
         const proposal &prop = proposals.get(proposal_id.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found.");
-        check(!prop.has_not_expired(),
-            "ERR::PROPOSAL_NOT_EXPIRED::The proposal has not expired so cannot be cleared yet.");
+
+        auto          escrow  = dacdir::dac_for_id(dac_id).account_for_type(dacdir::ESCROW);
+        escrows_table escrows = escrows_table(escrow, dac_id.value);
+
+        check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
+        auto esc_itr = escrows.find(proposal_id.value);
+        // If there is an escrow then the proposal should be expired before it can be cleared.
+        if (esc_itr != escrows.end()) {
+
+            check(!prop.has_not_expired(),
+                "ERR::PROPOSAL_NOT_EXPIRED::The proposal has not expired so cannot be cleared yet.");
+        }
         clearprop(prop, dac_id);
     }
 
