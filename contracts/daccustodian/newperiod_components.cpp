@@ -62,11 +62,21 @@ void daccustodian::assertPeriodTime(const dacglobals &globals) {
         globals.get_periodlength(), periodBlockCount);
 }
 
-void daccustodian::allocateCustodians(name dac_id) {
+void daccustodian::assertPendingPeriodTime(const dacglobals &globals) {
+    time_point_sec now                  = time_point_sec(eosio::current_time_point());
+    uint32_t pending_period_block_count = (now - globals.get_pending_period_time().sec_since_epoch()).sec_since_epoch();
+    check(pending_period_block_count > globals.get_pending_period_delay(),
+        "ERR::NEWPERIOD_PENDING_EARLY::New period is being called too soon while in pending phase. Pending length is %s periodBlockCount: %s",
+        globals.get_pending_period_delay(), pending_period_block_count);
+}
 
+bool daccustodian::periodIsPending(name dac_id) {
+    pending_custodians_table pending_custs(get_self(), dac_id.value);
+    return pending_custs.begin() != pending_custs.end();
+}
+
+void daccustodian::prepareCustodians(name dac_id) {
     // Configure custodians for the next period.
-
-    custodians_table         custodians(get_self(), dac_id.value);
     pending_custodians_table pending_custs(get_self(), dac_id.value);
 
     candidates_table registered_candidates(get_self(), dac_id.value);
@@ -76,27 +86,6 @@ void daccustodian::allocateCustodians(name dac_id) {
 
     const auto electcount = S{globals.get_numelected()};
     auto       cand_itr   = byvotes.begin();
-
-    // Empty the custodians table to get a full set of new custodians based on the current votes.
-    auto cust_itr = custodians.begin();
-    if (pending_custs.begin() != pending_custs.end()) {
-        while (cust_itr != custodians.end()) {
-            cust_itr = custodians.erase(cust_itr);
-        }
-    }
-    // Move pending custodians into custodians1
-    auto pending_cust_itr = pending_custs.begin();
-    while (pending_cust_itr != pending_custs.end()) {
-        custodians.emplace(auth_account, [&](custodian &c) {
-            c.cust_name           = pending_cust_itr->cust_name;
-            c.requestedpay        = pending_cust_itr->requestedpay;
-            c.total_vote_power    = pending_cust_itr->total_vote_power;
-            c.rank                = pending_cust_itr->rank;
-            c.number_voters       = pending_cust_itr->number_voters;
-            c.avg_vote_time_stamp = pending_cust_itr->avg_vote_time_stamp;
-        });
-        pending_cust_itr = pending_custs.erase(pending_cust_itr);
-    }
 
     auto currentCustodianCount = S{uint8_t{0}};
 
@@ -121,6 +110,21 @@ void daccustodian::allocateCustodians(name dac_id) {
             cand_itr++;
         }
     }
+}
+
+void daccustodian::allocateCustodians(name dac_id) {
+    pending_custodians_table pending_custs(get_self(), dac_id.value);
+    custodians_table         custodians(get_self(), dac_id.value);
+
+    if (pending_custs.begin() == pending_custs.end()) {
+        return; // SHOULD NOT HAPPEN
+    }
+
+    // Configure custodians for the next period.
+
+    // candidates_table registered_candidates(get_self(), dac_id.value);
+    const auto globals      = dacglobals{get_self(), dac_id};
+    name       auth_account = dacdir::dac_for_id(dac_id).owner;
 
     auto newCustodianCount = S{uint8_t{0}};
 
@@ -129,6 +133,26 @@ void daccustodian::allocateCustodians(name dac_id) {
         if (custodians.find(pending_itr->cust_name.value) == custodians.end()) {
             newCustodianCount++;
         }
+    }
+
+    // Empty the custodians table to get a full set of new custodians based on the current votes.
+    auto cust_itr = custodians.begin();
+    while (cust_itr != custodians.end()) {
+        cust_itr = custodians.erase(cust_itr);
+    }
+
+    // Move pending custodians into custodians1
+    auto pending_cust_itr = pending_custs.begin();
+    while (pending_cust_itr != pending_custs.end()) {
+        custodians.emplace(auth_account, [&](custodian &c) {
+            c.cust_name           = pending_cust_itr->cust_name;
+            c.requestedpay        = pending_cust_itr->requestedpay;
+            c.total_vote_power    = pending_cust_itr->total_vote_power;
+            c.rank                = pending_cust_itr->rank;
+            c.number_voters       = pending_cust_itr->number_voters;
+            c.avg_vote_time_stamp = pending_cust_itr->avg_vote_time_stamp;
+        });
+        pending_cust_itr = pending_custs.erase(pending_cust_itr);
     }
 
     if (newCustodianCount >= globals.get_auth_threshold_high()) {
@@ -270,7 +294,6 @@ ACTION daccustodian::newperiod(const string &message, const name &dac_id) {
 ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
     /* This is a housekeeping method, it can be called by anyone by design */
     auto globals = dacglobals{get_self(), dac_id};
-    assertPeriodTime(globals);
 
     dacdir::dac found_dac          = dacdir::dac_for_id(dac_id);
     const auto  activation_account = found_dac.account_for_type_maybe(dacdir::ACTIVATION);
@@ -310,21 +333,28 @@ ACTION daccustodian::runnewperiod(const string &message, const name &dac_id) {
         check(percent_of_current_voter_engagement > globals.get_vote_quorum_percent(),
             "ERR::NEWPERIOD_VOTER_ENGAGEMENT_LOW_PROCESS::Voter engagement is insufficient to process a new period");
     }
-
     globals.set_met_initial_votes_threshold(true);
 
-    // Distribute Pay is called before allocateCustodians is called to ensure custodians are paid for the just
-    // passed period. This also implies custodians should not be paid the first time this is called. Distribute pay
-    // to the current custodians.
-    distributeMeanPay(dac_id);
+    if (!periodIsPending(dac_id)) {
+        assertPeriodTime(globals);
+        prepareCustodians(dac_id);
+        globals.set_pending_period_time(current_block_time().to_time_point());
+    } else {
+        assertPendingPeriodTime(globals);
 
-    // Set custodians for the next period.
-    allocateCustodians(dac_id);
+        // Distribute Pay is called before   is called to ensure custodians are paid for the just
+        // passed period. This also implies custodians should not be paid the first time this is called. Distribute pay
+        // to the current custodians.
+        distributeMeanPay(dac_id);
 
-    // Set the auths on the dacauthority account
-    setMsigAuths(dac_id);
+        // Set custodians for the next period.
+        allocateCustodians(dac_id);
 
-    globals.set_lastperiodtime(current_block_time().to_time_point());
+        // Set the auths on the dacauthority account
+        setMsigAuths(dac_id);
+
+        globals.set_lastperiodtime(current_block_time().to_time_point());
+    }
 }
 
 uint16_t daccustodian::get_budget_percentage(const name &dac_id, const dacglobals &globals) {

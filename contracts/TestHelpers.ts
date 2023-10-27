@@ -190,6 +190,7 @@ export class SharedTestObjects {
           quantity: '30.0000 EOS',
         },
         periodlength: 5,
+        pending_period_delay: 3,
         initial_vote_quorum_percent: 31,
         vote_quorum_percent: 15,
         auth_threshold_high: 4,

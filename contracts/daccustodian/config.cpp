@@ -20,6 +20,9 @@ ACTION daccustodian::updateconfige(const contr_config &new_config, const name &d
     check(new_config.periodlength <= 3 * 365 * 24 * 60 * 60,
         "ERR::UPDATECONFIG_PERIOD_LENGTH::The period length cannot be longer than 3 years.");
 
+    check(new_config.pending_period_delay <= new_config.periodlength,
+        "ERR::UPDATECONFIG_PENDING_PERIOD_LENGTH::The pending period length cannot be longer than the period length.");
+
     check(new_config.initial_vote_quorum_percent < 100,
         "ERR::UPDATECONFIG_INVALID_INITIAL_VOTE_QUORUM_PERCENT::The initial vote quorum percent must be less than 100 and most likely a lot less than 100 to be achievable for the DAC.");
 
@@ -51,6 +54,7 @@ ACTION daccustodian::updateconfige(const contr_config &new_config, const name &d
     globals.set_maxvotes(new_config.maxvotes);
     globals.set_numelected(new_config.numelected);
     globals.set_periodlength(new_config.periodlength);
+    globals.set_pending_period_delay(new_config.pending_period_delay);
     globals.set_should_pay_via_service_provider(new_config.should_pay_via_service_provider);
     globals.set_initial_vote_quorum_percent(new_config.initial_vote_quorum_percent);
     globals.set_vote_quorum_percent(new_config.vote_quorum_percent);

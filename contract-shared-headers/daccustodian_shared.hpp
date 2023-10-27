@@ -194,6 +194,10 @@ namespace eosdac {
         //     - used for pay calculations if an eary election is called and to trigger deferred `newperiod` calls.
         uint32_t periodlength = 7 * 24 * 60 * 60;
 
+        // Length of time in seconds for the pending period. This is the time between the election and when the new
+        // custodians take over.
+        uint32_t pending_period_delay = 5 * 60;
+
         // The contract will direct all payments via the service provider.
         bool should_pay_via_service_provider;
 
@@ -294,10 +298,12 @@ namespace eosdac {
             PROPERTY(uint32_t, number_active_candidates);
             PROPERTY(int64_t, total_votes_on_candidates); 
             PROPERTY(eosio::time_point_sec, lastperiodtime);
+            PROPERTY(eosio::time_point_sec, pending_period_time);
             PROPERTY(eosio::extended_asset, lockupasset); 
             PROPERTY(uint8_t, maxvotes); 
             PROPERTY(uint8_t, numelected);
             PROPERTY(uint32_t, periodlength); 
+            PROPERTY(uint32_t, pending_period_delay); 
             PROPERTY(bool, should_pay_via_service_provider);
             PROPERTY(uint32_t, initial_vote_quorum_percent); 
             PROPERTY(uint32_t, vote_quorum_percent);
@@ -410,6 +416,7 @@ namespace eosdac {
                                    time_point_sec new_time_stamp, const name dac_id, const bool from_voting);
         void modifyProxiesWeight(int64_t vote_weight, name oldProxy, name newProxy, name dac_id, bool from_voting);
         void assertPeriodTime(const dacglobals &globals);
+        void assertPendingPeriodTime(const dacglobals &globals);
         void distributeMeanPay(name internal_dac_id);
         vector<eosiosystem::permission_level_weight> get_perm_level_weights(
             const custodians_table &custodians, const name &dac_id);
@@ -424,6 +431,8 @@ namespace eosdac {
         void removeCustodian(name cust, name internal_dac_id);
         void disableCandidate(name cust, name internal_dac_id);
         void removeCandidate(name cust, name internal_dac_id);
+        void prepareCustodians(name internal_dac_id);
+        bool periodIsPending(name internal_dac_id);
         void allocateCustodians(name internal_dac_id);
         bool permissionExists(name account, name permission);
         bool _check_transaction_authorization(const char *trx_data, uint32_t trx_size, const char *pubkeys_data,

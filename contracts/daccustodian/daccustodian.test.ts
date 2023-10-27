@@ -71,6 +71,7 @@ describe('Daccustodian', () => {
             auth_threshold_mid: 6,
             requested_pay_max: { contract: 'sdfsdf', quantity: '12.0000 EOS' },
             periodlength: 37500,
+            pending_period_delay: 4,
             initial_vote_quorum_percent: 31,
             vote_quorum_percent: 15,
             auth_threshold_high: 4,
@@ -101,6 +102,7 @@ describe('Daccustodian', () => {
             maxvotes: 5,
             requested_pay_max: { contract: 'sdfsdf', quantity: '12.0000 EOS' },
             periodlength: 37500,
+            pending_period_delay: 4,
             initial_vote_quorum_percent: 31,
             vote_quorum_percent: 15,
             auth_threshold_high: 5,
@@ -132,6 +134,7 @@ describe('Daccustodian', () => {
             maxvotes: 5,
             requested_pay_max: { contract: 'sdfsdf', quantity: '12.0000 EOS' },
             periodlength: 37500,
+            pending_period_delay: 4,
             initial_vote_quorum_percent: 31,
             vote_quorum_percent: 15,
             auth_threshold_high: 9,
@@ -155,6 +158,38 @@ describe('Daccustodian', () => {
         []
       );
     });
+    it('Should fail for pending being longer than the period length', async () => {
+      await assertEOSErrorIncludesMessage(
+        shared.daccustodian_contract.updateconfige(
+          {
+            numelected: 12,
+            maxvotes: 5,
+            requested_pay_max: { contract: 'sdfsdf', quantity: '12.0000 EOS' },
+            periodlength: 5,
+            pending_period_delay: 7,
+            initial_vote_quorum_percent: 31,
+            vote_quorum_percent: 15,
+            auth_threshold_high: 9,
+            auth_threshold_mid: 7,
+            auth_threshold_low: 8,
+            lockupasset: { contract: 'sdfsdf', quantity: '12.0000 EOS' },
+            should_pay_via_service_provider: false,
+            lockup_release_time_delay: 1233,
+            token_supply_theshold: 10000001,
+          },
+          dacId,
+          { from: shared.auth_account }
+        ),
+        'ERR::UPDATECONFIG_PENDING_PERIOD_LENGTH'
+      );
+      await assertRowsEqual(
+        shared.daccustodian_contract.dacglobalsTable({
+          scope: dacId,
+          limit: 2,
+        }),
+        []
+      );
+    });
     it('Should fail for invalid low auth threshold', async () => {
       await assertEOSErrorIncludesMessage(
         shared.daccustodian_contract.updateconfige(
@@ -163,6 +198,7 @@ describe('Daccustodian', () => {
             maxvotes: 5,
             requested_pay_max: { contract: 'sdfsdf', quantity: '12.0000 EOS' },
             periodlength: 5,
+            pending_period_delay: 4,
             initial_vote_quorum_percent: 31,
             vote_quorum_percent: 15,
             auth_threshold_high: 9,
@@ -197,6 +233,7 @@ describe('Daccustodian', () => {
               quantity: '30.0000 EOS',
             },
             periodlength: 5,
+            pending_period_delay: 4,
             initial_vote_quorum_percent: 31,
             vote_quorum_percent: 15,
             auth_threshold_high: 4,
@@ -227,6 +264,7 @@ describe('Daccustodian', () => {
               quantity: '30.0000 EOS',
             },
             periodlength: 5,
+            pending_period_delay: 4,
             initial_vote_quorum_percent: 31,
             vote_quorum_percent: 15,
             auth_threshold_high: 4,
@@ -257,6 +295,7 @@ describe('Daccustodian', () => {
               quantity: '30.0000 EOS',
             },
             periodlength: 4 * 365 * 24 * 60 * 60,
+            pending_period_delay: 4,
             initial_vote_quorum_percent: 31,
             vote_quorum_percent: 15,
             auth_threshold_high: 4,
@@ -287,6 +326,7 @@ describe('Daccustodian', () => {
               quantity: '30.0000 EOS',
             },
             periodlength: 7 * 24 * 60 * 60,
+            pending_period_delay: 4,
             initial_vote_quorum_percent: 100,
             vote_quorum_percent: 15,
             auth_threshold_high: 4,
@@ -317,6 +357,7 @@ describe('Daccustodian', () => {
               quantity: '30.0000 EOS',
             },
             periodlength: 7 * 24 * 60 * 60,
+            pending_period_delay: 4,
             initial_vote_quorum_percent: 31,
             vote_quorum_percent: 101,
             auth_threshold_high: 4,
@@ -347,6 +388,7 @@ describe('Daccustodian', () => {
               quantity: '30.0000 EOS',
             },
             periodlength: 7 * 24 * 60 * 60,
+            pending_period_delay: 4,
             initial_vote_quorum_percent: 31,
             vote_quorum_percent: 15,
             auth_threshold_high: 4,
@@ -376,6 +418,7 @@ describe('Daccustodian', () => {
             quantity: '30.0000 EOS',
           },
           periodlength: 5,
+          pending_period_delay: 4,
           initial_vote_quorum_percent: 31,
           vote_quorum_percent: 15,
           auth_threshold_high: 4,
@@ -446,6 +489,10 @@ describe('Daccustodian', () => {
               {
                 key: 'periodlength',
                 value: ['uint32', 5],
+              },
+              {
+                key: 'pending_period_delay',
+                value: ['uint32', 4],
               },
               {
                 key: 'requested_pay_max',
@@ -541,6 +588,7 @@ describe('Daccustodian', () => {
                   quantity: '25.0000 EOS',
                 },
                 periodlength: 5,
+                pending_period_delay: 4,
                 initial_vote_quorum_percent: 31,
                 vote_quorum_percent: 15,
                 auth_threshold_high: 4,
@@ -595,6 +643,7 @@ describe('Daccustodian', () => {
                   quantity: '25.0000 EOS',
                 },
                 periodlength: 5,
+                pending_period_delay: 4,
                 initial_vote_quorum_percent: 31,
                 vote_quorum_percent: 15,
                 auth_threshold_high: 4,
@@ -1790,6 +1839,8 @@ describe('Daccustodian', () => {
                     quantity: '23.0000 EOS',
                   },
                   periodlength: 5,
+                  pendingPeriodlength: 8,
+                  pending_period_delay: 4,
                   initial_vote_quorum_percent: 31,
                   vote_quorum_percent: 15,
                   auth_threshold_high: 4,
@@ -1832,6 +1883,37 @@ describe('Daccustodian', () => {
                 number_of_custodians
               );
             });
+            it('should not populate the custodians yet since this is the first election', async () => {
+              await assertRowCount(
+                shared.daccustodian_contract.custodians1Table({
+                  scope: dacId,
+                  limit: 20,
+                }),
+                0
+              );
+            });
+            it('should not execute new period while in pending period.', async () => {
+              await assertEOSErrorIncludesMessage(
+                shared.daccustodian_contract.newperiod(
+                  'initial new period',
+                  dacId,
+                  {
+                    from: regMembers[0], // Could be run by anyone.
+                  }
+                ),
+                'ERR::NEWPERIOD_PENDING_EARLY'
+              );
+            });
+            it('should not execute new period while in pending period.', async () => {
+              await sleep(4000);
+              await shared.daccustodian_contract.newperiod(
+                'initial new period',
+                dacId,
+                {
+                  from: regMembers[0], // Could be run by anyone.
+                }
+              );
+            });
             it('should have set socials to false', async () => {
               const actual = await get_from_dacglobals(
                 dacId,
@@ -1860,7 +1942,8 @@ describe('Daccustodian', () => {
                 keyType: 'i64',
               });
 
-              let res2 = await shared.daccustodian_contract.pendingcustsTable({
+              let pendingCusts =
+                await shared.daccustodian_contract.pendingcustsTable({
                 scope: dacId,
                 limit: 100,
                 indexPosition: 2, // bydecayed index
@@ -1882,9 +1965,8 @@ describe('Daccustodian', () => {
                 'candidates.slice(0, 5): ',
                 JSON.stringify(candidates.slice(0, 5), null, 2)
               );
-              console.log('res2.rows: ', JSON.stringify(res2.rows, null, 2));
-              chai.expect(res2.rows.length).to.equal(5);
-              chai.expect(candidates.slice(0, 5)).to.deep.equal(res2.rows);
+              // console.log('pendingCusts.rows: ', JSON.stringify(pendingCusts.rows, null, 2));
+              chai.expect(pendingCusts.rows.length).to.equal(0); // should be empty after custodians are set.
             });
             it('Custodians should not yet be paid', async () => {
               await assertRowCount(
@@ -1959,6 +2041,7 @@ describe('Daccustodian', () => {
                   quantity: '23.0000 EOS',
                 },
                 periodlength: 5,
+                pending_period_delay: 4,
                 initial_vote_quorum_percent: 31,
                 vote_quorum_percent: 15,
                 auth_threshold_high: 4,
@@ -2015,6 +2098,7 @@ describe('Daccustodian', () => {
                   quantity: '23.0000 EOS',
                 },
                 periodlength: 5,
+                pending_period_delay: 4,
                 initial_vote_quorum_percent: 31,
                 vote_quorum_percent: 15,
                 auth_threshold_high: 4,
@@ -2276,6 +2360,7 @@ describe('Daccustodian', () => {
             quantity: '0.0000 EOS',
           },
           periodlength: 5,
+          pending_period_delay: 4,
           initial_vote_quorum_percent: 31,
           vote_quorum_percent: 15,
           auth_threshold_high: 4,
@@ -3016,6 +3101,7 @@ describe('Daccustodian', () => {
               quantity: '30.0000 EOS',
             },
             periodlength: 5,
+            pending_period_delay: 4,
             initial_vote_quorum_percent: 31,
             vote_quorum_percent: 15,
             auth_threshold_high: 4,
@@ -3121,7 +3207,8 @@ describe('Daccustodian', () => {
             contract: 'eosio.token',
             quantity: '0.0000 EOS',
           },
-          periodlength: 1,
+          periodlength: 2,
+          pending_period_delay: 1,
           initial_vote_quorum_percent: 31,
           vote_quorum_percent: 15,
           auth_threshold_high: 4,
@@ -3155,7 +3242,14 @@ describe('Daccustodian', () => {
             from: regMembers[0],
           }
         );
-        await sleep(1000);
+        await sleep(2000);
+        await shared.daccustodian_contract.newperiod(
+          'initial new period',
+          dacId,
+          {
+            from: regMembers[0],
+          }
+        );
       });
       it('claimbudget should fail', async () => {
         await assertEOSErrorIncludesMessage(
@@ -3199,6 +3293,7 @@ describe('Daccustodian', () => {
           'Some money for the authority',
           { from: shared.tokenIssuer }
         );
+        await sleep(3000);
 
         await shared.daccustodian_contract.newperiod(
           'initial new period',
@@ -3207,7 +3302,14 @@ describe('Daccustodian', () => {
             from: regMembers[0],
           }
         );
-        await sleep(1000);
+        await sleep(2000);
+        await shared.daccustodian_contract.newperiod(
+          'initial new period',
+          dacId,
+          {
+            from: regMembers[0],
+          }
+        );
       });
       it('should not transfer budget', async () => {
         await assertBalanceEqual(
@@ -3308,6 +3410,15 @@ describe('Daccustodian', () => {
             'Some money for the treasury',
             { from: shared.tokenIssuer }
           );
+          await sleep(2000);
+          await shared.daccustodian_contract.newperiod(
+            'initial new period',
+            dacId,
+            {
+              from: regMembers[0],
+            }
+          );
+          await sleep(2000);
           await shared.daccustodian_contract.newperiod(
             'initial new period',
             dacId,
@@ -3440,6 +3551,15 @@ describe('Daccustodian', () => {
       let treasury_balance_before;
       let auth_balance_before;
       before(async () => {
+        await sleep(2000);
+        await shared.daccustodian_contract.newperiod(
+          'initial new period',
+          dacId,
+          {
+            from: regMembers[0],
+          }
+        );
+        await sleep(2000);
         await shared.daccustodian_contract.newperiod(
           'initial new period',
           dacId,
