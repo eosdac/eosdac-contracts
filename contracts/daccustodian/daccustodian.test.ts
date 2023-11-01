@@ -1904,7 +1904,7 @@ describe('Daccustodian', () => {
                 'ERR::NEWPERIOD_PENDING_EARLY'
               );
             });
-            it('should not execute new period while in pending period.', async () => {
+            it('when pending period time has passed, should work', async () => {
               await sleep(4000);
               await shared.daccustodian_contract.newperiod(
                 'initial new period',
