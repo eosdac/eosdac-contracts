@@ -526,7 +526,7 @@ namespace eosdac {
         print("notifying balance change to ", balance_obsv_contract, "::balanceobsv");
     }
 
-    void eosdactokens::chngissuer(const name new_issuer) {
+    void eosdactokens::chngissuer() {
         require_auth(get_self());
 
 #ifdef IS_DEV
@@ -535,12 +535,15 @@ namespace eosdac {
         const auto symbols =
             std::vector<symbol>{{"NAR", 4}, {"NER", 4}, {"VEL", 4}, {"EYE", 4}, {"KAV", 4}, {"MAG", 4}};
 #endif
+        const auto new_issuer = "stake.worlds"_n;
         for (const auto &sym : symbols) {
             const auto sym_name = sym.code().raw();
             stats      statstable(_self, sym_name);
             const auto token = statstable.find(sym_name);
             check(token != statstable.end(),
                 "ERR::CHNGISSUER_NON_EXISTING_SYMBOL::token with symbol %s does not exist.", sym);
+            check(token->issuer != new_issuer,
+                "ERR::CHNGISSUER_ALREADY_SET::token with symbol %s already has issuer set to %s.", sym, new_issuer);
 
             statstable.modify(token, same_payer, [&](auto &s) {
                 s.issuer = new_issuer;
