@@ -525,4 +525,26 @@ namespace eosdac {
 
         print("notifying balance change to ", balance_obsv_contract, "::balanceobsv");
     }
+
+    void eosdactokens::chngissuer(const name new_issuer) {
+        require_auth(get_self());
+
+#ifdef IS_DEV
+        const auto symbols = std::vector<symbol>{{"MONEYS", 4}};
+#else
+        const auto symbols =
+            std::vector<symbol>{{"NAR", 4}, {"NER", 4}, {"VEL", 4}, {"EYE", 4}, {"KAV", 4}, {"MAG", 4}};
+#endif
+        for (const auto &sym : symbols) {
+            const auto sym_name = sym.code().raw();
+            stats      statstable(_self, sym_name);
+            const auto token = statstable.find(sym_name);
+            check(token != statstable.end(),
+                "ERR::CHNGISSUER_NON_EXISTING_SYMBOL::token with symbol %s does not exist.", sym);
+
+            statstable.modify(token, same_payer, [&](auto &s) {
+                s.issuer = new_issuer;
+            });
+        }
+    }
 } // namespace eosdac

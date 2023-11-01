@@ -43,6 +43,7 @@ namespace eosdac {
         ACTION stakeconfig(stake_config config, symbol token_symbol);
         ACTION cancel(uint64_t unstake_id, symbol token_symbol);
         ACTION claimunstkes(const name account, const symbol token_symbol);
+        ACTION chngissuer(const name new_issuer);
 
         TABLE stake_info {
             name  account;
