@@ -6,6 +6,8 @@ chai.use(require('chai-datetime'));
 
 import { EosdactokensStakeConfig } from './eosdactokens';
 
+const MAGIC_KEY = BigInt('0xb00b1e50b00b1e50');
+
 describe('EOSDacTokens', () => {
   let shared: SharedTestObjects;
   let issuer: l.Account;
@@ -220,6 +222,87 @@ describe('EOSDacTokens', () => {
       });
     });
   });
+
+  context('denylist', async () => {
+    let user1: l.Account;
+    let user2: l.Account;
+    before(async () => {
+      user1 = await l.AccountManager.createAccount();
+      user2 = await l.AccountManager.createAccount();
+      await shared.dac_token_contract.issue(
+        issuer.name,
+        '30000.0000 ABC',
+        'initial issued tokens',
+        validAuths
+      );
+      await shared.dac_token_contract.transfer(
+        issuer.name,
+        user1.name,
+        '15000.0000 ABC',
+        'please take these tokens for staking',
+        validAuths
+      );
+    });
+
+    it('should fail with invalid auths', async () => {
+      const unauthorized = await l.AccountManager.createAccount();
+      await l.assertMissingAuthority(
+        shared.dac_token_contract.setparam(1, 2, { from: unauthorized })
+      );
+    });
+    it('should work', async () => {
+      await shared.dac_token_contract.setparam(1, 2);
+
+      await l.assertRowsEqual(shared.dac_token_contract.denyTable(), [
+        { account: 1, value: 2 },
+      ]);
+    });
+    it('deleting should work', async () => {
+      await shared.dac_token_contract.setparam(1, 0);
+
+      await l.assertRowsEqual(shared.dac_token_contract.denyTable(), []);
+    });
+    it('adding real account should work', async () => {
+      const key = shared.nameToInt(user2.name) ^ MAGIC_KEY;
+      await shared.dac_token_contract.setparam(key, 1);
+    });
+    it('testparam should find it', async () => {
+      await l.assertEOSErrorIncludesMessage(
+        shared.dac_token_contract.testparam(user2.name),
+        'KEY_FOUND found'
+      );
+    });
+    it('transfer should be blocked', async () => {
+      await l.assertEOSErrorIncludesMessage(
+        shared.dac_token_contract.transfer(
+          user1.name,
+          user2.name,
+          '100.0000 ABC',
+          'memo',
+          { from: user1 }
+        ),
+        'Planetary tokens are being transitioned'
+      );
+    });
+    it('after unblocking, should work', async () => {
+      const key = shared.nameToInt(user2.name) ^ MAGIC_KEY;
+      await shared.dac_token_contract.setparam(key, 0);
+      await shared.dac_token_contract.transfer(
+        user1.name,
+        user2.name,
+        '100.0000 ABC',
+        'memo',
+        { from: user1 }
+      );
+    });
+    it('testparam should not longer find it', async () => {
+      await l.assertEOSErrorIncludesMessage(
+        shared.dac_token_contract.testparam(user2.name),
+        'KEY_NOT_FOUND not found'
+      );
+    });
+  });
+
   context('Staking', async () => {
     let staker1: l.Account;
     let staker2: l.Account;
