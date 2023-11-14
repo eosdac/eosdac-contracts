@@ -6,7 +6,7 @@ chai.use(require('chai-datetime'));
 
 import { EosdactokensStakeConfig } from './eosdactokens';
 
-const MAGIC_KEY = BigInt('0xb00b1e50b00b1e50');
+const MAGIC_KEY = BigInt('0x234269da264d1337');
 
 describe('EOSDacTokens', () => {
   let shared: SharedTestObjects;
