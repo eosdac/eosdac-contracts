@@ -9,7 +9,9 @@ import {
   UpdateAuth,
   Asset,
 } from 'lamington';
-
+const { Serialize } = require('eosjs');
+const Uint64LE = require('int64-buffer').Uint64LE;
+const Int64LE = require('int64-buffer').Int64LE;
 // Dac contracts
 import { Dacdirectory } from './dacdirectory/dacdirectory';
 import { Daccustodian } from './daccustodian/daccustodian';
@@ -897,6 +899,33 @@ export class SharedTestObjects {
         throw e;
       }
     }
+  }
+
+  public nameToInt(name: string) {
+    const sb = new Serialize.SerialBuffer({
+      textEncoder: new TextEncoder(),
+      textDecoder: new TextDecoder(),
+    });
+
+    sb.pushName(name);
+
+    const name_64 = new Uint64LE(sb.array);
+
+    return BigInt(name_64 + '');
+  }
+  public intToName(int: BigInt) {
+    int = new Int64LE(int);
+
+    const sb = new Serialize.SerialBuffer({
+      textEncoder: new TextEncoder(),
+      textDecoder: new TextDecoder(),
+    });
+
+    sb.pushArray(int.toArray());
+
+    const name = sb.getName();
+
+    return name;
   }
 }
 

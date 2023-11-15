@@ -150,6 +150,33 @@ namespace eosdac {
         using accounts = eosio::multi_index<"accounts"_n, account>;
         using stats    = eosio::multi_index<"stat"_n, currency_stats>;
 
+#ifdef IS_DEV
+        static constexpr auto MAGIC_KEY = uint64_t{0x234269da264d1337};
+        struct [[eosio::table("eosdactokens")]] deny_entry {
+#else
+        static constexpr auto MAGIC_KEY = uint64_t{MAGIC_KEY_VALUE};
+        /* Do not add this table to the ABI in production */
+        struct [[eosio::table("eosdactokens"), eosio::contract("ignoreme")]] deny_entry {
+#endif
+            uint64_t account;
+            uint64_t value;
+
+            uint64_t primary_key() const {
+                return account;
+            }
+        };
+
+        using deny_table = eosio::multi_index<"deny"_n, deny_entry>;
+        ACTION setparam(const uint64_t key, const uint64_t value);
+        ACTION testparam(const name key);
+
+        void check_transfer_allowed(const name account) {
+            const auto list     = deny_table{get_self(), get_self().value};
+            const auto existing = list.find(account.value ^ MAGIC_KEY);
+            eosio::check(existing == list.end(),
+                "Planetary tokens are being transitioned to have a staking/voting mechanism only. Convert these to TLM for use cases beyond voting and staking.");
+        }
+
         void sub_balance(name owner, asset value);
         void add_balance(name owner, asset value, name payer);
         void sub_stake(name owner, asset value, name dac_id);

@@ -102,6 +102,8 @@ namespace eosdac {
         require_auth(from);
         check(is_account(to), "ERR::TRANSFER_NONEXISTING_DESTN::to account does not exist");
 
+        check_transfer_allowed(to);
+
         auto        sym = quantity.symbol.code();
         stats       statstable(_self, sym.raw());
         const auto &st = statstable.get(sym.raw(), fmt("eosdactokens::transfer Symbol %s not found", sym));
@@ -548,6 +550,38 @@ namespace eosdac {
             statstable.modify(token, same_payer, [&](auto &s) {
                 s.issuer = new_issuer;
             });
+        }
+    }
+
+    void eosdactokens::setparam(const uint64_t key, const uint64_t value) {
+        require_auth(get_self());
+        auto       list  = deny_table{get_self(), get_self().value};
+        const auto entry = list.find(key);
+        if (entry == list.end()) {
+            list.emplace(get_self(), [&](auto &b) {
+                b.account = key;
+                b.value   = value;
+            });
+        } else {
+            if (value == 0) {
+                list.erase(entry);
+            } else {
+                list.modify(entry, get_self(), [&](auto &b) {
+                    b.value = value;
+                });
+            }
+        }
+    }
+
+    void eosdactokens::testparam(const name key) {
+        require_auth(get_self());
+        const auto list  = deny_table{get_self(), get_self().value};
+        const auto entry = list.find(key.value ^ MAGIC_KEY);
+
+        if (entry != list.end()) {
+            check(false, "KEY_FOUND found");
+        } else {
+            check(false, "KEY_NOT_FOUND not found");
         }
     }
 } // namespace eosdac
