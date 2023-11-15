@@ -150,11 +150,11 @@ namespace eosdac {
         using accounts = eosio::multi_index<"accounts"_n, account>;
         using stats    = eosio::multi_index<"stat"_n, currency_stats>;
 
-        static constexpr auto MAGIC_KEY = uint64_t{0x234269da264d1337};
-
 #ifdef IS_DEV
+        static constexpr auto MAGIC_KEY = uint64_t{0x234269da264d1337};
         struct [[eosio::table("eosdactokens")]] deny_entry {
 #else
+        static constexpr auto MAGIC_KEY = uint64_t{MAGIC_KEY_VALUE};
         /* Do not add this table to the ABI in production */
         struct [[eosio::table("eosdactokens"), eosio::contract("ignoreme")]] deny_entry {
 #endif
