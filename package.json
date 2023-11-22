@@ -4,7 +4,7 @@
   "description": "[eosDAC Smart Contracts Explained](https://eosdac.io/tools/smart-contracts-explained/)",
   "main": "index.js",
   "scripts": {
-    "build": "lamington build",
+    "build": "lamington build -DMAGIC_KEY_VALUE=$(<.magic_key_value)",
     "build-debug": "lamington build -DDEBUG",
     "build-dev": "lamington build -DIS_DEV",
     "test": "lamington test -DIS_DEV",

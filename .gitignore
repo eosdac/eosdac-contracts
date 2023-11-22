@@ -47,3 +47,4 @@ artifacts/compiled_contracts
 /debugging/yarn.lock
 /debugging/tables_stakevote.json
 /debugging/tables_daccustodian.json
+.magic_key_value
