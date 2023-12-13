@@ -38,9 +38,9 @@ void referendum::refund(name account) {
 }
 
 void referendum::updateconfig(set_config_item new_config, name dac_id) {
-    auto dac = dacdir::dac_for_id(dac_id);
-    // auto auth_account = dac.owner; // Enable this when givin DAOs full control.
-    auto auth_account = get_self();
+    auto dac          = dacdir::dac_for_id(dac_id);
+    auto auth_account = dac.owner; // Enable this when giving DAOs full control.
+    // auto auth_account = get_self();
     require_auth(auth_account);
     auto config = config_item::get_current_configs(get_self(), dac_id);
 
@@ -302,7 +302,8 @@ void referendum::exec(uint64_t referendum_id, name dac_id) {
 
         if (ref->type == REFERENDUM_BINDING) {
             for (auto a : ref->acts) {
-                a.send();
+                // comment out for testing purposes. This line is potentaially dangerous for testing to bypass the DAOs.
+                // a.send();
             }
         } else if (ref->type == REFERENDUM_SEMI) {
             proposeMsig(*ref, dac_id);
