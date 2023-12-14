@@ -352,16 +352,18 @@ void referendum::stakeobsv(vector<account_stake_delta> stake_deltas, name dac_id
 void referendum::clean(name account, name dac_id) {
     require_auth(account);
 
+    votes_table votes(get_self(), dac_id.value);
+    auto        existing_vote_data = votes.find(account.value);
+    if (existing_vote_data == votes.end()) {
+        return; // Nothing to clean. Return early rather than assert so this can be including with other actions without
+                // breaking the other actions at the same time.
+    }
     referenda_table referenda(get_self(), dac_id.value);
-    votes_table     votes(get_self(), dac_id.value);
-    auto            existing_vote_data = votes.find(account.value);
 
     map<uint64_t, name> new_votes;
-    if (existing_vote_data != votes.end()) {
-        for (auto vd : existing_vote_data->votes) {
-            if (referenda.find(vd.first) != referenda.end()) {
-                new_votes[vd.first] = vd.second;
-            }
+    for (auto vd : existing_vote_data->votes) {
+        if (referenda.find(vd.first) != referenda.end()) {
+            new_votes[vd.first] = vd.second;
         }
     }
 
