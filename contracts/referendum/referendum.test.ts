@@ -230,7 +230,7 @@ describe('Referendum', () => {
           ],
         },
         dacId,
-        { from: shared.referendum_contract.account }
+        { from: shared.auth_account }
       );
     });
   });
