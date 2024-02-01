@@ -38,6 +38,7 @@ static constexpr eosio::name REFERENDUM_STATUS_PASSING{"passing"};
 static constexpr eosio::name REFERENDUM_STATUS_FAILING{"failing"};
 static constexpr eosio::name REFERENDUM_STATUS_QUORUM_UNMET{"quorum.unmet"};
 static constexpr eosio::name REFERENDUM_STATUS_EXPIRED{"expired"};
+static constexpr eosio::name REFERENDUM_STATUS_EXECUTED{"executed"};
 
 CONTRACT referendum : public contract {
 
@@ -78,7 +79,7 @@ CONTRACT referendum : public contract {
         STATUS_FAILING        = REFERENDUM_STATUS_FAILING.value,
         STATUS_QUORUM_NOT_MET = REFERENDUM_STATUS_QUORUM_UNMET.value,
         STATUS_EXPIRED        = REFERENDUM_STATUS_EXPIRED.value,
-
+        STATUS_EXECUTED       = REFERENDUM_STATUS_EXECUTED.value
     };
 
     struct account_stake_delta {
@@ -222,6 +223,7 @@ CONTRACT referendum : public contract {
     ACTION vote(
         name voter, uint64_t referendum_id, name vote, name dac_id); // vote: 0=no vote (remove), 1=yes, 2=no, 3=abstain
     ACTION exec(uint64_t referendum_id, name dac_id); // Exec the action if type is binding or semi-binding
+    ACTION rmvexecuted(uint64_t referendum_id, name dac_id);
     ACTION clean(name account, name dac_id);
     ACTION refund(name account);
     ACTION updatestatus(uint64_t referendum_id, name dac_id);

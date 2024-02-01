@@ -309,7 +309,19 @@ void referendum::exec(uint64_t referendum_id, name dac_id) {
             proposeMsig(*ref, dac_id);
         }
     }
+    referenda.modify(ref, same_payer, [&](auto &r) {
+        r.status = REFERENDUM_STATUS_EXECUTED;
+    });
+
     action(permission_level{get_self(), "active"_n}, get_self(), "publresult"_n, make_tuple(*ref)).send();
+}
+
+void referendum::rmvexecuted(uint64_t referendum_id, name dac_id) {
+
+    referenda_table referenda(get_self(), dac_id.value);
+    auto            ref = referenda.require_find(referendum_id, "ERR::REFERENDUM_NOT_FOUND::Referendum not found");
+
+    check(ref->status == REFERENDUM_STATUS_EXECUTED, "ERR::REFERENDUM_NOT_EXECUTED::Referendum has not been executed.");
     referenda.erase(ref);
 }
 
