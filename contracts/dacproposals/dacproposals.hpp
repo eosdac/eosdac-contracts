@@ -64,10 +64,11 @@ namespace eosdac {
         TABLE proposal {
             name           proposal_id;
             name           proposer;
-            name           arbitrator;
+            name           arbiter;
             string         content_hash;
             extended_asset proposal_pay;
-            extended_asset arbitrator_pay;
+            extended_asset arbiter_pay;
+            bool           arbiter_agreed = false;
             name           state;
             time_point_sec expiry;
             uint32_t       job_duration; // job duration in seconds
@@ -79,8 +80,8 @@ namespace eosdac {
             uint64_t proposer_key() const {
                 return proposer.value;
             }
-            uint64_t arbitrator_key() const {
-                return arbitrator.value;
+            uint64_t arbiter_key() const {
+                return arbiter.value;
             }
             uint64_t category_key() const {
                 return uint64_t(category);
@@ -94,7 +95,7 @@ namespace eosdac {
 
         using proposal_table = eosio::multi_index<"proposals"_n, proposal,
             eosio::indexed_by<"proposer"_n, eosio::const_mem_fun<proposal, uint64_t, &proposal::proposer_key>>,
-            eosio::indexed_by<"arbitrator"_n, eosio::const_mem_fun<proposal, uint64_t, &proposal::arbitrator_key>>,
+            eosio::indexed_by<"arbiter"_n, eosio::const_mem_fun<proposal, uint64_t, &proposal::arbiter_key>>,
             eosio::indexed_by<"category"_n, eosio::const_mem_fun<proposal, uint64_t, &proposal::category_key>>>;
 
         struct config {
@@ -115,8 +116,8 @@ namespace eosdac {
 
         dacproposals(name receiver, name code, datastream<const char *> ds) : contract(receiver, code, ds) {}
 
-        ACTION createprop(name proposer, string title, string summary, name arbitrator, extended_asset proposal_pay,
-            extended_asset arbitrator_pay, string content_hash, name id, uint16_t category, uint32_t job_duration,
+        ACTION createprop(name proposer, string title, string summary, name arbiter, extended_asset proposal_pay,
+            extended_asset arbiter_pay, string content_hash, name id, uint16_t category, uint32_t job_duration,
             name dac_id);
 
         ACTION voteprop(name custodian, name proposal_id, name vote, name dac_id);
@@ -125,8 +126,9 @@ namespace eosdac {
         ACTION delegatevote(name custodian, name proposal_id, name delegatee_custodian, name dac_id);
         ACTION delegatecat(name custodian, uint64_t category, name delegatee_custodian, name dac_id);
         ACTION undelegateca(name custodian, uint64_t category, name dac_id);
-        ACTION arbapprove(name arbitrator, name proposal_id, name dac_id);
-        ACTION arbdeny(name arbitrator, name proposal_id, name dac_id);
+        ACTION arbagree(name arbiter, name proposal_id, name dac_id);
+        ACTION arbapprove(name arbiter, name proposal_id, name dac_id);
+        ACTION arbdeny(name arbiter, name proposal_id, name dac_id);
         ACTION startwork(name proposal_id, name dac_id);
         ACTION completework(name proposal_id, name dac_id);
         ACTION finalize(name proposal_id, name dac_id);
@@ -144,7 +146,7 @@ namespace eosdac {
         void    transferfunds(const proposal &prop, name dac_id);
         void    check_proposal_can_start(name proposal_id, name dac_id);
         int16_t count_votes(proposal prop, VoteType vote_type, name dac_id);
-        void    arbitrator_rule_on_proposal(name arbitrator, name proposal_id, name dac_id);
+        void    arbiter_rule_on_proposal(name arbiter, name proposal_id, name dac_id);
         void    _voteprop(name custodian, name proposal_id, name vote, name dac_id);
 
         TABLE proposalvote {

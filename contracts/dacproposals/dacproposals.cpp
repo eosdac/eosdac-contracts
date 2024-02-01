@@ -12,14 +12,14 @@
 
 namespace eosdac {
 
-    ACTION dacproposals::createprop(name proposer, string title, string summary, name arbitrator,
-        extended_asset proposal_pay, extended_asset arbitrator_pay, string content_hash, name id, uint16_t category,
+    ACTION dacproposals::createprop(name proposer, string title, string summary, name arbiter,
+        extended_asset proposal_pay, extended_asset arbiter_pay, string content_hash, name id, uint16_t category,
         uint32_t job_duration, name dac_id) {
         require_auth(proposer);
         assertValidMember(proposer, dac_id);
         proposal_table proposals(get_self(), dac_id.value);
 
-        check(proposer != arbitrator, "You cannot nominate yourself as the arbitrator for a proposal.");
+        check(proposer != arbiter, "You cannot nominate yourself as the arbiter for a proposal.");
 
         check(proposals.find(id.value) == proposals.end(),
             "ERR::CREATEPROP_DUPLICATE_ID::A Proposal with the id already exists. Try again with a different id.");
@@ -29,27 +29,27 @@ namespace eosdac {
         check(proposal_pay.quantity.symbol.is_valid(), "ERR::CREATEPROP_INVALID_SYMBOL::Invalid pay amount symbol.");
         check(proposal_pay.quantity.amount > 0,
             "ERR::CREATEPROP_INVALID_proposal_pay::Invalid pay amount. Must be greater than 0.");
-        check(is_account(arbitrator), "ERR::CREATEPROP_INVALID_ARBITRATOR::Invalid arbitrator.");
+        check(is_account(arbiter), "ERR::CREATEPROP_INVALID_arbiter::Invalid arbiter.");
 
         auto dac            = dacdir::dac_for_id(dac_id);
         auto funding_source = dac.account_for_type(dacdir::SPENDINGS);
         auto auth           = dac.owner;
-        check(arbitrator != auth && arbitrator != funding_source, "Arbitrator must be a third party");
+        check(arbiter != auth && arbiter != funding_source, "arbiter must be a third party");
         auto current_configs = configs{get_self(), dac_id};
 
         uint32_t approval_duration = current_configs.get_approval_duration();
 
         proposals.emplace(proposer, [&](proposal &p) {
-            p.proposal_id    = id;
-            p.proposer       = proposer;
-            p.arbitrator     = arbitrator;
-            p.content_hash   = content_hash;
-            p.proposal_pay   = proposal_pay;
-            p.arbitrator_pay = arbitrator_pay;
-            p.state          = STATE_PENDING_APPROVAL;
-            p.category       = category;
-            p.job_duration   = job_duration;
-            p.expiry         = time_point_sec(current_time_point().sec_since_epoch()) + approval_duration;
+            p.proposal_id  = id;
+            p.proposer     = proposer;
+            p.arbiter      = arbiter;
+            p.content_hash = content_hash;
+            p.proposal_pay = proposal_pay;
+            p.arbiter_pay  = arbiter_pay;
+            p.state        = STATE_PENDING_APPROVAL;
+            p.category     = category;
+            p.job_duration = job_duration;
+            p.expiry       = time_point_sec(current_time_point().sec_since_epoch()) + approval_duration;
         });
     }
 
@@ -210,12 +210,29 @@ namespace eosdac {
         by_cat_and_voter.erase(vote_idx);
     }
 
-    ACTION dacproposals::arbdeny(name arbitrator, name proposal_id, name dac_id) {
-        arbitrator_rule_on_proposal(arbitrator, proposal_id, dac_id);
+    ACTION dacproposals::arbdeny(name arbiter, name proposal_id, name dac_id) {
+        arbiter_rule_on_proposal(arbiter, proposal_id, dac_id);
     }
 
-    ACTION dacproposals::arbapprove(name arbitrator, name proposal_id, name dac_id) {
-        arbitrator_rule_on_proposal(arbitrator, proposal_id, dac_id);
+    ACTION dacproposals::arbapprove(name arbiter, name proposal_id, name dac_id) {
+        arbiter_rule_on_proposal(arbiter, proposal_id, dac_id);
+    }
+
+    ACTION dacproposals::arbagree(name arbiter, name proposal_id, name dac_id) {
+        require_auth(arbiter);
+
+        auto proposals = proposal_table{get_self(), dac_id.value};
+
+        const proposal &prop = proposals.get(proposal_id.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found.");
+
+        check(prop.arbiter == arbiter, "ERR::INCORRECT_ABITER::You are not the arbiter for this proposal");
+
+        check(prop.state == STATE_PENDING_APPROVAL || prop.state == STATE_HAS_ENOUGH_APP_VOTES,
+            "ERR::ARBAGREE_WRONG_STATE::Proposal is not in the pending approval state therefore cannot be agreed to by the arbiter.");
+
+        proposals.modify(prop, same_payer, [&](auto &p) {
+            p.arbiter_agreed = true;
+        });
     }
 
     ACTION dacproposals::startwork(name proposal_id, name dac_id) {
@@ -225,6 +242,8 @@ namespace eosdac {
 
         require_auth(prop.proposer);
         check_proposal_can_start(proposal_id, dac_id);
+        check(
+            prop.arbiter_agreed, "ERR::STARTWORK_NO_ARBITER_AGREEMENT::Arbiter has not agreed to be on the proposal.");
 
         assertValidMember(prop.proposer, dac_id);
 
@@ -243,7 +262,7 @@ namespace eosdac {
         });
 
         dacescrow::init_action{escrow, {funding_source, "active"_n}}
-            .to_action(funding_source, prop.proposer, prop.arbitrator, time_now + (prop.job_duration * 2), memo,
+            .to_action(funding_source, prop.proposer, prop.arbiter, time_now + (prop.job_duration * 2), memo,
                 proposal_id, dac_id)
             .send();
 
@@ -252,8 +271,8 @@ namespace eosdac {
                 "rec:" + proposal_id.to_string() + ":" + dac_id.to_string()))
             .send();
 
-        action(eosio::permission_level{funding_source, "active"_n}, prop.arbitrator_pay.contract, "transfer"_n,
-            make_tuple(funding_source, escrow, prop.arbitrator_pay.quantity,
+        action(eosio::permission_level{funding_source, "active"_n}, prop.arbiter_pay.contract, "transfer"_n,
+            make_tuple(funding_source, escrow, prop.arbiter_pay.quantity,
                 "arb:" + proposal_id.to_string() + ":" + dac_id.to_string()))
             .send();
     }
@@ -604,12 +623,12 @@ namespace eosdac {
             approved_count, proposal_threshold);
     }
 
-    void dacproposals::arbitrator_rule_on_proposal(name arbitrator, name proposal_id, name dac_id) {
-        require_auth(arbitrator);
+    void dacproposals::arbiter_rule_on_proposal(name arbiter, name proposal_id, name dac_id) {
+        require_auth(arbiter);
         proposal_table proposals(_self, dac_id.value);
 
         const proposal &prop = proposals.get(proposal_id.value, "ERR::PROPOSAL_NOT_FOUND::Proposal not found.");
-        check(prop.arbitrator == arbitrator, "ERR::NOT_ARBITRATOR::You are not the arbitrator for this proposal");
+        check(prop.arbiter == arbiter, "ERR::NOT_arbiter::You are not the arbiter for this proposal");
 
         auto escrow = dacdir::dac_for_id(dac_id).account_for_type(dacdir::ESCROW);
         check(is_account(escrow), "ERR::ESCROW_ACCOUNT_NOT_FOUND::Escrow account not found");
@@ -620,7 +639,7 @@ namespace eosdac {
             "ERR::ESCROW_STILL_ACTIVE::Escrow is still active in escrow contract. It should have been either approved or dissapproved before calling this action.");
 
         check(prop.state == STATE_DISPUTED,
-            "ERR::PROP_NOT_IN_DISPUTE_STATE::A proposal can only be denied by an arbitrator when in dispute state.");
+            "ERR::PROP_NOT_IN_DISPUTE_STATE::A proposal can only be denied by an arbiter when in dispute state.");
 
         clearprop(prop, dac_id);
     }

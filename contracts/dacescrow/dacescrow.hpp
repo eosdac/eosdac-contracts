@@ -31,8 +31,8 @@ namespace eosdac {
 
         [[eosio::on_notify("*::transfer")]] void transfer(name from, name to, asset quantity, string memo);
         /**
-         * @brief This action can only be a called by the sender of the escrow or the arbitrator if the escrow is
-         * locked. Upon a success the escrow funds wil be sent to the receiver of the escrow funds and the arbitrators
+         * @brief This action can only be a called by the sender of the escrow or the arbiter if the escrow is
+         * locked. Upon a success the escrow funds wil be sent to the receiver of the escrow funds and the arbiters
          * fees will be sent to the arbitraor account. Then the escrow record will be removed from the contract table.
          *
          * @param key: the unique identifier for the escrow entry
@@ -41,7 +41,7 @@ namespace eosdac {
          */
         ACTION approve(name key, name approver, name dac_id);
         /**
-         * @brief This action can only be a called by the assigned arbitrator for the escrow. Upon a success the
+         * @brief This action can only be a called by the assigned arbiter for the escrow. Upon a success the
          * escrow funds wil be returned to the sender of the escrow funds and the escrow record will be removed from the
          * contract table.
          *
@@ -65,7 +65,7 @@ namespace eosdac {
          * @brief This action is intended to dispute an escrow that has not been paid but the receiver feels should be
          * paid. It can only be called by the intended receiver of the escrow after funds have been transferred into the
          * identified escrow. Upon success the escrow record will be locked and then it can only be resolved by the
-         * nominated arbitrator for the escrow.
+         * nominated arbiter for the escrow.
          *
          * @param key Unique identifer for the escrow to refund
          * @param dac_id The dac_id for the scope where the escrow is stored
@@ -89,7 +89,7 @@ namespace eosdac {
         ACTION clean(name dac_id);
 
       private:
-        void pay_arbitrator(const escrows_table::const_iterator esc_itr);
-        void refund_arbitrator_pay(const escrows_table::const_iterator esc_itr);
+        void pay_arbiter(const escrows_table::const_iterator esc_itr);
+        void refund_arbiter_pay(const escrows_table::const_iterator esc_itr);
     };
 } // namespace eosdac

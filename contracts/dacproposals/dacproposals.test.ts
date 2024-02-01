@@ -43,7 +43,7 @@ let planet: Account;
 describe('Dacproposals', () => {
   let otherAccount: Account;
   let proposer1Account: Account;
-  let arbitrator: Account;
+  let arbiter: Account;
   let propDacCustodians: Account[];
   let regMembers: Account[];
   const dacId = 'popdac';
@@ -87,7 +87,7 @@ describe('Dacproposals', () => {
     });
 
     otherAccount = regMembers[1];
-    arbitrator = regMembers[2];
+    arbiter = regMembers[2];
     proposer1Account = regMembers[3];
     delegateeCustodian = propDacCustodians[4];
 
@@ -165,7 +165,7 @@ describe('Dacproposals', () => {
             proposer1Account.name,
             'title',
             'summary',
-            arbitrator.name,
+            arbiter.name,
             { quantity: '100.0000 EOS', contract: 'eosio.token' },
             {
               quantity: '10.0000 PROPDAC',
@@ -189,7 +189,7 @@ describe('Dacproposals', () => {
               proposer1Account.name,
               'ti',
               'summary',
-              arbitrator.name,
+              arbiter.name,
               { quantity: '100.0000 EOS', contract: 'eosio.token' },
               {
                 quantity: '10.0000 PROPDAC',
@@ -213,7 +213,7 @@ describe('Dacproposals', () => {
               proposer1Account.name,
               'title',
               'su',
-              arbitrator.name,
+              arbiter.name,
               { quantity: '100.0000 EOS', contract: 'eosio.token' },
               {
                 quantity: '10.0000 PROPDAC',
@@ -238,7 +238,7 @@ describe('Dacproposals', () => {
               proposer1Account.name,
               'title',
               'summary',
-              arbitrator.name,
+              arbiter.name,
               { quantity: '-100.0000 EOS', contract: 'eosio.token' },
               {
                 quantity: '10.0000 PROPDAC',
@@ -255,8 +255,8 @@ describe('Dacproposals', () => {
           );
         });
       });
-      context('with no arbitrator', async () => {
-        it('should fail with invalid arbitrator error', async () => {
+      context('with no arbiter', async () => {
+        it('should fail with invalid arbiter error', async () => {
           await assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.createprop(
               proposer1Account.name,
@@ -275,7 +275,7 @@ describe('Dacproposals', () => {
               dacId,
               { from: proposer1Account }
             ),
-            'CREATEPROP_INVALID_ARBITRATOR'
+            'CREATEPROP_INVALID_arbiter'
           );
         });
       });
@@ -285,7 +285,7 @@ describe('Dacproposals', () => {
             proposer1Account.name,
             'title',
             'summary',
-            arbitrator.name,
+            arbiter.name,
             { quantity: '100.0000 EOS', contract: 'eosio.token' },
             {
               quantity: '10.0000 PROPDAC',
@@ -335,7 +335,7 @@ describe('Dacproposals', () => {
             proposer1Account.name,
             'title',
             'summary',
-            arbitrator.name,
+            arbiter.name,
             { quantity: '100.0000 EOS', contract: 'eosio.token' },
             {
               quantity: '10.0000 PROPDAC',
@@ -522,7 +522,7 @@ describe('Dacproposals', () => {
           proposer1Account.name,
           'startwork_title',
           'startwork_summary',
-          arbitrator.name,
+          arbiter.name,
           { quantity: '101.0000 EOS', contract: 'eosio.token' },
           {
             quantity: '10.0000 PROPDAC',
@@ -644,7 +644,7 @@ describe('Dacproposals', () => {
         proposer1Account.name,
         'title',
         'summary',
-        arbitrator.name,
+        arbiter.name,
         { quantity: '100.0000 EOS', contract: 'eosio.token' },
         {
           quantity: '10.0000 PROPDAC',
@@ -931,23 +931,85 @@ describe('Dacproposals', () => {
         await EOSManager.transact({ actions: [eosLoadAction, propLoadAction] });
       });
 
-      it('should succeed', async () => {
-        await shared.dacproposals_contract.startwork(
-          newpropid, // proposal id
-          dacId,
-          {
-            auths: [
+      context('Before abiters agreement', async () => {
+        it('should fail with arbiter error message', async () => {
+          await assertEOSErrorIncludesMessage(
+            shared.dacproposals_contract.startwork(
+              newpropid, // proposal id
+              dacId,
               {
-                actor: proposer1Account.name,
-                permission: 'active',
-              },
-              {
-                actor: shared.auth_account.name,
-                permission: 'active',
-              },
-            ],
-          }
-        );
+                auths: [
+                  {
+                    actor: proposer1Account.name,
+                    permission: 'active',
+                  },
+                  {
+                    actor: shared.auth_account.name,
+                    permission: 'active',
+                  },
+                ],
+              }
+            ),
+            ' ERR::STARTWORK_NO_ARBITER_AGREEMENT'
+          );
+        });
+      });
+      context('Getting abiter agreement', async () => {
+        context('with missing prop id', async () => {
+          it('should fail with prop error', async () => {
+            await assertEOSErrorIncludesMessage(
+              shared.dacproposals_contract.arbagree(
+                arbiter.name,
+                notfoundpropid,
+                dacId,
+                { from: arbiter }
+              ),
+              'ERR::PROPOSAL_NOT_FOUND'
+            );
+          });
+          context('with wrong auth', async () => {
+            it('should fail with missing arb auth', async () => {
+              await assertMissingAuthority(
+                shared.dacproposals_contract.arbagree(
+                  arbiter.name,
+                  newpropid,
+                  dacId,
+                  { from: otherAccount }
+                )
+              );
+            });
+          });
+          context('with correct auth', async () => {
+            it('should succeed', async () => {
+              await shared.dacproposals_contract.arbagree(
+                arbiter.name,
+                newpropid,
+                dacId,
+                { from: arbiter }
+              );
+            });
+          });
+        });
+      });
+      context('with arbiter agreement', async () => {
+        it('should succeed', async () => {
+          await shared.dacproposals_contract.startwork(
+            newpropid, // proposal id
+            dacId,
+            {
+              auths: [
+                {
+                  actor: proposer1Account.name,
+                  permission: 'active',
+                },
+                {
+                  actor: shared.auth_account.name,
+                  permission: 'active',
+                },
+              ],
+            }
+          );
+        });
       });
       context('Without delay', async () => {
         it('should populate the escrow table', async () => {
@@ -958,13 +1020,13 @@ describe('Dacproposals', () => {
           chai.expect(row.key).to.eq(newpropid);
           chai.expect(row.sender).to.eq(planet.name);
           chai.expect(row.receiver).to.eq(proposer1Account.name);
-          chai.expect(row.arb).to.eq(arbitrator.name);
+          chai.expect(row.arb).to.eq(arbiter.name);
           chai.expect(row.receiver_pay.quantity).to.eq('100.0000 EOS');
           chai
             .expect(row.memo)
             .to.eq(`${proposer1Account.name}:${newpropid}:${proposalHash}`);
           chai.expect(row.expires).to.be.afterTime(new Date(Date.now()));
-          chai.expect(row.arbitrator_pay.quantity).to.eq('10.0000 PROPDAC');
+          chai.expect(row.arbiter_pay.quantity).to.eq('10.0000 PROPDAC');
         });
         it('should update the proposal state to in_progress', async () => {
           const proposalRow = await shared.dacproposals_contract.proposalsTable(
@@ -976,7 +1038,7 @@ describe('Dacproposals', () => {
           );
           const row = proposalRow.rows[0];
           chai.expect(row.proposal_id).to.eq(newpropid);
-          chai.expect(row.arbitrator).to.eq(arbitrator.name);
+          chai.expect(row.arbiter).to.eq(arbiter.name);
           chai.expect(row.content_hash).to.eq(proposalHash);
           chai
             .expect(row.state)
@@ -1023,7 +1085,7 @@ describe('Dacproposals', () => {
           proposer1Account.name,
           'startwork_title',
           'startwork_summary',
-          arbitrator.name,
+          arbiter.name,
           { quantity: '105.0000 EOS', contract: 'eosio.token' },
           {
             quantity: '10.0000 PROPDAC',
@@ -1247,7 +1309,7 @@ describe('Dacproposals', () => {
           proposer1Account.name,
           'startwork_title',
           'startwork_summary',
-          arbitrator.name,
+          arbiter.name,
           { quantity: '101.0000 EOS', contract: 'eosio.token' },
           {
             quantity: '10.0000 PROPDAC',
@@ -1302,7 +1364,7 @@ describe('Dacproposals', () => {
           proposer1Account.name,
           'startwork_title',
           'startwork_summary',
-          arbitrator.name,
+          arbiter.name,
           { quantity: '101.0000 EOS', contract: 'eosio.token' },
           {
             quantity: '10.0000 PROPDAC',
@@ -1362,12 +1424,12 @@ describe('Dacproposals', () => {
             it('arb should not yet have been paid', async () => {
               await assertRowsEqual(
                 shared.dac_token_contract.accountsTable({
-                  scope: arbitrator.name,
+                  scope: arbiter.name,
                 }),
                 [{ balance: '20000.0000 PROPDAC' }]
               );
             });
-            it('dacescrow should be loaded with arbitrator funds', async () => {
+            it('dacescrow should be loaded with arbiter funds', async () => {
               await assertRowsEqual(
                 shared.dac_token_contract.accountsTable({
                   scope: shared.dacescrow_contract.account.name,
@@ -1430,15 +1492,15 @@ describe('Dacproposals', () => {
                 [{ balance: '20000.0000 PROPDAC' }]
               );
             });
-            it('dacescrow should have returned the arbitrator funds', async () => {
+            it('dacescrow should have returned the arbiter funds', async () => {
               await assertRowsEqual(
                 shared.dac_token_contract.accountsTable({
-                  scope: arbitrator.name,
+                  scope: arbiter.name,
                 }),
                 [{ balance: '20000.0000 PROPDAC' }]
               );
             });
-            it('dacescrow arbitrator funds should be returned to planet', async () => {
+            it('dacescrow arbiter funds should be returned to planet', async () => {
               await assertRowsEqual(
                 shared.dac_token_contract.accountsTable({
                   scope: planet.name,
@@ -1476,10 +1538,10 @@ describe('Dacproposals', () => {
       it('should fail with proposal not found error', async () => {
         await assertEOSErrorIncludesMessage(
           shared.dacproposals_contract.arbapprove(
-            arbitrator.name,
+            arbiter.name,
             notfoundpropid,
             dacId,
-            { from: arbitrator }
+            { from: arbiter }
           ),
           'ERR::PROPOSAL_NOT_FOUND'
         );
@@ -1500,7 +1562,7 @@ describe('Dacproposals', () => {
           proposer1Account.name,
           'title',
           'summary',
-          arbitrator.name,
+          arbiter.name,
           { quantity: '100.0000 EOS', contract: 'eosio.token' },
           {
             quantity: '10.0000 PROPDAC',
@@ -1549,6 +1611,13 @@ describe('Dacproposals', () => {
           ],
         });
 
+        await shared.dacproposals_contract.arbagree(
+          arbiter.name,
+          arbApproveId,
+          dacId,
+          { from: arbiter }
+        );
+
         await shared.dacproposals_contract.startwork(arbApproveId, dacId, {
           auths: [
             {
@@ -1563,8 +1632,8 @@ describe('Dacproposals', () => {
         });
         await sleep(6000);
       });
-      context('called by user other than arbitrator', async () => {
-        it('It should not arbitrator error', async () => {
+      context('called by user other than arbiter', async () => {
+        it('It should not arbiter error', async () => {
           await assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.arbapprove(
               proposer1Account.name,
@@ -1572,7 +1641,7 @@ describe('Dacproposals', () => {
               dacId,
               { from: proposer1Account }
             ),
-            'ERR::NOT_ARBITRATOR'
+            'ERR::NOT_arbiter'
           );
         });
       });
@@ -1580,10 +1649,10 @@ describe('Dacproposals', () => {
         it('It should fail with escrow still active error', async () => {
           await assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.arbapprove(
-              arbitrator.name,
+              arbiter.name,
               arbApproveId,
               dacId,
-              { from: arbitrator }
+              { from: arbiter }
             ),
             'ERR::ESCROW_STILL_ACTIVE'
           );
@@ -1600,19 +1669,19 @@ describe('Dacproposals', () => {
           const escrowAction: EosioAction = {
             account: shared.dacescrow_contract.account.name,
             name: 'approve',
-            authorization: [{ actor: arbitrator.name, permission: 'active' }],
+            authorization: [{ actor: arbiter.name, permission: 'active' }],
             data: {
               key: arbApproveId,
-              approver: arbitrator.name,
+              approver: arbiter.name,
               dac_id: dacId,
             },
           };
           const proposalAction: EosioAction = {
             account: shared.dacproposals_contract.account.name,
             name: 'arbapprove',
-            authorization: [{ actor: arbitrator.name, permission: 'active' }],
+            authorization: [{ actor: arbiter.name, permission: 'active' }],
             data: {
-              arbitrator: arbitrator.name,
+              arbiter: arbiter.name,
               proposal_id: arbApproveId,
               dac_id: dacId,
             },
@@ -1632,15 +1701,15 @@ describe('Dacproposals', () => {
             [{ balance: '100.0000 EOS' }]
           );
         });
-        it('arbitrator should not have been paid', async () => {
+        it('arbiter should not have been paid', async () => {
           await assertRowsEqual(
             shared.dac_token_contract.accountsTable({
-              scope: arbitrator.name,
+              scope: arbiter.name,
             }),
             [{ balance: '20000.0000 PROPDAC' }]
           );
         });
-        it('dacescrow should be loaded with arbitrator funds', async () => {
+        it('dacescrow should be loaded with arbiter funds', async () => {
           await assertRowsEqual(
             shared.dac_token_contract.accountsTable({
               scope: shared.dacescrow_contract.account.name,
@@ -1690,19 +1759,19 @@ describe('Dacproposals', () => {
           const escrowAction: EosioAction = {
             account: shared.dacescrow_contract.account.name,
             name: 'approve',
-            authorization: [{ actor: arbitrator.name, permission: 'active' }],
+            authorization: [{ actor: arbiter.name, permission: 'active' }],
             data: {
               key: arbApproveId,
-              approver: arbitrator.name,
+              approver: arbiter.name,
               dac_id: dacId,
             },
           };
           const proposalAction: EosioAction = {
             account: shared.dacproposals_contract.account.name,
             name: 'arbapprove',
-            authorization: [{ actor: arbitrator.name, permission: 'active' }],
+            authorization: [{ actor: arbiter.name, permission: 'active' }],
             data: {
-              arbitrator: arbitrator.name,
+              arbiter: arbiter.name,
               proposal_id: arbApproveId,
               dac_id: dacId,
             },
@@ -1721,16 +1790,16 @@ describe('Dacproposals', () => {
             [{ balance: '200.0000 EOS' }]
           );
         });
-        it('arbitrator should have been paid', async () => {
+        it('arbiter should have been paid', async () => {
           await assertRowsEqual(
             shared.dac_token_contract.accountsTable({
-              scope: arbitrator.name,
+              scope: arbiter.name,
             }),
             [{ balance: '20010.0000 PROPDAC' }]
           );
         });
 
-        it('dacescrow arbitrator funds should not be returned to planet', async () => {
+        it('dacescrow arbiter funds should not be returned to planet', async () => {
           await assertRowsEqual(
             shared.dac_token_contract.accountsTable({
               scope: planet.name,
@@ -1747,10 +1816,10 @@ describe('Dacproposals', () => {
       it('should fail with proposal not found error', async () => {
         await assertEOSErrorIncludesMessage(
           shared.dacproposals_contract.arbapprove(
-            arbitrator.name,
+            arbiter.name,
             notfoundpropid,
             dacId,
-            { from: arbitrator }
+            { from: arbiter }
           ),
           'ERR::PROPOSAL_NOT_FOUND'
         );
@@ -1771,7 +1840,7 @@ describe('Dacproposals', () => {
           proposer1Account.name,
           'title',
           'summary',
-          arbitrator.name,
+          arbiter.name,
           { quantity: '100.0000 EOS', contract: 'eosio.token' },
           {
             quantity: '10.0000 PROPDAC',
@@ -1820,6 +1889,13 @@ describe('Dacproposals', () => {
           ],
         });
 
+        await shared.dacproposals_contract.arbagree(
+          arbiter.name,
+          arbDenyId,
+          dacId,
+          { from: arbiter }
+        );
+
         await shared.dacproposals_contract.startwork(arbDenyId, dacId, {
           auths: [
             {
@@ -1834,8 +1910,8 @@ describe('Dacproposals', () => {
         });
         await sleep(6000);
       });
-      context('called by user other than arbitrator', async () => {
-        it('It should not arbitrator error', async () => {
+      context('called by user other than arbiter', async () => {
+        it('It should not arbiter error', async () => {
           await assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.arbdeny(
               proposer1Account.name,
@@ -1843,7 +1919,7 @@ describe('Dacproposals', () => {
               dacId,
               { from: proposer1Account }
             ),
-            'ERR::NOT_ARBITRATOR'
+            'ERR::NOT_arbiter'
           );
         });
       });
@@ -1851,10 +1927,10 @@ describe('Dacproposals', () => {
         it('It should fail with escrow still active error', async () => {
           await assertEOSErrorIncludesMessage(
             shared.dacproposals_contract.arbdeny(
-              arbitrator.name,
+              arbiter.name,
               arbDenyId,
               dacId,
-              { from: arbitrator }
+              { from: arbiter }
             ),
             'ERR::ESCROW_STILL_ACTIVE'
           );
@@ -1871,19 +1947,19 @@ describe('Dacproposals', () => {
           const escrowAction: EosioAction = {
             account: shared.dacescrow_contract.account.name,
             name: 'disapprove',
-            authorization: [{ actor: arbitrator.name, permission: 'active' }],
+            authorization: [{ actor: arbiter.name, permission: 'active' }],
             data: {
               key: arbDenyId,
-              disapprover: arbitrator.name,
+              disapprover: arbiter.name,
               dac_id: dacId,
             },
           };
           const proposalAction: EosioAction = {
             account: shared.dacproposals_contract.account.name,
             name: 'arbdeny',
-            authorization: [{ actor: arbitrator.name, permission: 'active' }],
+            authorization: [{ actor: arbiter.name, permission: 'active' }],
             data: {
-              arbitrator: arbitrator.name,
+              arbiter: arbiter.name,
               proposal_id: arbDenyId,
               dac_id: dacId,
             },
@@ -1904,15 +1980,15 @@ describe('Dacproposals', () => {
               [{ balance: '200.0000 EOS' }]
             );
           });
-          it('arbitrator should have been paid', async () => {
+          it('arbiter should have been paid', async () => {
             await assertRowsEqual(
               shared.dac_token_contract.accountsTable({
-                scope: arbitrator.name,
+                scope: arbiter.name,
               }),
               [{ balance: '20020.0000 PROPDAC' }]
             );
           });
-          it('dacescrow should be sent arbitrator funds', async () => {
+          it('dacescrow should be sent arbiter funds', async () => {
             await assertRowsEqual(
               shared.dac_token_contract.accountsTable({
                 scope: shared.dacescrow_contract.account.name,
@@ -1961,19 +2037,19 @@ describe('Dacproposals', () => {
           const escrowAction: EosioAction = {
             account: shared.dacescrow_contract.account.name,
             name: 'disapprove',
-            authorization: [{ actor: arbitrator.name, permission: 'active' }],
+            authorization: [{ actor: arbiter.name, permission: 'active' }],
             data: {
               key: arbDenyId,
-              disapprover: arbitrator.name,
+              disapprover: arbiter.name,
               dac_id: dacId,
             },
           };
           const proposalAction: EosioAction = {
             account: shared.dacproposals_contract.account.name,
             name: 'arbdeny',
-            authorization: [{ actor: arbitrator.name, permission: 'active' }],
+            authorization: [{ actor: arbiter.name, permission: 'active' }],
             data: {
-              arbitrator: arbitrator.name,
+              arbiter: arbiter.name,
               proposal_id: arbDenyId,
               dac_id: dacId,
             },
@@ -1991,16 +2067,16 @@ describe('Dacproposals', () => {
               [{ balance: '200.0000 EOS' }]
             );
           });
-          it('arbitrator should have been paid', async () => {
+          it('arbiter should have been paid', async () => {
             await assertRowsEqual(
               shared.dac_token_contract.accountsTable({
-                scope: arbitrator.name,
+                scope: arbiter.name,
               }),
               [{ balance: '20020.0000 PROPDAC' }]
             );
           });
 
-          it('dacescrow arbitrator funds should be returned to planet', async () => {
+          it('dacescrow arbiter funds should be returned to planet', async () => {
             await assertRowsEqual(
               shared.dac_token_contract.accountsTable({
                 scope: planet.name,
@@ -2029,7 +2105,7 @@ describe('Dacproposals', () => {
         proposer1Account.name,
         'startwork_title',
         'startwork_summary',
-        arbitrator.name,
+        arbiter.name,
         { quantity: '106.0000 EOS', contract: 'eosio.token' },
         {
           quantity: '10.0000 PROPDAC',
@@ -2091,6 +2167,12 @@ describe('Dacproposals', () => {
       context('with valid proposal id', async () => {
         context('after starting work but before completing', async () => {
           before(async () => {
+            await shared.dacproposals_contract.arbagree(
+              arbiter.name,
+              cancelpropid,
+              dacId,
+              { from: arbiter }
+            );
             await shared.dacproposals_contract.startwork(cancelpropid, dacId, {
               from: proposer1Account,
             });
@@ -2156,9 +2238,9 @@ describe('Dacproposals', () => {
               await shared.dacescrow_contract.escrowsTable({ scope: dacId })
             ).rows[0];
             expect(escrow.key).to.equal(cancelpropid);
-            expect(escrow.arb).to.equal(arbitrator.name);
-            expect(escrow.arbitrator_pay.quantity).to.equal('10.0000 PROPDAC');
-            expect(escrow.arbitrator_pay.contract).to.equal(
+            expect(escrow.arb).to.equal(arbiter.name);
+            expect(escrow.arbiter_pay.quantity).to.equal('10.0000 PROPDAC');
+            expect(escrow.arbiter_pay.contract).to.equal(
               shared.dac_token_contract.name
             );
 
@@ -2192,7 +2274,7 @@ describe('Dacproposals', () => {
         proposer1Account.name,
         'startwork_title',
         'startwork_summary',
-        arbitrator.name,
+        arbiter.name,
         { quantity: '106.0000 EOS', contract: 'eosio.token' },
         {
           quantity: '10.0000 PROPDAC',
@@ -2303,7 +2385,7 @@ describe('Dacproposals', () => {
             proposer1Account.name,
             'delegate categories_title',
             'delegate categories_summary',
-            arbitrator.name,
+            arbiter.name,
             { quantity: '106.0000 EOS', contract: 'eosio.token' },
             {
               quantity: '10.0000 PROPDAC',
@@ -2461,6 +2543,12 @@ describe('Dacproposals', () => {
             );
           });
           it('should succeed to allow start work', async () => {
+            await shared.dacproposals_contract.arbagree(
+              arbiter.name,
+              propId, // proposal id
+              dacId,
+              { from: arbiter }
+            );
             await shared.dacproposals_contract.startwork(
               propId, // proposal id
               dacId,
@@ -2509,7 +2597,7 @@ describe('Dacproposals', () => {
             proposer1Account.name,
             'delegate complex title',
             'delegate complex_summary',
-            arbitrator.name,
+            arbiter.name,
             { quantity: '106.0000 EOS', contract: 'eosio.token' },
             {
               quantity: '10.0000 PROPDAC',
@@ -2590,6 +2678,12 @@ describe('Dacproposals', () => {
               );
             });
             it('should succeed when attempting start work', async () => {
+              await shared.dacproposals_contract.arbagree(
+                arbiter.name,
+                propId,
+                dacId,
+                { from: arbiter }
+              );
               await shared.dacproposals_contract.startwork(
                 propId, // proposal id
                 dacId,
