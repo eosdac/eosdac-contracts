@@ -46,12 +46,10 @@ const minutes = 60 * seconds;
 
 let serialized_actions: any;
 let serialized_actions_outside_dao: any;
-// let delegateeCustodian: Account;
 let regMembers: Account[];
 let candidates: Account[];
 // let otherAccount: Account;
 // let proposer1Account: Account;
-// let arbitrator: Account;
 let planet: Account;
 
 describe('Referendum', () => {
@@ -203,29 +201,29 @@ describe('Referendum', () => {
           allow_per_account_voting: [
             {
               key: vote_type.TYPE_BINDING,
-              value: 1,
+              value: true,
             },
             {
               key: vote_type.TYPE_SEMI_BINDING,
-              value: 1,
+              value: true,
             },
             {
               key: vote_type.TYPE_OPINION,
-              value: 1,
+              value: true,
             },
           ],
           allow_vote_type: [
             {
               key: vote_type.TYPE_BINDING,
-              value: 1,
+              value: true,
             },
             {
               key: vote_type.TYPE_SEMI_BINDING,
-              value: 1,
+              value: true,
             },
             {
               key: vote_type.TYPE_OPINION,
-              value: 1,
+              value: true,
             },
           ],
         },
@@ -344,8 +342,20 @@ describe('Referendum', () => {
       });
     });
     context('exec', async () => {
+      it('should have referendum in the table before execution', async () => {
+        await assertRowCount(
+          shared.referendum_contract.referendumsTable({ scope: dacId }),
+          1
+        );
+      });
       it('should work', async () => {
         await referendum.exec('1', dacId);
+      });
+      it('Should not erase the referendum after execution', async () => {
+        await assertRowCount(
+          shared.referendum_contract.referendumsTable({ scope: dacId }),
+          1
+        );
       });
       it('should create the proposal', async () => {
         await assertRowCount(

@@ -344,10 +344,14 @@ void referendum::stakeobsv(vector<account_stake_delta> stake_deltas, name dac_id
                 auto ref = referenda.find(v->first);
 
                 if (ref != referenda.end()) {
-                    referenda.modify(ref, same_payer, [&](referendum_data &r) {
-                        r.token_votes[v->second] += asd.stake_delta.amount;
-                    });
-                    v++;
+                    if (ref->status == REFERENDUM_STATUS_EXPIRED || ref->status == REFERENDUM_STATUS_EXECUTED) {
+                        v = existing_votes.erase(v);
+                    } else {
+                        referenda.modify(ref, same_payer, [&](referendum_data &r) {
+                            r.token_votes[v->second] += asd.stake_delta.amount;
+                        });
+                        v++;
+                    }
                 } else {
                     // If the referendum cannot be found remove the vote.
                     v = existing_votes.erase(v);
@@ -374,7 +378,9 @@ void referendum::clean(name account, name dac_id) {
 
     map<uint64_t, name> new_votes;
     for (auto vd : existing_vote_data->votes) {
-        if (referenda.find(vd.first) != referenda.end()) {
+        if (referenda.find(vd.first) != referenda.end() &&
+            referenda.get(vd.first).status != REFERENDUM_STATUS_EXPIRED &&
+            referenda.get(vd.first).status != REFERENDUM_STATUS_EXECUTED) {
             new_votes[vd.first] = vd.second;
         }
     }
